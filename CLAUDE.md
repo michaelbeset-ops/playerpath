@@ -170,6 +170,22 @@ schermvullende wrapper — zie `layouts/auth/AuthSimpleLayout.vue` als voorbeeld
 Kaarten krijgen `border border-border` **plus** `shadow-sm`. Alleen een rand is
 te vlak; alleen een schaduw is te zwevend.
 
+#### Groen betekent iets
+
+Het groen uit het logo is het enige accent op de admin-kant, en het is
+**informatie, geen decoratie**:
+
+- een kerncijfer met een echte waarde krijgt een groen getal, een groen
+  streepje bovenaan de kaart en een groen getint icoon;
+- een kaart zonder waarde (nog niet gebouwd, of nul) blijft **grijs**.
+
+Zo zie je in één oogopslag wat leeft. Zou alles groen zijn, dan zegt de kleur
+niets meer. Gebruik geen extra accentkleuren om schermen "levendiger" te maken.
+
+Kerncijfers gebruik je via `components/StatCard.vue` — label, waarde, hint,
+icoon en optioneel een `href`. Elk cijfer krijgt een eigen lucide-icoon
+(spelers `Users`, rapporten `ClipboardList`, trainingen `CalendarDays`).
+
 ### Kleuren — speler/ouder (donker)
 
 | Rol | Kleur | Hex |
@@ -264,6 +280,8 @@ houdt, en dus niet mag sneuvelen:
   aan wat veranderd is;
 - een cijfer is **een tik** op een grote knop, geen dropdown of schuifje;
 - cijfertoetsen 1-9 en 0 vullen de actieve rij en springen door naar de volgende;
+- de cijferknoppen zijn minimaal 44px hoog, ook op telefoon (`h-11`), want dit
+  scherm wordt langs de lijn op een telefoon gebruikt;
 - opslaan zit in een vaste balk onderaan, binnen duimbereik;
 - de toelichting is optioneel en breekt het ritme niet.
 

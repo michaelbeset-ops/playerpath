@@ -151,12 +151,14 @@ const opslaan = () => form.post('/players/' + props.player.id + '/reports');
                         </p>
                     </div>
 
+                    <!-- h-11 = 44px tikhoogte, ook op telefoon. Vierkante knoppen zouden
+                         op 375px maar 30px hoog worden, en dat tikt niet lekker. -->
                     <div class="mt-3 grid grid-cols-10 gap-1 sm:gap-1.5">
                         <button
                             v-for="cijfer in cijfers"
                             :key="cijfer"
                             type="button"
-                            class="tabular flex aspect-square items-center justify-center rounded-lg border text-sm font-semibold transition sm:text-base"
+                            class="tabular flex h-11 items-center justify-center rounded-lg border text-sm font-semibold transition sm:h-12 sm:text-base"
                             :class="
                                 form.scores[categorie.category] === cijfer
                                     ? kleurVoor(cijfer) + ' border-transparent'
