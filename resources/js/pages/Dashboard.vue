@@ -1,7 +1,12 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
-import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/vue3';
+import { type BreadcrumbItem, type SharedData } from '@/types';
+import { Head, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
+
+const page = usePage<SharedData>();
+const school = computed(() => page.props.school);
+const rollen = computed(() => page.props.auth.roles ?? []);
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -26,7 +31,11 @@ const kaarten = [
         <div class="flex h-full flex-1 flex-col gap-6 p-4">
             <div>
                 <h1 class="text-2xl font-semibold tracking-tight">Dashboard</h1>
-                <p class="mt-1 text-sm text-muted-foreground">Welkom bij PlayerPath.</p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    <template v-if="school">{{ school.name }}</template>
+                    <template v-else>Welkom bij PlayerPath.</template>
+                    <span v-if="rollen.length" class="text-muted-foreground/70">&middot; {{ rollen.join(', ') }}</span>
+                </p>
             </div>
 
             <div class="grid auto-rows-min gap-4 md:grid-cols-3">

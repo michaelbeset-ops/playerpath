@@ -41,14 +41,51 @@ Dit zijn geen richtlijnen maar voorwaarden. Code die hier tegenin gaat is fout.
 
 ### 3.1 Multi-tenancy (belangrijkste regel)
 
-- **Elke tabel met klantdata krijgt een `school_id`.** Geen uitzonderingen.
-- Scoping gebeurt **altijd server-side**, via **één centrale scope-laag**
-  (een global scope op de models + middleware die de actieve school bepaalt).
+- **Elke tabel met klantdata krijgt een `school_id`.** Ook koppeltabellen.
+- Scoping gebeurt **altijd server-side**, via **één centrale scope-laag**.
   Niet per controller opnieuw, niet per query handmatig.
 - **Nooit** data verbergen in de UI en denken dat het daarmee beveiligd is.
 - Een school mag **nooit** data van een andere school kunnen zien, lezen,
   raden via een ID in de URL, of via een API-response terugkrijgen.
-- Bij elk nieuw model: `school_id` + de global scope + een policy. Alle drie.
+
+#### Hoe het werkt (fase 1)
+
+| Onderdeel | Bestand | Wat het doet |
+|---|---|---|
+| Actieve school | `app/Support/Tenancy/Tenancy.php` | Singleton met de school van deze request |
+| Middleware | `app/Http/Middleware/SetCurrentSchool.php` | Leidt de school af uit de **ingelogde gebruiker** |
+| Global scope | `app/Models/Scopes/SchoolScope.php` | Filtert elke query op `school_id` |
+| Trait | `app/Models/Concerns/BelongsToSchool.php` | Scope + `school_id` invullen + vastzetten |
+
+**Bij elk nieuw model met klantdata: `school_id` in de migratie, de
+`BelongsToSchool`-trait op het model, en een policy. Alle drie.**
+
+Drie eigenschappen die je niet mag weghalen:
+
+1. **De school komt nooit uit invoer.** Niet uit de URL, een subdomein of een
+   formulierveld — alleen uit het ingelogde account. Er valt dus niets aan te
+   knoeien.
+2. **Fail-closed.** Is er geen actieve school, dan levert een query *niets* op
+   (`1 = 0`) en gooit opslaan een fout. Een vergeten middleware mag nooit per
+   ongeluk alle scholen openzetten.
+3. **`school_id` ligt vast.** Hij wordt automatisch ingevuld bij aanmaken, staat
+   niet in `$fillable`, en wijzigen op een bestaand record gooit een fout.
+
+Koppeltabellen krijgen hun `school_id` via `withPivotValue('school_id',
+$this->school_id)` op de relatie. Dat vult hem in én filtert erop.
+
+`Tenancy::withoutScope()` en `Model::withoutSchoolScope()` bestaan voor bewuste
+beheer-acties (seeders, platformbeheer). **Nooit in een controller gebruiken.**
+
+#### Twee bewuste uitzonderingen
+
+- **`User` heeft géén global scope.** Inloggen moet een gebruiker op e-mailadres
+  kunnen vinden vóórdat er een school bekend is. In plaats daarvan: query
+  gebruikers via `$school->users()` of `User::ofCurrentSchool()`, en `UserPolicy`
+  weigert alles buiten de eigen school.
+- **De tabellen van spatie/laravel-permission hebben geen `school_id`.** De vier
+  rollen zijn platformbrede begrippen, geen klantdata. De koppeling
+  gebruiker↔rol is per gebruiker, en die hoort al bij één school.
 
 ### 3.2 Geld
 
@@ -74,7 +111,13 @@ Vier rollen via spatie/laravel-permission:
 - `ouder` — ziet alleen de kaart/voortgang van het eigen kind
 - `speler` — ziet alleen de eigen kaart
 
-Autorisatie loopt via **policies**, niet via `if ($user->role === ...)` in views.
+Autorisatie loopt via **policies** (`app/Policies/`), niet via
+`if ($user->role === ...)` in views. Elke policy-check begint met "zelfde
+school" — dat staat bewust náást de global scope: twee sloten op dezelfde deur.
+
+Zelfregistratie staat **uit**. Scholen en eigenaren zet je op met
+`php artisan school:create`; trainers en ouders worden later uitgenodigd door
+de eigenaar.
 
 ---
 
@@ -150,7 +193,33 @@ inzicht, dan is het één klasse omzetten.
   spelerskaart en grote panelen, `rounded-lg` voor inputs.
 - Ruim gebruik van witruimte (spacing-schaal 4/6/8).
 
-## 5. Werkwijze
+## 5. Datamodel
+
+| Model | Hoort bij | Belangrijkste velden |
+|---|---|---|
+| `School` | — (is de tenant) | `name`, `slug`, `is_active` |
+| `User` | school | `name`, `email`, rol via spatie |
+| `Player` | school | `first_name`, `last_name`, `date_of_birth`, `position`, `user_id?` |
+| `Group` | school | `name`, `age_category`, `is_active` |
+
+Relaties:
+
+- `Player` ↔ `Group`: **veel-op-veel** (`group_player`). Een speler kan in
+  meerdere groepen zitten (keeperstraining én veldtraining). Indelen is
+  **altijd handwerk** — nooit automatisch op leeftijd.
+- `Player` ↔ `User` (ouder): veel-op-veel (`guardian_player`), met
+  `relationship` (moeder/vader/verzorger). Op `User` heet dit `children()`.
+- `Player` → `User`: optioneel eigen inlogaccount van de speler zelf.
+
+Twee afspraken die je niet moet omdraaien:
+
+- **Leeftijd staat niet op de speler.** De speler heeft een `date_of_birth`;
+  leeftijd leid je daaruit af (`$player->age`), zodat het na een seizoenswissel
+  vanzelf klopt. De **leeftijdscategorie** ("Onder 12") hoort bij de **groep**.
+- **Positie** is een enum (`App\Enums\PlayerPosition`): `keeper` of `field`.
+  In de database Engels, in de UI het Nederlandse label.
+
+## 6. Werkwijze
 
 - **Fase voor fase.** Het bouwplan staat in `bouwplan-keepersplatform-claude-code.md`
   (fase 0 t/m 8). Begin een fase pas als de vorige werkt en getest is.
@@ -163,7 +232,7 @@ inzicht, dan is het één klasse omzetten.
 ### Fase-status
 
 - [x] Fase 0 — Projectopzet & fundament
-- [ ] Fase 1 — Datamodel & multi-tenancy
+- [x] Fase 1 — Datamodel & multi-tenancy
 - [ ] Fase 2 — Rapport → spelerskaart
 - [ ] Fase 3 — Spelers- & groepsbeheer
 - [ ] Fase 4 — Planning & aanwezigheid
@@ -174,7 +243,7 @@ inzicht, dan is het één klasse omzetten.
 
 ---
 
-## 6. Principes
+## 7. Principes
 
 - **Fundament vóór schermen.** Fase 0 en 1 bepalen alles daarna.
 - **Bouw alleen wat elke school kan gebruiken.** School-specifieke wensen worden
@@ -185,7 +254,7 @@ inzicht, dan is het één klasse omzetten.
 
 ---
 
-## 7. Praktisch (lokaal)
+## 8. Praktisch (lokaal)
 
 - PHP/Composer komen van Herd; draai die commando's via **PowerShell**, niet via bash.
 - Database: **SQLite** (`database/database.sqlite`). Geen MySQL lokaal.

@@ -2,6 +2,8 @@ import type { LucideIcon } from 'lucide-vue-next';
 
 export interface Auth {
     user: User;
+    /** De rollen van de ingelogde gebruiker: eigenaar, trainer, ouder of speler. */
+    roles: string[];
 }
 
 export interface BreadcrumbItem {
@@ -16,9 +18,16 @@ export interface NavItem {
     isActive?: boolean;
 }
 
+export interface School {
+    id: number;
+    name: string;
+}
+
 export interface SharedData {
     name: string;
     auth: Auth;
+    /** De actieve school van de ingelogde gebruiker; null als er geen is. */
+    school: School | null;
     ziggy: {
         location: string;
         url: string;

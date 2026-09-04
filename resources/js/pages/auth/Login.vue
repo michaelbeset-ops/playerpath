@@ -82,10 +82,9 @@ const submit = () => {
                 </Button>
             </div>
 
-            <div class="text-center text-sm text-muted-foreground">
-                Nog geen account?
-                <TextLink :href="route('register')" :tabindex="5">Maak er een aan</TextLink>
-            </div>
+            <p class="text-center text-sm text-muted-foreground">
+                Nog geen account? Je schoolbeheerder maakt er een voor je aan.
+            </p>
         </form>
     </AuthBase>
 </template>

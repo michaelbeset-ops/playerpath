@@ -162,7 +162,11 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Zelfregistratie staat bewust uit: niemand mag zomaar een school
+        // (tenant) aanmaken. Scholen en eigenaren zet je op met
+        // `php artisan school:create`; trainers en ouders worden later
+        // uitgenodigd door de eigenaar.
+        // Features::registration(),
         Features::resetPasswords(),
         Features::emailVerification(),
 

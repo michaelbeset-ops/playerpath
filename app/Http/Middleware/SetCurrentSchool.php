@@ -1,0 +1,50 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use App\Support\Tenancy\Tenancy;
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+/**
+ * Zet de actieve school op basis van de ingelogde gebruiker.
+ *
+ * De school komt nadrukkelijk NIET uit de URL, een subdomein of een
+ * formulierveld — alleen uit het account waarmee je bent ingelogd. Daarmee
+ * valt er niets te knoeien.
+ */
+class SetCurrentSchool
+{
+    public function __construct(protected Tenancy $tenancy) {}
+
+    public function handle(Request $request, Closure $next): Response
+    {
+        $user = $request->user();
+
+        if ($user === null) {
+            // Niet ingelogd: geen school. De scope levert dan niets op.
+            $this->tenancy->forget();
+
+            return $next($request);
+        }
+
+        abort_if(
+            $user->school_id === null,
+            403,
+            'Je account is niet aan een school gekoppeld. Neem contact op met je schoolbeheerder.'
+        );
+
+        $school = $user->school;
+
+        abort_if(
+            $school === null || ! $school->is_active,
+            403,
+            'Deze school is niet actief. Neem contact op met je schoolbeheerder.'
+        );
+
+        $this->tenancy->set($school);
+
+        return $next($request);
+    }
+}

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Tenancy\Tenancy;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -40,7 +41,9 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $request->user(),
+                'roles' => $request->user()?->getRoleNames()->all() ?? [],
             ],
+            'school' => fn () => app(Tenancy::class)->school()?->only(['id', 'name']),
         ]);
     }
 }

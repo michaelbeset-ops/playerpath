@@ -29,20 +29,13 @@ const page = usePage<SharedData>();
                     Naar het dashboard
                 </Link>
 
-                <template v-else>
-                    <Link
-                        :href="route('login')"
-                        class="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
-                    >
-                        Inloggen
-                    </Link>
-                    <Link
-                        :href="route('register')"
-                        class="rounded-xl border border-border px-5 py-2.5 text-sm font-semibold transition hover:bg-accent"
-                    >
-                        Account aanmaken
-                    </Link>
-                </template>
+                <Link
+                    v-else
+                    :href="route('login')"
+                    class="rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                >
+                    Inloggen
+                </Link>
             </div>
         </div>
     </div>

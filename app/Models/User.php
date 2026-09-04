@@ -2,47 +2,108 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\Role as RoleEnum;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
+/**
+ * Let op: User gebruikt bewust NIET de BelongsToSchool-trait.
+ *
+ * Inloggen moet een gebruiker op e-mailadres kunnen vinden vóórdat er een
+ * school bekend is; een global scope zou dat blokkeren. In plaats daarvan:
+ * - de middleware SetCurrentSchool leidt de actieve school af uit de ingelogde
+ *   gebruiker, dus de tenant komt nooit uit de URL;
+ * - query gebruikers altijd via $school->users() of ->ofCurrentSchool();
+ * - UserPolicy weigert alles buiten de eigen school.
+ *
+ * Zie CLAUDE.md 3.1.
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, HasRoles, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
     protected $fillable = [
+        'school_id',
         'name',
         'email',
         'password',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function school(): BelongsTo
+    {
+        return $this->belongsTo(School::class);
+    }
+
+    /** Het spelersprofiel van deze gebruiker, als hij zelf speler is. */
+    public function player(): HasOne
+    {
+        return $this->hasOne(Player::class);
+    }
+
+    /** De kinderen van deze gebruiker, als hij ouder is. */
+    public function children(): BelongsToMany
+    {
+        return $this->belongsToMany(Player::class, 'guardian_player')
+            ->withPivotValue('school_id', $this->school_id)
+            ->withPivot('relationship')
+            ->withTimestamps();
+    }
+
+    /** Beperk een gebruikersquery tot de actieve school. */
+    public function scopeOfCurrentSchool(Builder $query): Builder
+    {
+        $schoolId = app(\App\Support\Tenancy\Tenancy::class)->id();
+
+        return $schoolId === null
+            ? $query->whereRaw('1 = 0')
+            : $query->where('school_id', $schoolId);
+    }
+
+    public function isEigenaar(): bool
+    {
+        return $this->hasRole(RoleEnum::Eigenaar->value);
+    }
+
+    public function isTrainer(): bool
+    {
+        return $this->hasRole(RoleEnum::Trainer->value);
+    }
+
+    public function isOuder(): bool
+    {
+        return $this->hasRole(RoleEnum::Ouder->value);
+    }
+
+    public function isSpeler(): bool
+    {
+        return $this->hasRole(RoleEnum::Speler->value);
+    }
+
+    /** Hoort deze gebruiker bij dezelfde school als het gegeven model? */
+    public function belongsToSameSchool(mixed $model): bool
+    {
+        return $this->school_id !== null
+            && $model->school_id !== null
+            && $this->school_id === $model->school_id;
     }
 }
