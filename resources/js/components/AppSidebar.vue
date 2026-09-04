@@ -4,15 +4,25 @@ import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { ClipboardList, LayoutGrid } from 'lucide-vue-next';
+import { ClipboardList, LayoutGrid, Users, UsersRound } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
-// Spelers, groepen en trainingen komen erbij in de volgende fases.
+// Trainingen komt erbij in fase 4.
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: '/dashboard',
         icon: LayoutGrid,
+    },
+    {
+        title: 'Spelers',
+        href: '/players',
+        icon: Users,
+    },
+    {
+        title: 'Groepen',
+        href: '/groups',
+        icon: UsersRound,
     },
     {
         title: 'Rapporten',

@@ -57,7 +57,7 @@ class Player extends Model
     public function guardians(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'guardian_player')
-            ->withPivotValue('school_id', $this->school_id)
+            ->withPivotValue('school_id', $this->pivotSchoolId())
             ->withPivot('relationship')
             ->withTimestamps();
     }
@@ -65,7 +65,7 @@ class Player extends Model
     public function groups(): BelongsToMany
     {
         return $this->belongsToMany(Group::class)
-            ->withPivotValue('school_id', $this->school_id)
+            ->withPivotValue('school_id', $this->pivotSchoolId())
             ->withTimestamps();
     }
 

@@ -77,6 +77,30 @@ $this->school_id)` op de relatie. Dat vult hem in én filtert erop.
 `Tenancy::withoutScope()` en `Model::withoutSchoolScope()` bestaan voor bewuste
 beheer-acties (seeders, platformbeheer). **Nooit in een controller gebruiken.**
 
+#### Valkuil: validatieregels kennen de global scope niet
+
+`Rule::exists()` en `Rule::unique()` gaan **rechtstreeks naar de database** en
+gaan dus buiten Eloquent en de global scope om. Zonder extra `where` accepteert
+een formulier gewoon het id van een record van een andere school.
+
+Voeg daarom altijd de school toe:
+
+```php
+Rule::exists('groups', 'id')->where('school_id', app(Tenancy::class)->id())
+Rule::unique('groups', 'name')->where('school_id', app(Tenancy::class)->id())
+```
+
+Hetzelfde geldt voor `User`, dat sowieso geen global scope heeft: begrens
+gebruikers-ids expliciet op `school_id`.
+
+#### Valkuil: koppeltabellen bij eager loading
+
+Relaties gebruiken `withPivotValue('school_id', $this->pivotSchoolId())`. Die
+helper bestaat omdat Eloquent bij **eager loading** de relatie op een leeg model
+bouwt, waar `school_id` nog `null` is — een letterlijke `$this->school_id` gooit
+daar een exception. De helper valt terug op de actieve school, en anders op `0`:
+dat bestaat niet, dus de query levert niets op en een insert faalt. Fail-closed.
+
 #### Route model binding draait eerder dan de middleware
 
 `SubstituteBindings` zit in de web-groep **voor** `SetCurrentSchool`. Zonder
@@ -229,6 +253,18 @@ inzicht, dan is het één klasse omzetten.
 | `Report` | school | `player_id`, `trainer_id`, `reported_on`, `note` |
 | `ReportScore` | school | `report_id`, `category`, `score` (1-10) |
 
+Beheerschermen (fase 3): spelers en groepen zijn volledig te beheren door de
+**eigenaar**; de trainer mag alles zien maar niets wijzigen. Ouders koppel je
+op de spelersdetailpagina. Omdat zelfregistratie dichtstaat maakt de eigenaar
+het ouder-account aan; de ouder krijgt een e-mail om **zelf** een wachtwoord te
+kiezen, via de bestaande wachtwoord-vergeten-route. Er wordt dus nooit een
+wachtwoord gezet dat iemand anders kent.
+
+Verwijderen versus deactiveren: een speler die stopt zet je op **niet-actief**
+(hij blijft bewaard, telt niet mee). Definitief verwijderen bestaat wel, maar
+neemt de rapporten mee en staat daarom apart onderaan de detailpagina. Een
+groep verwijderen raakt de spelers nooit: alleen de indeling verdwijnt.
+
 Relaties:
 
 - `Player` ↔ `Group`: **veel-op-veel** (`group_player`). Een speler kan in
@@ -300,7 +336,7 @@ houdt, en dus niet mag sneuvelen:
 - [x] Fase 0 — Projectopzet & fundament
 - [x] Fase 1 — Datamodel & multi-tenancy
 - [x] Fase 2 — Rapport → spelerskaart
-- [ ] Fase 3 — Spelers- & groepsbeheer
+- [x] Fase 3 — Spelers- & groepsbeheer
 - [ ] Fase 4 — Planning & aanwezigheid
 - [ ] Fase 5 — Voortgang & ouder-ervaring
 - [ ] Fase 6 — Eigenaar-dashboard

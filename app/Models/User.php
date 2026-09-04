@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Support\Tenancy\Tenancy;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -64,7 +65,7 @@ class User extends Authenticatable
     public function children(): BelongsToMany
     {
         return $this->belongsToMany(Player::class, 'guardian_player')
-            ->withPivotValue('school_id', $this->school_id)
+            ->withPivotValue('school_id', $this->school_id ?? app(Tenancy::class)->id() ?? 0)
             ->withPivot('relationship')
             ->withTimestamps();
     }
@@ -72,7 +73,7 @@ class User extends Authenticatable
     /** Beperk een gebruikersquery tot de actieve school. */
     public function scopeOfCurrentSchool(Builder $query): Builder
     {
-        $schoolId = app(\App\Support\Tenancy\Tenancy::class)->id();
+        $schoolId = app(Tenancy::class)->id();
 
         return $schoolId === null
             ? $query->whereRaw('1 = 0')

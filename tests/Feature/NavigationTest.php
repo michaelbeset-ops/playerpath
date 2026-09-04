@@ -6,6 +6,7 @@ use App\Enums\Role;
 use App\Models\School;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
@@ -32,13 +33,13 @@ class NavigationTest extends TestCase
     {
         return [
             'Dashboard' => ['/dashboard'],
+            'Spelers' => ['/players'],
+            'Groepen' => ['/groups'],
             'Rapporten' => ['/reports'],
         ];
     }
 
-    /**
-     * @dataProvider menuItems
-     */
+    #[DataProvider('menuItems')]
     public function test_elk_menu_item_is_bereikbaar_voor_een_eigenaar(string $href): void
     {
         $school = School::factory()->create();
@@ -48,9 +49,7 @@ class NavigationTest extends TestCase
         $this->actingAs($eigenaar)->get($href)->assertOk();
     }
 
-    /**
-     * @dataProvider menuItems
-     */
+    #[DataProvider('menuItems')]
     public function test_elk_menu_item_is_bereikbaar_voor_een_trainer(string $href): void
     {
         $school = School::factory()->create();

@@ -28,6 +28,7 @@ export interface SharedData {
     auth: Auth;
     /** De actieve school van de ingelogde gebruiker; null als er geen is. */
     school: School | null;
+    flash: { status: string | null };
     ziggy: {
         location: string;
         url: string;

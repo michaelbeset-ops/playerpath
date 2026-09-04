@@ -56,6 +56,19 @@ trait BelongsToSchool
         return $this->belongsTo(School::class);
     }
 
+    /**
+     * Het school_id dat koppeltabellen meekrijgen.
+     *
+     * Bij eager loading bouwt Eloquent de relatie op een leeg model; dan is
+     * $this->school_id nog null en valt hij terug op de actieve school.
+     * Is ook die er niet, dan 0: die bestaat niet, dus de query levert niets
+     * op en een insert faalt op de foreign key. Fail-closed, net als de scope.
+     */
+    protected function pivotSchoolId(): int
+    {
+        return $this->school_id ?? app(Tenancy::class)->id() ?? 0;
+    }
+
     /** Query zonder school-filter. Alleen voor bewuste beheer-acties. */
     public static function withoutSchoolScope(): Builder
     {

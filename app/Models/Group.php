@@ -28,7 +28,7 @@ class Group extends Model
     public function players(): BelongsToMany
     {
         return $this->belongsToMany(Player::class)
-            ->withPivotValue('school_id', $this->school_id)
+            ->withPivotValue('school_id', $this->pivotSchoolId())
             ->withTimestamps();
     }
 }

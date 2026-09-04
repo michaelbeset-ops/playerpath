@@ -126,5 +126,12 @@ return [
         'password_confirmation' => 'Wachtwoordbevestiging',
         'current_password' => 'Huidig wachtwoord',
         'remember' => 'Ingelogd blijven',
+        'first_name' => 'De voornaam',
+        'last_name' => 'De achternaam',
+        'date_of_birth' => 'De geboortedatum',
+        'position' => 'De positie',
+        'is_active' => 'De status',
+        'age_category' => 'De leeftijdscategorie',
+        'relationship' => 'De relatie',
     ],
 ];

@@ -44,6 +44,9 @@ class HandleInertiaRequests extends Middleware
                 'roles' => $request->user()?->getRoleNames()->all() ?? [],
             ],
             'school' => fn () => app(Tenancy::class)->school()?->only(['id', 'name']),
+            'flash' => [
+                'status' => fn () => $request->session()->get('status'),
+            ],
         ]);
     }
 }
