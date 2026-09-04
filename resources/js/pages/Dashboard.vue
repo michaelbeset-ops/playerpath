@@ -30,14 +30,14 @@ const kaarten = [
             </div>
 
             <div class="grid auto-rows-min gap-4 md:grid-cols-3">
-                <div v-for="kaart in kaarten" :key="kaart.titel" class="rounded-xl border border-border bg-card p-5">
+                <div v-for="kaart in kaarten" :key="kaart.titel" class="rounded-xl border border-border bg-card p-5 shadow-sm">
                     <p class="text-sm font-medium text-muted-foreground">{{ kaart.titel }}</p>
-                    <p class="tabular mt-2 text-3xl font-bold leading-none">—</p>
+                    <p class="tabular mt-2 text-3xl font-bold leading-none text-foreground">—</p>
                     <p class="mt-2 text-xs text-muted-foreground">{{ kaart.hint }}</p>
                 </div>
             </div>
 
-            <div class="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-border p-10 text-center">
+            <div class="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
                 <div>
                     <p class="font-medium">Nog niets te zien</p>
                     <p class="mt-1 text-sm text-muted-foreground">

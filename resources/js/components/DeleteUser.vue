@@ -45,8 +45,8 @@ const closeModal = () => {
 <template>
     <div class="space-y-6">
         <HeadingSmall title="Account verwijderen" description="Verwijder je account en alle bijbehorende gegevens" />
-        <div class="space-y-4 rounded-lg border border-red-100 bg-red-50 p-4 dark:border-red-200/10 dark:bg-red-700/10">
-            <div class="relative space-y-0.5 text-red-600 dark:text-red-100">
+        <div class="space-y-4 rounded-xl border border-destructive/25 bg-destructive/5 p-4">
+            <div class="relative space-y-0.5 text-destructive">
                 <p class="font-medium">Let op</p>
                 <p class="text-sm">Dit kan niet ongedaan worden gemaakt.</p>
             </div>

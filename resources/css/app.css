@@ -3,28 +3,94 @@
 @tailwind utilities;
 
 /*
- * PlayerPath huisstijl.
- * Donker is de standaard, geen thema-optie: daarom krijgen :root en .dark
- * dezelfde waardes. Zie CLAUDE.md, hoofdstuk 4.
+ * PlayerPath huisstijl — twee kanten, één merk. Zie CLAUDE.md, hoofdstuk 4.
+ *
+ * LICHT is de standaard en geldt voor de admin/dashboard-kant (eigenaar,
+ * trainer): rustige off-white werkvloer, witte kaarten, donkere tekst.
+ *
+ * DONKER zet je aan met de klasse `theme-donker` op een schermvullende
+ * wrapper. Die kant is voor de speler/ouder-beleving: de spelerskaart,
+ * badges en mijlpalen — premium en met goud.
+ *
+ * Beide kanten delen dezelfde tokens, dus componenten hoeven niets te weten
+ * over het thema: gebruik altijd bg-card / text-foreground / border-border,
+ * nooit een hardgecodeerde kleur.
  */
 @layer base {
-    :root,
-    .dark {
-        /* Basis */
+    :root {
+        /* Werkvloer: gebroken wit, bewust geen hard wit */
+        --background: 210 17% 98%; /* #F8F9FA */
+        --foreground: 222 47% 11%; /* #0F172A */
+
+        /* Kaarten: wit, komen los van de achtergrond via rand + schaduw */
+        --card: 0 0% 100%;
+        --card-foreground: 222 47% 11%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 222 47% 11%;
+
+        /* Primair: fel groen blijft het accent, ook in licht */
+        --primary: 143 75% 42%; /* iets dieper voor leesbaarheid op wit */
+        --primary-foreground: 0 0% 100%;
+
+        /* Rustige vlakken */
+        --secondary: 210 40% 96%; /* #F1F5F9 */
+        --secondary-foreground: 222 47% 11%;
+        --muted: 210 40% 96%;
+        --muted-foreground: 215 16% 42%; /* #5A677D */
+        --accent: 210 40% 96%;
+        --accent-foreground: 222 47% 11%;
+
+        /* Goud/metallic: schaars gebruiken (spelerskaart, badges, mijlpalen) */
+        --gold: 43 74% 38%; /* donkerder, anders onleesbaar op wit */
+        --gold-foreground: 0 0% 100%;
+
+        /* Statussen */
+        --destructive: 0 72% 45%;
+        --destructive-foreground: 0 0% 100%;
+        --warning: 32 95% 38%;
+        --warning-foreground: 0 0% 100%;
+        --success: 143 75% 32%;
+        --success-foreground: 0 0% 100%;
+
+        /* Randen en velden */
+        --border: 214 32% 91%; /* #E2E8F0 */
+        --input: 214 32% 88%;
+        --ring: 143 75% 42%;
+
+        /* Grafieken (fase 5) */
+        --chart-1: 143 75% 38%;
+        --chart-2: 43 74% 42%;
+        --chart-3: 199 89% 42%;
+        --chart-4: 280 50% 50%;
+        --chart-5: 32 95% 44%;
+
+        /* Afronding: 12px basis */
+        --radius: 0.75rem;
+
+        /* Zijbalk: iets dieper grijs, zodat de werkvloer ertegen afsteekt */
+        --sidebar-background: 210 20% 94%;
+        --sidebar-foreground: 222 47% 11%;
+        --sidebar-primary: 143 75% 42%;
+        --sidebar-primary-foreground: 0 0% 100%;
+        --sidebar-accent: 210 30% 89%;
+        --sidebar-accent-foreground: 222 47% 11%;
+        --sidebar-border: 214 32% 88%;
+        --sidebar-ring: 143 75% 42%;
+    }
+
+    /* De donkere, premium kant: speler/ouder + de spelerskaart. */
+    .theme-donker {
         --background: 223 47% 7%; /* #0A0F1C */
         --foreground: 210 40% 96%; /* #F1F5F9 */
 
-        /* Panelen en kaarten */
         --card: 221 46% 12%; /* #111A2E */
         --card-foreground: 210 40% 96%;
         --popover: 221 46% 12%;
         --popover-foreground: 210 40% 96%;
 
-        /* Primair: fel groen */
         --primary: 143 75% 51%; /* #22E06B */
         --primary-foreground: 223 47% 7%;
 
-        /* Rustige vlakken */
         --secondary: 219 40% 18%; /* #1C2942 */
         --secondary-foreground: 210 40% 96%;
         --muted: 221 46% 12%;
@@ -32,34 +98,26 @@
         --accent: 219 40% 18%;
         --accent-foreground: 210 40% 96%;
 
-        /* Goud/metallic: schaars gebruiken (spelerskaart, badges, mijlpalen) */
         --gold: 46 65% 52%; /* #D4AF37 */
         --gold-foreground: 223 47% 7%;
 
-        /* Statussen */
-        --destructive: 0 84% 60%; /* #EF4444 */
+        --destructive: 0 84% 60%;
         --destructive-foreground: 210 40% 96%;
-        --warning: 38 92% 50%; /* #F59E0B */
+        --warning: 38 92% 50%;
         --warning-foreground: 223 47% 7%;
         --success: 143 75% 51%;
         --success-foreground: 223 47% 7%;
 
-        /* Randen en velden */
         --border: 219 40% 18%;
         --input: 219 40% 18%;
         --ring: 143 75% 51%;
 
-        /* Grafieken (fase 5) */
         --chart-1: 143 75% 51%;
         --chart-2: 46 65% 52%;
         --chart-3: 199 89% 55%;
         --chart-4: 280 65% 65%;
         --chart-5: 38 92% 50%;
 
-        /* Afronding: 12px basis (rounded-xl-gevoel) */
-        --radius: 0.75rem;
-
-        /* Zijbalk */
         --sidebar-background: 221 46% 10%;
         --sidebar-foreground: 210 40% 96%;
         --sidebar-primary: 143 75% 51%;
@@ -68,6 +126,8 @@
         --sidebar-accent-foreground: 210 40% 96%;
         --sidebar-border: 219 40% 16%;
         --sidebar-ring: 143 75% 51%;
+
+        color-scheme: dark;
     }
 }
 
@@ -77,7 +137,7 @@
     }
 
     html {
-        color-scheme: dark;
+        color-scheme: light;
     }
 
     body {

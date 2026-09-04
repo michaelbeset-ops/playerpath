@@ -80,11 +80,45 @@ Autorisatie loopt via **policies**, niet via `if ($user->role === ...)` in views
 
 ## 4. Huisstijl
 
-Donkere, premium basis — bewust in de geest van een FIFA-kaart: cijfers en
-metallic accenten springen eruit op donker. Fel groen verwijst naar het veld en
-staat voor groei en energie.
+PlayerPath heeft **twee kanten met één merk**. Dit is een harde regel, geen smaak:
 
-### Kleuren
+| Kant | Voor wie | Thema |
+|---|---|---|
+| **Admin / dashboard** | eigenaar, trainer | **Licht** — rustige werkvloer waar je uren op kijkt |
+| **Speler / ouder + spelerskaart** | speler, ouder | **Donker** — premium, in de geest van een FIFA-kaart |
+
+Fel groen is in beide kanten de accent- en actiekleur. Goud hoort bij de
+donkere kant (kaart, badges, mijlpalen) en wordt in de admin-kant vrijwel niet
+gebruikt.
+
+### Hoe je het thema aanzet
+
+Licht is de standaard: `:root` in `resources/css/app.css` bevat de lichte
+tokens. Donker zet je aan met de klasse **`theme-donker`** op een
+schermvullende wrapper — zie `layouts/auth/AuthSimpleLayout.vue` als voorbeeld.
+
+**Gebruik altijd de tokens**, nooit een hardgecodeerde kleur: `bg-background`,
+`bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`,
+`bg-primary`, `text-gold`. Zo klopt een component in beide thema's zonder
+`dark:`-varianten. Staat er ergens `bg-white`, `text-black`, `text-red-600` of
+`dark:`, dan is dat fout.
+
+### Kleuren — admin (licht)
+
+| Rol | Kleur | Hex |
+|---|---|---|
+| Achtergrond / werkvloer | Gebroken wit, geen hard wit | `#F8F9FA` |
+| Kaarten | Wit, met subtiele rand + lichte schaduw | `#FFFFFF` |
+| Rand | Lichtgrijs | `#E2E8F0` |
+| Zijbalk | Iets dieper grijs, zodat de werkvloer afsteekt | `#EBEEF2` |
+| Primair / actie | Groen (iets dieper, leesbaar op wit) | `#1BB85E` |
+| Tekst primair | Donker marineblauw | `#0F172A` |
+| Tekst secundair | Grijsblauw | `#5A677D` |
+
+Kaarten krijgen `border border-border` **plus** `shadow-sm`. Alleen een rand is
+te vlak; alleen een schaduw is te zwevend.
+
+### Kleuren — speler/ouder (donker)
 
 | Rol | Kleur | Hex |
 |---|---|---|
@@ -92,30 +126,29 @@ staat voor groei en energie.
 | Surface (kaarten, panelen) | Donkerblauw | `#111A2E` |
 | Surface hoog / randen | Donkerblauw licht | `#1C2942` |
 | Primair / actie | Fel groen | `#22E06B` |
-| Primair hover | Groen donker | `#16B85A` |
 | Accent (kaart, badges, mijlpalen) | Goud/metallic | `#D4AF37` |
 | Tekst primair | Bijna-wit | `#F1F5F9` |
 | Tekst secundair | Grijsblauw | `#94A3B8` |
-| Succes / waarschuwing / fout | `#22E06B` / `#F59E0B` / `#EF4444` |
 
-- **Donker is de standaard**, niet een thema-optie.
-- Goud is **schaars**: alleen voor de spelerskaart, badges en mijlpalen.
-  Niet voor gewone knoppen.
+Op donker komt diepte van kleurverschil, niet van harde schaduwen.
+
+### Gedeelde schermen
+
+Inloggen, registreren en de startpagina zijn de gedeelde voordeur en staan nu
+op **donker** — dat is de merkbeleving die je als eerste ziet. Verandert dat
+inzicht, dan is het één klasse omzetten.
 
 ### Typografie
 
 - Font: **Inter** (fallback: system-ui, sans-serif).
-- Cijfers op de spelerskaart: zwaar (700–800), strak, `tabular-nums`.
+- Cijfers op de spelerskaart: zwaar (700–800), strak, `tabular-nums`
+  (utility-klasse `tabular`).
 
 ### Vorm
 
 - Afronding: `rounded-xl` (12px) standaard, `rounded-2xl` (16px) voor de
-  spelerskaart en grote panelen, `rounded-lg` (8px) voor inputs.
-- Randen: 1px `#1C2942`. Schaduwen subtiel; diepte komt van kleurverschil,
-  niet van harde schaduwen.
+  spelerskaart en grote panelen, `rounded-lg` voor inputs.
 - Ruim gebruik van witruimte (spacing-schaal 4/6/8).
-
----
 
 ## 5. Werkwijze
 

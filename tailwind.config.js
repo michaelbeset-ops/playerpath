@@ -2,7 +2,8 @@ import defaultTheme from 'tailwindcss/defaultTheme';
 
 /** @type {import('tailwindcss').Config} */
 export default {
-    darkMode: ['class'],
+    // Donker is geen voorkeursinstelling maar een schermkeuze: `theme-donker`.
+    darkMode: ['class', '.theme-donker'],
     content: [
         './vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php',
         './storage/framework/views/*.php',

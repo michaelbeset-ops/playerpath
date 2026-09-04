@@ -9,7 +9,7 @@ const page = usePage<SharedData>();
 <template>
     <Head title="Welkom" />
 
-    <div class="flex min-h-svh flex-col items-center justify-center bg-background p-6">
+    <div class="theme-donker flex min-h-svh flex-col items-center justify-center bg-background p-6 text-foreground">
         <div class="w-full max-w-md text-center">
             <div class="mx-auto mb-6 flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
                 <AppLogoIcon class="size-8" />
