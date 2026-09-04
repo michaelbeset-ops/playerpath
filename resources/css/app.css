@@ -1,0 +1,91 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * PlayerPath huisstijl.
+ * Donker is de standaard, geen thema-optie: daarom krijgen :root en .dark
+ * dezelfde waardes. Zie CLAUDE.md, hoofdstuk 4.
+ */
+@layer base {
+    :root,
+    .dark {
+        /* Basis */
+        --background: 223 47% 7%; /* #0A0F1C */
+        --foreground: 210 40% 96%; /* #F1F5F9 */
+
+        /* Panelen en kaarten */
+        --card: 221 46% 12%; /* #111A2E */
+        --card-foreground: 210 40% 96%;
+        --popover: 221 46% 12%;
+        --popover-foreground: 210 40% 96%;
+
+        /* Primair: fel groen */
+        --primary: 143 75% 51%; /* #22E06B */
+        --primary-foreground: 223 47% 7%;
+
+        /* Rustige vlakken */
+        --secondary: 219 40% 18%; /* #1C2942 */
+        --secondary-foreground: 210 40% 96%;
+        --muted: 221 46% 12%;
+        --muted-foreground: 215 20% 65%; /* #94A3B8 */
+        --accent: 219 40% 18%;
+        --accent-foreground: 210 40% 96%;
+
+        /* Goud/metallic: schaars gebruiken (spelerskaart, badges, mijlpalen) */
+        --gold: 46 65% 52%; /* #D4AF37 */
+        --gold-foreground: 223 47% 7%;
+
+        /* Statussen */
+        --destructive: 0 84% 60%; /* #EF4444 */
+        --destructive-foreground: 210 40% 96%;
+        --warning: 38 92% 50%; /* #F59E0B */
+        --warning-foreground: 223 47% 7%;
+        --success: 143 75% 51%;
+        --success-foreground: 223 47% 7%;
+
+        /* Randen en velden */
+        --border: 219 40% 18%;
+        --input: 219 40% 18%;
+        --ring: 143 75% 51%;
+
+        /* Grafieken (fase 5) */
+        --chart-1: 143 75% 51%;
+        --chart-2: 46 65% 52%;
+        --chart-3: 199 89% 55%;
+        --chart-4: 280 65% 65%;
+        --chart-5: 38 92% 50%;
+
+        /* Afronding: 12px basis (rounded-xl-gevoel) */
+        --radius: 0.75rem;
+
+        /* Zijbalk */
+        --sidebar-background: 221 46% 10%;
+        --sidebar-foreground: 210 40% 96%;
+        --sidebar-primary: 143 75% 51%;
+        --sidebar-primary-foreground: 223 47% 7%;
+        --sidebar-accent: 219 40% 18%;
+        --sidebar-accent-foreground: 210 40% 96%;
+        --sidebar-border: 219 40% 16%;
+        --sidebar-ring: 143 75% 51%;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    html {
+        color-scheme: dark;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
+
+    /* Cijfers (spelerskaart, statistieken) altijd uitgelijnd */
+    .tabular {
+        font-variant-numeric: tabular-nums;
+    }
+}
