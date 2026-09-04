@@ -15,6 +15,15 @@ enum PlayerPosition: string
         };
     }
 
+    /** De categorieën waarop deze positie beoordeeld wordt.
+     *
+     * @return list<ReportCategory>
+     */
+    public function categories(): array
+    {
+        return ReportCategory::forPosition($this);
+    }
+
     /** @return array<string, string> waarde => Nederlands label */
     public static function options(): array
     {

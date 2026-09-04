@@ -4,16 +4,20 @@ import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { LayoutGrid } from 'lucide-vue-next';
+import { ClipboardList, LayoutGrid } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
-// Fase 0: alleen het dashboard. Spelers, groepen, trainingen en rapporten
-// komen erbij in de volgende fases.
+// Spelers, groepen en trainingen komen erbij in de volgende fases.
 const mainNavItems: NavItem[] = [
     {
         title: 'Dashboard',
         href: '/dashboard',
         icon: LayoutGrid,
+    },
+    {
+        title: 'Rapporten',
+        href: '/reports',
+        icon: ClipboardList,
     },
 ];
 </script>

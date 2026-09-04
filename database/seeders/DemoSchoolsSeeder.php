@@ -3,11 +3,14 @@
 namespace Database\Seeders;
 
 use App\Enums\PlayerPosition;
+use App\Enums\ReportCategory;
 use App\Enums\Role;
 use App\Models\Group;
 use App\Models\Player;
+use App\Models\Report;
 use App\Models\School;
 use App\Models\User;
+use App\Support\PlayerCard\CalculatePlayerCard;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
@@ -47,6 +50,27 @@ class DemoSchoolsSeeder extends Seeder
         );
     }
 
+    /** Twee rapporten met lichte groei, zodat de kaart iets laat zien. */
+    protected function maakRapporten(Player $speler, User $trainer): void
+    {
+        foreach ([['-6 weeks', -1], ['-1 week', 0]] as [$wanneer, $verschuiving]) {
+            $rapport = Report::create([
+                'player_id' => $speler->id,
+                'trainer_id' => $trainer->id,
+                'reported_on' => now()->modify($wanneer)->toDateString(),
+            ]);
+
+            foreach ($speler->position->categories() as $index => $categorie) {
+                $rapport->scores()->create([
+                    'category' => $categorie->value,
+                    'score' => max(1, min(10, 6 + (($index + $speler->id) % 3) + $verschuiving)),
+                ]);
+            }
+        }
+
+        app(CalculatePlayerCard::class)->refresh($speler->refresh());
+    }
+
     /**
      * @param  array<int, array{0: string, 1: string, 2: string, 3: PlayerPosition}>  $spelers
      * @param  array<int, array{0: string, 1: string}>  $groepen
@@ -78,7 +102,7 @@ class DemoSchoolsSeeder extends Seeder
 
         // Alles hieronder draait binnen deze school, zodat de scope het
         // school_id automatisch invult — precies zoals de app het straks doet.
-        app(Tenancy::class)->forSchool($school, function () use ($spelers, $groepen, $school, $eigenaarEmail) {
+        app(Tenancy::class)->forSchool($school, function () use ($spelers, $groepen, $school, $eigenaarEmail, $trainer) {
             $gemaakteGroepen = collect($groepen)->map(fn (array $groep) => Group::create([
                 'name' => $groep[0],
                 'age_category' => $groep[1],
@@ -103,6 +127,10 @@ class DemoSchoolsSeeder extends Seeder
             ]);
             $ouder->assignRole(Role::Ouder->value);
             $ouder->children()->attach($gemaakteSpelers->first()->id, ['relationship' => 'moeder']);
+
+            // Twee rapporten per speler, zodat de kaarten meteen gevuld zijn
+            // en je de doorrekening kunt zien.
+            $gemaakteSpelers->each(fn (Player $speler) => $this->maakRapporten($speler, $trainer));
         });
     }
 }

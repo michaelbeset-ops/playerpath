@@ -3,6 +3,7 @@
 namespace App\Support\Tenancy;
 
 use App\Models\School;
+use Closure;
 use RuntimeException;
 
 /**
@@ -17,6 +18,15 @@ class Tenancy
 {
     protected ?School $school = null;
 
+    /**
+     * Terugval om de school alsnog te bepalen als hij nog niet gezet is.
+     *
+     * Nodig omdat route model binding eerder in de request draait dan de
+     * SetCurrentSchool-middleware: zonder dit zou een URL met een {player}
+     * altijd een 404 geven. De bron blijft dezelfde — het ingelogde account.
+     */
+    protected ?Closure $resolver = null;
+
     /** Staat de scope tijdelijk uit? Alleen voor bewuste beheer-acties. */
     protected bool $disabled = false;
 
@@ -30,24 +40,33 @@ class Tenancy
         $this->school = null;
     }
 
+    public function resolveUsing(Closure $resolver): void
+    {
+        $this->resolver = $resolver;
+    }
+
     public function school(): ?School
     {
+        if ($this->school === null && $this->resolver !== null) {
+            $this->school = ($this->resolver)();
+        }
+
         return $this->school;
     }
 
     public function id(): ?int
     {
-        return $this->school?->id;
+        return $this->school()?->id;
     }
 
     public function hasSchool(): bool
     {
-        return $this->school !== null;
+        return $this->school() !== null;
     }
 
     public function schoolOrFail(): School
     {
-        return $this->school ?? throw new RuntimeException(
+        return $this->school() ?? throw new RuntimeException(
             'Er is geen actieve school gezet. Gebruik Tenancy::set() of draai binnen een ingelogde request.'
         );
     }

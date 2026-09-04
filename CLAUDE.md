@@ -77,6 +77,15 @@ $this->school_id)` op de relatie. Dat vult hem in én filtert erop.
 `Tenancy::withoutScope()` en `Model::withoutSchoolScope()` bestaan voor bewuste
 beheer-acties (seeders, platformbeheer). **Nooit in een controller gebruiken.**
 
+#### Route model binding draait eerder dan de middleware
+
+`SubstituteBindings` zit in de web-groep **voor** `SetCurrentSchool`. Zonder
+maatregel zou elke URL met een `{player}` een 404 geven, omdat de scope dan nog
+fail-closed dichtstaat. Daarom heeft `Tenancy` een terugval-resolver
+(`resolveUsing`, gezet in `AppServiceProvider`) die de school alsnog uit het
+ingelogde account haalt. De bron blijft dus hetzelfde; `SetCurrentSchool` blijft
+de plek waar geweigerd wordt.
+
 #### Twee bewuste uitzonderingen
 
 - **`User` heeft géén global scope.** Inloggen moet een gebruiker op e-mailadres
@@ -201,6 +210,8 @@ inzicht, dan is het één klasse omzetten.
 | `User` | school | `name`, `email`, rol via spatie |
 | `Player` | school | `first_name`, `last_name`, `date_of_birth`, `position`, `user_id?` |
 | `Group` | school | `name`, `age_category`, `is_active` |
+| `Report` | school | `player_id`, `trainer_id`, `reported_on`, `note` |
+| `ReportScore` | school | `report_id`, `category`, `score` (1-10) |
 
 Relaties:
 
@@ -219,6 +230,43 @@ Twee afspraken die je niet moet omdraaien:
 - **Positie** is een enum (`App\Enums\PlayerPosition`): `keeper` of `field`.
   In de database Engels, in de UI het Nederlandse label.
 
+### Rapport en spelerskaart (fase 2)
+
+De categorieen staan in `App\Enums\ReportCategory`, zes per positie:
+
+- **Keeper:** reflexen, uitkomen, voetenwerk, 1-op-1, hoge ballen, communicatie
+- **Veldspeler:** techniek, inzicht, passing, afwerking, snelheid, mentaliteit
+
+Zes is bewust: dat past op een scherm zonder scrollen, en dat is de voorwaarde
+voor het 30-seconden-rapport.
+
+**De schaal is 1 t/m 10**, zoals een rapportcijfer. Op de kaart wordt dat maal
+tien: een 8 leest als 80. Zo denkt de trainer in cijfers die hij kent, en ziet
+de speler een FIFA-achtig getal.
+
+Doorrekenen gebeurt in `App\Support\PlayerCard\CalculatePlayerCard`:
+
+1. Per categorie tellen de **laatste 3 rapporten** mee. Een mindere training
+   verpest de kaart niet, maar echte groei is binnen een paar rapporten zichtbaar.
+2. Sub-score = gemiddeld cijfer x 10.
+3. Overall = gemiddelde van de sub-scores, afgerond.
+4. Zonder rapporten: `null`, niet 0. Een lege kaart is geen slechte kaart.
+
+De uitkomst wordt opgeslagen op `players` (`overall_rating`,
+`category_ratings`, `rated_at`). Dat is een **momentopname**: de waarheid staat
+in `reports`. Die kolommen staan niet in `$fillable` en worden alleen door
+`CalculatePlayerCard::refresh()` gezet — nooit met de hand.
+
+**Het rapport-invulscherm is de belangrijkste UX van de app.** Wat het snel
+houdt, en dus niet mag sneuvelen:
+
+- de cijfers van het vorige rapport staan **voorgevuld**; de trainer past alleen
+  aan wat veranderd is;
+- een cijfer is **een tik** op een grote knop, geen dropdown of schuifje;
+- cijfertoetsen 1-9 en 0 vullen de actieve rij en springen door naar de volgende;
+- opslaan zit in een vaste balk onderaan, binnen duimbereik;
+- de toelichting is optioneel en breekt het ritme niet.
+
 ## 6. Werkwijze
 
 - **Fase voor fase.** Het bouwplan staat in `bouwplan-keepersplatform-claude-code.md`
@@ -233,7 +281,7 @@ Twee afspraken die je niet moet omdraaien:
 
 - [x] Fase 0 — Projectopzet & fundament
 - [x] Fase 1 — Datamodel & multi-tenancy
-- [ ] Fase 2 — Rapport → spelerskaart
+- [x] Fase 2 — Rapport → spelerskaart
 - [ ] Fase 3 — Spelers- & groepsbeheer
 - [ ] Fase 4 — Planning & aanwezigheid
 - [ ] Fase 5 — Voortgang & ouder-ervaring

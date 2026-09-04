@@ -1,0 +1,40 @@
+<?php
+
+namespace App\Http\Controllers\Players;
+
+use App\Http\Controllers\Controller;
+use App\Models\Player;
+use App\Support\PlayerCard\CalculatePlayerCard;
+use Inertia\Inertia;
+use Inertia\Response;
+
+class PlayerCardController extends Controller
+{
+    public function __construct(protected CalculatePlayerCard $calculator) {}
+
+    public function show(Player $player): Response
+    {
+        $this->authorize('view', $player);
+
+        $laatste = $player->reports()->newestFirst()->with('trainer')->first();
+
+        return Inertia::render('players/Card', [
+            'player' => [
+                'id' => $player->id,
+                'name' => $player->full_name,
+                'position' => $player->position->label(),
+                'age' => $player->age,
+                'overall_rating' => $player->overall_rating,
+                'rated_at' => $player->rated_at?->format('d-m-Y'),
+            ],
+            'categories' => $this->calculator->breakdown($player),
+            'reportCount' => $player->reports()->count(),
+            'lastReport' => $laatste ? [
+                'reported_on' => $laatste->reported_on->format('d-m-Y'),
+                'trainer' => $laatste->trainer?->name,
+                'note' => $laatste->note,
+            ] : null,
+            'canReport' => auth()->user()->can('createReport', $player),
+        ]);
+    }
+}

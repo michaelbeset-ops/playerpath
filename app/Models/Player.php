@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Player extends Model
 {
@@ -24,12 +25,20 @@ class Player extends Model
         'is_active',
     ];
 
+    /**
+     * De doorgerekende kaartcijfers worden nooit met de hand gezet, alleen
+     * door CalculatePlayerCard. Daarom staan ze niet in $fillable.
+     */
+
     protected function casts(): array
     {
         return [
             'date_of_birth' => 'date',
             'position' => PlayerPosition::class,
             'is_active' => 'boolean',
+            'category_ratings' => 'array',
+            'overall_rating' => 'integer',
+            'rated_at' => 'datetime',
         ];
     }
 
@@ -37,6 +46,11 @@ class Player extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class);
     }
 
     /** De ouders/verzorgers van deze speler. */
@@ -68,5 +82,11 @@ class Player extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
+    }
+
+    /** Heeft deze speler al cijfers op zijn kaart? */
+    public function hasRating(): bool
+    {
+        return $this->overall_rating !== null;
     }
 }
