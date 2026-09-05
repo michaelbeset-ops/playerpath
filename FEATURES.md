@@ -20,7 +20,7 @@ Status: ✅ klaar · 🟡 deels · ⬜ nog niet. De fase verwijst naar
 | M7 | Mobiele toegang / app-gevoel (PWA) voor trainers én ouders/spelers | 🟡 | Alle schermen mobiel-first gebouwd. Ontbreekt: installeerbare PWA (manifest, service worker, icoon, push). | 12 |
 | M8 | Digitaal ondertekenen van formulieren bij inschrijving (toestemming, AVG, gedrag) | ⬛ | **Geschrapt in overleg (5-9-2026).** Het akkoord-vinkje op het inschrijfformulier blijft. Wil je dit alsnog: documenten per school met versies, handtekening (naam + tijdstip + IP + documentversie), opnieuw laten tekenen bij een nieuwe versie. | — |
 | M9 | Overzichten met export (CSV/Excel): leden, aanwezigheid, later betalingen | ✅ | Spelers, Trainingen, Aanwezigheid en een financieel werkboek met vier tabbladen. Uitbreidbaar via `ExportRegistry`. Echte incassodata volgt met M2. | 6 ✅ (betaaldata in 9) |
-| M10 | White-label branding per school (logo, kleuren) + eigen subdomein (`xtra.playerpath.nl`) | ⬜ | Eén huisstijl voor alles. Ontbreekt: logo en kleuren per school, subdomein per school, e-mails uit naam van de school. | 11 |
+| M10 | White-label branding per school (logo, kleuren) + eigen subdomein (`xtra.playerpath.nl`) | ✅ | Logo en merkkleur per school, met automatische contrastcorrectie; branding via subdomein op inlogpagina en inschrijfformulier; e-mails uit naam van de school. Het subdomein bepaalt nooit de datascheiding. Live subdomeinen vragen DNS en een wildcard-certificaat bij het uitrollen (fase 12). | 11 |
 
 ## ONTWIKKELINGSLAAG — het onderscheid
 

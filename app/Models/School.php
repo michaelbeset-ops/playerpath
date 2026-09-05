@@ -21,6 +21,8 @@ class School extends Model
         'slug',
         'is_active',
         'retention_months',
+        'logo_path',
+        'brand_color',
     ];
 
     protected function casts(): array

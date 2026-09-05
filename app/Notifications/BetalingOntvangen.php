@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Payment;
+use App\Notifications\Concerns\SendsFromSchool;
 use App\Support\Money\Money;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -12,7 +13,7 @@ use Illuminate\Notifications\Notification;
 /** Bevestiging aan de ouders zodra een betaling binnen is. */
 class BetalingOntvangen extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, SendsFromSchool;
 
     public function __construct(public Payment $payment) {}
 
@@ -27,13 +28,13 @@ class BetalingOntvangen extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        return $this->schoolMail($notifiable)
             ->subject('Betaling ontvangen')
             ->greeting('Bedankt!')
             ->line("We hebben je betaling van **{$this->bedrag()}** ontvangen.")
             ->line("Het gaat om: {$this->payment->description}.")
             ->action('Bekijk je betalingen', route('billing.index'))
-            ->salutation('Met vriendelijke groet, '.config('app.name'));
+            ->salutation($this->schoolSalutation($notifiable));
     }
 
     /** @return array<string, mixed> */

@@ -139,7 +139,7 @@ eerste betaling, mandaat, incasso, stornering.
 **Klaar wanneer:** de eigenaar zegt een training af en elke ouder van die groep
 weet het binnen een minuut.
 
-## Fase 11 — White-label & subdomein (M10)
+## Fase 11 — White-label & subdomein (M10) ✅
 
 **Doel:** elke school voelt de app als de zijne.
 

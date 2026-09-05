@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\Player;
 use App\Models\Report;
+use App\Notifications\Concerns\SendsFromSchool;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -19,7 +20,7 @@ use Illuminate\Notifications\Notification;
  */
 class NieuwRapport extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, SendsFromSchool;
 
     public function __construct(
         public Report $report,
@@ -41,7 +42,7 @@ class NieuwRapport extends Notification implements ShouldQueue
     {
         $naam = $this->player->first_name;
 
-        $bericht = (new MailMessage)
+        $bericht = $this->schoolMail($notifiable)
             ->subject("Nieuw rapport voor {$naam}")
             ->greeting('Hallo!')
             ->line("De trainer heeft een nieuw rapport ingevuld voor {$naam}.");
@@ -57,7 +58,7 @@ class NieuwRapport extends Notification implements ShouldQueue
         return $bericht
             ->action('Bekijk de spelerskaart', route('players.card', $this->player))
             ->line('Je krijgt deze e-mail omdat je gekoppeld bent aan deze speler.')
-            ->salutation('Met vriendelijke groet, '.config('app.name'));
+            ->salutation($this->schoolSalutation($notifiable));
     }
 
     /** @return array<string, mixed> */

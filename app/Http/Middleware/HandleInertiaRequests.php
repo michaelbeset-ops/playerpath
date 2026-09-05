@@ -47,6 +47,9 @@ class HandleInertiaRequests extends Middleware
         if ($request->routeIs('players.shared', 'enroll.*')) {
             return array_merge(parent::share($request), [
                 'name' => config('app.name'),
+                // Het inschrijfformulier hoort de school te tonen; de gedeelde
+                // kaart juist niet. Branding::forRequest maakt dat onderscheid.
+                'branding' => app()->bound('branding') ? app('branding') : null,
                 'auth' => ['user' => null, 'roles' => []],
                 'school' => null,
                 'nav' => [],
@@ -58,6 +61,7 @@ class HandleInertiaRequests extends Middleware
         return array_merge(parent::share($request), [
             ...parent::share($request),
             'name' => config('app.name'),
+            'branding' => app()->bound('branding') ? app('branding') : null,
             'auth' => [
                 'user' => $request->user(),
                 'roles' => $request->user()?->getRoleNames()->all() ?? [],

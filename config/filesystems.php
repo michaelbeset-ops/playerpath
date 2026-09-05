@@ -41,7 +41,9 @@ return [
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            // Bewust relatief: achter een tunnel of een eigen subdomein klopt
+            // een vaste APP_URL niet meer, en dan blokkeert de browser het beeld.
+            'url' => '/storage',
             'visibility' => 'public',
             'throw' => false,
             'report' => false,

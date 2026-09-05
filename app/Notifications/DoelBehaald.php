@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\Goal;
 use App\Models\Player;
+use App\Notifications\Concerns\SendsFromSchool;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -12,7 +13,7 @@ use Illuminate\Notifications\Notification;
 /** "Doel gehaald!" Naar de ouders en de speler zelf. */
 class DoelBehaald extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, SendsFromSchool;
 
     public function __construct(public Goal $goal, public Player $player) {}
 
@@ -27,13 +28,13 @@ class DoelBehaald extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        return $this->schoolMail($notifiable)
             ->subject("{$this->player->first_name} heeft een doel gehaald!")
             ->greeting('Goed nieuws!')
             ->line("{$this->player->first_name} heeft het doel **{$this->goal->category->label()} naar {$this->goal->target_rating}** gehaald.")
             ->line('Dat staat nu als mijlpaal op de spelerskaart.')
             ->action('Bekijk de spelerskaart', route('players.card', $this->player))
-            ->salutation('Met vriendelijke groet, '.config('app.name'));
+            ->salutation($this->schoolSalutation($notifiable));
     }
 
     /** @return array<string, mixed> */

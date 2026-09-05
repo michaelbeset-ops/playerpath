@@ -55,6 +55,13 @@ return [
     'url' => env('APP_URL', 'http://localhost'),
 
     /*
+     * Het basisdomein waarop scholen een eigen subdomein krijgen
+     * (bijv. "playerpath.nl" → "xtra.playerpath.nl"). Leeg laten als de app op
+     * één adres draait; dan wordt er geen subdomein afgeleid.
+     */
+    'domain' => env('APP_DOMAIN'),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------

@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Announcement;
+use App\Notifications\Concerns\SendsFromSchool;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -18,7 +19,7 @@ use Illuminate\Notifications\Notification;
  */
 class NieuweMededeling extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, SendsFromSchool;
 
     public function __construct(public Announcement $announcement) {}
 
@@ -32,7 +33,7 @@ class NieuweMededeling extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $bericht = (new MailMessage)
+        $bericht = $this->schoolMail($notifiable)
             ->subject($this->announcement->title)
             ->greeting($this->announcement->title);
 
@@ -43,7 +44,7 @@ class NieuweMededeling extends Notification implements ShouldQueue
 
         return $bericht
             ->action('Bekijk in PlayerPath', route('notifications.index'))
-            ->salutation('Met vriendelijke groet, '.$this->announcement->school->name);
+            ->salutation($this->schoolSalutation($notifiable));
     }
 
     /** @return array<string, mixed> */

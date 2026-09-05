@@ -624,6 +624,32 @@ houdt, en dus niet mag sneuvelen:
   te bereiken. Een lege voorkeur betekent "alles aan", zodat een nieuwe soort
   bestaande gebruikers niet stilzwijgend afmeldt.
 
+### White-label (Fase 11)
+
+- Een school kiest **een logo en één merkkleur**, meer niet. Statuskleuren,
+  grafiektinten en de spelerskaart blijven van PlayerPath: "waarschuwing" hoort
+  overal hetzelfde te betekenen, en het gecontroleerde contrast van de grafieken
+  mag een school niet per ongeluk slopen.
+- De kleur komt als `<style>` in de `<head>` (zie `ShareBranding` +
+  `app.blade.php`), **niet** via JavaScript. Anders ziet elke bezoeker eerst een
+  flits PlayerPath-groen.
+- `Support\Branding\BrandColor` bepaalt de tekstkleur op die merkkleur zelf,
+  door te meten welke van wit/bijna-zwart het meeste contrast geeft — niet door
+  wit te forceren. Haalt geen van beide 4,5:1 (dat gebeurt bij felle
+  middentinten), dan schuift alleen de **helderheid** op tot het wel kan, met
+  behoud van tint. De kleur weigeren zou betekenen dat een school haar merk niet
+  mag gebruiken; de eis verlagen dat ze haar eigen knoppen niet meer leest.
+- **Het subdomein bepaalt alleen hoe het eruitziet.** `Branding::fromHost()`
+  levert de school voor logo, naam en kleur; welke data je ziet blijft
+  `SetCurrentSchool` op basis van het account. Kom je als eigenaar van school A
+  binnen op het adres van school B, dan zie je jouw eigen merk en jouw eigen
+  data. Zonder `APP_DOMAIN` wordt er geen subdomein afgeleid.
+- **De gedeelde spelerskaart krijgt geen huisstijl.** Een logo zou net zo goed
+  verraden bij welke school het kind zit als de naam.
+- E-mails gaan uit naam van de school (`Notifications\Concerns\SendsFromSchool`).
+  Alleen de afzendernaam; het adres blijft van het platform, want een eigen
+  afzenderadres vraagt SPF- en DKIM-records bij de school zelf.
+
 ## 6. Werkwijze
 
 - **Fase voor fase.** Het bouwplan staat in `bouwplan-keepersplatform-claude-code.md`
@@ -649,7 +675,7 @@ Volledige scope en status per feature: `FEATURES.md`. Volgorde: het bouwplan.
 - [x] Fase 8 — Bewaartermijn, inzage en verwijderen (AVG); ondertekenen geschrapt
 - [x] Fase 9 — Betalingen (Mollie): eenmalig, doorlopende incasso, termijnen, herinneringen
 - [x] Fase 10 — Communicatie (mededelingen, afzeggen, meldingsvoorkeuren)
-- [ ] Fase 11 — White-label & subdomein
+- [x] Fase 11 — White-label & subdomein (logo, merkkleur, branding per adres)
 - [ ] Fase 12 — Productie & lancering (PWA, deploy)
 
 ---

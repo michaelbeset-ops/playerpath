@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Enrollment;
+use App\Notifications\Concerns\SendsFromSchool;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -13,7 +14,7 @@ use Illuminate\Notifications\Notification;
  */
 class NieuweInschrijving extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, SendsFromSchool;
 
     public function __construct(public Enrollment $enrollment) {}
 
@@ -25,13 +26,13 @@ class NieuweInschrijving extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
+        return $this->schoolMail($notifiable)
             ->subject("Nieuwe inschrijving: {$this->enrollment->child_name}")
             ->greeting('Hallo!')
             ->line("{$this->enrollment->guardian_name} heeft {$this->enrollment->child_name} ({$this->enrollment->position->label()}, {$this->enrollment->age} jaar) ingeschreven.")
             ->line($this->enrollment->plan ? "Gewenst tarief: {$this->enrollment->plan->name}." : 'Er is nog geen tarief gekozen.')
             ->action('Bekijk de inschrijving', route('enrollments.index'))
-            ->salutation('Met vriendelijke groet, '.config('app.name'));
+            ->salutation($this->schoolSalutation($notifiable));
     }
 
     /** @return array<string, mixed> */

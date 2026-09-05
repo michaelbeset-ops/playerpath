@@ -24,8 +24,19 @@ export interface School {
     name: string;
 }
 
+/** De huisstijl van de school die bij dit verzoek hoort. */
+export interface Branding {
+    name: string;
+    logo: string | null;
+    color: string | null;
+    primary: string | null;
+    primaryForeground: string | null;
+}
+
 export interface SharedData {
     name: string;
+    /** Null op de publiek gedeelde spelerskaart: die verraadt geen school. */
+    branding: Branding | null;
     auth: Auth;
     /** De actieve school van de ingelogde gebruiker; null als er geen is. */
     school: School | null;

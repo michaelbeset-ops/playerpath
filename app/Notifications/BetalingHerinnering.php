@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Payment;
+use App\Notifications\Concerns\SendsFromSchool;
 use App\Support\Money\Money;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -17,7 +18,7 @@ use Illuminate\Notifications\Notification;
  */
 class BetalingHerinnering extends Notification implements ShouldQueue
 {
-    use Queueable;
+    use Queueable, SendsFromSchool;
 
     public function __construct(public Payment $payment, public int $dagenTeLaat) {}
 
@@ -32,7 +33,7 @@ class BetalingHerinnering extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
-        $bericht = (new MailMessage)
+        $bericht = $this->schoolMail($notifiable)
             ->subject('Herinnering: openstaande betaling')
             ->greeting('Hallo')
             ->line("Er staat nog een betaling van **{$this->bedrag()}** open.")
@@ -42,7 +43,7 @@ class BetalingHerinnering extends Notification implements ShouldQueue
         return $bericht
             ->action('Bekijk je betalingen', route('billing.index'))
             ->line('Heb je al betaald? Dan kun je deze mail negeren.')
-            ->salutation('Met vriendelijke groet, '.config('app.name'));
+            ->salutation($this->schoolSalutation($notifiable));
     }
 
     /** @return array<string, mixed> */
