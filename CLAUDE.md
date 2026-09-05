@@ -409,6 +409,37 @@ een kind. Wat die pagina veilig houdt, en dus niet weg mag:
 - wie mag delen: de **eigenaar** en de **ouders van dit kind**. De trainer niet —
   die beslist niet of andermans kind op internet komt.
 
+### De spelerskaart als verzamelkaart
+
+`components/PlayerCardVisual.vue` is de kaart zelf, gebruikt op de kaartpagina
+en op de publieke deel-pagina. Eén component, zodat die twee nooit uit elkaar
+lopen.
+
+- **Eigen identiteit, geen FUT-kopie**: geen schild, geen vlag, geen clublogo.
+  Wel een groot overall-cijfer, zes stats met drieletterige afkortingen en een
+  medaillon met initialen.
+- **Het niveau bepaalt de look** via CSS-variabelen per tier (`pp-tier-*`):
+  brons, zilver, goud, elite. Elite heeft als enige een bewegende schittering,
+  uit bij `prefers-reduced-motion`. Een nieuw niveau is één CSS-blokje.
+- **Keeper en veldspeler zien er anders uit**: keepers krijgen diagonale
+  handschoen-strepen, veldspelers veldlijnen. Subtiel, in de achtergrond.
+- **Mobiel-first**: maximaal 360px breed, schaalt daaronder mee; onder 360px
+  wordt het cijfer en het medaillon kleiner.
+
+De kaart is bewust donker, ook binnen de lichte admin-schil: dat is de
+speler/ouder-kant van het merk (hoofdstuk 4).
+
+### Overzichten exporteren
+
+`Support/Exports`: een `Export`-interface, `ExportRegistry` en `ExportWriter`.
+**Een nieuw overzicht is één klasse plus een regel in het register**; scherm en
+writer zijn generiek. Het betalingsoverzicht komt er zo bij zodra Mollie is
+aangesloten.
+
+CSV gaat met **puntkomma en BOM**, anders propt Nederlands Excel alles in één
+kolom. Geld in exports: pas in `rows()` van centen naar een getal in euro's,
+nooit als tekst met euroteken — anders kan Excel er niet mee rekenen.
+
 ### Datavisualisatie
 
 - **Eén serie per grafiek.** Zes categorieën in één grafiek wordt spaghetti;

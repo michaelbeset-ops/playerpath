@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import FlashMessage from '@/components/FlashMessage.vue';
+import PlayerCardVisual from '@/components/PlayerCardVisual.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import FlashMessage from '@/components/FlashMessage.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Check, Copy, Link2, Lock, TrendingUp, Trophy } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
@@ -18,6 +19,7 @@ const props = defineProps<{
         id: number;
         name: string;
         position: string;
+        position_key: 'keeper' | 'field';
         age: number | null;
         overall_rating: number | null;
         rated_at: string | null;
@@ -33,22 +35,7 @@ const props = defineProps<{
 
 // Bewust alleen de speler zelf: een kruimel naar /reports zou voor een ouder
 // een dode link zijn.
-const breadcrumbs: BreadcrumbItem[] = [
-    { title: props.player.name, href: '/players/' + props.player.id + '/card' },
-];
-
-// De initialen op de kaart, zoals een clubembleem.
-const initialen = computed(() =>
-    props.player.name
-        .split(' ')
-        .filter(Boolean)
-        .map((deel) => deel[0])
-        .slice(0, 2)
-        .join('')
-        .toUpperCase(),
-);
-
-const balkBreedte = (rating: number | null) => (rating === null ? '0%' : rating + '%');
+const breadcrumbs: BreadcrumbItem[] = [{ title: props.player.name, href: '/players/' + props.player.id + '/card' }];
 
 const behaald = computed(() => props.badges.filter((b) => b.earned));
 const nogTeGaan = computed(() => props.badges.filter((b) => !b.earned));
@@ -82,73 +69,54 @@ const kopieer = async () => {
             <FlashMessage />
 
             <!--
-                De kaart is bewust donker: dit is de speler/ouder-kant van het
-                merk. Zie CLAUDE.md hoofdstuk 4.
+                De kaart is het pronkstuk en bewust donker: dit is de
+                speler/ouder-kant van het merk. Zie CLAUDE.md hoofdstuk 4.
             -->
-            <div class="theme-donker overflow-hidden rounded-2xl border border-border bg-background text-foreground">
-                <div class="flex items-center gap-5 border-b border-border p-6">
-                    <div class="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-gold/15 text-xl font-bold text-gold">
-                        {{ initialen }}
-                    </div>
+            <div class="theme-donker rounded-3xl bg-background p-4 sm:p-8">
+                <PlayerCardVisual
+                    :name="player.name"
+                    :position="player.position"
+                    :position-key="player.position_key"
+                    :age="player.age"
+                    :overall="player.overall_rating"
+                    :categories="categories"
+                    :level="level"
+                    :badges="behaald"
+                    :report-count="reportCount"
+                />
 
-                    <div class="min-w-0 flex-1">
-                        <p class="text-xs uppercase tracking-widest text-gold">
-                            {{ player.position }}
-                            <span v-if="player.overall_rating" class="text-muted-foreground">&middot; {{ level.label }}</span>
-                        </p>
-                        <h1 class="truncate text-2xl font-bold tracking-tight">{{ player.name }}</h1>
-                        <p class="mt-0.5 text-sm text-muted-foreground">
-                            <span v-if="player.age">{{ player.age }} jaar &middot; </span>
-                            <span class="tabular">{{ reportCount }}</span>
-                            {{ reportCount === 1 ? 'rapport' : 'rapporten' }}
-                        </p>
-                    </div>
-
-                    <div class="shrink-0 text-right">
-                        <p class="text-[10px] uppercase tracking-widest text-muted-foreground">Overall</p>
-                        <p class="tabular text-5xl font-extrabold leading-none" :class="player.overall_rating ? 'text-primary' : 'text-muted-foreground'">
-                            {{ player.overall_rating ?? '—' }}
-                        </p>
-                    </div>
-                </div>
-
-                <div v-if="player.overall_rating" class="grid gap-x-8 gap-y-4 p-6 sm:grid-cols-2">
-                    <div v-for="categorie in categories" :key="categorie.category">
-                        <div class="flex items-baseline justify-between gap-3">
-                            <p class="text-sm font-medium">{{ categorie.label }}</p>
-                            <p class="tabular text-lg font-bold leading-none" :class="categorie.rating === null ? 'text-muted-foreground' : ''">
-                                {{ categorie.rating ?? '—' }}
-                            </p>
-                        </div>
-                        <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-secondary">
-                            <div class="h-full rounded-full bg-primary transition-all duration-500" :style="{ width: balkBreedte(categorie.rating) }"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div v-else class="p-10 text-center">
-                    <p class="font-medium">Nog geen cijfers</p>
-                    <p class="mt-1 text-sm text-muted-foreground">Zodra een trainer het eerste rapport invult, komt deze kaart tot leven.</p>
-                </div>
-
-                <p v-if="player.rated_at" class="border-t border-border px-6 py-3 text-xs text-muted-foreground">
-                    Bijgewerkt op {{ player.rated_at }} &middot; gemiddelde van de laatste 3 rapporten
+                <p v-if="player.rated_at" class="mt-4 text-center text-xs text-muted-foreground">
+                    Bijgewerkt op {{ player.rated_at }} &middot; gemiddelde van de laatste 3 rapporten &middot; niveau {{ level.label.toLowerCase() }}
                 </p>
             </div>
 
-            <!-- Mijlpalen: horen bij de donkere kaart, met goud als accent -->
-            <div v-if="player.overall_rating" class="theme-donker mt-4 rounded-2xl border border-border bg-background p-6 text-foreground">
+            <div class="mt-4 flex flex-wrap items-center gap-3">
+                <Link
+                    :href="'/players/' + player.id + '/progress'"
+                    class="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold shadow-sm transition hover:border-primary"
+                >
+                    <TrendingUp class="size-4" />
+                    Bekijk de voortgang
+                </Link>
+
+                <Link
+                    v-if="canReport"
+                    :href="'/players/' + player.id + '/reports/create'"
+                    class="inline-flex items-center rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                >
+                    Nieuw rapport invullen
+                </Link>
+            </div>
+
+            <!-- Mijlpalen voluit: wat is behaald, en wat is de volgende -->
+            <div v-if="player.overall_rating" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
                 <div class="flex flex-wrap items-baseline justify-between gap-2">
                     <p class="font-medium">Mijlpalen</p>
                     <p class="tabular text-xs text-muted-foreground">{{ behaald.length }} van {{ badges.length }} behaald</p>
                 </div>
 
                 <div class="mt-4 grid gap-2 sm:grid-cols-2">
-                    <div
-                        v-for="badge in behaald"
-                        :key="badge.key"
-                        class="flex items-start gap-3 rounded-xl border border-gold/30 bg-gold/10 p-3"
-                    >
+                    <div v-for="badge in behaald" :key="badge.key" class="flex items-start gap-3 rounded-xl border border-gold/30 bg-gold/10 p-3">
                         <Trophy class="mt-0.5 size-4 shrink-0 text-gold" />
                         <div class="min-w-0">
                             <p class="text-sm font-semibold text-gold">{{ badge.label }}</p>
@@ -156,11 +124,7 @@ const kopieer = async () => {
                         </div>
                     </div>
 
-                    <div
-                        v-for="badge in nogTeGaan"
-                        :key="badge.key"
-                        class="flex items-start gap-3 rounded-xl border border-border p-3 opacity-60"
-                    >
+                    <div v-for="badge in nogTeGaan" :key="badge.key" class="flex items-start gap-3 rounded-xl border border-border p-3 opacity-70">
                         <Lock class="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                         <div class="min-w-0">
                             <p class="text-sm font-medium">{{ badge.label }}</p>
@@ -170,7 +134,6 @@ const kopieer = async () => {
                 </div>
             </div>
 
-            <!-- Toelichting en actie staan buiten de kaart, in de lichte admin-omgeving -->
             <div v-if="lastReport" class="mt-4 rounded-xl border border-border bg-card p-4 shadow-sm">
                 <p class="text-sm font-medium">Laatste rapport</p>
                 <p class="mt-1 text-xs text-muted-foreground">
@@ -220,24 +183,6 @@ const kopieer = async () => {
                     <Link2 class="size-4" />
                     Deel-link aanmaken
                 </button>
-            </div>
-
-            <div class="mt-4 flex flex-wrap items-center gap-3">
-                <Link
-                    :href="'/players/' + player.id + '/progress'"
-                    class="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold shadow-sm transition hover:border-primary"
-                >
-                    <TrendingUp class="size-4" />
-                    Bekijk de voortgang
-                </Link>
-
-                <Link
-                    v-if="canReport"
-                    :href="'/players/' + player.id + '/reports/create'"
-                    class="inline-flex items-center rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
-                >
-                    Nieuw rapport invullen
-                </Link>
             </div>
         </div>
     </AppLayout>

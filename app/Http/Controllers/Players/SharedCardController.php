@@ -60,6 +60,7 @@ class SharedCardController extends Controller
             'player' => [
                 'name' => $player->public_name,
                 'position' => $player->position->label(),
+                'position_key' => $player->position->value,
                 'overall_rating' => $player->overall_rating,
             ],
             'categories' => array_map(

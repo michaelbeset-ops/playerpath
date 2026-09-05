@@ -29,6 +29,7 @@ class PlayerCardController extends Controller
                 'id' => $player->id,
                 'name' => $player->full_name,
                 'position' => $player->position->label(),
+                'position_key' => $player->position->value,
                 'age' => $player->age,
                 'overall_rating' => $player->overall_rating,
                 'rated_at' => $player->rated_at?->format('d-m-Y'),
