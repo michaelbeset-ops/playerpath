@@ -6,7 +6,6 @@ use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Player;
-use App\Models\Subscription;
 use App\Support\Money\Money;
 use App\Support\Payments\PaymentGateway;
 use Illuminate\Http\Request;

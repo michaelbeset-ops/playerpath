@@ -3,6 +3,7 @@
 namespace App\Support\PlayerCard;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\GoalStatus;
 use App\Models\Player;
 use App\Models\Report;
 
@@ -76,7 +77,7 @@ class PlayerTimeline
             ];
         }
 
-        foreach ($player->goals()->where('status', \App\Enums\GoalStatus::Achieved->value)->get() as $goal) {
+        foreach ($player->goals()->where('status', GoalStatus::Achieved->value)->get() as $goal) {
             $items[] = [
                 'type' => 'mijlpaal',
                 'date' => $goal->achieved_at->format('d-m-Y'),

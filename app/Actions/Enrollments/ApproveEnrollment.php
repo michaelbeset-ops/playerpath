@@ -2,6 +2,7 @@
 
 namespace App\Actions\Enrollments;
 
+use App\Actions\Payments\GeneratePayments;
 use App\Enums\EnrollmentStatus;
 use App\Enums\Role;
 use App\Enums\SubscriptionStatus;
@@ -24,6 +25,8 @@ use RuntimeException;
  */
 class ApproveEnrollment
 {
+    public function __construct(protected GeneratePayments $facturen) {}
+
     public function handle(Enrollment $enrollment, User $eigenaar): Player
     {
         if ($enrollment->status !== EnrollmentStatus::Pending) {
@@ -69,7 +72,7 @@ class ApproveEnrollment
             ]);
 
             if ($enrollment->plan) {
-                Subscription::create([
+                $abonnement = Subscription::create([
                     'player_id' => $player->id,
                     'plan_id' => $enrollment->plan->id,
                     'amount_cents' => $enrollment->plan->amount_cents,
@@ -78,6 +81,11 @@ class ApproveEnrollment
                     'payment_method' => $enrollment->payment_method,
                     'starts_on' => now()->toDateString(),
                 ]);
+
+                // Meteen de eerste rekening, zodat er iets te betalen is zodra
+                // de ouder inlogt. Wachten op de nachtelijke facturenloop zou
+                // betekenen dat een net goedgekeurd gezin een leeg scherm ziet.
+                $this->facturen->handle($abonnement);
             }
 
             $enrollment->forceFill([

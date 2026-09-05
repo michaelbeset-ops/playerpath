@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Support\Money\Money;
 use App\Support\Payments\PaymentGateway;
 use App\Support\Tenancy\Tenancy;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -29,7 +30,7 @@ class BillingTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\RoleSeeder::class);
+        $this->seed(RoleSeeder::class);
 
         $this->school = School::factory()->create();
         $this->eigenaar = User::factory()->for($this->school)->create();
@@ -312,7 +313,7 @@ class BillingTest extends TestCase
             ->assertInertia(fn ($page) => $page->where('gateway.connected', false));
     }
 
-    public function test_de_app_maakt_zelf_geen_betalingen_aan(): void
+    public function test_een_abonnement_levert_een_openstaande_rekening_op_maar_incasseert_niets(): void
     {
         $plan = Plan::factory()->for($this->school)->create();
         $speler = Player::factory()->for($this->school)->create();
@@ -324,9 +325,16 @@ class BillingTest extends TestCase
             'starts_on' => now()->toDateString(),
         ]);
 
-        // Een abonnement vastleggen is administratie; er wordt niets
-        // geïncasseerd zolang er geen provider hangt.
         $this->assertDatabaseCount('subscriptions', 1);
-        $this->assertDatabaseCount('payments', 0);
+
+        // Er ontstaat wel een vordering — anders weet een school die per
+        // overboeking int niet wie er nog moet betalen. Maar hij staat open:
+        // er is geen cent verplaatst en niets doet alsof.
+        $this->assertDatabaseCount('payments', 1);
+
+        $betaling = Payment::firstOrFail();
+        $this->assertSame(PaymentStatus::Open, $betaling->status);
+        $this->assertNull($betaling->paid_at);
+        $this->assertNull($betaling->external_reference);
     }
 }

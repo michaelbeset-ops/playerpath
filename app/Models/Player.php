@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\PlayerPosition;
 use App\Models\Concerns\BelongsToSchool;
+use Database\Factories\PlayerFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Player extends Model
 {
-    /** @use HasFactory<\Database\Factories\PlayerFactory> */
+    /** @use HasFactory<PlayerFactory> */
     use BelongsToSchool, HasFactory;
 
     protected $fillable = [
@@ -29,7 +30,6 @@ class Player extends Model
      * De doorgerekende kaartcijfers worden nooit met de hand gezet, alleen
      * door CalculatePlayerCard. Daarom staan ze niet in $fillable.
      */
-
     protected function casts(): array
     {
         return [

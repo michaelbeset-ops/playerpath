@@ -10,6 +10,7 @@ use App\Models\School;
 use App\Models\User;
 use App\Support\PlayerCard\CalculatePlayerCard;
 use App\Support\Tenancy\Tenancy;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -31,7 +32,7 @@ class ReportToCardTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\RoleSeeder::class);
+        $this->seed(RoleSeeder::class);
 
         $this->school = School::factory()->create();
 

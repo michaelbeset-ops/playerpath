@@ -5,6 +5,7 @@ namespace Tests\Unit;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Support\Payments\MollieGateway;
+use Mollie\Api\MollieApiClient;
 use Mollie\Api\Resources\Payment as MolliePayment;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -134,7 +135,7 @@ class MollieGatewayTest extends TestCase
     /** @param array<string, mixed> $eigenschappen */
     private function mollie(array $eigenschappen): MolliePayment
     {
-        $betaling = new MolliePayment(new \Mollie\Api\MollieApiClient);
+        $betaling = new MolliePayment(new MollieApiClient);
 
         foreach ($eigenschappen as $naam => $waarde) {
             $betaling->{$naam} = $waarde;

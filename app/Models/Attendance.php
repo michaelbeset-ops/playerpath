@@ -5,13 +5,14 @@ namespace App\Models;
 use App\Enums\AttendanceStatus;
 use App\Enums\Registration;
 use App\Models\Concerns\BelongsToSchool;
+use Database\Factories\AttendanceFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Attendance extends Model
 {
-    /** @use HasFactory<\Database\Factories\AttendanceFactory> */
+    /** @use HasFactory<AttendanceFactory> */
     use BelongsToSchool, HasFactory;
 
     protected $fillable = [

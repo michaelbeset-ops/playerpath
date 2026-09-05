@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Players;
 
 use App\Enums\PlayerPosition;
+use App\Models\Player;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -15,7 +16,7 @@ class PlayerRequest extends FormRequest
 
         return $player
             ? $this->user()->can('update', $player)
-            : $this->user()->can('create', \App\Models\Player::class);
+            : $this->user()->can('create', Player::class);
     }
 
     public function rules(): array

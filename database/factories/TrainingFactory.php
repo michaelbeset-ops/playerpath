@@ -4,11 +4,12 @@ namespace Database\Factories;
 
 use App\Models\Group;
 use App\Models\School;
+use App\Models\Training;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Carbon;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Training>
+ * @extends Factory<Training>
  */
 class TrainingFactory extends Factory
 {

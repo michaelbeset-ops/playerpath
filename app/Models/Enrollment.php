@@ -6,6 +6,7 @@ use App\Enums\EnrollmentStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PlayerPosition;
 use App\Models\Concerns\BelongsToSchool;
+use Database\Factories\EnrollmentFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Enrollment extends Model
 {
-    /** @use HasFactory<\Database\Factories\EnrollmentFactory> */
+    /** @use HasFactory<EnrollmentFactory> */
     use BelongsToSchool, HasFactory;
 
     protected $fillable = [

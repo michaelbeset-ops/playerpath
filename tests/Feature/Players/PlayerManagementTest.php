@@ -6,9 +6,11 @@ use App\Enums\PlayerPosition;
 use App\Enums\Role;
 use App\Models\Group;
 use App\Models\Player;
+use App\Models\Report;
 use App\Models\School;
 use App\Models\User;
 use App\Support\Tenancy\Tenancy;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -24,7 +26,7 @@ class PlayerManagementTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\RoleSeeder::class);
+        $this->seed(RoleSeeder::class);
 
         $this->school = School::factory()->create();
         $this->eigenaar = User::factory()->for($this->school)->create();
@@ -194,7 +196,7 @@ class PlayerManagementTest extends TestCase
     {
         $speler = Player::factory()->for($this->school)->keeper()->create();
 
-        \App\Models\Report::factory()->for($this->school)->create([
+        Report::factory()->for($this->school)->create([
             'player_id' => $speler->id,
             'trainer_id' => $this->eigenaar->id,
         ]);

@@ -6,8 +6,8 @@ use App\Support\Payments\MollieGateway;
 use App\Support\Payments\NotConnectedGateway;
 use App\Support\Payments\PaymentGateway;
 use App\Support\Tenancy\Tenancy;
-use Mollie\Api\MollieApiClient;
 use Illuminate\Support\ServiceProvider;
+use Mollie\Api\MollieApiClient;
 
 class AppServiceProvider extends ServiceProvider
 {

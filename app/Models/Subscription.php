@@ -6,6 +6,7 @@ use App\Enums\BillingInterval;
 use App\Enums\PaymentMethod;
 use App\Enums\SubscriptionStatus;
 use App\Models\Concerns\BelongsToSchool;
+use Database\Factories\SubscriptionFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Subscription extends Model
 {
-    /** @use HasFactory<\Database\Factories\SubscriptionFactory> */
+    /** @use HasFactory<SubscriptionFactory> */
     use BelongsToSchool, HasFactory;
 
     protected $fillable = [
@@ -22,6 +23,7 @@ class Subscription extends Model
         'plan_id',
         'amount_cents',
         'interval',
+        'installments',
         'status',
         'payment_method',
         'starts_on',
@@ -34,6 +36,7 @@ class Subscription extends Model
         return [
             'amount_cents' => 'integer',
             'interval' => BillingInterval::class,
+            'installments' => 'integer',
             'status' => SubscriptionStatus::class,
             'payment_method' => PaymentMethod::class,
             'starts_on' => 'date',

@@ -6,12 +6,15 @@ use App\Enums\PlayerPosition;
 use App\Enums\ReportCategory;
 use App\Enums\Role;
 use App\Models\Player;
+use App\Models\Report;
 use App\Models\School;
 use App\Models\User;
 use App\Notifications\NieuwRapport;
 use App\Support\PlayerCard\PlayerBadges;
 use App\Support\PlayerCard\PlayerProgress;
 use App\Support\Tenancy\Tenancy;
+use Database\Seeders\RoleSeeder;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -30,7 +33,7 @@ class ProgressAndNotificationTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\RoleSeeder::class);
+        $this->seed(RoleSeeder::class);
 
         $this->school = School::factory()->create();
 
@@ -158,8 +161,8 @@ class ProgressAndNotificationTest extends TestCase
     public function test_de_melding_gaat_via_de_queue(): void
     {
         $this->assertInstanceOf(
-            \Illuminate\Contracts\Queue\ShouldQueue::class,
-            new NieuwRapport(new \App\Models\Report, $this->speler, 80, 5),
+            ShouldQueue::class,
+            new NieuwRapport(new Report, $this->speler, 80, 5),
             'Het opslaan van een rapport mag nooit wachten op een mailserver.'
         );
     }

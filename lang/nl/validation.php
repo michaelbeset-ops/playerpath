@@ -110,7 +110,7 @@ return [
     'uploaded' => 'Het uploaden van :attribute is mislukt.',
     'uppercase' => ':attribute mag alleen hoofdletters bevatten.',
     'url' => ':attribute is geen geldige URL.',
-    
+
     'uuid' => ':attribute moet een geldige UUID zijn.',
 
     'custom' => [

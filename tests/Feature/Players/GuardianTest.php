@@ -7,6 +7,7 @@ use App\Models\Player;
 use App\Models\School;
 use App\Models\User;
 use App\Support\Tenancy\Tenancy;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -26,7 +27,7 @@ class GuardianTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\RoleSeeder::class);
+        $this->seed(RoleSeeder::class);
 
         $this->school = School::factory()->create();
         $this->eigenaar = User::factory()->for($this->school)->create();

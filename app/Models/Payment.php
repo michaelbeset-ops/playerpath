@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Concerns\BelongsToSchool;
+use Database\Factories\PaymentFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Payment extends Model
 {
-    /** @use HasFactory<\Database\Factories\PaymentFactory> */
+    /** @use HasFactory<PaymentFactory> */
     use BelongsToSchool, HasFactory;
 
     protected $fillable = [
@@ -25,6 +26,9 @@ class Payment extends Model
         'due_on',
         'paid_at',
         'external_reference',
+        'period_start',
+        'installment_number',
+        'installment_total',
     ];
 
     protected function casts(): array
@@ -34,6 +38,7 @@ class Payment extends Model
             'status' => PaymentStatus::class,
             'method' => PaymentMethod::class,
             'due_on' => 'date',
+            'period_start' => 'date',
             'paid_at' => 'datetime',
             'reminded_at' => 'datetime',
         ];

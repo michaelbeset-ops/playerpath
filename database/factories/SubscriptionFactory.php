@@ -7,10 +7,11 @@ use App\Enums\PaymentMethod;
 use App\Enums\SubscriptionStatus;
 use App\Models\Player;
 use App\Models\School;
+use App\Models\Subscription;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Subscription>
+ * @extends Factory<Subscription>
  */
 class SubscriptionFactory extends Factory
 {

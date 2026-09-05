@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers\Trainings;
 
+use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Trainings\TrainingRequest;
-use App\Models\Attendance;
 use App\Models\Group;
 use App\Models\Player;
 use App\Models\Training;
 use App\Models\User;
-use App\Enums\Role;
 use App\Support\Trainings\VisibleTrainings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

@@ -12,7 +12,7 @@ Status: ✅ klaar · 🟡 deels · ⬜ nog niet. De fase verwijst naar
 | # | Feature | Status | Wat er staat / ontbreekt | Fase |
 |---|---|---|---|---|
 | M1 | Online inschrijving door ouders/spelers | 🟡 | Openbaar formulier per school (`/inschrijven/{slug}`), tariefkeuze, inbox met goedkeuring die speler, ouderaccount en abonnement aanmaakt. Ontbreekt: betaalstart (M2); ondertekenen (M8) is geschrapt. | 0–6 ✅ · rest in 9 |
-| M2 | Betalingen: abonnement (maandelijkse incasso) + eenmalig (iDEAL) + termijnen; gezin kiest plan, systeem int automatisch | 🟡 | Tarieven, abonnementen, betalingen en het financiële dashboard staan; bedragen in centen; `PaymentGateway`-naad. Ontbreekt: Mollie zelf, incasso, iDEAL-checkout, webhooks, storno's, herinneringen, en **termijnen** (bestaat nog niet in het model). | 9 |
+| M2 | Betalingen: abonnement (maandelijkse incasso) + eenmalig (iDEAL) + termijnen; gezin kiest plan, systeem int automatisch | 🟡 | Mollie aangesloten: eenmalig betalen (iDEAL), webhooks, storno's, facturenloop, termijnen, herinneringen, en betaalstart bij goedkeuring van een inschrijving. Ontbreekt: doorlopende SEPA-incasso met mandaten, en verificatie tegen een echt Mollie-account. | 9 |
 | M3 | Agenda/planning van trainingen met trainer(s) en locatie | ✅ | Trainingen (wekelijks herhalen), trainers many-to-many, locatie, kalender maand/week, mobiel. | 4 ✅ |
 | M4 | Aanwezigheidsregistratie | ✅ | Afvinken door trainer, aan-/afmelden door ouder/speler, gescheiden vastgelegd, opkomst op dashboard. | 4 ✅ |
 | M5 | Ledenadministratie (spelers, ouders, trainers) met rollen | ✅ | Gebruikers met drie tabbladen, uitnodigen via e-mail, rollen eigenaar/trainer/ouder/speler, policies, multi-tenancy server-side. | 1, 3 ✅ |

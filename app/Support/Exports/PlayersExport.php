@@ -3,6 +3,7 @@
 namespace App\Support\Exports;
 
 use App\Models\Player;
+use Illuminate\Support\Carbon;
 
 class PlayersExport implements Export
 {
@@ -58,7 +59,7 @@ class PlayersExport implements Export
                 $speler->overall_rating,
                 $speler->reports_count,
                 $speler->reports_max_reported_on
-                    ? \Illuminate\Support\Carbon::parse($speler->reports_max_reported_on)->format('d-m-Y')
+                    ? Carbon::parse($speler->reports_max_reported_on)->format('d-m-Y')
                     : null,
             ];
         }

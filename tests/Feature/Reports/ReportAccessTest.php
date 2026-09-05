@@ -9,6 +9,7 @@ use App\Models\Player;
 use App\Models\School;
 use App\Models\User;
 use App\Support\Tenancy\Tenancy;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -24,7 +25,7 @@ class ReportAccessTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\RoleSeeder::class);
+        $this->seed(RoleSeeder::class);
     }
 
     protected function gebruiker(School $school, Role $rol): User

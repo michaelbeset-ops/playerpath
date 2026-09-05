@@ -7,6 +7,7 @@ use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use App\Support\Payments\PaymentGateway;
 use App\Support\Payments\RemotePayment;
+use Carbon\CarbonImmutable;
 
 /**
  * Een betaalprovider die niet met het internet praat.
@@ -70,7 +71,7 @@ class FakeGateway implements PaymentGateway
         $this->remote[$reference] = new RemotePayment(
             reference: $reference,
             status: PaymentStatus::Paid,
-            paidAt: \Carbon\CarbonImmutable::now(),
+            paidAt: CarbonImmutable::now(),
             method: $method,
         );
     }

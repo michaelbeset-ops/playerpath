@@ -43,6 +43,7 @@ const form = useForm({
     plan_id: '',
     payment_method: 'directdebit',
     starts_on: new Date().toISOString().slice(0, 10),
+    installments: 1,
 });
 
 const opslaan = () =>
@@ -136,6 +137,20 @@ const kleurVoor = (status: string) =>
                         <Label for="starts_on">Ingangsdatum</Label>
                         <Input id="starts_on" v-model="form.starts_on" type="date" required />
                         <InputError :message="form.errors.starts_on" />
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="installments">In termijnen</Label>
+                        <select
+                            id="installments"
+                            v-model.number="form.installments"
+                            class="h-10 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
+                        >
+                            <option :value="1">In één keer</option>
+                            <option v-for="n in 11" :key="n + 1" :value="n + 1">{{ n + 1 }} termijnen</option>
+                        </select>
+                        <p class="text-xs text-muted-foreground">Het bedrag per periode wordt dan gespreid over evenveel maandrekeningen.</p>
+                        <InputError :message="form.errors.installments" />
                     </div>
                 </div>
 

@@ -12,6 +12,7 @@ use App\Models\Subscription;
 use App\Models\User;
 use App\Notifications\NieuweInschrijving;
 use App\Support\Tenancy\Tenancy;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
@@ -29,7 +30,7 @@ class EnrollmentTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\RoleSeeder::class);
+        $this->seed(RoleSeeder::class);
 
         $this->school = School::factory()->create(['slug' => 'keepersschool-rob']);
         $this->eigenaar = User::factory()->for($this->school)->create();

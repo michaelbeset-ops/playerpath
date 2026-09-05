@@ -4,13 +4,14 @@ namespace App\Models;
 
 use App\Enums\BillingInterval;
 use App\Models\Concerns\BelongsToSchool;
+use Database\Factories\PlanFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Plan extends Model
 {
-    /** @use HasFactory<\Database\Factories\PlanFactory> */
+    /** @use HasFactory<PlanFactory> */
     use BelongsToSchool, HasFactory;
 
     protected $fillable = [

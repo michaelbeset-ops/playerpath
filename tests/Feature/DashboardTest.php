@@ -3,10 +3,15 @@
 namespace Tests\Feature;
 
 use App\Enums\Role;
+use App\Models\Attendance;
+use App\Models\Group;
 use App\Models\Player;
+use App\Models\Report;
 use App\Models\School;
+use App\Models\Training;
 use App\Models\User;
 use App\Support\Tenancy\Tenancy;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -18,7 +23,7 @@ class DashboardTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\RoleSeeder::class);
+        $this->seed(RoleSeeder::class);
     }
 
     protected function eigenaar(School $school): User
@@ -112,13 +117,13 @@ class DashboardTest extends TestCase
         $vergeten = Player::factory()->for($school)->keeper()->create(['first_name' => 'Vergeten', 'last_name' => 'Speler']);
         $recent = Player::factory()->for($school)->keeper()->create(['first_name' => 'Recent', 'last_name' => 'Beoordeeld']);
 
-        \App\Models\Report::factory()->for($school)->create([
+        Report::factory()->for($school)->create([
             'player_id' => $vergeten->id,
             'trainer_id' => $eigenaar->id,
             'reported_on' => now()->subDays(60),
         ]);
 
-        \App\Models\Report::factory()->for($school)->create([
+        Report::factory()->for($school)->create([
             'player_id' => $recent->id,
             'trainer_id' => $eigenaar->id,
             'reported_on' => now()->subDays(3),
@@ -170,22 +175,22 @@ class DashboardTest extends TestCase
 
         app(Tenancy::class)->set($school);
 
-        $groep = \App\Models\Group::factory()->for($school)->create();
-        $training = \App\Models\Training::factory()->for($school)->for($groep)->past()->create();
+        $groep = Group::factory()->for($school)->create();
+        $training = Training::factory()->for($school)->for($groep)->past()->create();
 
         $spelers = Player::factory()->count(4)->for($school)->create();
 
         // Drie aanwezig, een afwezig, en een vierde die niet is afgevinkt.
-        \App\Models\Attendance::factory()->for($school)->create([
+        Attendance::factory()->for($school)->create([
             'training_id' => $training->id, 'player_id' => $spelers[0]->id, 'status' => 'present',
         ]);
-        \App\Models\Attendance::factory()->for($school)->create([
+        Attendance::factory()->for($school)->create([
             'training_id' => $training->id, 'player_id' => $spelers[1]->id, 'status' => 'present',
         ]);
-        \App\Models\Attendance::factory()->for($school)->create([
+        Attendance::factory()->for($school)->create([
             'training_id' => $training->id, 'player_id' => $spelers[2]->id, 'status' => 'absent',
         ]);
-        \App\Models\Attendance::factory()->for($school)->create([
+        Attendance::factory()->for($school)->create([
             'training_id' => $training->id, 'player_id' => $spelers[3]->id, 'status' => null,
         ]);
 
@@ -233,8 +238,8 @@ class DashboardTest extends TestCase
 
         app(Tenancy::class)->set($schoolB);
         Player::factory()->count(5)->for($schoolB)->create();
-        \App\Models\Group::factory()->for($schoolB)->create();
-        \App\Models\Training::factory()->for($schoolB)->for(\App\Models\Group::factory()->for($schoolB))->upcoming()->create();
+        Group::factory()->for($schoolB)->create();
+        Training::factory()->for($schoolB)->for(Group::factory()->for($schoolB))->upcoming()->create();
 
         app(Tenancy::class)->set($schoolA);
         Player::factory()->count(2)->for($schoolA)->create();
@@ -258,13 +263,13 @@ class DashboardTest extends TestCase
 
         $speler = Player::factory()->for($school)->keeper()->create();
 
-        \App\Models\Report::factory()->for($school)->create([
+        Report::factory()->for($school)->create([
             'player_id' => $speler->id,
             'trainer_id' => $eigenaar->id,
             'reported_on' => now(),
         ]);
 
-        \App\Models\Report::factory()->for($school)->create([
+        Report::factory()->for($school)->create([
             'player_id' => $speler->id,
             'trainer_id' => $eigenaar->id,
             'reported_on' => now()->subWeeks(3),

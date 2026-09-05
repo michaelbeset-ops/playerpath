@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\GoalStatus;
 use App\Enums\ReportCategory;
 use App\Models\Concerns\BelongsToSchool;
+use Database\Factories\GoalFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Goal extends Model
 {
-    /** @use HasFactory<\Database\Factories\GoalFactory> */
+    /** @use HasFactory<GoalFactory> */
     use BelongsToSchool, HasFactory;
 
     protected $fillable = [

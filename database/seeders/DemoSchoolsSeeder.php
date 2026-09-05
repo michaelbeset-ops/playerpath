@@ -6,9 +6,8 @@ use App\Enums\BillingInterval;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Enums\PlayerPosition;
-use App\Enums\SubscriptionStatus;
-use App\Enums\ReportCategory;
 use App\Enums\Role;
+use App\Enums\SubscriptionStatus;
 use App\Models\Group;
 use App\Models\Payment;
 use App\Models\Plan;
@@ -21,6 +20,7 @@ use App\Models\User;
 use App\Support\PlayerCard\CalculatePlayerCard;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 /**
@@ -64,7 +64,7 @@ class DemoSchoolsSeeder extends Seeder
      * Alleen in de seeder. De app zelf maakt geen betalingen aan zolang er
      * geen betaalprovider is aangesloten.
      *
-     * @param  \Illuminate\Support\Collection<int, Player>  $spelers
+     * @param  Collection<int, Player>  $spelers
      */
     protected function maakAdministratie($spelers): void
     {
@@ -113,7 +113,7 @@ class DemoSchoolsSeeder extends Seeder
     }
 
     /** Eén training geweest, twee komende. */
-    protected function maakTrainingen(\App\Models\Group $groep, User $trainer): void
+    protected function maakTrainingen(Group $groep, User $trainer): void
     {
         foreach ([-7, 7, 14] as $dagen) {
             $start = now()->addDays($dagen)->setTime(18, 0);

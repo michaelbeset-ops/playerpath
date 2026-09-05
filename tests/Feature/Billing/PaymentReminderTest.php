@@ -9,6 +9,7 @@ use App\Models\School;
 use App\Models\User;
 use App\Notifications\BetalingHerinnering;
 use App\Support\Tenancy\Tenancy;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -27,7 +28,7 @@ class PaymentReminderTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\RoleSeeder::class);
+        $this->seed(RoleSeeder::class);
 
         $this->school = School::factory()->create();
         app(Tenancy::class)->set($this->school);

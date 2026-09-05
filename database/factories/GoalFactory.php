@@ -4,12 +4,13 @@ namespace Database\Factories;
 
 use App\Enums\GoalStatus;
 use App\Enums\ReportCategory;
+use App\Models\Goal;
 use App\Models\Player;
 use App\Models\School;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Goal>
+ * @extends Factory<Goal>
  */
 class GoalFactory extends Factory
 {

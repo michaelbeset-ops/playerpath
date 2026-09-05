@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Notifications\DoelBehaald;
 use App\Support\Goals\GoalProgress;
 use App\Support\Tenancy\Tenancy;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -31,7 +32,7 @@ class GoalTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\RoleSeeder::class);
+        $this->seed(RoleSeeder::class);
 
         $this->school = School::factory()->create();
         $this->trainer = User::factory()->for($this->school)->create();

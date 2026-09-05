@@ -11,3 +11,9 @@ Artisan::command('inspire', function () {
 // Herinneringen bij openstaande betalingen. Eén keer per dag en op een
 // burgerlijk tijdstip: een betaalmail om drie uur 's nachts leest niemand.
 Schedule::command('payments:remind')->dailyAt('09:00');
+
+// De facturenloop. Dagelijks, want abonnementen beginnen op verschillende
+// dagen van de maand; de loop is idempotent en maakt nooit twee keer dezelfde
+// rekening. Vóór de herinneringen, zodat een verse rekening niet meteen als
+// achterstallig wordt gezien.
+Schedule::command('payments:generate')->dailyAt('08:00');

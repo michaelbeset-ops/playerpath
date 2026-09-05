@@ -5,15 +5,18 @@ namespace Tests\Feature\Exports;
 use App\Enums\Role;
 use App\Models\Attendance;
 use App\Models\Group;
+use App\Models\Payment;
 use App\Models\Player;
 use App\Models\School;
 use App\Models\Training;
 use App\Models\User;
 use App\Support\Exports\AttendanceExport;
 use App\Support\Exports\ExportRegistry;
+use App\Support\Exports\FinancialExport;
 use App\Support\Exports\PlayersExport;
 use App\Support\Exports\TrainingsExport;
 use App\Support\Tenancy\Tenancy;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -29,7 +32,7 @@ class ExportTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\RoleSeeder::class);
+        $this->seed(RoleSeeder::class);
 
         $this->school = School::factory()->create();
         $this->eigenaar = User::factory()->for($this->school)->create();
@@ -180,14 +183,14 @@ class ExportTest extends TestCase
     {
         $speler = Player::factory()->for($this->school)->create(['first_name' => 'Sem', 'last_name' => 'de Vries']);
 
-        \App\Models\Payment::factory()->for($this->school)->paid()->create([
+        Payment::factory()->for($this->school)->paid()->create([
             'player_id' => $speler->id, 'amount_cents' => 2750, 'due_on' => '2026-09-08', 'paid_at' => '2026-09-05',
         ]);
-        \App\Models\Payment::factory()->for($this->school)->create([
+        Payment::factory()->for($this->school)->create([
             'player_id' => $speler->id, 'amount_cents' => 1250, 'due_on' => '2026-09-08',
         ]);
 
-        $export = app(\App\Support\Exports\FinancialExport::class);
+        $export = app(FinancialExport::class);
         $sheets = $export->sheets(['from' => '2026-09-01', 'to' => '2026-09-30']);
 
         $this->assertSame(['Overzicht', 'Betalingen', 'Openstaand', 'Abonnementen'], array_map(fn ($s) => $s->title, $sheets));

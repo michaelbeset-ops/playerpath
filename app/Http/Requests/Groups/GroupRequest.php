@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Groups;
 
 use App\Models\Group;
+use App\Support\Tenancy\Tenancy;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -29,7 +30,7 @@ class GroupRequest extends FormRequest
                 // Uniek binnen de school; de global scope beperkt de check al
                 // tot de eigen school.
                 Rule::unique('groups', 'name')
-                    ->where('school_id', app(\App\Support\Tenancy\Tenancy::class)->id())
+                    ->where('school_id', app(Tenancy::class)->id())
                     ->ignore($group?->id),
             ],
             'age_category' => ['nullable', 'string', 'max:255'],

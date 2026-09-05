@@ -5,7 +5,6 @@ namespace App\Http\Requests\Reports;
 use App\Enums\ReportCategory;
 use App\Models\Player;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class StoreReportRequest extends FormRequest
 {

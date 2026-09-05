@@ -6,6 +6,7 @@ use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use App\Models\Subscription;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 
 /**
  * Het financiële werkboek: vier tabbladen die samen het verhaal vertellen.
@@ -72,7 +73,7 @@ class FinancialExport implements WorkbookExport
         ];
     }
 
-    /** @return \Illuminate\Support\Collection<int, Payment> */
+    /** @return Collection<int, Payment> */
     protected function betalingen(array $filters)
     {
         return Payment::query()

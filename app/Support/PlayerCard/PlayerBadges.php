@@ -3,6 +3,7 @@
 namespace App\Support\PlayerCard;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\GoalStatus;
 use App\Models\Player;
 
 /**
@@ -85,7 +86,7 @@ class PlayerBadges
                 'key' => 'doel_gehaald',
                 'label' => 'Doelgericht',
                 'description' => 'Een ontwikkelingsdoel gehaald',
-                'earned' => $player->goals()->where('status', \App\Enums\GoalStatus::Achieved->value)->exists(),
+                'earned' => $player->goals()->where('status', GoalStatus::Achieved->value)->exists(),
             ],
             [
                 'key' => 'aanwezig_vijf',

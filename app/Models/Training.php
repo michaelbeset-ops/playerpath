@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToSchool;
+use Database\Factories\TrainingFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Training extends Model
 {
-    /** @use HasFactory<\Database\Factories\TrainingFactory> */
+    /** @use HasFactory<TrainingFactory> */
     use BelongsToSchool, HasFactory;
 
     protected $fillable = [

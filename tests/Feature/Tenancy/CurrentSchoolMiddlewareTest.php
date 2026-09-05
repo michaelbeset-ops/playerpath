@@ -6,6 +6,7 @@ use App\Enums\Role;
 use App\Models\School;
 use App\Models\User;
 use App\Support\Tenancy\Tenancy;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -17,7 +18,7 @@ class CurrentSchoolMiddlewareTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\RoleSeeder::class);
+        $this->seed(RoleSeeder::class);
     }
 
     public function test_de_actieve_school_komt_uit_het_ingelogde_account(): void

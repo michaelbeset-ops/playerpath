@@ -13,6 +13,7 @@ use App\Notifications\BetalingOntvangen;
 use App\Support\Payments\NotConnectedGateway;
 use App\Support\Payments\PaymentGateway;
 use App\Support\Tenancy\Tenancy;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\Support\FakeGateway;
@@ -36,7 +37,7 @@ class CheckoutTest extends TestCase
     {
         parent::setUp();
 
-        $this->seed(\Database\Seeders\RoleSeeder::class);
+        $this->seed(RoleSeeder::class);
 
         $this->gateway = new FakeGateway;
         $this->app->instance(PaymentGateway::class, $this->gateway);

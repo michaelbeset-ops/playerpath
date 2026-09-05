@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Billing;
 
-use App\Enums\BillingInterval;
+use App\Actions\Payments\GeneratePayments;
 use App\Enums\PaymentMethod;
 use App\Enums\SubscriptionStatus;
 use App\Http\Controllers\Controller;
@@ -28,7 +28,10 @@ use Inertia\Response;
  */
 class SubscriptionController extends Controller
 {
-    public function __construct(protected PaymentGateway $gateway) {}
+    public function __construct(
+        protected PaymentGateway $gateway,
+        protected GeneratePayments $facturen,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -86,29 +89,39 @@ class SubscriptionController extends Controller
             'plan_id' => ['required', 'integer', Rule::exists('plans', 'id')->where('school_id', $schoolId)],
             'payment_method' => ['required', Rule::enum(PaymentMethod::class)],
             'starts_on' => ['required', 'date'],
-        ], [], [
+            // Een jaarbedrag in tien maandtermijnen is bij sportclubs normaal.
+            'installments' => ['nullable', 'integer', 'between:1,12'],
+        ], [
+            'installments.between' => 'Kies één tot twaalf termijnen.',
+        ], [
             'player_id' => 'De speler',
             'plan_id' => 'De abonnementsvorm',
             'payment_method' => 'De betaalmethode',
             'starts_on' => 'De ingangsdatum',
+            'installments' => 'Het aantal termijnen',
         ]);
 
         $plan = Plan::findOrFail($validated['plan_id']);
 
         // Bedrag en frequentie worden overgenomen, niet gekoppeld: verandert de
         // school later haar tarief, dan verandert een lopend abonnement niet mee.
-        Subscription::create([
+        $abonnement = Subscription::create([
             'player_id' => $validated['player_id'],
             'plan_id' => $plan->id,
             'amount_cents' => $plan->amount_cents,
             'interval' => $plan->interval,
+            'installments' => ($validated['installments'] ?? 1) > 1 ? $validated['installments'] : null,
             'status' => SubscriptionStatus::Active,
             'payment_method' => $validated['payment_method'],
             'starts_on' => $validated['starts_on'],
         ]);
 
+        // Meteen de rekening voor de lopende termijn; anders staat er tot de
+        // nachtelijke facturenloop niets open en valt er dus niets te betalen.
+        $aangemaakt = count($this->facturen->handle($abonnement));
+
         $melding = $this->gateway->isConnected()
-            ? 'Het abonnement is aangemaakt en de incasso is aangevraagd.'
+            ? "Het abonnement is aangemaakt en er staat {$aangemaakt} betaling(en) klaar voor het gezin."
             : 'Het abonnement is vastgelegd. Er wordt nog niets geïncasseerd: '.$this->gateway->name().' is niet aangesloten.';
 
         return back()->with('status', $melding);

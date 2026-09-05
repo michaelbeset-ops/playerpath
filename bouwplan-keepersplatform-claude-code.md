@@ -100,24 +100,31 @@ per speler de gegevens uitdraaien of definitief wissen.
 inschrijving (M8). In overleg geschrapt; het akkoord-vinkje op het
 inschrijfformulier blijft voorlopig wat het is.
 
-## Fase 9 — Betalingen (Mollie + Cashier) (M2)
+## Fase 9 — Betalingen (Mollie) 🟡
 
 **Doel:** het gevoeligste onderdeel, bewust op een product dat verder al werkt.
 
-- Mollie-account + Laravel Cashier (Mollie); `MollieGateway` achter de bestaande
-  `PaymentGateway`-naad.
-- Drie betaalmodellen: **abonnement** (maandelijkse SEPA-incasso), **eenmalig**
-  (iDEAL) en **termijnen** (een bedrag in N delen; nieuw in het model).
-- Betaalstart vanuit de inschrijving: gezin kiest plan, na goedkeuring start de
-  eerste betaling of het mandaat automatisch.
-- Webhooks, storneringen, mislukte incasso's en **automatische herinneringen**
-  (dit doen alle concurrenten; hier moeten we mee).
-- Betalingsoverzicht in de exports met echte incassodata; financieel dashboard
-  afmaken.
+Gebouwd:
 
-**Klaar wanneer:** een ouder schrijft in, betaalt via iDEAL of incasso, en de
-eigenaar ziet de betaling terug. Test dit grondig — dit is waar fouten het
-meest pijn doen.
+- `MollieGateway` achter de bestaande `PaymentGateway`-naad; zonder sleutel
+  blijft alles op `NotConnectedGateway`.
+- Eenmalig betalen (iDEAL en wat de betaler verder kiest) vanaf "Mijn abonnement".
+- Webhooks, met storneringen en mislukte betalingen; `SyncPayment` als enige
+  plek die een stand zet.
+- Facturenloop `payments:generate`: een abonnement brengt de rekening voor de
+  lopende termijn voort, idempotent.
+- Termijnen: een periodebedrag in N maandrekeningen, tot op de cent kloppend.
+- Automatische herinneringen `payments:remind`.
+- Betaalstart bij het goedkeuren van een inschrijving.
+
+Nog niet gebouwd:
+
+- **Doorlopende SEPA-incasso met mandaten.** Nu betaalt een ouder elke rekening
+  zelf; automatisch afschrijven vraagt Mollie-customers, mandaten en een
+  incassoloop, en is pas te verifiëren met een echt Mollie-account.
+
+**Klaar wanneer:** een ouder schrijft in, betaalt via iDEAL, en de eigenaar
+ziet de betaling terug. Dat werkt; alleen de automatische incasso ontbreekt.
 
 ## Fase 10 — Communicatie (M6)
 

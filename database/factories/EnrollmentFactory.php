@@ -5,11 +5,12 @@ namespace Database\Factories;
 use App\Enums\EnrollmentStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PlayerPosition;
+use App\Models\Enrollment;
 use App\Models\School;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Enrollment>
+ * @extends Factory<Enrollment>
  */
 class EnrollmentFactory extends Factory
 {

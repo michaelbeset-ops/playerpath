@@ -11,6 +11,7 @@ use App\Models\Group;
 use App\Models\Player;
 use App\Models\Report;
 use App\Models\Training;
+use Illuminate\Support\Carbon;
 
 /**
  * De cijfers voor het eigenaar-dashboard.
@@ -102,7 +103,7 @@ class SchoolDashboard
                 'position' => $speler->position->label(),
                 'overall_rating' => $speler->overall_rating,
                 'last_report_on' => $speler->reports_max_reported_on
-                    ? \Illuminate\Support\Carbon::parse($speler->reports_max_reported_on)->format('d-m-Y')
+                    ? Carbon::parse($speler->reports_max_reported_on)->format('d-m-Y')
                     : null,
             ])
             ->values()

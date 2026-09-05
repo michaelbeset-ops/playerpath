@@ -339,8 +339,11 @@ een `MollieGateway` schrijven en die in `AppServiceProvider` binden.
 
 Zolang er geen provider is:
 
-- **maakt de app zelf geen betalingen aan.** Een abonnement vastleggen is
-  administratie; er wordt niets geïncasseerd. Geen nepbetalingen, ooit.
+- **verplaatst de app geen cent en doet niets alsof.** Een abonnement brengt
+  wel een *openstaande* rekening voort — anders weet een school die per
+  overboeking int niet wie er nog moet betalen — maar die staat op `open`,
+  zonder betaaldatum en zonder kenmerk bij een provider. Een betaling op
+  `paid` zetten die nooit binnenkwam gebeurt nooit.
 - **zegt elk scherm dat eerlijk**, via `GatewayNotice`.
 - kan de eigenaar een betaling **met de hand** op betaald zetten. Dat blijft ook
   daarna nuttig, voor overboekingen en contant.
@@ -565,6 +568,33 @@ houdt, en dus niet mag sneuvelen:
 - Alles hier is van de **eigenaar**. Een trainer beslist niet welke gegevens van
   een oud-lid verdwijnen.
 
+### Betalingen met Mollie (Fase 9)
+
+- De app praat alleen met `Support\Payments\PaymentGateway`. Zonder `MOLLIE_KEY`
+  in `.env` hangt daar `NotConnectedGateway` aan en start er nergens een
+  betaling; een sleutel toevoegen zet de hele keten aan zonder schermwijziging.
+- **Geld gaat via centen naar `"12.50"`**, met `intdiv` en het restant, nooit
+  via een float. Zie `MollieGateway::toAmount()`.
+- **De status komt uit de bedragen, niet uit `_links`.** Elke stornering telt
+  meteen; een terugbetaling alleen als hij volledig is, anders zou een tientje
+  korting de hele omzet laten verdampen.
+- **De webhook gelooft niets.** Mollie stuurt alleen een id; wij halen de stand
+  zelf op. Altijd 200 terug, ook bij een onbekend id: een foutcode laat Mollie
+  eindeloos herhalen en verraadt of een id bestaat. Zoeken gebeurt met
+  `withoutSchoolScope()`, want er is geen ingelogde gebruiker; daarna wordt de
+  school expliciet gezet met `forSchool()`.
+- **`Actions\Payments\SyncPayment` is de enige plek die een betaalstand zet**,
+  en is idempotent: Mollie herhaalt webhooks, en twee bevestigingsmails voor
+  één betaling is fout.
+- **`payments:generate` maakt de rekeningen**, dagelijks en idempotent op
+  `period_start`. Een termijn loopt vanaf de startdag van het abonnement, niet
+  per kalendermaand: wie op de 20e begint betaalt telkens op de 20e.
+- **Termijnen** (`subscriptions.installments`) splitsen het periodebedrag via
+  `Support\Money\SplitAmount`; de restcenten gaan naar de eerste termijnen,
+  zodat de som exact klopt.
+- `payments:remind` is ook zonder provider nuttig: drie dagen respijt, hooguit
+  eens per twee weken per betaling, alleen naar de ouders van dat kind.
+
 ## 6. Werkwijze
 
 - **Fase voor fase.** Het bouwplan staat in `bouwplan-keepersplatform-claude-code.md`
@@ -588,7 +618,7 @@ Volledige scope en status per feature: `FEATURES.md`. Volgorde: het bouwplan.
 - [x] Fase 6 — Eigenaar-dashboard (+ exports, online inschrijven)
 - [x] Fase 7 — Ontwikkelingsdoelen (doel per categorie, op koers, badge, tijdlijn)
 - [x] Fase 8 — Bewaartermijn, inzage en verwijderen (AVG); ondertekenen geschrapt
-- [ ] Fase 9 — Betalingen (Mollie): schermen en model staan, koppeling niet
+- [~] Fase 9 — Betalingen: Mollie aangesloten voor eenmalige betalingen; doorlopende incasso nog niet
 - [ ] Fase 10 — Communicatie
 - [ ] Fase 11 — White-label & subdomein
 - [ ] Fase 12 — Productie & lancering (PWA, deploy)
