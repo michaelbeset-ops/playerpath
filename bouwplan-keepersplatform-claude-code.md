@@ -82,21 +82,23 @@ stelt per speler meetbare doelen, en ouder en speler zien de weg ernaartoe.
 **Klaar wanneer:** een trainer zet een doel, vult een rapport in, en de ouder
 ziet de groei richting het doel — met een mijlpaal als het gehaald is.
 
-## Fase 8 — Inschrijven compleet & digitaal ondertekenen (M8, rest van M1)
+## Fase 8 — Bewaartermijn, inzage en verwijderen (AVG) ✅
 
-**Doel:** de inschrijving juridisch en praktisch compleet, zonder dat daar al
-geld voor hoeft te lopen.
+**Doel:** netjes omgaan met de gegevens van kinderen, zonder dat er iets
+onomkeerbaars vanzelf gebeurt.
 
-- Documenten per school (toestemming, AVG/privacy, gedragscode), met versies.
-- Digitaal ondertekenen in het inschrijfformulier: naam, tijdstip, IP,
-  documentversie; opslag bij de inschrijving en later bij de speler.
-- Opnieuw laten tekenen als een document een nieuwe versie krijgt; overzicht
-  voor de eigenaar van wie nog niet getekend heeft.
-- Bewaartermijn en verwijderen volgens AVG (verzoek van ouder → export en
-  wissen).
+- Bewaartermijn per school (in maanden), leeg = nog niets besloten.
+- De klok start op de dag dat een speler op niet-actief gaat (`deactivated_at`).
+- Overzicht van oud-leden waarvan de termijn verstreken is; de eigenaar beslist
+  per persoon. Er wordt nooit automatisch verwijderd.
+- Inzageverzoek: alle gegevens van één speler als Excel-werkmap.
 
-**Klaar wanneer:** een ouder schrijft in, tekent de documenten, en de eigenaar
-ziet bij goedkeuring precies wat er getekend is en wanneer.
+**Klaar wanneer:** de eigenaar stelt een termijn in, ziet wie er weg mag, en kan
+per speler de gegevens uitdraaien of definitief wissen.
+
+**Bewust niet gebouwd:** documenten per school en digitaal ondertekenen bij de
+inschrijving (M8). In overleg geschrapt; het akkoord-vinkje op het
+inschrijfformulier blijft voorlopig wat het is.
 
 ## Fase 9 — Betalingen (Mollie + Cashier) (M2)
 

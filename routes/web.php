@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Privacy\PrivacyController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -21,6 +22,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Overzichten exporteren (eigenaar). Zie Support/Exports.
     Route::get('exports', [ExportController::class, 'index'])->name('exports.index');
     Route::get('exports/{key}', [ExportController::class, 'download'])->name('exports.download');
+
+    // Fase 8: bewaartermijn, inzage en verwijderen (AVG). Alleen de eigenaar.
+    Route::get('privacy', [PrivacyController::class, 'index'])->name('privacy.index');
+    Route::patch('privacy', [PrivacyController::class, 'update'])->name('privacy.update');
+    Route::get('players/{player}/gegevens', [PrivacyController::class, 'download'])->name('privacy.player-data');
+    Route::delete('privacy/players/{player}', [PrivacyController::class, 'erase'])->name('privacy.erase');
 });
 
 require __DIR__.'/players.php';

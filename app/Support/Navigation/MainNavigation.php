@@ -44,6 +44,7 @@ class MainNavigation
             ['section' => 'Financieel', 'title' => 'Betalingen', 'href' => '/payments', 'icon' => 'payments', 'allowed' => $user->can('viewAny', Payment::class)],
             ['section' => 'Financieel', 'title' => 'Tarieven', 'href' => '/plans', 'icon' => 'plans', 'allowed' => $user->can('viewAny', Plan::class)],
             ['section' => 'Financieel', 'title' => 'Overzichten', 'href' => '/exports', 'icon' => 'exports', 'allowed' => $user->isEigenaar()],
+            ['section' => 'School', 'title' => 'Privacy', 'href' => '/privacy', 'icon' => 'privacy', 'allowed' => $user->isEigenaar()],
             // Ouder en speler: hun eigen abonnement, niet dat van de school.
             ['section' => 'School', 'title' => 'Mijn abonnement', 'href' => '/billing', 'icon' => 'payments', 'allowed' => $user->visiblePlayerIds() !== []],
         ];

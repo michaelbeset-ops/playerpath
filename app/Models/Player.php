@@ -40,7 +40,24 @@ class Player extends Model
             'overall_rating' => 'integer',
             'rated_at' => 'datetime',
             'shared_at' => 'datetime',
+            'deactivated_at' => 'datetime',
         ];
+    }
+
+    /**
+     * De klok van de bewaartermijn loopt vanaf de dag dat iemand stopt.
+     *
+     * Bewust hier en niet in een controller: een speler wordt op meer dan een
+     * plek op niet-actief gezet, en de datum mag nooit van de plek afhangen.
+     * `deactivated_at` staat daarom ook niet in $fillable.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (Player $player) {
+            if ($player->isDirty('is_active')) {
+                $player->deactivated_at = $player->is_active ? null : now();
+            }
+        });
     }
 
     /** Het eigen inlogaccount van de speler (mag ontbreken). */

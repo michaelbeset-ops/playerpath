@@ -11,14 +11,14 @@ Status: ✅ klaar · 🟡 deels · ⬜ nog niet. De fase verwijst naar
 
 | # | Feature | Status | Wat er staat / ontbreekt | Fase |
 |---|---|---|---|---|
-| M1 | Online inschrijving door ouders/spelers | 🟡 | Openbaar formulier per school (`/inschrijven/{slug}`), tariefkeuze, inbox met goedkeuring die speler, ouderaccount en abonnement aanmaakt. Ontbreekt: ondertekenen (M8) en betaalstart (M2). | 0–6 ✅ · rest in 8 en 9 |
+| M1 | Online inschrijving door ouders/spelers | 🟡 | Openbaar formulier per school (`/inschrijven/{slug}`), tariefkeuze, inbox met goedkeuring die speler, ouderaccount en abonnement aanmaakt. Ontbreekt: betaalstart (M2); ondertekenen (M8) is geschrapt. | 0–6 ✅ · rest in 9 |
 | M2 | Betalingen: abonnement (maandelijkse incasso) + eenmalig (iDEAL) + termijnen; gezin kiest plan, systeem int automatisch | 🟡 | Tarieven, abonnementen, betalingen en het financiële dashboard staan; bedragen in centen; `PaymentGateway`-naad. Ontbreekt: Mollie zelf, incasso, iDEAL-checkout, webhooks, storno's, herinneringen, en **termijnen** (bestaat nog niet in het model). | 9 |
 | M3 | Agenda/planning van trainingen met trainer(s) en locatie | ✅ | Trainingen (wekelijks herhalen), trainers many-to-many, locatie, kalender maand/week, mobiel. | 4 ✅ |
 | M4 | Aanwezigheidsregistratie | ✅ | Afvinken door trainer, aan-/afmelden door ouder/speler, gescheiden vastgelegd, opkomst op dashboard. | 4 ✅ |
 | M5 | Ledenadministratie (spelers, ouders, trainers) met rollen | ✅ | Gebruikers met drie tabbladen, uitnodigen via e-mail, rollen eigenaar/trainer/ouder/speler, policies, multi-tenancy server-side. | 1, 3 ✅ |
 | M6 | In-app communicatie + meldingen naar ouders | 🟡 | Meldingen (nieuw rapport, nieuwe inschrijving) in app en mail via queue. Ontbreekt: **mededelingen van school naar ouders/groep** (afgelasting, nieuws), inbox/berichten, later push. | 10 |
 | M7 | Mobiele toegang / app-gevoel (PWA) voor trainers én ouders/spelers | 🟡 | Alle schermen mobiel-first gebouwd. Ontbreekt: installeerbare PWA (manifest, service worker, icoon, push). | 12 |
-| M8 | Digitaal ondertekenen van formulieren bij inschrijving (toestemming, AVG, gedrag) | ⬜ | Alleen een akkoord-vinkje op het inschrijfformulier. Ontbreekt: documenten per school, handtekening (getekend + tijdstip + IP + versie), bewaren, opnieuw laten tekenen bij nieuwe versie. | 8 |
+| M8 | Digitaal ondertekenen van formulieren bij inschrijving (toestemming, AVG, gedrag) | ⬛ | **Geschrapt in overleg (5-9-2026).** Het akkoord-vinkje op het inschrijfformulier blijft. Wil je dit alsnog: documenten per school met versies, handtekening (naam + tijdstip + IP + documentversie), opnieuw laten tekenen bij een nieuwe versie. | — |
 | M9 | Overzichten met export (CSV/Excel): leden, aanwezigheid, later betalingen | ✅ | Spelers, Trainingen, Aanwezigheid en een financieel werkboek met vier tabbladen. Uitbreidbaar via `ExportRegistry`. Echte incassodata volgt met M2. | 6 ✅ (betaaldata in 9) |
 | M10 | White-label branding per school (logo, kleuren) + eigen subdomein (`xtra.playerpath.nl`) | ⬜ | Eén huisstijl voor alles. Ontbreekt: logo en kleuren per school, subdomein per school, e-mails uit naam van de school. | 11 |
 
@@ -49,7 +49,7 @@ live draaien en erom vragen.
 | Fase | Naam | Features |
 |---|---|---|
 | 7 | Ontwikkelingsdoelen | O2 |
-| 8 | Inschrijven compleet & ondertekenen | M8, rest van M1 |
+| 8 | Bewaartermijn, inzage en verwijderen (AVG) | privacy |
 | 9 | Betalingen (Mollie) | M2, betaaldata in M9 |
 | 10 | Communicatie | M6 |
 | 11 | White-label & subdomein | M10 |

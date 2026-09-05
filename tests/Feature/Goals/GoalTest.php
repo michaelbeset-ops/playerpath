@@ -201,6 +201,16 @@ class GoalTest extends TestCase
             ->assertInertia(fn ($page) => $page->where('goals.uitkomen.target', 80));
     }
 
+    public function test_de_spelerspagina_biedt_de_trainer_de_knop_om_een_doel_te_stellen(): void
+    {
+        // Regressie: de klassenaam werd hier ooit zonder import geschreven,
+        // waardoor de policy nooit aansloeg en de knop stilletjes wegbleef.
+        $this->actingAs($this->trainer)
+            ->get("/players/{$this->keeper->id}")
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('can.goals', true)->has('goalCategories', 6));
+    }
+
     public function test_een_ouder_ziet_het_doel_maar_mag_er_geen_stellen(): void
     {
         $ouder = User::factory()->for($this->school)->create();

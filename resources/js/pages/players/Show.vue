@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ClipboardList, IdCard, Pencil, Target, Trash2, UserPlus, X } from 'lucide-vue-next';
+import { ClipboardList, FileDown, IdCard, Pencil, Target, Trash2, UserPlus, X } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 interface Categorie {
@@ -39,7 +39,7 @@ const props = defineProps<{
     linkableGuardians: { id: number; name: string; email: string }[];
     goals: Doel[];
     goalCategories: { value: string; label: string }[];
-    can: { manage: boolean; delete: boolean; report: boolean; goals: boolean };
+    can: { manage: boolean; delete: boolean; report: boolean; goals: boolean; privacy: boolean };
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -389,6 +389,22 @@ const verwijderen = () => {
             </div>
 
             <!-- Verwijderen staat apart en onderaan: het is onomkeerbaar -->
+            <!-- AVG: een ouder mag opvragen wat de school over zijn kind bewaart -->
+            <div v-if="can.privacy" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+                <p class="font-medium">Inzageverzoek</p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    Alles wat de school over {{ player.name }} bewaart in één Excel-bestand: profiel, ouders, rapporten, cijfers,
+                    aanwezigheid, doelen en betalingen. Bedoeld om aan een ouder te geven die daarom vraagt.
+                </p>
+                <a
+                    :href="'/players/' + player.id + '/gegevens'"
+                    class="mt-4 inline-flex h-9 items-center rounded-lg border border-border px-3 text-sm font-medium hover:border-primary"
+                >
+                    <FileDown class="mr-2 size-4" />
+                    Gegevens downloaden
+                </a>
+            </div>
+
             <div v-if="can.delete" class="mt-4 rounded-xl border border-destructive/25 bg-destructive/5 p-5">
                 <p class="font-medium text-destructive">Speler verwijderen</p>
                 <p class="mt-1 text-sm text-muted-foreground">

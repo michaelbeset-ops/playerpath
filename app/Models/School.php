@@ -19,12 +19,14 @@ class School extends Model
         'name',
         'slug',
         'is_active',
+        'retention_months',
     ];
 
     protected function casts(): array
     {
         return [
             'is_active' => 'boolean',
+            'retention_months' => 'integer',
         ];
     }
 

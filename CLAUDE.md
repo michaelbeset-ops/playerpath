@@ -549,6 +549,22 @@ houdt, en dus niet mag sneuvelen:
 - Beoordelen gebeurt alleen in `Actions\Goals\EvaluateGoals`, aangeroepen vanuit `StoreReport` na de kaartberekening: gehaald → `DoelBehaald` naar ouders + speler, badge `doel_gehaald`, mijlpaal in de tijdlijn; einddatum voorbij → `missed`.
 - Trainer/eigenaar stelt en stopt (`GoalPolicy`), ouder/speler ziet alleen. Het rapportscherm toont per categorie een chip "doel 80", niets meer.
 
+### Privacy en bewaartermijn (Fase 8)
+
+- `schools.retention_months` is de termijn in maanden; **null betekent "nog niets
+  besloten"**, niet "alles mag weg". Zonder termijn signaleert het scherm niets.
+- De klok start bij `players.deactivated_at`, gezet in een `saving`-hook op het
+  model — niet in een controller, want een speler gaat op meer dan één plek op
+  niet-actief en de datum mag niet van de plek afhangen. Staat niet in `$fillable`.
+- **Er verwijdert nooit iets zichzelf.** `Support\Privacy\RetentionOverview`
+  signaleert alleen; de eigenaar drukt per persoon op de knop. Een verkeerd
+  ingestelde termijn merk je anders pas als de rapporten al weg zijn.
+- Inzageverzoek: `Support\Exports\PlayerDataExport` zet alles van één speler in
+  één werkmap. Die staat bewust **niet** in `ExportRegistry` — dat register is
+  voor schoolbrede overzichten die je uit een lijst kiest.
+- Alles hier is van de **eigenaar**. Een trainer beslist niet welke gegevens van
+  een oud-lid verdwijnen.
+
 ## 6. Werkwijze
 
 - **Fase voor fase.** Het bouwplan staat in `bouwplan-keepersplatform-claude-code.md`
@@ -571,7 +587,7 @@ Volledige scope en status per feature: `FEATURES.md`. Volgorde: het bouwplan.
 - [x] Fase 5 — Voortgang & ouder-ervaring (+ verzamelkaart)
 - [x] Fase 6 — Eigenaar-dashboard (+ exports, online inschrijven)
 - [x] Fase 7 — Ontwikkelingsdoelen (doel per categorie, op koers, badge, tijdlijn)
-- [ ] Fase 8 — Inschrijven compleet & digitaal ondertekenen
+- [x] Fase 8 — Bewaartermijn, inzage en verwijderen (AVG); ondertekenen geschrapt
 - [ ] Fase 9 — Betalingen (Mollie): schermen en model staan, koppeling niet
 - [ ] Fase 10 — Communicatie
 - [ ] Fase 11 — White-label & subdomein

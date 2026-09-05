@@ -157,6 +157,8 @@ class DemoSchoolsSeeder extends Seeder
     protected function maakSchool(string $naam, string $eigenaarEmail, array $spelers, array $groepen): void
     {
         $school = School::create([
+            // Twee jaar bewaren; zo laat het privacyscherm meteen iets zien.
+            'retention_months' => 24,
             'name' => $naam,
             'slug' => Str::slug($naam),
         ]);
@@ -230,7 +232,13 @@ class DemoSchoolsSeeder extends Seeder
 
             // Tarieven, abonnementen en een paar betalingen, zodat het
             // financiële scherm meteen laat zien hoe het eruitziet.
+            // Een oud-lid waarvan de bewaartermijn allang verstreken is, zodat
+            // het privacyscherm niet leeg staat.
+            $gestopt = $gemaakteSpelers->last();
             $this->maakAdministratie($gemaakteSpelers);
+
+            $gestopt->update(['is_active' => false]);
+            $gestopt->forceFill(['deactivated_at' => now()->subMonths(30)])->save();
         });
     }
 }

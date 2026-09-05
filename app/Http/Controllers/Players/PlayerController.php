@@ -6,6 +6,7 @@ use App\Enums\PlayerPosition;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Players\PlayerRequest;
+use App\Models\Goal;
 use App\Models\Group;
 use App\Models\Player;
 use App\Models\User;
@@ -107,7 +108,8 @@ class PlayerController extends Controller
                 'manage' => $request->user()->can('update', $player),
                 'delete' => $request->user()->can('delete', $player),
                 'report' => $request->user()->can('createReport', $player),
-                'goals' => $request->user()->can('createFor', [App\Models\Goal::class, $player]),
+                'goals' => $request->user()->can('createFor', [Goal::class, $player]),
+                'privacy' => $request->user()->isEigenaar(),
             ],
         ]);
     }
