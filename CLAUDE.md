@@ -87,6 +87,10 @@ Spelers, Groepen en Rapporten zien die allemaal 403 gaven.
 **Nieuw scherm erbij? Voeg het toe aan `MainNavigation`, niet aan
 `AppSidebar.vue`.** `NavigationTest` loopt per rol elk getoond item echt af.
 
+Elk item heeft een `section` (School of Financieel); `NavMain` groepeert erop.
+Een verlopen sessie (419) wordt in `bootstrap/app.php` afgevangen met een
+melding in plaats van een foutpagina.
+
 #### Valkuil: validatieregels kennen de global scope niet
 
 `Rule::exists()` en `Rule::unique()` gaan **rechtstreeks naar de database** en

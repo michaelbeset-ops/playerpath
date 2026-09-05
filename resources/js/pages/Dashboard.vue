@@ -97,9 +97,9 @@ const kaarten = computed(() => {
             icon: Star,
         },
         {
-            label: 'Rapporten deze week',
+            label: 'Rapporten',
             value: s.reportsThisWeek,
-            hint: s.reportsThisWeek === 0 ? 'Nog niemand beoordeeld' : 'ingevuld door je trainers',
+            hint: s.reportsThisWeek === 0 ? 'deze week nog niemand beoordeeld' : 'deze week, ingevuld door je trainers',
             icon: ClipboardList,
             href: '/reports',
         },
