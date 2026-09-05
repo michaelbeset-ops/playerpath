@@ -602,6 +602,28 @@ houdt, en dus niet mag sneuvelen:
   bank of ouder kan het intrekken, en afschrijven zonder mandaat levert een
   stornering plus een boze ouder op. Een fout bij één gezin stopt de ronde niet.
 
+### Communicatie (Fase 10)
+
+- `announcements`: `group_id` leeg = hele school. `recipients_count` wordt bij
+  het versturen vastgelegd en **nooit herberekend**: wie er toen in de groep zat
+  is de waarheid, en een speler die vandaag vertrekt heeft het bericht wél gehad.
+- Ontvangers via `Support\Communication\AnnouncementAudience`: ouders **en**
+  spelers met een eigen inlog, alleen van actieve spelers, en nooit dubbel.
+- **Versturen gebeurt na de transactie.** Een mislukte opslag mag nooit alsnog
+  honderd mails opleveren; die krijg je niet terug.
+- **Een training afzeggen verwijdert hem niet.** Hij blijft als afgezegd in het
+  rooster staan — "er stond een training die niet doorging" is iets anders dan
+  "er stond niets" — en de reden is verplicht, want die komt letterlijk in het
+  bericht. Terugzetten stuurt bewust géén bericht: dat wil de trainer zelf
+  formuleren.
+- **Trainers mogen ook mededelingen sturen**, niet alleen de eigenaar. Een
+  afgelasting komt van wie om zeven uur naar het veld kijkt.
+- **Meldingsvoorkeuren gelden alleen voor mail** (`users.notification_preferences`,
+  zie `User::wantsEmail()`). In-app meldingen zijn niet uit te zetten: anders
+  mist iemand een afgelasting en heeft de school geen enkele manier meer om hem
+  te bereiken. Een lege voorkeur betekent "alles aan", zodat een nieuwe soort
+  bestaande gebruikers niet stilzwijgend afmeldt.
+
 ## 6. Werkwijze
 
 - **Fase voor fase.** Het bouwplan staat in `bouwplan-keepersplatform-claude-code.md`
@@ -626,7 +648,7 @@ Volledige scope en status per feature: `FEATURES.md`. Volgorde: het bouwplan.
 - [x] Fase 7 — Ontwikkelingsdoelen (doel per categorie, op koers, badge, tijdlijn)
 - [x] Fase 8 — Bewaartermijn, inzage en verwijderen (AVG); ondertekenen geschrapt
 - [x] Fase 9 — Betalingen (Mollie): eenmalig, doorlopende incasso, termijnen, herinneringen
-- [ ] Fase 10 — Communicatie
+- [x] Fase 10 — Communicatie (mededelingen, afzeggen, meldingsvoorkeuren)
 - [ ] Fase 11 — White-label & subdomein
 - [ ] Fase 12 — Productie & lancering (PWA, deploy)
 

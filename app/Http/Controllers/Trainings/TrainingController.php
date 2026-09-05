@@ -121,6 +121,8 @@ class TrainingController extends Controller
                     'name' => $trainer->name,
                 ]),
                 'has_passed' => $training->hasPassed(),
+                'cancelled_at' => $training->cancelled_at?->format('d-m-Y H:i'),
+                'cancellation_reason' => $training->cancellation_reason,
             ],
             'players' => $spelers->values()->map(fn (Player $speler) => [
                 'id' => $speler->id,

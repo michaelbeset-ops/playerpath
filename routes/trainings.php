@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Trainings\AttendanceController;
 use App\Http\Controllers\Trainings\CalendarController;
+use App\Http\Controllers\Trainings\CancellationController;
 use App\Http\Controllers\Trainings\RegistrationController;
 use App\Http\Controllers\Trainings\TrainingController;
 use Illuminate\Support\Facades\Route;
@@ -16,4 +17,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('trainings/{training}/registration/{player}', [RegistrationController::class, 'store'])
         ->name('registration.store');
+
+    // Fase 10: afzeggen stuurt meteen bericht aan de groep.
+    Route::post('trainings/{training}/afzeggen', [CancellationController::class, 'store'])->name('trainings.cancel');
+    Route::delete('trainings/{training}/afzeggen', [CancellationController::class, 'destroy'])->name('trainings.uncancel');
 });

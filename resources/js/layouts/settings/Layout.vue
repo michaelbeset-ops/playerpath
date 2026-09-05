@@ -14,6 +14,10 @@ const sidebarNavItems: NavItem[] = [
         title: 'Wachtwoord',
         href: '/settings/password',
     },
+    {
+        title: 'Meldingen',
+        href: '/settings/notifications',
+    },
 ];
 
 const currentPath = window.location.pathname;

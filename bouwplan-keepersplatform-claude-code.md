@@ -127,7 +127,7 @@ eigenaar ziet de betaling terug. Dat werkt.
 zelf. Voor productie hoort daar een ronde met een Mollie-testaccount overheen:
 eerste betaling, mandaat, incasso, stornering.
 
-## Fase 10 — Communicatie (M6)
+## Fase 10 — Communicatie (M6) ✅
 
 **Doel:** de school bereikt ouders zonder WhatsApp-groepen.
 

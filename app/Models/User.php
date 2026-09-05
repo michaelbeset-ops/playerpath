@@ -47,6 +47,7 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
+            'notification_preferences' => 'array',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
@@ -144,5 +145,35 @@ class User extends Authenticatable
         return $this->school_id !== null
             && $model->school_id !== null
             && $this->school_id === $model->school_id;
+    }
+
+    /**
+     * De soorten mail die een gebruiker kan uitzetten.
+     *
+     * In-app meldingen staan er bewust niet bij: die zijn niet uit te zetten.
+     * Zou dat wel kunnen, dan mist iemand een afgelasting en heeft de school
+     * geen enkele manier meer om hem te bereiken.
+     *
+     * @return array<string, string>
+     */
+    public static function notificationKinds(): array
+    {
+        return [
+            'rapport' => 'Een nieuw rapport voor mijn kind',
+            'doel' => 'Een doel dat gehaald is',
+            'mededeling' => 'Mededelingen van de school',
+            'betaling' => 'Betalingen en herinneringen',
+        ];
+    }
+
+    /**
+     * Wil deze gebruiker dit soort bericht ook per mail?
+     *
+     * Onbekend of leeg betekent ja: een bestaande gebruiker mag niet stilletjes
+     * zijn meldingen kwijtraken doordat er een voorkeur bijkomt.
+     */
+    public function wantsEmail(string $kind): bool
+    {
+        return (bool) ($this->notification_preferences[$kind] ?? true);
     }
 }

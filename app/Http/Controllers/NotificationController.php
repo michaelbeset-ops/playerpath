@@ -23,7 +23,9 @@ class NotificationController extends Controller
             ->get()
             ->map(fn ($melding) => [
                 'id' => $melding->id,
+                'type' => $melding->data['type'] ?? null,
                 'title' => $melding->data['title'] ?? 'Melding',
+                'body' => $melding->data['body'] ?? null,
                 'url' => $melding->data['url'] ?? null,
                 'player_name' => $melding->data['player_name'] ?? null,
                 'overall_rating' => $melding->data['overall_rating'] ?? null,

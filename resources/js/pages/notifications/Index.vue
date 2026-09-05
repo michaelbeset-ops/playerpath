@@ -3,12 +3,14 @@ import FlashMessage from '@/components/FlashMessage.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ClipboardList } from 'lucide-vue-next';
+import { ClipboardList, Megaphone } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 interface Melding {
     id: string;
+    type: string | null;
     title: string;
+    body: string | null;
     url: string | null;
     player_name: string | null;
     overall_rating: number | null;
@@ -64,7 +66,8 @@ const allesGelezen = () => router.post('/notifications/read', {}, { preserveScro
                         class="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg"
                         :class="melding.read ? 'bg-secondary text-muted-foreground' : 'bg-primary/10 text-primary'"
                     >
-                        <ClipboardList class="size-4" />
+                        <Megaphone v-if="melding.type === 'mededeling'" class="size-4" />
+                        <ClipboardList v-else class="size-4" />
                     </span>
 
                     <div class="min-w-0 flex-1">
@@ -72,6 +75,8 @@ const allesGelezen = () => router.post('/notifications/read', {}, { preserveScro
                             <p class="text-sm font-medium">{{ melding.title }}</p>
                             <p class="shrink-0 text-xs text-muted-foreground">{{ melding.when }}</p>
                         </div>
+
+                        <p v-if="melding.body" class="mt-1 whitespace-pre-line text-sm text-muted-foreground">{{ melding.body }}</p>
 
                         <p v-if="melding.overall_rating !== null" class="tabular mt-1 text-sm text-muted-foreground">
                             De kaart staat nu op <span class="font-semibold text-foreground">{{ melding.overall_rating }}</span>
@@ -83,7 +88,7 @@ const allesGelezen = () => router.post('/notifications/read', {}, { preserveScro
 
             <div v-else class="mt-6 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
                 <p class="font-medium">Nog geen meldingen</p>
-                <p class="mt-1 text-sm text-muted-foreground">Zodra er een rapport wordt ingevuld, lees je het hier.</p>
+                <p class="mt-1 text-sm text-muted-foreground">Zodra er een rapport wordt ingevuld of de school iets laat weten, lees je het hier.</p>
             </div>
         </div>
     </AppLayout>

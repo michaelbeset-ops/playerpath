@@ -2,6 +2,7 @@
 
 namespace App\Support\Navigation;
 
+use App\Models\Announcement;
 use App\Models\Enrollment;
 use App\Models\Group;
 use App\Models\Payment;
@@ -39,6 +40,7 @@ class MainNavigation
             ['section' => 'School', 'title' => 'Trainingen', 'href' => '/trainings', 'icon' => 'trainings', 'allowed' => $user->can('viewAny', Training::class)],
             ['section' => 'School', 'title' => 'Kalender', 'href' => '/calendar', 'icon' => 'calendar', 'allowed' => $user->can('viewAny', Training::class)],
             ['section' => 'School', 'title' => 'Rapporten', 'href' => '/reports', 'icon' => 'reports', 'allowed' => $user->can('viewAny', Report::class)],
+            ['section' => 'School', 'title' => 'Mededelingen', 'href' => '/announcements', 'icon' => 'announcements', 'allowed' => $user->can('viewAny', Announcement::class)],
             ['section' => 'Financieel', 'title' => 'Inschrijvingen', 'href' => '/enrollments', 'icon' => 'enrollments', 'allowed' => $user->can('viewAny', Enrollment::class)],
             ['section' => 'Financieel', 'title' => 'Abonnementen', 'href' => '/subscriptions', 'icon' => 'subscriptions', 'allowed' => $user->can('viewAny', Subscription::class)],
             ['section' => 'Financieel', 'title' => 'Betalingen', 'href' => '/payments', 'icon' => 'payments', 'allowed' => $user->can('viewAny', Payment::class)],

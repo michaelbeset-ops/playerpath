@@ -19,7 +19,10 @@ class DoelBehaald extends Notification implements ShouldQueue
     /** @return list<string> */
     public function via(object $notifiable): array
     {
-        return ['mail', 'database'];
+        // In-app altijd; per mail alleen wie dat aan heeft staan.
+        return $notifiable->wantsEmail('doel')
+            ? ['mail', 'database']
+            : ['database'];
     }
 
     public function toMail(object $notifiable): MailMessage

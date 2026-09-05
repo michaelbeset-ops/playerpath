@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Check, MapPin, Pencil, Trash2, UserCog, X } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { CalendarX2, Check, MapPin, Pencil, RotateCcw, Trash2, UserCog, X } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 
 interface SpelerRij {
     id: number;
@@ -26,6 +26,8 @@ const props = defineProps<{
         note: string | null;
         trainers: { id: number; name: string }[];
         has_passed: boolean;
+        cancelled_at: string | null;
+        cancellation_reason: string | null;
     };
     players: SpelerRij[];
     can: { record: boolean; manage: boolean; delete: boolean };
@@ -35,6 +37,27 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Trainingen', href: '/trainings' },
     { title: props.training.group, href: '/trainings/' + props.training.id },
 ];
+
+// Afzeggen stuurt meteen bericht aan de groep, dus vragen we om een reden:
+// "gaat niet door" zonder waarom levert alleen maar telefoontjes op.
+const toonAfzeggen = ref(false);
+const reden = ref('');
+
+const afzeggen = () => {
+    router.post('/trainings/' + props.training.id + '/afzeggen', { reason: reden.value }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            toonAfzeggen.value = false;
+            reden.value = '';
+        },
+    });
+};
+
+const terugzetten = () => {
+    if (confirm('De training weer in het rooster zetten? De groep krijgt hier geen bericht van.')) {
+        router.delete('/trainings/' + props.training.id + '/afzeggen', { preserveScroll: true });
+    }
+};
 
 const aanwezig = computed(() => props.players.filter((s) => s.status === 'present').length);
 const afgevinkt = computed(() => props.players.filter((s) => s.status !== null).length);
@@ -96,6 +119,61 @@ const verwijderen = () => {
             </div>
 
             <p v-if="training.note" class="mt-4 rounded-lg bg-secondary px-3 py-2 text-sm">{{ training.note }}</p>
+
+            <!-- Afgezegd: blijft in het rooster staan, maar duidelijk gemarkeerd -->
+            <div v-if="training.cancelled_at" class="mt-4 rounded-xl border border-warning/30 bg-warning/10 p-4">
+                <p class="flex items-center gap-2 font-medium text-warning">
+                    <CalendarX2 class="size-4" />
+                    Deze training gaat niet door
+                </p>
+                <p class="mt-1 text-sm">{{ training.cancellation_reason }}</p>
+                <p class="tabular mt-1 text-xs text-muted-foreground">Afgezegd op {{ training.cancelled_at }}, de groep heeft bericht gehad.</p>
+
+                <button
+                    v-if="can.manage"
+                    type="button"
+                    class="mt-3 inline-flex items-center gap-2 text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                    @click="terugzetten"
+                >
+                    <RotateCcw class="size-3.5" />
+                    Toch weer laten doorgaan
+                </button>
+            </div>
+
+            <!-- Afzeggen -->
+            <div v-else-if="can.manage && !training.has_passed" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+                <template v-if="!toonAfzeggen">
+                    <p class="font-medium">Gaat de training niet door?</p>
+                    <p class="mt-1 text-sm text-muted-foreground">
+                        Alle ouders en spelers van {{ training.group }} krijgen meteen bericht, in de app en per e-mail.
+                    </p>
+                    <Button variant="secondary" class="mt-3" @click="toonAfzeggen = true">
+                        <CalendarX2 class="mr-2 size-4" />
+                        Training afzeggen
+                    </Button>
+                </template>
+
+                <form v-else @submit.prevent="afzeggen">
+                    <p class="font-medium">Training afzeggen</p>
+                    <label for="reden" class="mt-3 block text-sm">Waarom gaat het niet door?</label>
+                    <input
+                        id="reden"
+                        v-model="reden"
+                        maxlength="200"
+                        required
+                        placeholder="Het veld staat onder water."
+                        class="mt-1 h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
+                    />
+                    <p class="mt-2 text-xs text-muted-foreground">Dit komt letterlijk in het bericht te staan.</p>
+
+                    <div class="mt-3 flex items-center gap-3">
+                        <Button type="submit" variant="destructive" :disabled="!reden">Afzeggen en iedereen berichten</Button>
+                        <button type="button" class="text-sm text-muted-foreground underline underline-offset-4" @click="toonAfzeggen = false">
+                            Annuleren
+                        </button>
+                    </div>
+                </form>
+            </div>
 
             <!-- Aanwezigheid afvinken (trainer) -->
             <div v-if="can.record" class="mt-6 rounded-xl border border-border bg-card p-5 shadow-sm">
