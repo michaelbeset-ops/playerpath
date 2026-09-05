@@ -8,8 +8,7 @@ use InvalidArgumentException;
  * Alle overzichten die geëxporteerd kunnen worden, in de volgorde van het scherm.
  *
  * Een nieuw overzicht toevoegen: een Export-klasse schrijven en hier in de
- * lijst zetten. Het betalingsoverzicht komt hier straks bij als
- * PaymentsExport::class, zodra Mollie is aangesloten.
+ * lijst zetten. Meerdere tabbladen? Implementeer WorkbookExport.
  */
 class ExportRegistry
 {
@@ -18,6 +17,7 @@ class ExportRegistry
         PlayersExport::class,
         TrainingsExport::class,
         AttendanceExport::class,
+        FinancialExport::class,
     ];
 
     /** @return list<Export> */

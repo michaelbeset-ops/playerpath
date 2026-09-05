@@ -112,7 +112,7 @@ class NavigationTest extends TestCase
 
         $this->assertSame([
             '/dashboard', '/users', '/groups', '/trainings', '/calendar', '/reports',
-            '/subscriptions', '/payments', '/plans', '/exports',
+            '/enrollments', '/subscriptions', '/payments', '/plans', '/exports',
         ], $hrefs);
     }
 

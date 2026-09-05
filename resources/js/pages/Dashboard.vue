@@ -9,6 +9,7 @@ import {
     ClipboardList,
     CreditCard,
     IdCard,
+    Inbox,
     MapPin,
     Star,
     TrendingUp,
@@ -38,6 +39,7 @@ const props = defineProps<{
         trainingsThisWeek: number;
         attendanceRate: { percentage: number | null; present: number; total: number };
         groups: number;
+        pendingEnrollments: number;
     };
     needsAttention?: { id: number; name: string; position: string; overall_rating: number | null; last_report_on: string | null }[];
     attentionAfterDays?: number;
@@ -132,6 +134,23 @@ const kaarten = computed(() => {
                         :href="kaart.href"
                     />
                 </div>
+
+                <!-- Nieuwe inschrijvingen: alleen voor de eigenaar, en alleen als er iets ligt -->
+                <Link
+                    v-if="can?.seeFinance && stats && stats.pendingEnrollments > 0"
+                    href="/enrollments"
+                    class="mt-4 flex items-center gap-3 rounded-xl border border-warning/40 bg-warning/5 p-4 transition hover:border-warning"
+                >
+                    <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-warning/10 text-warning">
+                        <Inbox class="size-5" />
+                    </span>
+                    <div class="min-w-0 flex-1">
+                        <p class="font-medium">
+                            {{ stats.pendingEnrollments }} {{ stats.pendingEnrollments === 1 ? 'nieuwe inschrijving' : 'nieuwe inschrijvingen' }}
+                        </p>
+                        <p class="text-xs text-muted-foreground">Wacht op je goedkeuring.</p>
+                    </div>
+                </Link>
 
                 <!-- Snelle acties: alleen wat deze rol echt mag -->
                 <div class="mt-4 flex flex-wrap gap-2">

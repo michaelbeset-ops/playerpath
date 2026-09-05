@@ -77,6 +77,7 @@ const url = (overzicht: Overzicht, format: 'csv' | 'xlsx') => {
                             <p class="mt-0.5 text-sm text-muted-foreground">{{ overzicht.description }}</p>
                             <p v-if="overzicht.supportsDateRange" class="mt-1 text-xs text-muted-foreground">
                                 Periode {{ periode.from }} t/m {{ periode.to }}
+                                <span v-if="overzicht.key === 'financial'"> &middot; openstaand en abonnementen altijd volledig</span>
                             </p>
                         </div>
                     </div>
@@ -102,7 +103,8 @@ const url = (overzicht: Overzicht, format: 'csv' | 'xlsx') => {
             </div>
 
             <p class="mt-6 text-xs text-muted-foreground">
-                Het betalingsoverzicht komt hier bij zodra Mollie is aangesloten. De opzet is daar al op voorbereid.
+                Het financiële overzicht bevat in Excel vier tabbladen; als CSV krijg je alleen de betalingen. Zodra Mollie is
+                aangesloten komen de echte incassogegevens hier automatisch in.
             </p>
         </div>
     </AppLayout>

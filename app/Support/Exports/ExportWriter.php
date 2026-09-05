@@ -34,13 +34,29 @@ class ExportWriter
             $writer = $format === 'csv' ? $this->csv() : new XlsxWriter;
 
             $writer->openToFile('php://output');
-            $writer->addRow(Row::fromValues($export->headings()));
 
-            foreach ($export->rows($filters) as $rij) {
-                $writer->addRow(Row::fromValues(array_map(
-                    fn ($waarde) => $waarde ?? '',
-                    array_values($rij),
-                )));
+            // Excel krijgt alle tabbladen; CSV kent er maar één en krijgt het hoofdtabblad.
+            $sheets = ($format === 'xlsx' && $export instanceof WorkbookExport)
+                ? $export->sheets($filters)
+                : [new Sheet($export->title(), $export->headings(), $export->rows($filters))];
+
+            foreach ($sheets as $index => $sheet) {
+                if ($index > 0) {
+                    $writer->addNewSheetAndMakeItCurrent();
+                }
+
+                if ($writer instanceof XlsxWriter) {
+                    $writer->getCurrentSheet()->setName(mb_substr($sheet->title, 0, 31));
+                }
+
+                $writer->addRow(Row::fromValues($sheet->headings));
+
+                foreach ($sheet->rows as $rij) {
+                    $writer->addRow(Row::fromValues(array_map(
+                        fn ($waarde) => $waarde ?? '',
+                        array_values($rij),
+                    )));
+                }
             }
 
             $writer->close();

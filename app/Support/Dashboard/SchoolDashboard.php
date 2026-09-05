@@ -5,6 +5,7 @@ namespace App\Support\Dashboard;
 use App\Enums\AttendanceStatus;
 use App\Enums\PlayerPosition;
 use App\Models\Attendance;
+use App\Models\Enrollment;
 use App\Models\Group;
 use App\Models\Player;
 use App\Models\Report;
@@ -37,6 +38,7 @@ class SchoolDashboard
             'trainingsThisWeek' => Training::whereBetween('starts_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
             'attendanceRate' => $this->opkomst(),
             'groups' => Group::where('is_active', true)->count(),
+            'pendingEnrollments' => Enrollment::pending()->count(),
         ];
     }
 

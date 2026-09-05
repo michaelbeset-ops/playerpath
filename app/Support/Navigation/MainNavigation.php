@@ -2,6 +2,7 @@
 
 namespace App\Support\Navigation;
 
+use App\Models\Enrollment;
 use App\Models\Group;
 use App\Models\Payment;
 use App\Models\Player;
@@ -36,6 +37,7 @@ class MainNavigation
             ['title' => 'Trainingen', 'href' => '/trainings', 'icon' => 'trainings', 'allowed' => $user->can('viewAny', Training::class)],
             ['title' => 'Kalender', 'href' => '/calendar', 'icon' => 'calendar', 'allowed' => $user->can('viewAny', Training::class)],
             ['title' => 'Rapporten', 'href' => '/reports', 'icon' => 'reports', 'allowed' => $user->can('viewAny', Report::class)],
+            ['title' => 'Inschrijvingen', 'href' => '/enrollments', 'icon' => 'enrollments', 'allowed' => $user->can('viewAny', Enrollment::class)],
             ['title' => 'Abonnementen', 'href' => '/subscriptions', 'icon' => 'subscriptions', 'allowed' => $user->can('viewAny', Subscription::class)],
             ['title' => 'Betalingen', 'href' => '/payments', 'icon' => 'payments', 'allowed' => $user->can('viewAny', Payment::class)],
             ['title' => 'Tarieven', 'href' => '/plans', 'icon' => 'plans', 'allowed' => $user->can('viewAny', Plan::class)],

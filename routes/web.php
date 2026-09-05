@@ -26,4 +26,5 @@ Route::middleware(['auth', 'verified'])->group(function () {
 require __DIR__.'/players.php';
 require __DIR__.'/trainings.php';
 require __DIR__.'/billing.php';
+require __DIR__.'/enrollments.php';
 require __DIR__.'/settings.php';

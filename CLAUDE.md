@@ -429,12 +429,36 @@ lopen.
 De kaart is bewust donker, ook binnen de lichte admin-schil: dat is de
 speler/ouder-kant van het merk (hoofdstuk 4).
 
+### Inschrijvingen
+
+Elke school heeft een **openbaar inschrijfformulier** op `/inschrijven/{slug}`.
+Dat is, naast de gedeelde kaart, de enige route zonder inlog; de school komt
+daar wél uit de URL, want er is geen ingelogde gebruiker. `HandleInertiaRequests`
+zet de app-props voor `enroll.*` leeg, net als voor de kaart.
+
+Een inschrijving is een **aparte tabel** (`enrollments`), geen speler. Pas als
+de eigenaar goedkeurt (`Actions/Enrollments/ApproveEnrollment`) ontstaan in één
+transactie de speler, het ouderaccount (of de koppeling aan een bestaand account
+van dezelfde school) en het abonnement. Zo komt er nooit ongevraagd iemand in
+het ledenbestand. Hoort het e-mailadres van de ouder bij een andere school, dan
+stopt de goedkeuring: een account hoort bij precies één school.
+
+Wat concurrenten (ClubCollect, VreugdOnline, Waresport) allemaal hebben en wij
+nu ook: online inschrijven met tariefkeuze, een realtime beeld van ontvangen en
+openstaand, een lijst met wie nog moet betalen inclusief contactgegevens, en
+exports voor de boekhouder. Wat zij extra doen en bij ons bij Mollie hoort:
+automatische herinneringen bij mislukte incasso's.
+
 ### Overzichten exporteren
 
 `Support/Exports`: een `Export`-interface, `ExportRegistry` en `ExportWriter`.
 **Een nieuw overzicht is één klasse plus een regel in het register**; scherm en
 writer zijn generiek. Het betalingsoverzicht komt er zo bij zodra Mollie is
 aangesloten.
+
+Meerdere tabbladen? Implementeer `WorkbookExport` en geef `Sheet`s terug; CSV
+krijgt dan alleen het hoofdtabblad. `FinancialExport` is het voorbeeld: Overzicht
+per maand, Betalingen, Openstaand (met wie je moet bellen) en Abonnementen.
 
 CSV gaat met **puntkomma en BOM**, anders propt Nederlands Excel alles in één
 kolom. Geld in exports: pas in `rows()` van centen naar een getal in euro's,

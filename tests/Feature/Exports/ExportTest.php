@@ -45,10 +45,11 @@ class ExportTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('exports/Index')
-                ->count('exports', 3)
+                ->count('exports', 4)
                 ->where('exports.0.key', 'players')
                 ->where('exports.1.key', 'trainings')
                 ->where('exports.2.key', 'attendance')
+                ->where('exports.3.key', 'financial')
             );
     }
 
@@ -175,12 +176,42 @@ class ExportTest extends TestCase
             ->assertSessionHasErrors('to');
     }
 
+    public function test_het_financiele_werkboek_heeft_vier_tabbladen_en_rekent_in_euros(): void
+    {
+        $speler = Player::factory()->for($this->school)->create(['first_name' => 'Sem', 'last_name' => 'de Vries']);
+
+        \App\Models\Payment::factory()->for($this->school)->paid()->create([
+            'player_id' => $speler->id, 'amount_cents' => 2750, 'due_on' => '2026-09-08', 'paid_at' => '2026-09-05',
+        ]);
+        \App\Models\Payment::factory()->for($this->school)->create([
+            'player_id' => $speler->id, 'amount_cents' => 1250, 'due_on' => '2026-09-08',
+        ]);
+
+        $export = app(\App\Support\Exports\FinancialExport::class);
+        $sheets = $export->sheets(['from' => '2026-09-01', 'to' => '2026-09-30']);
+
+        $this->assertSame(['Overzicht', 'Betalingen', 'Openstaand', 'Abonnementen'], array_map(fn ($s) => $s->title, $sheets));
+
+        $overzicht = iterator_to_array($sheets[0]->rows);
+        $this->assertSame('September 2026', $overzicht[0][0]);
+        $this->assertSame(27.5, $overzicht[0][1], 'Ontvangen als getal in euro, niet als tekst.');
+        $this->assertSame(12.5, $overzicht[0][2]);
+        $this->assertSame('Totaal', $overzicht[1][0]);
+
+        $openstaand = iterator_to_array($sheets[2]->rows);
+        $this->assertCount(1, $openstaand);
+        $this->assertSame(12.5, $openstaand[0][4]);
+
+        // Excel-download werkt met meerdere tabbladen.
+        $this->actingAs($this->eigenaar)->get('/exports/financial?format=xlsx')->assertOk();
+    }
+
     public function test_het_register_is_uitbreidbaar(): void
     {
         $registry = app(ExportRegistry::class);
 
         $this->assertTrue($registry->has('players'));
-        $this->assertFalse($registry->has('payments'), 'Het betalingsoverzicht komt pas als Mollie is aangesloten.');
+        $this->assertTrue($registry->has('financial'));
         $this->assertSame('Trainingen', $registry->find('trainings')->title());
     }
 }
