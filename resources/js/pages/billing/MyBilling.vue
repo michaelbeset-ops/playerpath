@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/vue3';
-import { Receipt } from 'lucide-vue-next';
+import { Head, router } from '@inertiajs/vue3';
+import { CreditCard, Receipt } from 'lucide-vue-next';
+import { ref } from 'vue';
 
 defineProps<{
     players: {
@@ -27,6 +28,7 @@ defineProps<{
         due_on: string;
         paid_at: string | null;
         is_overdue: boolean;
+        payable: boolean;
     }[];
     outstanding: string;
     hasOutstanding: boolean;
@@ -34,6 +36,15 @@ defineProps<{
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Mijn abonnement', href: '/billing' }];
+
+// Welke betaling op dit moment onderweg is naar de provider. Zonder dit kun je
+// twee keer klikken en sta je twee keer bij de bank.
+const bezig = ref<number | null>(null);
+
+const betaal = (id: number) => {
+    bezig.value = id;
+    router.post('/billing/payments/' + id + '/betalen', {}, { onFinish: () => (bezig.value = null) });
+};
 
 const kleurVoor = (status: string) => {
     if (status === 'paid') {
@@ -118,6 +129,17 @@ const kleurVoor = (status: string) => {
                         <span class="shrink-0 rounded-lg px-2 py-1 text-xs font-medium" :class="kleurVoor(betaling.status)">
                             {{ betaling.status_label }}
                         </span>
+
+                        <button
+                            v-if="betaling.payable"
+                            type="button"
+                            class="inline-flex h-9 shrink-0 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+                            :disabled="bezig === betaling.id"
+                            @click="betaal(betaling.id)"
+                        >
+                            <CreditCard class="mr-2 size-4" />
+                            {{ bezig === betaling.id ? 'Bezig…' : 'Nu betalen' }}
+                        </button>
                     </div>
                 </div>
 

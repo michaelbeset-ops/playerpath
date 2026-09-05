@@ -2,11 +2,16 @@
 
 namespace App\Support\Payments;
 
+use App\Models\Payment;
+
 /**
  * De stand van zaken zolang er geen betaalprovider is aangesloten.
  *
  * Bewust een echte implementatie en geen null: zo kan elk scherm gewoon de
  * gateway vragen hoe het ervoor staat, in plaats van overal te raden.
+ *
+ * Betalen gooit een exception in plaats van te doen alsof. Een nepbetaling is
+ * het ergste wat een boekhouding kan overkomen.
  */
 class NotConnectedGateway implements PaymentGateway
 {
@@ -24,5 +29,15 @@ class NotConnectedGateway implements PaymentGateway
     {
         return 'Betalingen zijn nog niet aangesloten. Je kunt abonnementen en bedragen alvast inrichten; '
             .'zodra Mollie gekoppeld is, gaan betalingen automatisch lopen.';
+    }
+
+    public function start(Payment $payment, string $returnUrl, string $webhookUrl): RemotePayment
+    {
+        throw GatewayNotConnected::make();
+    }
+
+    public function fetch(string $reference): RemotePayment
+    {
+        throw GatewayNotConnected::make();
     }
 }

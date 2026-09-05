@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use App\Support\Payments\MollieGateway;
 use App\Support\Payments\NotConnectedGateway;
 use App\Support\Payments\PaymentGateway;
 use App\Support\Tenancy\Tenancy;
+use Mollie\Api\MollieApiClient;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -14,10 +16,22 @@ class AppServiceProvider extends ServiceProvider
         // Eén instantie per request: de actieve school.
         $this->app->singleton(Tenancy::class);
 
-        // De betaalprovider. Zolang er geen koppeling is, zegt de app dat
-        // overal eerlijk en maakt hij zelf geen betalingen aan. Mollie
-        // aansluiten is straks: een MollieGateway schrijven en hem hier binden.
-        $this->app->singleton(PaymentGateway::class, fn () => new NotConnectedGateway);
+        // De betaalprovider. Zonder sleutel in .env blijft alles op
+        // NotConnectedGateway staan: de schermen zeggen dat eerlijk en er wordt
+        // nooit een betaling gestart. Een sleutel toevoegen is genoeg om de
+        // hele keten aan te zetten; aan de schermen verandert er niets.
+        $this->app->singleton(MollieApiClient::class, function () {
+            $client = new MollieApiClient;
+            $client->setApiKey((string) config('services.mollie.key'));
+
+            return $client;
+        });
+
+        $this->app->singleton(PaymentGateway::class, function ($app) {
+            return blank(config('services.mollie.key'))
+                ? new NotConnectedGateway
+                : new MollieGateway($app->make(MollieApiClient::class));
+        });
     }
 
     public function boot(): void

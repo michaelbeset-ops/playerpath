@@ -35,6 +35,7 @@ class Payment extends Model
             'method' => PaymentMethod::class,
             'due_on' => 'date',
             'paid_at' => 'datetime',
+            'reminded_at' => 'datetime',
         ];
     }
 

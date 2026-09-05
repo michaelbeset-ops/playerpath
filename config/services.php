@@ -28,6 +28,12 @@ return [
         'key' => env('RESEND_KEY'),
     ],
 
+    // Betalingen. Zonder sleutel blijft de app op NotConnectedGateway staan
+    // en wordt er nergens een betaling gestart; zie AppServiceProvider.
+    'mollie' => [
+        'key' => env('MOLLIE_KEY'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

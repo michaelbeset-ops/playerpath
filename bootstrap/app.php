@@ -25,6 +25,9 @@ return Application::configure(basePath: dirname(__DIR__))
             '::1',
         ]);
 
+        // De webhook komt van Mollie, niet uit een browser met een sessie.
+        $middleware->validateCsrfTokens(except: ['webhooks/mollie']);
+
         // SetCurrentSchool staat bewust vóór Inertia: alles wat daarna draait
         // (inclusief gedeelde props) werkt al binnen de juiste school.
         $middleware->web(append: [

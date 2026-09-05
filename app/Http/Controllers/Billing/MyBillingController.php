@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Billing;
 
+use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Player;
@@ -63,6 +64,9 @@ class MyBillingController extends Controller
                 'due_on' => $betaling->due_on->format('d-m-Y'),
                 'paid_at' => $betaling->paid_at?->format('d-m-Y'),
                 'is_overdue' => $betaling->isOverdue(),
+                // Alleen aanbieden wat echt kan: zonder provider is er niets
+                // te betalen, en een voldane betaling hoort geen knop te hebben.
+                'payable' => $this->gateway->isConnected() && $betaling->status !== PaymentStatus::Paid,
             ]);
 
         $openstaand = (int) Payment::whereIn('player_id', $spelerIds)->outstanding()->sum('amount_cents');
