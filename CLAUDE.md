@@ -545,7 +545,7 @@ houdt, en dus niet mag sneuvelen:
 ## 6. Werkwijze
 
 - **Fase voor fase.** Het bouwplan staat in `bouwplan-keepersplatform-claude-code.md`
-  (fase 0 t/m 8). Begin een fase pas als de vorige werkt en getest is.
+  (fase 0 t/m 12); de feature-scope in `FEATURES.md`. Begin een fase pas als de vorige werkt en getest is.
 - **Nooit vooruitlopen.** Bouw alleen wat in de huidige fase staat.
 - Kleine, werkende stappen. Na elke werkende stap: **git commit**.
 - Bij onduidelijkheid of dubbelzinnigheid: **eerst vragen, niet gokken**.
@@ -554,15 +554,21 @@ houdt, en dus niet mag sneuvelen:
 
 ### Fase-status
 
+Volledige scope en status per feature: `FEATURES.md`. Volgorde: het bouwplan.
+
 - [x] Fase 0 — Projectopzet & fundament
 - [x] Fase 1 — Datamodel & multi-tenancy
 - [x] Fase 2 — Rapport → spelerskaart
-- [x] Fase 3 — Spelers- & groepsbeheer
-- [x] Fase 4 — Planning & aanwezigheid
-- [x] Fase 5 — Voortgang & ouder-ervaring
-- [x] Fase 6 — Eigenaar-dashboard
-- [~] Fase 7 — Betalingen: schermen en model klaar, Mollie nog niet aangesloten
-- [ ] Fase 8 — Productie & lancering
+- [x] Fase 3 — Spelers- & groepsbeheer (later: Gebruikers)
+- [x] Fase 4 — Planning & aanwezigheid (+ kalender, trainers per training)
+- [x] Fase 5 — Voortgang & ouder-ervaring (+ verzamelkaart)
+- [x] Fase 6 — Eigenaar-dashboard (+ exports, online inschrijven)
+- [ ] Fase 7 — Ontwikkelingsdoelen
+- [ ] Fase 8 — Inschrijven compleet & digitaal ondertekenen
+- [ ] Fase 9 — Betalingen (Mollie): schermen en model staan, koppeling niet
+- [ ] Fase 10 — Communicatie
+- [ ] Fase 11 — White-label & subdomein
+- [ ] Fase 12 — Productie & lancering (PWA, deploy)
 
 ---
 

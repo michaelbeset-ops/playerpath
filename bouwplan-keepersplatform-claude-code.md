@@ -2,9 +2,12 @@
 
 Gefaseerd stappenplan om het systeem te bouwen in **Laravel + Inertia + Vue**,
 op dezelfde manier als je B-Organized aanpakt: met Claude Code, een CLAUDE.md
-als kompas, en fase voor fase. **Betalingen (Mollie) komen bewust pas aan het
-eind** — je bouwt eerst een compleet werkend product en zet daarna pas het
-gevoeligste stuk erop.
+als kompas, en fase voor fase. **Betalingen (Mollie) komen bewust pas laat** —
+je bouwt eerst een compleet werkend product en zet daarna pas het gevoeligste
+stuk erop.
+
+De volledige feature-scope (must-have, ontwikkelingslaag, later) staat in
+`FEATURES.md`. Dit bouwplan is de volgorde waarin die scope gebouwd wordt.
 
 ## Werkwijze (zo gebruik je dit plan)
 
@@ -17,149 +20,138 @@ gevoeligste stuk erop.
 
 ---
 
-## CLAUDE.md — schrijf dit eerst
+## CLAUDE.md — schrijf dit eerst ✅
 
-Voordat je begint met bouwen, zet je een `CLAUDE.md` in de root met de regels
-waar Claude Code zich aan moet houden. Neem hierin op:
-
-- **Wat het is:** SaaS-platform voor keeper- en voetbalscholen. Meerdere scholen
-  (tenants) in één systeem, elk met eigen data.
-- **Stack:** Laravel + Inertia + Vue + Tailwind. Fortify voor auth,
-  spatie/laravel-permission voor rollen, PrimeVue voor admin-UI, Mollie +
-  Laravel Cashier voor betalingen (pas in de laatste fase).
-- **Multi-tenancy (harde regel):** elke tabel met klantdata krijgt een
-  `school_id`. Scoping gebeurt **altijd server-side** via één centrale scope-laag
-  (global scope + middleware) — nooit alleen in de UI verbergen. Een school mag
-  nooit data van een andere school kunnen zien.
-- **Rollen:** eigenaar, trainer, ouder, speler.
-- **Geld:** altijd als integers in centen (of decimal), **nooit als float**.
-- **Taal:** alles volledig in het Nederlands — UI, e-mails, validatie- en
-  foutmeldingen.
-- **Huisstijl:** leg je kleuren, font en afrondingen vast (zoals je bij
-  B-Organized deed), zodat de UI consistent blijft.
+Staat in de root. Bevat stack, harde regels (multi-tenancy server-side, geld in
+centen, alles Nederlands), huisstijl (licht voor beheer, donker voor de
+spelerskant), datamodel en de valkuilen die onderweg gevonden zijn.
 
 ---
 
-## Fase 0 — Projectopzet & fundament
+## Fase 0 — Projectopzet & fundament ✅
 
-**Doel:** een lege maar draaiende app met inloggen.
+Laravel Vue starter kit, Herd + SQLite, Fortify, git, leeg dashboard met navigatie.
 
-- Scaffolden met de **officiële Laravel Vue starter kit** (Laravel + Inertia +
-  Vue + Tailwind + Vite).
-- Lokaal draaien met **Laravel Herd + SQLite** (zero-config; MySQL pas voor
-  productie).
-- Git repo opzetten, eerste commit.
-- **Fortify** voor auth (inloggen, e-mailverificatie; zelfregistratie later
-  bepalen).
-- Basis-layout: een leeg dashboard-skelet met navigatie.
+## Fase 1 — Datamodel & multi-tenancy ✅
 
-**Klaar wanneer:** je kunt inloggen en een leeg dashboard zien.
+School, User, Speler, Groep, ouder-koppeling. `school_id` op elke tabel, één
+centrale scope-laag (fail-closed), rollen met policies. Bewezen met tests dat
+school A niets van school B ziet.
 
-## Fase 1 — Datamodel & multi-tenancy (de ruggengraat)
+## Fase 2 — Het kloppend hart: rapport → spelerskaart ✅
 
-**Doel:** de datastructuur en de waterdichte scheiding tussen scholen. Dit is
-het belangrijkste fundament — hier niet haasten.
+Rapport in ~30 seconden (voorgevuld, één tik per cijfer, cijfertoetsen),
+keeper- en veldspelercategorieën, doorrekening naar overall + sub-scores.
 
-- Kern-entiteiten en relaties:
-  - **School** (de tenant)
-  - **User** (hoort bij één school, heeft een rol)
-  - **Speler** (hoort bij een school; keeper of veldspeler; leeftijdscategorie)
-  - **Groep** (trainingsgroep / leeftijdscategorie)
-  - **Ouder-koppeling** (welke ouder hoort bij welke speler)
-  - *(Rapport, Training, Betaling komen in latere fases erbij)*
-- **Multi-tenancy:** `school_id` op elke tabel, plus een centrale scope-laag die
-  alles automatisch filtert op de ingelogde school. Server-side, één plek.
-- **Rollen** met spatie/laravel-permission: eigenaar, trainer, ouder, speler +
-  policies die bepalen wie wat mag.
-- Migrations, models, relaties en policies.
+## Fase 3 — Spelers- & groepsbeheer ✅
 
-**Klaar wanneer:** je kunt (als test) twee scholen aanmaken en bewijzen dat de
-één de data van de ander niet kan zien.
+Spelers toevoegen/bewerken, groepen, ouders koppelen en uitnodigen. Later
+uitgebreid tot **Gebruikers** (spelers, trainers, ouders in één scherm).
 
-## Fase 2 — Het kloppend hart: rapport → spelerskaart
+## Fase 4 — Planning & aanwezigheid ✅
 
-**Doel:** het onderscheidende deel als eerste werkend. Eén compleet spoor van
-begin tot eind.
+Trainingen (wekelijks herhalen, meerdere trainers, locatie), kalender maand/week,
+afvinken door trainer, aan-/afmelden door ouder/speler.
 
-- **Rapport invullen** (trainer): het 30-seconden-scherm met scores per
-  categorie. Keeper-categorieën (reflexen, uitkomen, voetenwerk, 1-op-1, hoge
-  ballen, communicatie) vs veldspeler-categorieën.
-- **Doorrekenen naar de spelerskaart:** overall rating + sub-scores op basis van
-  de rapporten.
-- **Spelerskaart tonen** (speler/ouder): de FIFA-kaart met de actuele cijfers.
+## Fase 5 — Voortgang & ouder-ervaring ✅
 
-**Klaar wanneer:** een trainer vult een rapport in en de spelerskaart verandert
-zichtbaar mee. Dit is de kern van je product — als dit staat, staat het hart.
+Groeigrafieken, tijdlijn, meldingen (app + mail via queue), kaart met niveau,
+badges en publieke deel-link. Later: de kaart als verzamelkaart.
 
-## Fase 3 — Spelers- & groepsbeheer
+## Fase 6 — Eigenaar-dashboard ✅
 
-**Doel:** de school kan zijn spelers beheren.
+Kerncijfers, aandachtslijst, komende trainingen, financieel vak, snelle acties.
+Plus: overzichten met export (spelers, trainingen, aanwezigheid, financieel
+werkboek) en online inschrijven met goedkeuring door de eigenaar.
 
-- Spelers toevoegen/bewerken, indelen in groepen en leeftijdscategorieën.
-- Spelersoverzicht (tabel, filterbaar) + spelersdetail.
-- Ouders koppelen aan hun kind(eren).
+---
 
-**Klaar wanneer:** een eigenaar kan zijn hele ledenbestand opzetten en beheren.
+## Fase 7 — Ontwikkelingsdoelen (O2)
 
-## Fase 4 — Planning & aanwezigheid
+**Doel:** het onderscheid verstevigen vóór de commerciële features. Een trainer
+stelt per speler meetbare doelen, en ouder en speler zien de weg ernaartoe.
 
-**Doel:** trainingen organiseren.
+- Doel per speler: categorie, streefcijfer, periode (bijv. "Uitkomen naar 80
+  vóór 1 december"), gesteld door de trainer, zichtbaar voor ouder en speler.
+- Voortgang t.o.v. het doel op de kaart, de voortgangspagina en in de tijdlijn;
+  melding en badge bij behalen.
+- Doelen meenemen in het rapport-invulscherm zonder het ritme van 30 seconden
+  te breken (een klein "op koers / niet op koers" naast de categorie).
+- Overzicht voor de eigenaar: hoeveel spelers hebben een actief doel.
 
-- Trainingen inplannen (agenda/rooster), gekoppeld aan groepen.
-- Aanwezigheid afvinken per training.
-- Speler/ouder ziet komende trainingen en kan zich aan-/afmelden.
+**Klaar wanneer:** een trainer zet een doel, vult een rapport in, en de ouder
+ziet de groei richting het doel — met een mijlpaal als het gehaald is.
 
-**Klaar wanneer:** je kunt een training plannen, de groep ziet 'm, en
-aanwezigheid werkt.
+## Fase 8 — Inschrijven compleet & digitaal ondertekenen (M8, rest van M1)
 
-## Fase 5 — Voortgang & ouder-ervaring
+**Doel:** de inschrijving juridisch en praktisch compleet, zonder dat daar al
+geld voor hoeft te lopen.
 
-**Doel:** de features die klanten vasthouden (je onderscheiders 2 en 3).
+- Documenten per school (toestemming, AVG/privacy, gedragscode), met versies.
+- Digitaal ondertekenen in het inschrijfformulier: naam, tijdstip, IP,
+  documentversie; opslag bij de inschrijving en later bij de speler.
+- Opnieuw laten tekenen als een document een nieuwe versie krijgt; overzicht
+  voor de eigenaar van wie nog niet getekend heeft.
+- Bewaartermijn en verwijderen volgens AVG (verzoek van ouder → export en
+  wissen).
 
-- **Voortgang:** grafiek van de groei per categorie over de tijd.
-- **Ouder-tijdlijn:** feed met nieuwe rapporten, highlights, kwartaal-terugblik.
-- **Meldingen:** in-app + e-mail (via Brevo) bij een nieuw rapport e.d.
-  Op de achtergrond via **queues (Redis)**.
-- **FIFA-kaart aankleden:** seizoen/level, mijlpalen, badges, deel-functie.
+**Klaar wanneer:** een ouder schrijft in, tekent de documenten, en de eigenaar
+ziet bij goedkeuring precies wat er getekend is en wanneer.
 
-**Klaar wanneer:** een ouder krijgt een melding bij een nieuw rapport, ziet de
-groei van z'n kind, en de kaart voelt levend.
+## Fase 9 — Betalingen (Mollie + Cashier) (M2)
 
-## Fase 6 — Eigenaar-dashboard
+**Doel:** het gevoeligste onderdeel, bewust op een product dat verder al werkt.
 
-**Doel:** overzicht voor de schooleigenaar.
-
-- Kerncijfers (aantal spelers, komende trainingen, later: omzet).
-- Overzichten en snelle acties.
-- Voorbereiding van het financiële overzicht (de echte betaalcijfers komen in
-  fase 7).
-
-**Klaar wanneer:** de eigenaar heeft één scherm met grip op zijn school.
-
-## Fase 7 — Betalingen (Mollie + Cashier) — het laatste, aparte stuk
-
-**Doel:** het gevoeligste onderdeel, bewust als laatste, op een al werkend
-product.
-
-- **Mollie** account + **Laravel Cashier (Mollie)** installeren.
-- Inschrijven mét betalen: **iDEAL** (eenmalig) en **SEPA-incasso** (maandelijks
-  abonnement).
-- Abonnementen per ouder/speler beheren; storneringen afhandelen.
-- Betaaloverzicht, automatische herinneringen, en het financiële dashboard
+- Mollie-account + Laravel Cashier (Mollie); `MollieGateway` achter de bestaande
+  `PaymentGateway`-naad.
+- Drie betaalmodellen: **abonnement** (maandelijkse SEPA-incasso), **eenmalig**
+  (iDEAL) en **termijnen** (een bedrag in N delen; nieuw in het model).
+- Betaalstart vanuit de inschrijving: gezin kiest plan, na goedkeuring start de
+  eerste betaling of het mandaat automatisch.
+- Webhooks, storneringen, mislukte incasso's en **automatische herinneringen**
+  (dit doen alle concurrenten; hier moeten we mee).
+- Betalingsoverzicht in de exports met echte incassodata; financieel dashboard
   afmaken.
 
 **Klaar wanneer:** een ouder schrijft in, betaalt via iDEAL of incasso, en de
 eigenaar ziet de betaling terug. Test dit grondig — dit is waar fouten het
 meest pijn doen.
 
-## Fase 8 — Productie & lancering
+## Fase 10 — Communicatie (M6)
 
-**Doel:** live en klaar voor je eerste school.
+**Doel:** de school bereikt ouders zonder WhatsApp-groepen.
+
+- Mededelingen van school naar alle ouders of naar een groep (afgelasting,
+  nieuws, oproep), in de app en per e-mail via de queue.
+- Berichteninbox voor ouders en spelers; meldingsvoorkeuren.
+- Voorbereiding op push (komt met de PWA in fase 12).
+
+**Klaar wanneer:** de eigenaar zegt een training af en elke ouder van die groep
+weet het binnen een minuut.
+
+## Fase 11 — White-label & subdomein (M10)
+
+**Doel:** elke school voelt de app als de zijne.
+
+- Logo en kleuren per school (instelling, geen aparte versie), zichtbaar in de
+  app, op de kaart, in het inschrijfformulier en in e-mails.
+- Eigen subdomein per school (`xtra.playerpath.nl`). Let op: het subdomein
+  bepaalt de **branding en de inlogpagina**, nooit de dataschieding — die blijft
+  uit het ingelogde account komen (CLAUDE.md 3.1).
+- E-mails uit naam van de school.
+
+**Klaar wanneer:** twee scholen draaien naast elkaar met eigen logo, kleuren en
+adres, en zien nog steeds niets van elkaar.
+
+## Fase 12 — Productie & lancering (M7 + deploy)
+
+**Doel:** live en klaar voor de eerste school.
 
 - **PWA-laag** (vite-plugin-pwa): installeerbaar op mobiel met app-gevoel voor
-  spelers/ouders. Bewust geen offline-caching van financiële data.
+  trainers én ouders/spelers; push-meldingen. Bewust geen offline-caching van
+  financiële data.
 - Deploy naar **Hetzner via Laravel Forge**: MySQL + Redis, object storage (EU),
-  mail via Brevo.
+  mail via Brevo, queue-worker onder supervisor.
 - Security-hardening, backups, e-mailverificatie aan.
 - Onboarding-flow: hoe zet je een nieuwe school (Rob en Yoel als eerste) erin.
 
@@ -167,16 +159,21 @@ meest pijn doen.
 
 ---
 
+## Later (niet in een fase)
+
+Video-analyse, oefeningenbibliotheek, tryout-workflows, scouting, leaderboards
+tussen scholen. Pas als de eerste scholen live draaien en erom vragen.
+
+---
+
 ## Principes om vast te houden
 
-- **Fundament vóór schermen.** Fase 0 en 1 (datamodel + multi-tenancy) bepalen
-  alles daarna. Daar niet haasten.
+- **Fundament vóór schermen.** Fase 0 en 1 bepalen alles daarna.
 - **Bouw alleen wat elke school kan gebruiken.** School-specifieke wensen worden
   een instelling (aan/uit), geen aparte versie.
 - **Test na elke fase.** Kleine, werkende stappen kloppen bijna altijd; grote
   sprongen breken.
 - **De rapport-invoer is je belangrijkste UX.** Als dat niet in ~30 seconden
-  kan, blijven de kaarten leeg en stort je onderscheid in. Fase 2 is niet "af"
-  tot dat scherm echt snel is.
-- **Betalingen laatst en apart.** Precies zoals je nu plant — eerst een compleet
-  werkend product, dan pas het geld erop.
+  kan, blijven de kaarten leeg en stort je onderscheid in.
+- **Betalingen laat en apart.** Eerst een compleet werkend product, dan pas het
+  geld erop.
