@@ -3,6 +3,7 @@
 namespace App\Support\Payments;
 
 use App\Models\Payment;
+use App\Models\Player;
 
 /**
  * De naad waar de betaalprovider inklikt.
@@ -31,9 +32,13 @@ interface PaymentGateway
      * webhookUrl (waar de waarheid binnenkomt). Die twee zijn niet inwisselbaar:
      * een mens die de browser sluit meldt niets terug, de webhook wel.
      *
+     * Wordt er een klantkenmerk meegegeven, dan is dit een eerste betaling die
+     * meteen een incassomandaat vastlegt: daarna kan er automatisch worden
+     * afgeschreven zonder dat de ouder er nog iets voor hoeft te doen.
+     *
      * @throws GatewayNotConnected
      */
-    public function start(Payment $payment, string $returnUrl, string $webhookUrl): RemotePayment;
+    public function start(Payment $payment, string $returnUrl, string $webhookUrl, ?string $customerReference = null): RemotePayment;
 
     /**
      * Vraag de provider hoe het met deze betaling staat.
@@ -44,4 +49,30 @@ interface PaymentGateway
      * @throws GatewayNotConnected
      */
     public function fetch(string $reference): RemotePayment;
+
+    /**
+     * Het klantkenmerk van deze speler bij de provider, zo nodig aangemaakt.
+     *
+     * @throws GatewayNotConnected
+     */
+    public function ensureCustomer(Player $player): string;
+
+    /**
+     * Mag er van deze klant automatisch afgeschreven worden?
+     *
+     * Een mandaat kan ingetrokken zijn door de bank of de ouder. Dat vragen we
+     * daarom elke incassoronde opnieuw, in plaats van het bij onszelf te
+     * onthouden en er straks naast te zitten.
+     *
+     * @throws GatewayNotConnected
+     */
+    public function hasValidMandate(string $customerReference): bool;
+
+    /**
+     * Schrijf af op een bestaand mandaat. Hier komt geen browser aan te pas:
+     * dit gebeurt in een achtergrondtaak, dus er is ook geen betaalscherm.
+     *
+     * @throws GatewayNotConnected
+     */
+    public function charge(Payment $payment, string $customerReference, string $webhookUrl): RemotePayment;
 }

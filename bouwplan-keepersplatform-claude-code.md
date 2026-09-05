@@ -100,7 +100,7 @@ per speler de gegevens uitdraaien of definitief wissen.
 inschrijving (M8). In overleg geschrapt; het akkoord-vinkje op het
 inschrijfformulier blijft voorlopig wat het is.
 
-## Fase 9 — Betalingen (Mollie) 🟡
+## Fase 9 — Betalingen (Mollie) ✅
 
 **Doel:** het gevoeligste onderdeel, bewust op een product dat verder al werkt.
 
@@ -117,14 +117,15 @@ Gebouwd:
 - Automatische herinneringen `payments:remind`.
 - Betaalstart bij het goedkeuren van een inschrijving.
 
-Nog niet gebouwd:
+- Doorlopende SEPA-incasso: de eerste betaling legt het mandaat vast,
+  `payments:collect` schrijft daarna automatisch af.
 
-- **Doorlopende SEPA-incasso met mandaten.** Nu betaalt een ouder elke rekening
-  zelf; automatisch afschrijven vraagt Mollie-customers, mandaten en een
-  incassoloop, en is pas te verifiëren met een echt Mollie-account.
+**Klaar wanneer:** een ouder schrijft in, betaalt via iDEAL of incasso, en de
+eigenaar ziet de betaling terug. Dat werkt.
 
-**Klaar wanneer:** een ouder schrijft in, betaalt via iDEAL, en de eigenaar
-ziet de betaling terug. Dat werkt; alleen de automatische incasso ontbreekt.
+**Let op:** alles is getest tegen een nagebouwde provider, niet tegen Mollie
+zelf. Voor productie hoort daar een ronde met een Mollie-testaccount overheen:
+eerste betaling, mandaat, incasso, stornering.
 
 ## Fase 10 — Communicatie (M6)
 

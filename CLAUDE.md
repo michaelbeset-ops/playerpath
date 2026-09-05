@@ -594,6 +594,13 @@ houdt, en dus niet mag sneuvelen:
   zodat de som exact klopt.
 - `payments:remind` is ook zonder provider nuttig: drie dagen respijt, hooguit
   eens per twee weken per betaling, alleen naar de ouders van dat kind.
+- **Doorlopende incasso**: de eerste betaling die de ouder zelf doet legt het
+  mandaat vast (`sequenceType: first` met een klantkenmerk op de speler, niet
+  op het ouderaccount — een gezin kan per kind een andere rekening hebben).
+  Daarna schrijft `payments:collect` af. Die ronde vraagt **elke keer opnieuw**
+  of het mandaat nog geldig is in plaats van dat bij onszelf te onthouden: een
+  bank of ouder kan het intrekken, en afschrijven zonder mandaat levert een
+  stornering plus een boze ouder op. Een fout bij één gezin stopt de ronde niet.
 
 ## 6. Werkwijze
 
@@ -618,7 +625,7 @@ Volledige scope en status per feature: `FEATURES.md`. Volgorde: het bouwplan.
 - [x] Fase 6 — Eigenaar-dashboard (+ exports, online inschrijven)
 - [x] Fase 7 — Ontwikkelingsdoelen (doel per categorie, op koers, badge, tijdlijn)
 - [x] Fase 8 — Bewaartermijn, inzage en verwijderen (AVG); ondertekenen geschrapt
-- [~] Fase 9 — Betalingen: Mollie aangesloten voor eenmalige betalingen; doorlopende incasso nog niet
+- [x] Fase 9 — Betalingen (Mollie): eenmalig, doorlopende incasso, termijnen, herinneringen
 - [ ] Fase 10 — Communicatie
 - [ ] Fase 11 — White-label & subdomein
 - [ ] Fase 12 — Productie & lancering (PWA, deploy)

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Billing;
 
 use App\Actions\Payments\SyncPayment;
+use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
@@ -52,6 +53,10 @@ class CheckoutController extends Controller
                 $payment,
                 route('billing.return', $payment),
                 route('webhooks.mollie'),
+                // Staat het abonnement op incasso, dan legt deze eerste
+                // betaling meteen het mandaat vast. Daarna hoeft de ouder er
+                // niets meer voor te doen.
+                $this->klantVoorIncasso($payment),
             );
         } catch (Throwable $e) {
             report($e);
@@ -91,6 +96,20 @@ class CheckoutController extends Controller
                 ? 'Bedankt, we hebben je betaling ontvangen.'
                 : 'De betaling is nog niet afgerond. Zodra hij binnen is zie je dat hier.',
         );
+    }
+
+    /**
+     * Het klantkenmerk als hier een incassomandaat bij hoort, anders null.
+     */
+    private function klantVoorIncasso(Payment $payment): ?string
+    {
+        $abonnement = $payment->subscription;
+
+        if ($abonnement?->payment_method !== PaymentMethod::DirectDebit || $payment->player === null) {
+            return null;
+        }
+
+        return $this->gateway->ensureCustomer($payment->player);
     }
 
     /**

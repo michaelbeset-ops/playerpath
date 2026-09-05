@@ -17,3 +17,6 @@ Schedule::command('payments:remind')->dailyAt('09:00');
 // rekening. Vóór de herinneringen, zodat een verse rekening niet meteen als
 // achterstallig wordt gezien.
 Schedule::command('payments:generate')->dailyAt('08:00');
+
+// De incassoronde, na de facturenloop zodat verse rekeningen meteen meegaan.
+Schedule::command('payments:collect')->dailyAt('08:30');

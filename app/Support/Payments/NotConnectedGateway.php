@@ -3,6 +3,7 @@
 namespace App\Support\Payments;
 
 use App\Models\Payment;
+use App\Models\Player;
 
 /**
  * De stand van zaken zolang er geen betaalprovider is aangesloten.
@@ -31,12 +32,27 @@ class NotConnectedGateway implements PaymentGateway
             .'zodra Mollie gekoppeld is, gaan betalingen automatisch lopen.';
     }
 
-    public function start(Payment $payment, string $returnUrl, string $webhookUrl): RemotePayment
+    public function start(Payment $payment, string $returnUrl, string $webhookUrl, ?string $customerReference = null): RemotePayment
     {
         throw GatewayNotConnected::make();
     }
 
     public function fetch(string $reference): RemotePayment
+    {
+        throw GatewayNotConnected::make();
+    }
+
+    public function ensureCustomer(Player $player): string
+    {
+        throw GatewayNotConnected::make();
+    }
+
+    public function hasValidMandate(string $customerReference): bool
+    {
+        return false;
+    }
+
+    public function charge(Payment $payment, string $customerReference, string $webhookUrl): RemotePayment
     {
         throw GatewayNotConnected::make();
     }

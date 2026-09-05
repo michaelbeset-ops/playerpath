@@ -5,6 +5,7 @@ namespace App\Support\Payments;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Payment;
+use App\Models\Player;
 use App\Support\Money\Money;
 use Carbon\CarbonImmutable;
 use Mollie\Api\MollieApiClient;
@@ -42,9 +43,9 @@ class MollieGateway implements PaymentGateway
         return 'Betalingen lopen via Mollie.';
     }
 
-    public function start(Payment $payment, string $returnUrl, string $webhookUrl): RemotePayment
+    public function start(Payment $payment, string $returnUrl, string $webhookUrl, ?string $customerReference = null): RemotePayment
     {
-        $mollie = $this->client->payments->create([
+        $mollie = $this->client->payments->create(array_filter([
             'amount' => [
                 'currency' => 'EUR',
                 'value' => self::toAmount($payment->amount_cents),
@@ -54,6 +55,63 @@ class MollieGateway implements PaymentGateway
             'webhookUrl' => $webhookUrl,
             // Onze eigen id meesturen, zodat een betaling ook terug te vinden
             // is als het opslaan van het kenmerk hier onverhoopt misgaat.
+            'metadata' => [
+                'payment_id' => $payment->id,
+                'school_id' => $payment->school_id,
+            ],
+            // Met een klant erbij is dit een eerste betaling die het mandaat
+            // vastlegt; zonder klant een gewone eenmalige betaling.
+            'customerId' => $customerReference,
+            'sequenceType' => $customerReference === null ? null : 'first',
+            // Alleen null eruit: array_filter zonder callback zou ook een lege
+            // omschrijving of een bedrag van nul weggooien.
+        ], fn ($waarde) => $waarde !== null));
+
+        return $this->toRemote($mollie);
+    }
+
+    public function ensureCustomer(Player $player): string
+    {
+        if ($player->payment_customer_reference !== null) {
+            return $player->payment_customer_reference;
+        }
+
+        // De naam van het kind, met het adres van de ouder die betaalt: dat is
+        // wat een ouder op zijn bankafschrift wil herkennen.
+        $customer = $this->client->customers->create([
+            'name' => $player->full_name,
+            'email' => $player->guardians->first()?->email,
+            'metadata' => ['player_id' => $player->id, 'school_id' => $player->school_id],
+        ]);
+
+        $player->forceFill(['payment_customer_reference' => $customer->id])->save();
+
+        return $customer->id;
+    }
+
+    public function hasValidMandate(string $customerReference): bool
+    {
+        foreach ($this->client->mandates->pageForId($customerReference) as $mandate) {
+            if ($mandate->isValid()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function charge(Payment $payment, string $customerReference, string $webhookUrl): RemotePayment
+    {
+        $mollie = $this->client->payments->create([
+            'amount' => [
+                'currency' => 'EUR',
+                'value' => self::toAmount($payment->amount_cents),
+            ],
+            'description' => $payment->description,
+            'webhookUrl' => $webhookUrl,
+            'customerId' => $customerReference,
+            // Geen redirectUrl: er zit geen mens aan de andere kant.
+            'sequenceType' => 'recurring',
             'metadata' => [
                 'payment_id' => $payment->id,
                 'school_id' => $payment->school_id,

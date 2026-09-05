@@ -5,6 +5,7 @@ namespace Tests\Support;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Payment;
+use App\Models\Player;
 use App\Support\Payments\PaymentGateway;
 use App\Support\Payments\RemotePayment;
 use Carbon\CarbonImmutable;
@@ -23,7 +24,7 @@ class FakeGateway implements PaymentGateway
     /** @var array<string, RemotePayment> */
     public array $remote = [];
 
-    /** @var list<array{payment: int, returnUrl: string, webhookUrl: string}> */
+    /** @var list<array{payment: int, returnUrl: string, webhookUrl: string, customer: string|null}> */
     public array $started = [];
 
     public ?\Throwable $failWith = null;
@@ -43,13 +44,18 @@ class FakeGateway implements PaymentGateway
         return 'Testprovider actief.';
     }
 
-    public function start(Payment $payment, string $returnUrl, string $webhookUrl): RemotePayment
+    /** @var list<array{payment: int, customer: string}> */
+    public array $charged = [];
+
+    public bool $mandate = false;
+
+    public function start(Payment $payment, string $returnUrl, string $webhookUrl, ?string $customerReference = null): RemotePayment
     {
         if ($this->failWith !== null) {
             throw $this->failWith;
         }
 
-        $this->started[] = ['payment' => $payment->id, 'returnUrl' => $returnUrl, 'webhookUrl' => $webhookUrl];
+        $this->started[] = ['payment' => $payment->id, 'returnUrl' => $returnUrl, 'webhookUrl' => $webhookUrl, 'customer' => $customerReference];
 
         $remote = new RemotePayment(
             reference: 'tr_test_'.$payment->id,
@@ -79,5 +85,36 @@ class FakeGateway implements PaymentGateway
     public function markStatus(string $reference, PaymentStatus $status): void
     {
         $this->remote[$reference] = new RemotePayment($reference, $status);
+    }
+
+    public function ensureCustomer(Player $player): string
+    {
+        if ($player->payment_customer_reference === null) {
+            $player->forceFill(['payment_customer_reference' => 'cst_test_'.$player->id])->save();
+        }
+
+        return $player->payment_customer_reference;
+    }
+
+    public function hasValidMandate(string $customerReference): bool
+    {
+        return $this->mandate;
+    }
+
+    public function charge(Payment $payment, string $customerReference, string $webhookUrl): RemotePayment
+    {
+        if ($this->failWith !== null) {
+            throw $this->failWith;
+        }
+
+        $this->charged[] = ['payment' => $payment->id, 'customer' => $customerReference];
+
+        $remote = new RemotePayment(
+            reference: 'tr_incasso_'.$payment->id,
+            status: PaymentStatus::Open,
+            method: PaymentMethod::DirectDebit,
+        );
+
+        return $this->remote[$remote->reference] = $remote;
     }
 }
