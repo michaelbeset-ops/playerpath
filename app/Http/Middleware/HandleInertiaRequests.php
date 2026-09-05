@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Navigation\MainNavigation;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -44,6 +45,7 @@ class HandleInertiaRequests extends Middleware
                 'roles' => $request->user()?->getRoleNames()->all() ?? [],
             ],
             'school' => fn () => app(Tenancy::class)->school()?->only(['id', 'name']),
+            'nav' => fn () => app(MainNavigation::class)->for($request->user()),
             'flash' => [
                 'status' => fn () => $request->session()->get('status'),
             ],

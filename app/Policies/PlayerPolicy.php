@@ -13,9 +13,16 @@ use App\Models\User;
  */
 class PlayerPolicy
 {
+    /**
+     * Het volledige ledenbestand van de school.
+     *
+     * Bewust alleen eigenaar en trainer: een ouder hoort niet te zien welke
+     * andere kinderen op de school zitten. Ouder en speler komen bij hun eigen
+     * speler via view(), niet via dit overzicht.
+     */
     public function viewAny(User $user): bool
     {
-        return $user->isEigenaar() || $user->isTrainer() || $user->isOuder() || $user->isSpeler();
+        return $user->isEigenaar() || $user->isTrainer();
     }
 
     public function view(User $user, Player $player): bool

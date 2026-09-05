@@ -100,6 +100,28 @@ class User extends Authenticatable
         return $this->hasRole(RoleEnum::Speler->value);
     }
 
+    /**
+     * De spelers die deze gebruiker als "van hemzelf" mag beschouwen.
+     *
+     * Voor een ouder zijn dat zijn kinderen, voor een speler zijn eigen
+     * profiel. Eigenaar en trainer hebben dit niet nodig: die zien de hele
+     * school. Gebruikt om trainingen en aanwezigheid te filteren.
+     *
+     * @return list<int>
+     */
+    public function visiblePlayerIds(): array
+    {
+        if ($this->isOuder()) {
+            return $this->children()->pluck('players.id')->all();
+        }
+
+        if ($this->isSpeler()) {
+            return $this->player()->pluck('id')->all();
+        }
+
+        return [];
+    }
+
     /** Hoort deze gebruiker bij dezelfde school als het gegeven model? */
     public function belongsToSameSchool(mixed $model): bool
     {

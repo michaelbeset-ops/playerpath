@@ -9,6 +9,7 @@ use App\Models\Group;
 use App\Models\Player;
 use App\Models\Report;
 use App\Models\School;
+use App\Models\Training;
 use App\Models\User;
 use App\Support\PlayerCard\CalculatePlayerCard;
 use App\Support\Tenancy\Tenancy;
@@ -48,6 +49,21 @@ class DemoSchoolsSeeder extends Seeder
                 ['Selectie', 'Onder 15'],
             ],
         );
+    }
+
+    /** Eén training geweest, twee komende. */
+    protected function maakTrainingen(\App\Models\Group $groep): void
+    {
+        foreach ([-7, 7, 14] as $dagen) {
+            $start = now()->addDays($dagen)->setTime(18, 0);
+
+            Training::create([
+                'group_id' => $groep->id,
+                'starts_at' => $start,
+                'ends_at' => $start->copy()->addMinutes(90),
+                'location' => 'Sportpark De Vliert, veld 3',
+            ]);
+        }
     }
 
     /** Twee rapporten met lichte groei, zodat de kaart iets laat zien. */
@@ -131,6 +147,10 @@ class DemoSchoolsSeeder extends Seeder
             // Twee rapporten per speler, zodat de kaarten meteen gevuld zijn
             // en je de doorrekening kunt zien.
             $gemaakteSpelers->each(fn (Player $speler) => $this->maakRapporten($speler, $trainer));
+
+            // Een training vorige week en twee komende, zodat er meteen iets
+            // te zien en af te vinken valt.
+            $this->maakTrainingen($gemaakteGroepen->first());
         });
     }
 }

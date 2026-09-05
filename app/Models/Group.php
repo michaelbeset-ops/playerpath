@@ -6,6 +6,7 @@ use App\Models\Concerns\BelongsToSchool;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Group extends Model
 {
@@ -23,6 +24,11 @@ class Group extends Model
         return [
             'is_active' => 'boolean',
         ];
+    }
+
+    public function trainings(): HasMany
+    {
+        return $this->hasMany(Training::class);
     }
 
     public function players(): BelongsToMany

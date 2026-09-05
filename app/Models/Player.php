@@ -53,6 +53,11 @@ class Player extends Model
         return $this->hasMany(Report::class);
     }
 
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
     /** De ouders/verzorgers van deze speler. */
     public function guardians(): BelongsToMany
     {

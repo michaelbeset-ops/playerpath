@@ -3,19 +3,27 @@
 namespace Tests\Feature;
 
 use App\Enums\Role;
+use App\Models\Player;
 use App\Models\School;
 use App\Models\User;
+use App\Support\Navigation\MainNavigation;
+use App\Support\Tenancy\Tenancy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 /**
- * De zijbalk-links moeten echt ergens heen gaan.
+ * Het menu mag nooit iets tonen dat je niet mag openen, en nooit iets missen
+ * dat je wel mag.
  *
- * Aanleiding: NavMain las item.url terwijl de items item.href hebben. De link
- * kreeg dus een lege href en klikken deed niets — zonder foutmelding, want er
- * ging simpelweg geen request uit. Zoiets vang je alleen met een test die de
- * doelen van het menu echt opvraagt.
+ * Aanleiding, twee keer:
+ * 1. NavMain las item.url terwijl de items item.href hebben — klikken deed
+ *    niets, zonder foutmelding, want er ging geen request uit.
+ * 2. Het menu was hardgecodeerd, dus een ouder zag Spelers, Groepen en
+ *    Rapporten staan die allemaal 403 gaven.
+ *
+ * Sindsdien bepaalt de server het menu op basis van de policies, en loopt deze
+ * test er per rol echt doorheen.
  */
 class NavigationTest extends TestCase
 {
@@ -28,53 +36,82 @@ class NavigationTest extends TestCase
         $this->seed(\Database\Seeders\RoleSeeder::class);
     }
 
-    /** De hrefs zoals ze in AppSidebar.vue staan. */
-    public static function menuItems(): array
+    public static function rollen(): array
     {
         return [
-            'Dashboard' => ['/dashboard'],
-            'Spelers' => ['/players'],
-            'Groepen' => ['/groups'],
-            'Rapporten' => ['/reports'],
+            'eigenaar' => [Role::Eigenaar],
+            'trainer' => [Role::Trainer],
+            'ouder' => [Role::Ouder],
+            'speler' => [Role::Speler],
         ];
     }
 
-    #[DataProvider('menuItems')]
-    public function test_elk_menu_item_is_bereikbaar_voor_een_eigenaar(string $href): void
+    protected function gebruiker(Role $rol): User
     {
         $school = School::factory()->create();
-        $eigenaar = User::factory()->for($school)->create();
-        $eigenaar->assignRole(Role::Eigenaar->value);
+        $user = User::factory()->for($school)->create();
+        $user->assignRole($rol->value);
 
-        $this->actingAs($eigenaar)->get($href)->assertOk();
-    }
+        app(Tenancy::class)->set($school);
 
-    #[DataProvider('menuItems')]
-    public function test_elk_menu_item_is_bereikbaar_voor_een_trainer(string $href): void
-    {
-        $school = School::factory()->create();
-        $trainer = User::factory()->for($school)->create();
-        $trainer->assignRole(Role::Trainer->value);
+        // Een ouder of speler zonder eigen speler ziet nergens iets; geef ze er
+        // dus een, zodat de test het echte geval dekt.
+        $speler = Player::factory()->for($school)->create();
 
-        $this->actingAs($trainer)->get($href)->assertOk();
-    }
-
-    public function test_de_zijbalk_verwijst_alleen_naar_bestaande_routes(): void
-    {
-        $sidebar = file_get_contents(resource_path('js/components/AppSidebar.vue'));
-
-        preg_match_all("/href: '([^']+)'/", $sidebar, $treffers);
-
-        $this->assertNotEmpty($treffers[1], 'Geen menu-items gevonden in AppSidebar.vue.');
-
-        $school = School::factory()->create();
-        $eigenaar = User::factory()->for($school)->create();
-        $eigenaar->assignRole(Role::Eigenaar->value);
-
-        foreach ($treffers[1] as $href) {
-            $this->actingAs($eigenaar)
-                ->get($href)
-                ->assertOk("Het menu-item {$href} leidt niet naar een werkend scherm.");
+        if ($rol === Role::Ouder) {
+            $user->children()->attach($speler->id);
         }
+
+        if ($rol === Role::Speler) {
+            $speler->update(['user_id' => $user->id]);
+        }
+
+        return $user;
+    }
+
+    #[DataProvider('rollen')]
+    public function test_elk_getoond_menu_item_werkt_ook_echt(Role $rol): void
+    {
+        $user = $this->gebruiker($rol);
+
+        $items = app(MainNavigation::class)->for($user);
+
+        $this->assertNotEmpty($items, "De rol {$rol->value} ziet helemaal geen menu.");
+
+        foreach ($items as $item) {
+            $this->actingAs($user)
+                ->get($item['href'])
+                ->assertOk("Het menu-item {$item['title']} ({$item['href']}) werkt niet voor een {$rol->value}.");
+        }
+    }
+
+    public function test_een_ouder_krijgt_geen_beheer_items_te_zien(): void
+    {
+        $ouder = $this->gebruiker(Role::Ouder);
+
+        $hrefs = array_column(app(MainNavigation::class)->for($ouder), 'href');
+
+        $this->assertContains('/dashboard', $hrefs);
+        $this->assertContains('/trainings', $hrefs);
+        $this->assertNotContains('/players', $hrefs);
+        $this->assertNotContains('/groups', $hrefs);
+        $this->assertNotContains('/reports', $hrefs);
+    }
+
+    public function test_een_eigenaar_ziet_het_hele_menu(): void
+    {
+        $eigenaar = $this->gebruiker(Role::Eigenaar);
+
+        $hrefs = array_column(app(MainNavigation::class)->for($eigenaar), 'href');
+
+        $this->assertSame(['/dashboard', '/players', '/groups', '/trainings', '/reports'], $hrefs);
+    }
+
+    public function test_een_ouder_komt_niet_bij_het_ledenbestand(): void
+    {
+        $ouder = $this->gebruiker(Role::Ouder);
+
+        // Een ouder hoort niet te zien welke andere kinderen op de school zitten.
+        $this->actingAs($ouder)->get('/players')->assertForbidden();
     }
 }

@@ -13,4 +13,5 @@ Route::get('dashboard', DashboardController::class)
     ->name('dashboard');
 
 require __DIR__.'/players.php';
+require __DIR__.'/trainings.php';
 require __DIR__.'/settings.php';

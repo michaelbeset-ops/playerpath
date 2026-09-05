@@ -7,7 +7,7 @@ import { CalendarDays, ClipboardList, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 const props = defineProps<{
-    stats: { players: number; reportsThisWeek: number };
+    stats: { players: number; reportsThisWeek: number; trainingsThisWeek: number };
 }>();
 
 const page = usePage<SharedData>();
@@ -34,9 +34,10 @@ const kaarten = computed(() => [
     },
     {
         label: 'Trainingen deze week',
-        value: null,
-        hint: 'Komt in fase 4',
+        value: props.stats.trainingsThisWeek,
+        hint: props.stats.trainingsThisWeek === 0 ? 'Niets ingepland deze week' : 'ingepland',
         icon: CalendarDays,
+        href: '/trainings',
     },
 ]);
 </script>

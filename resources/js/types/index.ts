@@ -29,6 +29,8 @@ export interface SharedData {
     /** De actieve school van de ingelogde gebruiker; null als er geen is. */
     school: School | null;
     flash: { status: string | null };
+    /** Het hoofdmenu, server-side bepaald op basis van wat je mag. */
+    nav: { title: string; href: string; icon: string }[];
     ziggy: {
         location: string;
         url: string;

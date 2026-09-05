@@ -77,6 +77,16 @@ $this->school_id)` op de relatie. Dat vult hem in én filtert erop.
 `Tenancy::withoutScope()` en `Model::withoutSchoolScope()` bestaan voor bewuste
 beheer-acties (seeders, platformbeheer). **Nooit in een controller gebruiken.**
 
+#### Het menu komt van de server
+
+`App\Support\Navigation\MainNavigation` bepaalt welke menu-items je ziet, op
+basis van de **policies**. De Vue-kant vertaalt alleen de iconennaam naar een
+component. Dat is geen cosmetica: een hardgecodeerd menu liet een ouder
+Spelers, Groepen en Rapporten zien die allemaal 403 gaven.
+
+**Nieuw scherm erbij? Voeg het toe aan `MainNavigation`, niet aan
+`AppSidebar.vue`.** `NavigationTest` loopt per rol elk getoond item echt af.
+
 #### Valkuil: validatieregels kennen de global scope niet
 
 `Rule::exists()` en `Rule::unique()` gaan **rechtstreeks naar de database** en
@@ -252,6 +262,8 @@ inzicht, dan is het één klasse omzetten.
 | `Group` | school | `name`, `age_category`, `is_active` |
 | `Report` | school | `player_id`, `trainer_id`, `reported_on`, `note` |
 | `ReportScore` | school | `report_id`, `category`, `score` (1-10) |
+| `Training` | school | `group_id`, `starts_at`, `ends_at`, `location` |
+| `Attendance` | school | `training_id`, `player_id`, `registration`, `status` |
 
 Beheerschermen (fase 3): spelers en groepen zijn volledig te beheren door de
 **eigenaar**; de trainer mag alles zien maar niets wijzigen. Ouders koppel je
@@ -281,6 +293,28 @@ Twee afspraken die je niet moet omdraaien:
   vanzelf klopt. De **leeftijdscategorie** ("Onder 12") hoort bij de **groep**.
 - **Positie** is een enum (`App\Enums\PlayerPosition`): `keeper` of `field`.
   In de database Engels, in de UI het Nederlandse label.
+
+### Trainingen en aanwezigheid (fase 4)
+
+Een training hoort altijd bij **een groep**. Wie er verwacht worden wordt
+**niet** vastgelegd: dat zijn de actieve spelers van die groep op het moment
+dat je kijkt. Komt er een speler bij de groep, dan staat hij vanzelf op de
+lijst van de volgende training.
+
+`Attendance` heeft bewust **twee losse velden**, en die moet je niet
+samenvoegen:
+
+| Veld | Wie zet het | Wat betekent het |
+|---|---|---|
+| `registration` | speler of ouder, vooraf | "ik kom" / "ik kom niet" |
+| `status` | trainer, achteraf | aanwezig / afwezig |
+
+Iemand kan zich afmelden en toch komen, of niets zeggen en er gewoon staan.
+Juist dat verschil is voor een school interessant, dus het blijft gescheiden.
+`RegistrationController` raakt `status` nooit aan, en andersom.
+
+Wekelijks herhalen maakt **losse** trainingen, geen reeks. Er is dus geen
+"pas de hele serie aan" — dat is bewust weggelaten tot iemand erom vraagt.
 
 ### Rapport en spelerskaart (fase 2)
 
@@ -337,7 +371,7 @@ houdt, en dus niet mag sneuvelen:
 - [x] Fase 1 — Datamodel & multi-tenancy
 - [x] Fase 2 — Rapport → spelerskaart
 - [x] Fase 3 — Spelers- & groepsbeheer
-- [ ] Fase 4 — Planning & aanwezigheid
+- [x] Fase 4 — Planning & aanwezigheid
 - [ ] Fase 5 — Voortgang & ouder-ervaring
 - [ ] Fase 6 — Eigenaar-dashboard
 - [ ] Fase 7 — Betalingen (Mollie + Cashier)
