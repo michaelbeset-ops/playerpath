@@ -4,7 +4,7 @@ import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
-import { CalendarDays, CalendarRange, ClipboardList, CreditCard, LayoutGrid, Receipt, Tag, Users, UsersRound } from 'lucide-vue-next';
+import { CalendarDays, CalendarRange, ClipboardList, CreditCard, FileDown, LayoutGrid, Receipt, Tag, Users, UsersRound } from 'lucide-vue-next';
 import { computed, type Component } from 'vue';
 import AppLogo from './AppLogo.vue';
 
@@ -23,6 +23,7 @@ const iconen: Record<string, Component> = {
     subscriptions: Receipt,
     payments: CreditCard,
     plans: Tag,
+    exports: FileDown,
 };
 
 const page = usePage<SharedData>();
