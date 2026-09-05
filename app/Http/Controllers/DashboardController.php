@@ -8,6 +8,9 @@ use App\Models\Training;
 use App\Models\User;
 use App\Support\Dashboard\SchoolDashboard;
 use App\Support\Payments\BillingOverview;
+use App\Support\PlayerCard\CalculatePlayerCard;
+use App\Support\PlayerCard\PlayerBadges;
+use App\Support\PlayerCard\PlayerProgress;
 use App\Support\Payments\PaymentGateway;
 use App\Support\Trainings\VisibleTrainings;
 use Illuminate\Http\Request;
@@ -30,6 +33,9 @@ class DashboardController extends Controller
         protected SchoolDashboard $dashboard,
         protected BillingOverview $billing,
         protected PaymentGateway $gateway,
+        protected CalculatePlayerCard $calculator,
+        protected PlayerBadges $badges,
+        protected PlayerProgress $progress,
     ) {}
 
     public function __invoke(Request $request): Response
@@ -81,14 +87,24 @@ class DashboardController extends Controller
             ->get()
             ->map(function (Player $speler) {
                 $laatste = $speler->reports()->newestFirst()->first();
+                $badges = $this->badges->for($speler, $this->progress);
 
                 return [
                     'id' => $speler->id,
                     'name' => $speler->full_name,
                     'first_name' => $speler->first_name,
                     'position' => $speler->position->label(),
+                    'position_key' => $speler->position->value,
+                    'age' => $speler->age,
                     'overall_rating' => $speler->overall_rating,
                     'last_report_on' => $laatste?->reported_on->format('d-m-Y'),
+                    'report_count' => $speler->reports()->count(),
+                    // De kaart zelf op het dashboard: dat is waar een kind voor komt.
+                    'categories' => $this->calculator->breakdown($speler),
+                    'level' => $this->badges->level($speler->overall_rating),
+                    'badges' => array_values(array_filter($badges, fn ($b) => $b['earned'])),
+                    // De eerstvolgende mijlpaal: iets om naartoe te werken.
+                    'next_badge' => collect($badges)->first(fn ($b) => ! $b['earned']),
                 ];
             });
 

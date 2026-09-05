@@ -81,7 +81,7 @@ class DashboardTest extends TestCase
 
         app(Tenancy::class)->set($school);
 
-        $eigenKind = Player::factory()->for($school)->create(['first_name' => 'Sem', 'last_name' => 'de Vries']);
+        $eigenKind = Player::factory()->for($school)->keeper()->create(['first_name' => 'Sem', 'last_name' => 'de Vries']);
         Player::factory()->count(4)->for($school)->create();
 
         $ouder->children()->attach($eigenKind->id);
@@ -93,6 +93,10 @@ class DashboardTest extends TestCase
                 ->where('view', 'gezin')
                 ->count('players', 1)
                 ->where('players.0.name', 'Sem de Vries')
+                ->where('players.0.position_key', 'keeper')
+                ->has('players.0.categories', 6)
+                ->has('players.0.level')
+                ->where('players.0.next_badge.key', 'eerste_rapport')
                 // Schoolbrede cijfers horen hier niet: die zijn niet van een ouder.
                 ->missing('stats')
             );

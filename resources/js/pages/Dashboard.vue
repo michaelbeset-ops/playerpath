@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import PlayerCardVisual from '@/components/PlayerCardVisual.vue';
 import StatCard from '@/components/StatCard.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem, type SharedData } from '@/types';
@@ -13,6 +14,7 @@ import {
     MapPin,
     Star,
     TrendingUp,
+    Trophy,
     UserPlus,
     UserRoundCheck,
     Plug,
@@ -25,8 +27,15 @@ interface SpelerKaart {
     name: string;
     first_name: string;
     position: string;
+    position_key: 'keeper' | 'field';
+    age: number | null;
     overall_rating: number | null;
     last_report_on: string | null;
+    report_count: number;
+    categories: { category: string; label: string; rating: number | null }[];
+    level: { key: string; label: string; description: string };
+    badges: { key: string; label: string; description: string }[];
+    next_badge: { key: string; label: string; description: string } | null;
 }
 
 const props = defineProps<{
@@ -322,43 +331,47 @@ const kaarten = computed(() => {
 
             <!-- Ouder en speler: het eigen kind -->
             <template v-else>
-                <div class="mt-6 grid gap-4 sm:grid-cols-2">
-                    <Link
-                        v-for="speler in players"
-                        :key="speler.id"
-                        :href="'/players/' + speler.id + '/card'"
-                        class="group relative overflow-hidden rounded-xl border border-border bg-card p-5 shadow-sm transition hover:border-primary/40 hover:shadow"
-                    >
-                        <span
-                            class="absolute inset-x-0 top-0 h-1"
-                            :class="speler.overall_rating ? 'bg-primary' : 'bg-border'"
-                            aria-hidden="true"
-                        ></span>
+                <!-- De kaart zelf, meteen in beeld: dat is waar een kind voor komt -->
+                <div v-for="speler in players" :key="speler.id" class="mt-6">
+                    <div class="theme-donker rounded-3xl bg-background p-4 sm:p-6">
+                        <PlayerCardVisual
+                            :name="speler.name"
+                            :position="speler.position"
+                            :position-key="speler.position_key"
+                            :age="speler.age"
+                            :overall="speler.overall_rating"
+                            :categories="speler.categories"
+                            :level="speler.level"
+                            :badges="speler.badges"
+                            :report-count="speler.report_count"
+                        />
 
-                        <div class="flex items-start justify-between gap-4">
-                            <div class="min-w-0">
-                                <p class="truncate font-medium">{{ speler.name }}</p>
-                                <p class="mt-1 text-xs text-muted-foreground">{{ speler.position }}</p>
-                            </div>
-
-                            <p
-                                class="tabular shrink-0 text-3xl font-bold leading-none"
-                                :class="speler.overall_rating ? 'text-primary' : 'text-muted-foreground/60'"
-                            >
-                                {{ speler.overall_rating ?? '—' }}
+                        <!-- Iets om naartoe te werken -->
+                        <div v-if="speler.next_badge" class="mx-auto mt-4 flex max-w-[22.5rem] items-start gap-3 rounded-xl border border-border bg-card/60 p-3">
+                            <Trophy class="mt-0.5 size-4 shrink-0 text-gold" />
+                            <p class="text-sm">
+                                <span class="font-medium">Volgende mijlpaal: {{ speler.next_badge.label }}.</span>
+                                <span class="text-muted-foreground"> {{ speler.next_badge.description }}.</span>
                             </p>
                         </div>
+                    </div>
 
-                        <p class="mt-3 text-xs text-muted-foreground">
-                            <template v-if="speler.last_report_on">Laatste rapport {{ speler.last_report_on }}</template>
-                            <template v-else>Nog geen rapport</template>
-                        </p>
-
-                        <span class="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-primary">
+                    <div class="mt-3 grid grid-cols-2 gap-2">
+                        <Link
+                            :href="'/players/' + speler.id + '/card'"
+                            class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium shadow-sm transition hover:border-primary"
+                        >
                             <IdCard class="size-4" />
-                            Bekijk de spelerskaart
-                        </span>
-                    </Link>
+                            Kaart en delen
+                        </Link>
+                        <Link
+                            :href="'/players/' + speler.id + '/progress'"
+                            class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium shadow-sm transition hover:border-primary"
+                        >
+                            <TrendingUp class="size-4" />
+                            Voortgang
+                        </Link>
+                    </div>
                 </div>
 
                 <div class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -383,15 +396,6 @@ const kaarten = computed(() => {
                     <p v-else class="mt-2 text-sm text-muted-foreground">Er staat nog geen training gepland.</p>
                 </div>
 
-                <div v-if="players?.length" class="mt-4">
-                    <Link
-                        :href="'/players/' + players[0].id + '/progress'"
-                        class="inline-flex items-center gap-2 text-sm font-medium text-primary underline underline-offset-4"
-                    >
-                        <TrendingUp class="size-4" />
-                        Bekijk de voortgang van {{ players[0].first_name }}
-                    </Link>
-                </div>
             </template>
         </div>
     </AppLayout>

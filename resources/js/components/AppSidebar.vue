@@ -31,6 +31,7 @@ const page = usePage<SharedData>();
 
 const mainNavItems = computed<NavItem[]>(() =>
     (page.props.nav ?? []).map((item) => ({
+        section: item.section,
         title: item.title,
         href: item.href,
         icon: iconen[item.icon] ?? LayoutGrid,

@@ -12,6 +12,7 @@ export interface BreadcrumbItem {
 }
 
 export interface NavItem {
+    section?: string;
     title: string;
     href: string;
     icon?: LucideIcon;
@@ -30,7 +31,7 @@ export interface SharedData {
     school: School | null;
     flash: { status: string | null };
     /** Het hoofdmenu, server-side bepaald op basis van wat je mag. */
-    nav: { title: string; href: string; icon: string }[];
+    nav: { section: string; title: string; href: string; icon: string }[];
     unreadNotifications: number;
     ziggy: {
         location: string;

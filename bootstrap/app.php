@@ -23,5 +23,15 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // Een verlopen sessie (419) is geen fout van de gebruiker. In plaats
+        // van een kale foutpagina sturen we hem terug met een duidelijke
+        // melding; een trainer laat de aanwezigheidspagina makkelijk een uur
+        // openstaan.
+        $exceptions->respond(function ($response, $exception, $request) {
+            if ($response->getStatusCode() === 419) {
+                return back()->with('status', 'Je sessie was verlopen. Probeer het nog een keer.');
+            }
+
+            return $response;
+        });
     })->create();
