@@ -333,7 +333,7 @@ const kaarten = computed(() => {
             <template v-else>
                 <!-- De kaart zelf, meteen in beeld: dat is waar een kind voor komt -->
                 <div v-for="speler in players" :key="speler.id" class="mt-6">
-                    <div class="theme-donker rounded-3xl bg-background p-4 sm:p-6">
+                    <div class="theme-donker rounded-3xl bg-background p-4 text-foreground sm:p-6">
                         <PlayerCardVisual
                             :name="speler.name"
                             :position="speler.position"

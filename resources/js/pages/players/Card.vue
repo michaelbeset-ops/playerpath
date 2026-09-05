@@ -72,7 +72,7 @@ const kopieer = async () => {
                 De kaart is het pronkstuk en bewust donker: dit is de
                 speler/ouder-kant van het merk. Zie CLAUDE.md hoofdstuk 4.
             -->
-            <div class="theme-donker rounded-3xl bg-background p-4 sm:p-8">
+            <div class="theme-donker rounded-3xl bg-background p-4 text-foreground sm:p-8">
                 <PlayerCardVisual
                     :name="player.name"
                     :position="player.position"
