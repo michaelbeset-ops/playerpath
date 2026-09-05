@@ -650,6 +650,26 @@ houdt, en dus niet mag sneuvelen:
   Alleen de afzendernaam; het adres blijft van het platform, want een eigen
   afzenderadres vraagt SPF- en DKIM-records bij de school zelf.
 
+### PWA en productie (Fase 12)
+
+- **De service worker bewaart geen enkel antwoord met gegevens.** Alleen
+  `/build/`-assets (hash in de naam, dus onveranderlijk), de iconen en de
+  offline-pagina. Het bouwplan zei "geen offline-caching van financiële data";
+  dat is hier strenger doorgetrokken, omdat een gedeelde telefoon nooit een
+  pagina uit de cache mag teruggeven die niet meer van die gebruiker is.
+  POST-verzoeken raakt hij niet aan: een herhaald rapport of een dubbele
+  betaling is erger dan geen offline-ondersteuning.
+- **Het manifest is dynamisch** (`/manifest.webmanifest`): naam en themakleur
+  komen van de school, zodat de app op het beginscherm van een ouder haar naam
+  draagt. Het icoon blijft van PlayerPath — een geüpload logo is zelden vierkant.
+- Iconen worden getekend door `php artisan playerpath:icons`, niet met de hand,
+  zodat ze na een merkwijziging opnieuw uit te draaien zijn.
+- `SecurityHeaders` staat op **elk** antwoord. HSTS alleen op productie én over
+  https: lokaal zou je browser `playerpath.test` maandenlang naar https dwingen.
+- `php artisan playerpath:check` scheidt **blokkerend** van **aandachtspunt**.
+  Draai het na elke deploy. Deploystappen die niet in code kunnen staan:
+  `DEPLOY.md`.
+
 ## 6. Werkwijze
 
 - **Fase voor fase.** Het bouwplan staat in `bouwplan-keepersplatform-claude-code.md`
@@ -676,7 +696,7 @@ Volledige scope en status per feature: `FEATURES.md`. Volgorde: het bouwplan.
 - [x] Fase 9 — Betalingen (Mollie): eenmalig, doorlopende incasso, termijnen, herinneringen
 - [x] Fase 10 — Communicatie (mededelingen, afzeggen, meldingsvoorkeuren)
 - [x] Fase 11 — White-label & subdomein (logo, merkkleur, branding per adres)
-- [ ] Fase 12 — Productie & lancering (PWA, deploy)
+- [~] Fase 12 — Productie & lancering: PWA en hardening staan; deploy en push nog niet
 
 ---
 

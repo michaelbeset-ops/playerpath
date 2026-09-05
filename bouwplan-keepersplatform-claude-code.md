@@ -153,7 +153,7 @@ weet het binnen een minuut.
 **Klaar wanneer:** twee scholen draaien naast elkaar met eigen logo, kleuren en
 adres, en zien nog steeds niets van elkaar.
 
-## Fase 12 — Productie & lancering (M7 + deploy)
+## Fase 12 — Productie & lancering (M7 + deploy) 🟡
 
 **Doel:** live en klaar voor de eerste school.
 
@@ -164,6 +164,19 @@ adres, en zien nog steeds niets van elkaar.
   mail via Brevo, queue-worker onder supervisor.
 - Security-hardening, backups, e-mailverificatie aan.
 - Onboarding-flow: hoe zet je een nieuwe school (Rob en Yoel als eerste) erin.
+
+Gebouwd: de PWA-laag (dynamisch manifest per school, service worker die geen
+gegevens bewaart, offline-pagina, installatie-aanbod, iconen), security-headers
+op elk antwoord, rate limiting op de publieke routes, `playerpath:check` en
+`DEPLOY.md` met alles wat op de server moet gebeuren.
+
+Nog niet gedaan:
+
+- **Push-meldingen.** Vragen VAPID-sleutels en een vast domein: een
+  push-abonnement hangt aan de herkomst, dus op een tijdelijke tunnel-URL is
+  het meteen waardeloos. Bouwen zodra het domein staat.
+- **De deploy zelf.** Dat gaat om accounts en servers (Hetzner, Forge, Brevo,
+  Mollie live) en staat stap voor stap in `DEPLOY.md`.
 
 **Klaar wanneer:** de eerste school kan er echt mee werken.
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetCurrentSchool;
 use App\Http\Middleware\ShareBranding;
 use Illuminate\Foundation\Application;
@@ -21,6 +22,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // browser ze als mixed content: Ziggy-routes, formulieren en de
         // deel-link lopen dan stuk. We vertrouwen alleen loopback, want alleen
         // een proces op deze machine mag zeggen wat het schema was.
+        // Op elk antwoord, ook op de webhook en de publieke pagina's.
+        $middleware->append(SecurityHeaders::class);
+
         $middleware->trustProxies(at: [
             '127.0.0.1',
             '::1',

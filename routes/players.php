@@ -48,7 +48,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // De enige route zonder inlog. Zie SharedCardController voor waarom dat kan.
+// Het token van 48 tekens is niet te raden, maar een limiet houdt iemand die
+// het toch probeert buiten de deur en scheelt onnodige belasting.
 Route::get('kaart/{token}', [SharedCardController::class, 'show'])
-    ->middleware(PreventSearchIndexing::class)
+    ->middleware([PreventSearchIndexing::class, 'throttle:60,1'])
     ->name('players.shared')
     ->where('token', '[A-Za-z0-9]{48}');

@@ -21,6 +21,13 @@
             </style>
         @endif
 
+        {{-- PWA: installeerbaar op het beginscherm. Het manifest is per school. --}}
+        <link rel="manifest" href="/manifest.webmanifest">
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+        <meta name="theme-color" content="{{ $branding['usedColor'] ?? '#0A0F1C' }}">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-title" content="{{ $branding['name'] ?? config('app.name') }}">
+
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800" rel="stylesheet" />
 

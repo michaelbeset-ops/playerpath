@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import InstallPrompt from '@/components/InstallPrompt.vue';
 import AppLayout from '@/layouts/app/AppSidebarLayout.vue';
 import type { BreadcrumbItemType } from '@/types';
 
@@ -14,5 +15,6 @@ withDefaults(defineProps<Props>(), {
 <template>
     <AppLayout :breadcrumbs="breadcrumbs">
         <slot />
+        <InstallPrompt />
     </AppLayout>
 </template>

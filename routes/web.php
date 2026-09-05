@@ -6,12 +6,21 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Privacy\PrivacyController;
+use App\Http\Controllers\Pwa\ManifestController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
     return Inertia::render('Welcome');
 })->name('home');
+
+/*
+ * De PWA-laag. Bewust zonder inlog: een manifest en een offline-pagina moeten
+ * ook op te halen zijn als de sessie verlopen is, anders is de app niet
+ * installeerbaar.
+ */
+Route::get('manifest.webmanifest', ManifestController::class)->name('manifest');
+Route::get('offline', fn () => Inertia::render('Offline'))->name('offline');
 
 Route::get('dashboard', DashboardController::class)
     ->middleware(['auth', 'verified'])
