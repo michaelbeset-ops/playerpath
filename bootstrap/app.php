@@ -14,6 +14,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        // Achter een tunnel of loadbalancer (Cloudflare, Forge/nginx) komt het
+        // verzoek binnen op 127.0.0.1 over http, terwijl de bezoeker https
+        // gebruikt. Zonder deze regel bouwt Laravel http-URL's en blokkeert de
+        // browser ze als mixed content: Ziggy-routes, formulieren en de
+        // deel-link lopen dan stuk. We vertrouwen alleen loopback, want alleen
+        // een proces op deze machine mag zeggen wat het schema was.
+        $middleware->trustProxies(at: [
+            '127.0.0.1',
+            '::1',
+        ]);
+
         // SetCurrentSchool staat bewust vóór Inertia: alles wat daarna draait
         // (inclusief gedeelde props) werkt al binnen de juiste school.
         $middleware->web(append: [
