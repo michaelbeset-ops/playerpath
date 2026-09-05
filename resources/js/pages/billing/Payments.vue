@@ -1,0 +1,177 @@
+<script setup lang="ts">
+import FlashMessage from '@/components/FlashMessage.vue';
+import GatewayNotice from '@/components/GatewayNotice.vue';
+import StatCard from '@/components/StatCard.vue';
+import AppLayout from '@/layouts/AppLayout.vue';
+import { type BreadcrumbItem } from '@/types';
+import { Head, router } from '@inertiajs/vue3';
+import { AlertTriangle, Clock, Euro, Search, Wallet } from 'lucide-vue-next';
+import { reactive, watch } from 'vue';
+
+interface Betaling {
+    id: number;
+    player: string | null;
+    player_id: number;
+    amount: string;
+    status: string;
+    status_label: string;
+    method: string | null;
+    description: string;
+    due_on: string;
+    paid_at: string | null;
+    is_overdue: boolean;
+}
+
+const props = defineProps<{
+    payments: Betaling[];
+    filters: { status: string; search: string };
+    statuses: Record<string, string>;
+    summary: {
+        revenueThisMonth: string;
+        outstanding: string;
+        outstandingCount: number;
+        overdue: string;
+        overdueCount: number;
+        activeSubscriptions: number;
+        yearlyValue: string;
+        needsAttentionCount: number;
+    };
+    gateway: { connected: boolean; name: string; message: string };
+}>();
+
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Betalingen', href: '/payments' }];
+
+const filters = reactive({ ...props.filters });
+
+let wachten: ReturnType<typeof setTimeout> | undefined;
+
+watch(
+    filters,
+    () => {
+        clearTimeout(wachten);
+        wachten = setTimeout(() => {
+            router.get('/payments', { ...filters }, { preserveState: true, replace: true });
+        }, 300);
+    },
+    { deep: true },
+);
+
+const kleurVoor = (status: string) => {
+    if (status === 'paid') {
+        return 'bg-primary/10 text-primary';
+    }
+
+    if (status === 'failed' || status === 'charged_back') {
+        return 'bg-destructive/10 text-destructive';
+    }
+
+    if (status === 'refunded') {
+        return 'bg-secondary text-muted-foreground';
+    }
+
+    return 'bg-warning/10 text-warning';
+};
+
+const zetStatus = (betaling: Betaling, status: string) =>
+    router.patch('/payments/' + betaling.id, { status }, { preserveScroll: true, preserveState: false });
+</script>
+
+<template>
+    <Head title="Betalingen" />
+
+    <AppLayout :breadcrumbs="breadcrumbs">
+        <div class="mx-auto w-full max-w-5xl p-4">
+            <FlashMessage />
+            <GatewayNotice :gateway="gateway" />
+
+            <h1 class="text-2xl font-semibold tracking-tight">Betalingen</h1>
+            <p class="mt-1 text-sm text-muted-foreground">Wat er binnenkomt, wat openstaat en wat misging.</p>
+
+            <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <StatCard label="Ontvangen" :value="summary.revenueThisMonth" hint="deze maand, betaalde facturen" :icon="Euro" />
+                <StatCard
+                    label="Openstaand"
+                    tone="warning"
+                    :value="summary.outstanding"
+                    :hint="summary.outstandingCount + (summary.outstandingCount === 1 ? ' factuur' : ' facturen')"
+                    :icon="Wallet"
+                />
+                <StatCard
+                    label="Achterstallig"
+                    :value="summary.overdueCount === 0 ? null : summary.overdue"
+                    :hint="summary.overdueCount === 0 ? 'Niets over de vervaldatum' : summary.overdueCount + ' over de vervaldatum'"
+                    :icon="Clock"
+                    tone="warning"
+                />
+                <StatCard
+                    label="Vraagt om actie"
+                    :value="summary.needsAttentionCount === 0 ? null : summary.needsAttentionCount"
+                    :hint="summary.needsAttentionCount === 0 ? 'Geen mislukte of gestorneerde' : 'mislukt of gestorneerd'"
+                    :icon="AlertTriangle"
+                    tone="danger"
+                />
+            </div>
+
+            <!-- Filters -->
+            <div class="mt-6 grid gap-3 sm:grid-cols-2">
+                <div class="relative">
+                    <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                    <input
+                        v-model="filters.search"
+                        type="search"
+                        placeholder="Zoek op speler..."
+                        class="w-full rounded-lg border border-input bg-card py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
+                    />
+                </div>
+
+                <select v-model="filters.status" class="rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary">
+                    <option value="">Alle statussen</option>
+                    <option v-for="(label, waarde) in statuses" :key="waarde" :value="waarde">{{ label }}</option>
+                </select>
+            </div>
+
+            <div v-if="payments.length" class="mt-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                <div
+                    v-for="(betaling, index) in payments"
+                    :key="betaling.id"
+                    class="flex flex-wrap items-center gap-4 p-4"
+                    :class="index > 0 ? 'border-t border-border' : ''"
+                >
+                    <div class="min-w-0 flex-1">
+                        <p class="truncate font-medium">{{ betaling.player ?? 'Onbekende speler' }}</p>
+                        <p class="truncate text-xs text-muted-foreground">
+                            {{ betaling.description }} &middot; vervalt {{ betaling.due_on }}
+                            <span v-if="betaling.paid_at"> &middot; betaald {{ betaling.paid_at }}</span>
+                            <span v-if="betaling.method"> &middot; {{ betaling.method }}</span>
+                        </p>
+                    </div>
+
+                    <p class="tabular shrink-0 font-semibold">{{ betaling.amount }}</p>
+
+                    <span class="shrink-0 rounded-lg px-2 py-1 text-xs font-medium" :class="kleurVoor(betaling.status)">
+                        {{ betaling.status_label }}
+                        <span v-if="betaling.is_overdue"> &middot; te laat</span>
+                    </span>
+
+                    <!-- Met de hand bijwerken; nodig zolang er geen provider is,
+                         en daarna nog steeds voor overboekingen en contant. -->
+                    <select
+                        :value="betaling.status"
+                        class="shrink-0 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                        :aria-label="'Status van de betaling van ' + (betaling.player ?? 'onbekend')"
+                        @change="zetStatus(betaling, ($event.target as HTMLSelectElement).value)"
+                    >
+                        <option v-for="(label, waarde) in statuses" :key="waarde" :value="waarde">{{ label }}</option>
+                    </select>
+                </div>
+            </div>
+
+            <div v-else class="mt-4 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
+                <p class="font-medium">Nog geen betalingen</p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    Zodra {{ gateway.name }} is aangesloten komen betalingen hier vanzelf binnen.
+                </p>
+            </div>
+        </div>
+    </AppLayout>
+</template>

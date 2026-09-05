@@ -217,7 +217,10 @@ Zo zie je in één oogopslag wat leeft. Zou alles groen zijn, dan zegt de kleur
 niets meer. Gebruik geen extra accentkleuren om schermen "levendiger" te maken.
 
 Kerncijfers gebruik je via `components/StatCard.vue` — label, waarde, hint,
-icoon en optioneel een `href`. Elk cijfer krijgt een eigen lucide-icoon
+icoon, optioneel een `href` en een **`tone`**. Die laatste is er omdat groen als
+"goed" leest: een cijfer dat om actie vraagt (achterstallig, gestorneerd) krijgt
+`tone="warning"` of `tone="danger"`, anders zegt de kleur het tegendeel van wat
+er staat. Elk cijfer krijgt een eigen lucide-icoon
 (spelers `Users`, rapporten `ClipboardList`, trainingen `CalendarDays`).
 
 ### Kleuren — speler/ouder (donker)
@@ -267,6 +270,12 @@ inzicht, dan is het één klasse omzetten.
 
 `Player` heeft daarnaast `share_token` en `shared_at` voor de publieke kaart.
 
+| Model | Hoort bij | Belangrijkste velden |
+|---|---|---|
+| `Plan` | school | `name`, `amount_cents`, `interval` |
+| `Subscription` | school | `player_id`, `plan_id?`, `amount_cents`, `interval`, `status` |
+| `Payment` | school | `player_id`, `subscription_id?`, `amount_cents`, `status`, `due_on` |
+
 Beheerschermen (fase 3): spelers en groepen zijn volledig te beheren door de
 **eigenaar**; de trainer mag alles zien maar niets wijzigen. Ouders koppel je
 op de spelersdetailpagina. Omdat zelfregistratie dichtstaat maakt de eigenaar
@@ -295,6 +304,34 @@ Twee afspraken die je niet moet omdraaien:
   vanzelf klopt. De **leeftijdscategorie** ("Onder 12") hoort bij de **groep**.
 - **Positie** is een enum (`App\Enums\PlayerPosition`): `keeper` of `field`.
   In de database Engels, in de UI het Nederlandse label.
+
+### Betalingen (fase 7, nog niet aangesloten)
+
+De administratie staat er volledig; **Mollie is bewust nog niet gekoppeld**.
+De app praat alleen met `Support/Payments/PaymentGateway`, nooit rechtstreeks
+met een provider. Nu hangt daar `NotConnectedGateway` aan; aansluiten is later
+een `MollieGateway` schrijven en die in `AppServiceProvider` binden.
+
+Zolang er geen provider is:
+
+- **maakt de app zelf geen betalingen aan.** Een abonnement vastleggen is
+  administratie; er wordt niets geïncasseerd. Geen nepbetalingen, ooit.
+- **zegt elk scherm dat eerlijk**, via `GatewayNotice`.
+- kan de eigenaar een betaling **met de hand** op betaald zetten. Dat blijft ook
+  daarna nuttig, voor overboekingen en contant.
+
+Twee regels over geld die je niet moet omdraaien:
+
+- **Alles in centen**, ook door de hele keten heen. `Support/Money/Money` doet
+  de omzetting: `toCents()` gaat via string en `round()`, want `12.50 * 100`
+  geeft in floating point `1249.9999999999998`. Precies daarom is geld geen float.
+- **Een abonnement bewaart zijn eigen bedrag en interval**, los van het tarief.
+  Verhoogt de school later haar prijs, dan verandert een lopend abonnement niet
+  mee — anders zou een tariefwijziging met terugwerkende kracht ingaan.
+
+Rollen: tarieven, abonnementen en het betaaloverzicht zijn van de **eigenaar**.
+Een trainer komt er niet bij. Een ouder heeft een eigen scherm (`/billing`) met
+alleen het abonnement en de betalingen van zijn eigen kind.
 
 ### Het eigenaar-dashboard (fase 6)
 
@@ -444,7 +481,7 @@ houdt, en dus niet mag sneuvelen:
 - [x] Fase 4 — Planning & aanwezigheid
 - [x] Fase 5 — Voortgang & ouder-ervaring
 - [x] Fase 6 — Eigenaar-dashboard
-- [ ] Fase 7 — Betalingen (Mollie + Cashier)
+- [~] Fase 7 — Betalingen: schermen en model klaar, Mollie nog niet aangesloten
 - [ ] Fase 8 — Productie & lancering
 
 ---

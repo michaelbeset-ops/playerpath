@@ -18,11 +18,33 @@ const props = withDefaults(
         hint?: string;
         icon: Component;
         href?: string;
+        /**
+         * Wat de waarde betekent. Groen leest als "goed", dus een cijfer dat om
+         * actie vraagt mag nooit groen zijn — dan zegt kleur het tegendeel van
+         * wat er staat.
+         */
+        tone?: 'default' | 'warning' | 'danger';
     }>(),
-    { value: null, hint: undefined, href: undefined },
+    { value: null, hint: undefined, href: undefined, tone: 'default' },
 );
 
 const heeftWaarde = computed(() => props.value !== null && props.value !== undefined);
+
+const kleuren = computed(() => {
+    if (!heeftWaarde.value) {
+        return { balk: 'bg-border', tekst: 'text-muted-foreground/60', icoon: 'bg-secondary text-muted-foreground/70' };
+    }
+
+    if (props.tone === 'danger') {
+        return { balk: 'bg-destructive', tekst: 'text-destructive', icoon: 'bg-destructive/10 text-destructive' };
+    }
+
+    if (props.tone === 'warning') {
+        return { balk: 'bg-warning', tekst: 'text-warning', icoon: 'bg-warning/10 text-warning' };
+    }
+
+    return { balk: 'bg-primary', tekst: 'text-primary', icoon: 'bg-primary/10 text-primary' };
+});
 </script>
 
 <template>
@@ -33,19 +55,19 @@ const heeftWaarde = computed(() => props.value !== null && props.value !== undef
         :class="href ? 'hover:border-primary/40 hover:shadow' : ''"
     >
         <!-- Het groene streepje bovenaan de kaart -->
-        <span class="absolute inset-x-0 top-0 h-1" :class="heeftWaarde ? 'bg-primary' : 'bg-border'" aria-hidden="true"></span>
+        <span class="absolute inset-x-0 top-0 h-1" :class="kleuren.balk" aria-hidden="true"></span>
 
         <div class="flex items-start justify-between gap-4">
             <div class="min-w-0">
                 <p class="truncate text-sm font-medium text-muted-foreground">{{ label }}</p>
-                <p class="tabular mt-2 text-3xl font-bold leading-none" :class="heeftWaarde ? 'text-primary' : 'text-muted-foreground/60'">
+                <p class="tabular mt-2 text-3xl font-bold leading-none" :class="kleuren.tekst">
                     {{ heeftWaarde ? value : '—' }}
                 </p>
             </div>
 
             <span
                 class="flex size-10 shrink-0 items-center justify-center rounded-lg transition"
-                :class="heeftWaarde ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground/70'"
+                :class="kleuren.icoon"
             >
                 <component :is="icon" class="size-5" />
             </span>

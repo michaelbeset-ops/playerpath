@@ -1,0 +1,69 @@
+<?php
+
+namespace App\Models;
+
+use App\Enums\PaymentMethod;
+use App\Enums\PaymentStatus;
+use App\Models\Concerns\BelongsToSchool;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class Payment extends Model
+{
+    /** @use HasFactory<\Database\Factories\PaymentFactory> */
+    use BelongsToSchool, HasFactory;
+
+    protected $fillable = [
+        'player_id',
+        'subscription_id',
+        'amount_cents',
+        'status',
+        'method',
+        'description',
+        'due_on',
+        'paid_at',
+        'external_reference',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'amount_cents' => 'integer',
+            'status' => PaymentStatus::class,
+            'method' => PaymentMethod::class,
+            'due_on' => 'date',
+            'paid_at' => 'datetime',
+        ];
+    }
+
+    public function player(): BelongsTo
+    {
+        return $this->belongsTo(Player::class);
+    }
+
+    public function subscription(): BelongsTo
+    {
+        return $this->belongsTo(Subscription::class);
+    }
+
+    public function scopePaid(Builder $query): Builder
+    {
+        return $query->where('status', PaymentStatus::Paid->value);
+    }
+
+    public function scopeOutstanding(Builder $query): Builder
+    {
+        return $query->whereIn('status', [
+            PaymentStatus::Open->value,
+            PaymentStatus::Failed->value,
+            PaymentStatus::ChargedBack->value,
+        ]);
+    }
+
+    public function isOverdue(): bool
+    {
+        return $this->status === PaymentStatus::Open && $this->due_on->isPast();
+    }
+}

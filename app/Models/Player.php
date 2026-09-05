@@ -54,6 +54,22 @@ class Player extends Model
         return $this->hasMany(Report::class);
     }
 
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    /** Het lopende abonnement, als dat er is. */
+    public function activeSubscription(): ?Subscription
+    {
+        return $this->subscriptions()->active()->latest('starts_on')->first();
+    }
+
     public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class);

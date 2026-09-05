@@ -96,6 +96,12 @@ class NavigationTest extends TestCase
         $this->assertNotContains('/players', $hrefs);
         $this->assertNotContains('/groups', $hrefs);
         $this->assertNotContains('/reports', $hrefs);
+        // De administratie van de school is niet van een ouder; die heeft een
+        // eigen scherm met alleen het eigen abonnement.
+        $this->assertNotContains('/payments', $hrefs);
+        $this->assertNotContains('/plans', $hrefs);
+        $this->assertNotContains('/subscriptions', $hrefs);
+        $this->assertContains('/billing', $hrefs);
     }
 
     public function test_een_eigenaar_ziet_het_hele_menu(): void
@@ -104,7 +110,10 @@ class NavigationTest extends TestCase
 
         $hrefs = array_column(app(MainNavigation::class)->for($eigenaar), 'href');
 
-        $this->assertSame(['/dashboard', '/players', '/groups', '/trainings', '/reports'], $hrefs);
+        $this->assertSame([
+            '/dashboard', '/players', '/groups', '/trainings', '/reports',
+            '/subscriptions', '/payments', '/plans',
+        ], $hrefs);
     }
 
     public function test_een_ouder_komt_niet_bij_het_ledenbestand(): void

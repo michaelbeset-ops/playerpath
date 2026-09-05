@@ -14,6 +14,7 @@ import {
     TrendingUp,
     UserPlus,
     UserRoundCheck,
+    Plug,
     Users,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
@@ -42,6 +43,17 @@ const props = defineProps<{
     attentionAfterDays?: number;
     upcomingTrainings?: { id: number; group: string; date: string; time: string; location: string | null }[];
     can?: { managePlayers: boolean; manageGroups: boolean; planTrainings: boolean; seeFinance: boolean };
+    finance?: {
+        revenueThisMonth: string;
+        outstanding: string;
+        outstandingCount: number;
+        overdue: string;
+        overdueCount: number;
+        activeSubscriptions: number;
+        yearlyValue: string;
+        needsAttentionCount: number;
+    } | null;
+    gateway?: { connected: boolean; name: string; message: string };
     players?: SpelerKaart[];
     nextTraining?: { id: number; group: string; date: string; time: string; location: string | null } | null;
 }>();
@@ -236,26 +248,57 @@ const kaarten = computed(() => {
                 </div>
 
                 <!--
-                    Financieel overzicht. Bewust leeg en eerlijk: er zijn nog geen
-                    betaalgegevens, dus er staan hier geen cijfers. Mollie komt in
-                    fase 7; dit vak laat alleen zien waar het straks landt.
+                    Financieel overzicht. De cijfers komen uit de administratie;
+                    of er ook echt geïncasseerd wordt hangt af van de gateway.
                 -->
-                <div v-if="can?.seeFinance" class="mt-4 rounded-xl border border-dashed border-border bg-card/50 p-5">
-                    <div class="flex items-start gap-3">
-                        <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground/70">
-                            <CreditCard class="size-5" />
-                        </span>
+                <div v-if="can?.seeFinance && finance" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+                    <div class="flex flex-wrap items-baseline justify-between gap-2">
+                        <p class="font-medium">Financieel overzicht</p>
+                        <Link href="/payments" class="text-xs font-medium text-primary underline underline-offset-4">Alle betalingen</Link>
+                    </div>
 
-                        <div class="min-w-0">
-                            <p class="font-medium">Financieel overzicht</p>
-                            <p class="mt-1 text-sm text-muted-foreground">
-                                Hier komen je omzet, lopende abonnementen en openstaande betalingen te staan, zodra betalingen zijn
-                                aangesloten. Dat is de laatste stap, bewust op een product dat verder al werkt.
+                    <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <div>
+                            <p class="tabular text-2xl font-bold leading-none text-primary">{{ finance.revenueThisMonth }}</p>
+                            <p class="mt-1 text-xs text-muted-foreground">ontvangen deze maand</p>
+                        </div>
+                        <div>
+                            <p
+                                class="tabular text-2xl font-bold leading-none"
+                                :class="finance.outstandingCount ? 'text-foreground' : 'text-muted-foreground/60'"
+                            >
+                                {{ finance.outstanding }}
                             </p>
-                            <p class="mt-2 text-xs text-muted-foreground">Nog niet aangesloten &middot; komt in fase 7</p>
+                            <p class="mt-1 text-xs text-muted-foreground">
+                                openstaand<span v-if="finance.overdueCount"> &middot; {{ finance.overdueCount }} te laat</span>
+                            </p>
+                        </div>
+                        <div>
+                            <p class="tabular text-2xl font-bold leading-none">{{ finance.activeSubscriptions }}</p>
+                            <p class="mt-1 text-xs text-muted-foreground">lopende abonnementen</p>
+                        </div>
+                        <div>
+                            <p class="tabular text-2xl font-bold leading-none">{{ finance.yearlyValue }}</p>
+                            <p class="mt-1 text-xs text-muted-foreground">op jaarbasis</p>
                         </div>
                     </div>
+
+                    <p
+                        v-if="finance.needsAttentionCount"
+                        class="mt-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm"
+                    >
+                        {{ finance.needsAttentionCount }}
+                        {{ finance.needsAttentionCount === 1 ? 'betaling is mislukt of gestorneerd' : 'betalingen zijn mislukt of gestorneerd' }}.
+                        <Link href="/payments?status=failed" class="font-medium text-destructive underline underline-offset-4">Bekijken</Link>
+                    </p>
+
+                    <p v-if="!gateway?.connected" class="mt-4 flex items-start gap-2 text-xs text-muted-foreground">
+                        <Plug class="mt-0.5 size-3.5 shrink-0" />
+                        {{ gateway?.name }} is nog niet aangesloten, dus er wordt niets automatisch geïncasseerd. Deze cijfers komen uit wat
+                        je zelf hebt vastgelegd.
+                    </p>
                 </div>
+
             </template>
 
             <!-- Ouder en speler: het eigen kind -->

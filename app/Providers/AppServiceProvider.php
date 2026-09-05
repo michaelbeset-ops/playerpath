@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Support\Payments\NotConnectedGateway;
+use App\Support\Payments\PaymentGateway;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Support\ServiceProvider;
 
@@ -11,6 +13,11 @@ class AppServiceProvider extends ServiceProvider
     {
         // Eén instantie per request: de actieve school.
         $this->app->singleton(Tenancy::class);
+
+        // De betaalprovider. Zolang er geen koppeling is, zegt de app dat
+        // overal eerlijk en maakt hij zelf geen betalingen aan. Mollie
+        // aansluiten is straks: een MollieGateway schrijven en hem hier binden.
+        $this->app->singleton(PaymentGateway::class, fn () => new NotConnectedGateway);
     }
 
     public function boot(): void

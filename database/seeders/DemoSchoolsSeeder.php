@@ -2,13 +2,20 @@
 
 namespace Database\Seeders;
 
+use App\Enums\BillingInterval;
+use App\Enums\PaymentMethod;
+use App\Enums\PaymentStatus;
 use App\Enums\PlayerPosition;
+use App\Enums\SubscriptionStatus;
 use App\Enums\ReportCategory;
 use App\Enums\Role;
 use App\Models\Group;
+use App\Models\Payment;
+use App\Models\Plan;
 use App\Models\Player;
 use App\Models\Report;
 use App\Models\School;
+use App\Models\Subscription;
 use App\Models\Training;
 use App\Models\User;
 use App\Support\PlayerCard\CalculatePlayerCard;
@@ -49,6 +56,60 @@ class DemoSchoolsSeeder extends Seeder
                 ['Selectie', 'Onder 15'],
             ],
         );
+    }
+
+    /**
+     * Demo-administratie: een tarief, abonnementen en wat betalingen.
+     *
+     * Alleen in de seeder. De app zelf maakt geen betalingen aan zolang er
+     * geen betaalprovider is aangesloten.
+     *
+     * @param  \Illuminate\Support\Collection<int, Player>  $spelers
+     */
+    protected function maakAdministratie($spelers): void
+    {
+        $plan = Plan::create([
+            'name' => 'Keeperstraining',
+            'description' => 'Wekelijkse training, inclusief materiaal',
+            'amount_cents' => 2750,
+            'interval' => BillingInterval::Monthly,
+        ]);
+
+        foreach ($spelers as $index => $speler) {
+            $abonnement = Subscription::create([
+                'player_id' => $speler->id,
+                'plan_id' => $plan->id,
+                'amount_cents' => $plan->amount_cents,
+                'interval' => $plan->interval,
+                'status' => SubscriptionStatus::Active,
+                'payment_method' => PaymentMethod::DirectDebit,
+                'starts_on' => now()->subMonths(4)->startOfMonth()->toDateString(),
+            ]);
+
+            // Drie maanden historie: betaald, betaald, en de laatste wisselend.
+            foreach ([3, 2, 1, 0] as $positie => $maandenGeleden) {
+                $moment = now()->subMonths($maandenGeleden)->startOfMonth();
+
+                // De eerste speler heeft een mislukte incasso, zodat je ziet
+                // hoe dat eruitziet.
+                $status = match (true) {
+                    $maandenGeleden === 0 && $index === 0 => PaymentStatus::Failed,
+                    $maandenGeleden === 0 => PaymentStatus::Open,
+                    default => PaymentStatus::Paid,
+                };
+
+                Payment::create([
+                    'player_id' => $speler->id,
+                    'subscription_id' => $abonnement->id,
+                    'amount_cents' => $abonnement->amount_cents,
+                    'status' => $status,
+                    'method' => PaymentMethod::DirectDebit,
+                    'description' => 'Contributie '.$moment->translatedFormat('F Y'),
+                    'due_on' => $moment->copy()->addDays(7)->toDateString(),
+                    'paid_at' => $status === PaymentStatus::Paid ? $moment->copy()->addDays(3) : null,
+                ]);
+            }
+        }
     }
 
     /** Eén training geweest, twee komende. */
@@ -151,6 +212,10 @@ class DemoSchoolsSeeder extends Seeder
             // Een training vorige week en twee komende, zodat er meteen iets
             // te zien en af te vinken valt.
             $this->maakTrainingen($gemaakteGroepen->first());
+
+            // Tarieven, abonnementen en een paar betalingen, zodat het
+            // financiële scherm meteen laat zien hoe het eruitziet.
+            $this->maakAdministratie($gemaakteSpelers);
         });
     }
 }

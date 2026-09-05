@@ -3,8 +3,11 @@
 namespace App\Support\Navigation;
 
 use App\Models\Group;
+use App\Models\Payment;
 use App\Models\Player;
+use App\Models\Plan;
 use App\Models\Report;
+use App\Models\Subscription;
 use App\Models\Training;
 use App\Models\User;
 
@@ -32,6 +35,11 @@ class MainNavigation
             ['title' => 'Groepen', 'href' => '/groups', 'icon' => 'groups', 'allowed' => $user->can('viewAny', Group::class)],
             ['title' => 'Trainingen', 'href' => '/trainings', 'icon' => 'trainings', 'allowed' => $user->can('viewAny', Training::class)],
             ['title' => 'Rapporten', 'href' => '/reports', 'icon' => 'reports', 'allowed' => $user->can('viewAny', Report::class)],
+            ['title' => 'Abonnementen', 'href' => '/subscriptions', 'icon' => 'subscriptions', 'allowed' => $user->can('viewAny', Subscription::class)],
+            ['title' => 'Betalingen', 'href' => '/payments', 'icon' => 'payments', 'allowed' => $user->can('viewAny', Payment::class)],
+            ['title' => 'Tarieven', 'href' => '/plans', 'icon' => 'plans', 'allowed' => $user->can('viewAny', Plan::class)],
+            // Ouder en speler: hun eigen abonnement, niet dat van de school.
+            ['title' => 'Mijn abonnement', 'href' => '/billing', 'icon' => 'payments', 'allowed' => $user->visiblePlayerIds() !== []],
         ];
 
         return array_values(array_map(

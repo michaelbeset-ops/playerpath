@@ -7,6 +7,8 @@ use App\Models\Player;
 use App\Models\Training;
 use App\Models\User;
 use App\Support\Dashboard\SchoolDashboard;
+use App\Support\Payments\BillingOverview;
+use App\Support\Payments\PaymentGateway;
 use App\Support\Trainings\VisibleTrainings;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -26,6 +28,8 @@ class DashboardController extends Controller
     public function __construct(
         protected VisibleTrainings $visible,
         protected SchoolDashboard $dashboard,
+        protected BillingOverview $billing,
+        protected PaymentGateway $gateway,
     ) {}
 
     public function __invoke(Request $request): Response
@@ -53,6 +57,14 @@ class DashboardController extends Controller
                 'planTrainings' => $user->can('create', Training::class),
                 // Het financiële overzicht is van de eigenaar, niet van de trainer.
                 'seeFinance' => $user->isEigenaar(),
+            ],
+            // Het financiële vak. De cijfers komen uit de administratie; of er
+            // ook echt geïncasseerd wordt hangt af van de gateway.
+            'finance' => $user->isEigenaar() ? $this->billing->summary() : null,
+            'gateway' => [
+                'connected' => $this->gateway->isConnected(),
+                'name' => $this->gateway->name(),
+                'message' => $this->gateway->statusMessage(),
             ],
         ]);
     }
