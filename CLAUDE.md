@@ -296,6 +296,23 @@ Twee afspraken die je niet moet omdraaien:
 - **Positie** is een enum (`App\Enums\PlayerPosition`): `keeper` of `field`.
   In de database Engels, in de UI het Nederlandse label.
 
+### Het eigenaar-dashboard (fase 6)
+
+De cijfers staan in `Support/Dashboard/SchoolDashboard`, niet in de controller.
+Drie afspraken die je niet moet omdraaien:
+
+- **Alleen cijfers die echt bestaan.** Liever een leeg vak met uitleg dan een
+  getal dat nergens op slaat.
+- **Opkomst telt alleen wat de trainer echt afvinkte.** "Niet afgevinkt" is
+  geen "afwezig"; die spelers vallen buiten de breuk.
+- **"Vraagt om aandacht" is het belangrijkste blok**: spelers zonder rapport in
+  30 dagen. Dat laat zien waar het product stilvalt, en een lege kaart is
+  precies waarom een ouder afhaakt.
+
+Snelle acties volgen de policies, net als het menu: een trainer krijgt geen
+knop "Speler toevoegen" te zien. Het **financiële vak is van de eigenaar** en
+staat er bewust leeg bij tot fase 7 — geen voorbeeldcijfers.
+
 ### Voortgang, meldingen en de kaart (fase 5)
 
 **Voortgang** (`Support/PlayerCard/PlayerProgress`) toont het cijfer van elk
@@ -426,7 +443,7 @@ houdt, en dus niet mag sneuvelen:
 - [x] Fase 3 — Spelers- & groepsbeheer
 - [x] Fase 4 — Planning & aanwezigheid
 - [x] Fase 5 — Voortgang & ouder-ervaring
-- [ ] Fase 6 — Eigenaar-dashboard
+- [x] Fase 6 — Eigenaar-dashboard
 - [ ] Fase 7 — Betalingen (Mollie + Cashier)
 - [ ] Fase 8 — Productie & lancering
 

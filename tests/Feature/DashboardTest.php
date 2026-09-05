@@ -98,6 +98,153 @@ class DashboardTest extends TestCase
             );
     }
 
+    public function test_het_dashboard_wijst_spelers_aan_die_te_lang_geen_rapport_hadden(): void
+    {
+        $school = School::factory()->create();
+        $eigenaar = $this->eigenaar($school);
+
+        app(Tenancy::class)->set($school);
+
+        $vergeten = Player::factory()->for($school)->keeper()->create(['first_name' => 'Vergeten', 'last_name' => 'Speler']);
+        $recent = Player::factory()->for($school)->keeper()->create(['first_name' => 'Recent', 'last_name' => 'Beoordeeld']);
+
+        \App\Models\Report::factory()->for($school)->create([
+            'player_id' => $vergeten->id,
+            'trainer_id' => $eigenaar->id,
+            'reported_on' => now()->subDays(60),
+        ]);
+
+        \App\Models\Report::factory()->for($school)->create([
+            'player_id' => $recent->id,
+            'trainer_id' => $eigenaar->id,
+            'reported_on' => now()->subDays(3),
+        ]);
+
+        $this->actingAs($eigenaar)
+            ->get('/dashboard')
+            ->assertInertia(fn ($page) => $page
+                ->count('needsAttention', 1)
+                ->where('needsAttention.0.name', 'Vergeten Speler')
+            );
+    }
+
+    public function test_een_speler_zonder_enig_rapport_vraagt_ook_om_aandacht(): void
+    {
+        $school = School::factory()->create();
+        $eigenaar = $this->eigenaar($school);
+
+        Player::factory()->for($school)->create(['first_name' => 'Nooit', 'last_name' => 'Beoordeeld']);
+
+        $this->actingAs($eigenaar)
+            ->get('/dashboard')
+            ->assertInertia(fn ($page) => $page
+                ->count('needsAttention', 1)
+                ->where('needsAttention.0.last_report_on', null)
+            );
+    }
+
+    public function test_de_gemiddelde_rating_telt_alleen_spelers_met_cijfers(): void
+    {
+        $school = School::factory()->create();
+        $eigenaar = $this->eigenaar($school);
+
+        app(Tenancy::class)->set($school);
+
+        Player::factory()->for($school)->create()->forceFill(['overall_rating' => 60])->save();
+        Player::factory()->for($school)->create()->forceFill(['overall_rating' => 80])->save();
+        Player::factory()->for($school)->create(); // nog geen cijfers
+
+        $this->actingAs($eigenaar)
+            ->get('/dashboard')
+            ->assertInertia(fn ($page) => $page->where('stats.averageRating', 70));
+    }
+
+    public function test_de_opkomst_telt_alleen_wat_echt_is_afgevinkt(): void
+    {
+        $school = School::factory()->create();
+        $eigenaar = $this->eigenaar($school);
+
+        app(Tenancy::class)->set($school);
+
+        $groep = \App\Models\Group::factory()->for($school)->create();
+        $training = \App\Models\Training::factory()->for($school)->for($groep)->past()->create();
+
+        $spelers = Player::factory()->count(4)->for($school)->create();
+
+        // Drie aanwezig, een afwezig, en een vierde die niet is afgevinkt.
+        \App\Models\Attendance::factory()->for($school)->create([
+            'training_id' => $training->id, 'player_id' => $spelers[0]->id, 'status' => 'present',
+        ]);
+        \App\Models\Attendance::factory()->for($school)->create([
+            'training_id' => $training->id, 'player_id' => $spelers[1]->id, 'status' => 'present',
+        ]);
+        \App\Models\Attendance::factory()->for($school)->create([
+            'training_id' => $training->id, 'player_id' => $spelers[2]->id, 'status' => 'absent',
+        ]);
+        \App\Models\Attendance::factory()->for($school)->create([
+            'training_id' => $training->id, 'player_id' => $spelers[3]->id, 'status' => null,
+        ]);
+
+        $this->actingAs($eigenaar)
+            ->get('/dashboard')
+            ->assertInertia(fn ($page) => $page
+                ->where('stats.attendanceRate.percentage', 67)
+                ->where('stats.attendanceRate.total', 3)
+            );
+    }
+
+    public function test_een_trainer_ziet_geen_financieel_overzicht_en_geen_beheeracties(): void
+    {
+        $school = School::factory()->create();
+
+        $trainer = User::factory()->for($school)->create();
+        $trainer->assignRole(Role::Trainer->value);
+
+        $this->actingAs($trainer)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('view', 'school')
+                ->where('can.seeFinance', false)
+                ->where('can.managePlayers', false)
+                ->where('can.manageGroups', false)
+                // Trainingen inplannen mag hij wel.
+                ->where('can.planTrainings', true)
+            );
+    }
+
+    public function test_een_eigenaar_ziet_het_financiele_vak(): void
+    {
+        $school = School::factory()->create();
+
+        $this->actingAs($this->eigenaar($school))
+            ->get('/dashboard')
+            ->assertInertia(fn ($page) => $page->where('can.seeFinance', true));
+    }
+
+    public function test_de_dashboardcijfers_blijven_binnen_de_eigen_school(): void
+    {
+        $schoolA = School::factory()->create();
+        $schoolB = School::factory()->create();
+
+        app(Tenancy::class)->set($schoolB);
+        Player::factory()->count(5)->for($schoolB)->create();
+        \App\Models\Group::factory()->for($schoolB)->create();
+        \App\Models\Training::factory()->for($schoolB)->for(\App\Models\Group::factory()->for($schoolB))->upcoming()->create();
+
+        app(Tenancy::class)->set($schoolA);
+        Player::factory()->count(2)->for($schoolA)->create();
+
+        $this->actingAs($this->eigenaar($schoolA))
+            ->get('/dashboard')
+            ->assertInertia(fn ($page) => $page
+                ->where('stats.players', 2)
+                ->where('stats.groups', 0)
+                ->count('upcomingTrainings', 0)
+                ->count('needsAttention', 2)
+            );
+    }
+
     public function test_rapporten_van_deze_week_worden_geteld(): void
     {
         $school = School::factory()->create();

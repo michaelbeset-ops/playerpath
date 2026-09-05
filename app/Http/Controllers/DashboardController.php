@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Group;
 use App\Models\Player;
-use App\Models\Report;
 use App\Models\Training;
 use App\Models\User;
+use App\Support\Dashboard\SchoolDashboard;
 use App\Support\Trainings\VisibleTrainings;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -18,11 +19,14 @@ use Inertia\Response;
  * eigen kind. Eén gedeeld dashboard toonde een ouder schoolbrede cijfers en
  * een knop "Rapport invullen" die hij toch niet mag gebruiken.
  *
- * Het volledige eigenaar-dashboard (omzet, overzichten) is fase 6.
+ * De cijfers voor de schoolweergave staan in Support/Dashboard/SchoolDashboard.
  */
 class DashboardController extends Controller
 {
-    public function __construct(protected VisibleTrainings $visible) {}
+    public function __construct(
+        protected VisibleTrainings $visible,
+        protected SchoolDashboard $dashboard,
+    ) {}
 
     public function __invoke(Request $request): Response
     {
@@ -30,19 +34,25 @@ class DashboardController extends Controller
         $eigenSpelers = $user->visiblePlayerIds();
 
         return $eigenSpelers === []
-            ? $this->voorSchool()
+            ? $this->voorSchool($user)
             : $this->voorGezin($user, $eigenSpelers);
     }
 
     /** Eigenaar en trainer: de cijfers van de school. */
-    protected function voorSchool(): Response
+    protected function voorSchool(User $user): Response
     {
         return Inertia::render('Dashboard', [
             'view' => 'school',
-            'stats' => [
-                'players' => Player::active()->count(),
-                'reportsThisWeek' => Report::where('reported_on', '>=', now()->startOfWeek())->count(),
-                'trainingsThisWeek' => Training::whereBetween('starts_at', [now()->startOfWeek(), now()->endOfWeek()])->count(),
+            'stats' => $this->dashboard->stats(),
+            'needsAttention' => $this->dashboard->needsAttention(),
+            'attentionAfterDays' => SchoolDashboard::AANDACHT_NA_DAGEN,
+            'upcomingTrainings' => $this->dashboard->upcomingTrainings(),
+            'can' => [
+                'managePlayers' => $user->can('create', Player::class),
+                'manageGroups' => $user->can('create', Group::class),
+                'planTrainings' => $user->can('create', Training::class),
+                // Het financiële overzicht is van de eigenaar, niet van de trainer.
+                'seeFinance' => $user->isEigenaar(),
             ],
         ]);
     }
