@@ -54,6 +54,7 @@ class DashboardTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('Dashboard')
+                ->where('view', 'school')
                 ->where('stats.players', 3)
                 ->where('stats.reportsThisWeek', 0)
             );
@@ -69,6 +70,32 @@ class DashboardTest extends TestCase
         $this->actingAs($this->eigenaar($school))
             ->get('/dashboard')
             ->assertInertia(fn ($page) => $page->where('stats.players', 2));
+    }
+
+    public function test_een_ouder_krijgt_het_eigen_kind_te_zien_en_geen_schoolcijfers(): void
+    {
+        $school = School::factory()->create();
+
+        $ouder = User::factory()->for($school)->create();
+        $ouder->assignRole(Role::Ouder->value);
+
+        app(Tenancy::class)->set($school);
+
+        $eigenKind = Player::factory()->for($school)->create(['first_name' => 'Sem', 'last_name' => 'de Vries']);
+        Player::factory()->count(4)->for($school)->create();
+
+        $ouder->children()->attach($eigenKind->id);
+
+        $this->actingAs($ouder)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('view', 'gezin')
+                ->count('players', 1)
+                ->where('players.0.name', 'Sem de Vries')
+                // Schoolbrede cijfers horen hier niet: die zijn niet van een ouder.
+                ->missing('stats')
+            );
     }
 
     public function test_rapporten_van_deze_week_worden_geteld(): void

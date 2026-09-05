@@ -5,12 +5,18 @@ namespace App\Http\Controllers\Players;
 use App\Http\Controllers\Controller;
 use App\Models\Player;
 use App\Support\PlayerCard\CalculatePlayerCard;
+use App\Support\PlayerCard\PlayerBadges;
+use App\Support\PlayerCard\PlayerProgress;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PlayerCardController extends Controller
 {
-    public function __construct(protected CalculatePlayerCard $calculator) {}
+    public function __construct(
+        protected CalculatePlayerCard $calculator,
+        protected PlayerBadges $badges,
+        protected PlayerProgress $progress,
+    ) {}
 
     public function show(Player $player): Response
     {
@@ -35,6 +41,12 @@ class PlayerCardController extends Controller
                 'note' => $laatste->note,
             ] : null,
             'canReport' => auth()->user()->can('createReport', $player),
+            'level' => $this->badges->level($player->overall_rating),
+            'share' => [
+                'can' => auth()->user()->can('share', $player),
+                'url' => $player->isShared() ? route('players.shared', $player->share_token) : null,
+            ],
+            'badges' => $this->badges->for($player, $this->progress),
         ]);
     }
 }

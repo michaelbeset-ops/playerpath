@@ -92,6 +92,10 @@ class PlayerController extends Controller
 
     public function show(Request $request, Player $player): Response
     {
+        // De detailpagina is een beheerscherm: hij toont onder meer de
+        // contactgegevens van de ouders. Een ouder of speler hoort hier niet
+        // te komen; die hebben de spelerskaart en de voortgangspagina.
+        $this->authorize('viewAny', Player::class);
         $this->authorize('view', $player);
 
         $player->load(['groups', 'guardians']);

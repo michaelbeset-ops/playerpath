@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import FlashMessage from '@/components/FlashMessage.vue';
+import { Head, Link, router } from '@inertiajs/vue3';
+import { Check, Copy, Link2, Lock, TrendingUp, Trophy } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 
 interface Categorie {
     category: string;
@@ -24,10 +26,14 @@ const props = defineProps<{
     reportCount: number;
     lastReport: { reported_on: string; trainer: string | null; note: string | null } | null;
     canReport: boolean;
+    level: { key: string; label: string; description: string };
+    badges: { key: string; label: string; description: string; earned: boolean }[];
+    share: { can: boolean; url: string | null };
 }>();
 
+// Bewust alleen de speler zelf: een kruimel naar /reports zou voor een ouder
+// een dode link zijn.
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Rapporten', href: '/reports' },
     { title: props.player.name, href: '/players/' + props.player.id + '/card' },
 ];
 
@@ -43,6 +49,29 @@ const initialen = computed(() =>
 );
 
 const balkBreedte = (rating: number | null) => (rating === null ? '0%' : rating + '%');
+
+const behaald = computed(() => props.badges.filter((b) => b.earned));
+const nogTeGaan = computed(() => props.badges.filter((b) => !b.earned));
+
+const gekopieerd = ref(false);
+
+const deelAan = () => router.post('/players/' + props.player.id + '/share', {}, { preserveScroll: true });
+
+const deelUit = () => {
+    if (confirm('De deel-link uitzetten? Wie de link heeft, kan de kaart daarna niet meer bekijken.')) {
+        router.delete('/players/' + props.player.id + '/share', { preserveScroll: true });
+    }
+};
+
+const kopieer = async () => {
+    if (!props.share.url) {
+        return;
+    }
+
+    await navigator.clipboard.writeText(props.share.url);
+    gekopieerd.value = true;
+    setTimeout(() => (gekopieerd.value = false), 2000);
+};
 </script>
 
 <template>
@@ -50,6 +79,8 @@ const balkBreedte = (rating: number | null) => (rating === null ? '0%' : rating 
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-3xl p-4">
+            <FlashMessage />
+
             <!--
                 De kaart is bewust donker: dit is de speler/ouder-kant van het
                 merk. Zie CLAUDE.md hoofdstuk 4.
@@ -61,7 +92,10 @@ const balkBreedte = (rating: number | null) => (rating === null ? '0%' : rating 
                     </div>
 
                     <div class="min-w-0 flex-1">
-                        <p class="text-xs uppercase tracking-widest text-gold">{{ player.position }}</p>
+                        <p class="text-xs uppercase tracking-widest text-gold">
+                            {{ player.position }}
+                            <span v-if="player.overall_rating" class="text-muted-foreground">&middot; {{ level.label }}</span>
+                        </p>
                         <h1 class="truncate text-2xl font-bold tracking-tight">{{ player.name }}</h1>
                         <p class="mt-0.5 text-sm text-muted-foreground">
                             <span v-if="player.age">{{ player.age }} jaar &middot; </span>
@@ -102,6 +136,40 @@ const balkBreedte = (rating: number | null) => (rating === null ? '0%' : rating 
                 </p>
             </div>
 
+            <!-- Mijlpalen: horen bij de donkere kaart, met goud als accent -->
+            <div v-if="player.overall_rating" class="theme-donker mt-4 rounded-2xl border border-border bg-background p-6 text-foreground">
+                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <p class="font-medium">Mijlpalen</p>
+                    <p class="tabular text-xs text-muted-foreground">{{ behaald.length }} van {{ badges.length }} behaald</p>
+                </div>
+
+                <div class="mt-4 grid gap-2 sm:grid-cols-2">
+                    <div
+                        v-for="badge in behaald"
+                        :key="badge.key"
+                        class="flex items-start gap-3 rounded-xl border border-gold/30 bg-gold/10 p-3"
+                    >
+                        <Trophy class="mt-0.5 size-4 shrink-0 text-gold" />
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-gold">{{ badge.label }}</p>
+                            <p class="text-xs text-muted-foreground">{{ badge.description }}</p>
+                        </div>
+                    </div>
+
+                    <div
+                        v-for="badge in nogTeGaan"
+                        :key="badge.key"
+                        class="flex items-start gap-3 rounded-xl border border-border p-3 opacity-60"
+                    >
+                        <Lock class="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                        <div class="min-w-0">
+                            <p class="text-sm font-medium">{{ badge.label }}</p>
+                            <p class="text-xs text-muted-foreground">{{ badge.description }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Toelichting en actie staan buiten de kaart, in de lichte admin-omgeving -->
             <div v-if="lastReport" class="mt-4 rounded-xl border border-border bg-card p-4 shadow-sm">
                 <p class="text-sm font-medium">Laatste rapport</p>
@@ -111,8 +179,60 @@ const balkBreedte = (rating: number | null) => (rating === null ? '0%' : rating 
                 <p v-if="lastReport.note" class="mt-3 text-sm">{{ lastReport.note }}</p>
             </div>
 
-            <div v-if="canReport" class="mt-4">
+            <!-- Delen: standaard uit, en met de gevolgen erbij -->
+            <div v-if="share.can && player.overall_rating" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+                <p class="font-medium">Kaart delen</p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    Maak een link waarmee iemand zonder account deze kaart kan bekijken. Op die pagina staan alleen de voornaam met
+                    initiaal, de positie en de cijfers — geen achternaam, leeftijd, school of trainersnotities.
+                </p>
+
+                <template v-if="share.url">
+                    <div class="mt-4 flex flex-wrap items-center gap-2">
+                        <input
+                            :value="share.url"
+                            readonly
+                            class="min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-xs text-muted-foreground"
+                            @focus="($event.target as HTMLInputElement).select()"
+                        />
+                        <button
+                            type="button"
+                            class="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition hover:border-primary"
+                            @click="kopieer"
+                        >
+                            <Check v-if="gekopieerd" class="size-4 text-primary" />
+                            <Copy v-else class="size-4" />
+                            {{ gekopieerd ? 'Gekopieerd' : 'Kopieer' }}
+                        </button>
+                    </div>
+
+                    <button type="button" class="mt-3 text-sm font-medium text-destructive underline underline-offset-4" @click="deelUit">
+                        Delen stoppen
+                    </button>
+                </template>
+
+                <button
+                    v-else
+                    type="button"
+                    class="mt-4 inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium transition hover:border-primary"
+                    @click="deelAan"
+                >
+                    <Link2 class="size-4" />
+                    Deel-link aanmaken
+                </button>
+            </div>
+
+            <div class="mt-4 flex flex-wrap items-center gap-3">
                 <Link
+                    :href="'/players/' + player.id + '/progress'"
+                    class="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold shadow-sm transition hover:border-primary"
+                >
+                    <TrendingUp class="size-4" />
+                    Bekijk de voortgang
+                </Link>
+
+                <Link
+                    v-if="canReport"
                     :href="'/players/' + player.id + '/reports/create'"
                     class="inline-flex items-center rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
                 >

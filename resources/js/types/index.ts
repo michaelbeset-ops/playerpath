@@ -31,6 +31,7 @@ export interface SharedData {
     flash: { status: string | null };
     /** Het hoofdmenu, server-side bepaald op basis van wat je mag. */
     nav: { title: string; href: string; icon: string }[];
+    unreadNotifications: number;
     ziggy: {
         location: string;
         url: string;

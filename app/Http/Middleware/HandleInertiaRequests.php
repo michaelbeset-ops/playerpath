@@ -37,6 +37,24 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        // De publiek gedeelde spelerskaart staat buiten de app: geen menu, geen
+        // ingelogde gebruiker, geen school. Zou hij de gewone gedeelde props
+        // krijgen, dan stond de naam van de school in de broncode van een
+        // pagina die iedereen met de link kan openen.
+        // Expliciet leegzetten in plaats van weglaten: Inertia's gedeelde props
+        // zijn statisch, dus een eerdere request kan er nog iets in hebben laten
+        // staan. Overschrijven is het enige wat gegarandeerd werkt.
+        if ($request->routeIs('players.shared')) {
+            return array_merge(parent::share($request), [
+                'name' => config('app.name'),
+                'auth' => ['user' => null, 'roles' => []],
+                'school' => null,
+                'nav' => [],
+                'unreadNotifications' => 0,
+                'flash' => ['status' => null],
+            ]);
+        }
+
         return array_merge(parent::share($request), [
             ...parent::share($request),
             'name' => config('app.name'),
@@ -46,6 +64,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'school' => fn () => app(Tenancy::class)->school()?->only(['id', 'name']),
             'nav' => fn () => app(MainNavigation::class)->for($request->user()),
+            'unreadNotifications' => fn () => $request->user()?->unreadNotifications()->count() ?? 0,
             'flash' => [
                 'status' => fn () => $request->session()->get('status'),
             ],

@@ -62,6 +62,25 @@ class PlayerPolicy
         return $user->belongsToSameSchool($player) && $user->isEigenaar();
     }
 
+    /**
+     * De kaart publiek deelbaar maken.
+     *
+     * Bewust NIET de trainer: die beslist niet of het kind van iemand anders
+     * op internet komt. Wel de eigenaar van de school en de ouders zelf.
+     */
+    public function share(User $user, Player $player): bool
+    {
+        if (! $user->belongsToSameSchool($player)) {
+            return false;
+        }
+
+        if ($user->isEigenaar()) {
+            return true;
+        }
+
+        return $user->isOuder() && $user->children()->whereKey($player->getKey())->exists();
+    }
+
     /** Rapporten schrijven doet de trainer (fase 2). */
     public function createReport(User $user, Player $player): bool
     {

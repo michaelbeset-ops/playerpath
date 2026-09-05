@@ -57,8 +57,9 @@
         --input: 214 32% 88%;
         --ring: 143 75% 42%;
 
-        /* Grafieken (fase 5) */
-        --chart-1: 143 75% 38%;
+        /* Grafieken. Deze tinten zijn met de palet-validator gecontroleerd op
+           contrast met het vlak eronder; pas ze niet los aan. */
+        --chart-1: 146 74% 32%; /* #158F49 */
         --chart-2: 43 74% 42%;
         --chart-3: 199 89% 42%;
         --chart-4: 280 50% 50%;
@@ -112,7 +113,7 @@
         --input: 219 40% 18%;
         --ring: 143 75% 51%;
 
-        --chart-1: 143 75% 51%;
+        --chart-1: 145 74% 38%; /* #19A855 */
         --chart-2: 46 65% 52%;
         --chart-3: 199 89% 55%;
         --chart-4: 280 65% 65%;

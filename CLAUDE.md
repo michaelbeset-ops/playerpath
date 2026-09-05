@@ -265,6 +265,8 @@ inzicht, dan is het één klasse omzetten.
 | `Training` | school | `group_id`, `starts_at`, `ends_at`, `location` |
 | `Attendance` | school | `training_id`, `player_id`, `registration`, `status` |
 
+`Player` heeft daarnaast `share_token` en `shared_at` voor de publieke kaart.
+
 Beheerschermen (fase 3): spelers en groepen zijn volledig te beheren door de
 **eigenaar**; de trainer mag alles zien maar niets wijzigen. Ouders koppel je
 op de spelersdetailpagina. Omdat zelfregistratie dichtstaat maakt de eigenaar
@@ -293,6 +295,57 @@ Twee afspraken die je niet moet omdraaien:
   vanzelf klopt. De **leeftijdscategorie** ("Onder 12") hoort bij de **groep**.
 - **Positie** is een enum (`App\Enums\PlayerPosition`): `keeper` of `field`.
   In de database Engels, in de UI het Nederlandse label.
+
+### Voortgang, meldingen en de kaart (fase 5)
+
+**Voortgang** (`Support/PlayerCard/PlayerProgress`) toont het cijfer van elk
+**rapport afzonderlijk**, niet het doorgerekende kaartgemiddelde. Anders zie je
+een afgevlakte lijn in plaats van wat de trainer die dag opschreef. Vanaf twee
+rapporten is er een grafiek; daarvoor niet.
+
+**Tijdlijn en mijlpalen worden afgeleid**, niet opgeslagen. Er is geen
+gebeurtenissen-tabel die uit de pas kan lopen met de werkelijkheid, en een
+nieuwe badge kost één regel in `PlayerBadges`.
+
+**Meldingen** gaan via `NieuwRapport` naar de ouders en de speler zelf, in de
+app en per e-mail. De notificatie is `ShouldQueue`: het opslaan van een rapport
+mag nooit wachten op een mailserver — dat scherm moet in dertig seconden klaar
+zijn. De melding gaat er **na** de transactie uit, zodat een mislukte opslag
+nooit alsnog een e-mail oplevert. Lokaal draai je `php artisan queue:work`.
+
+**Het dashboard verschilt per rol.** Eigenaar en trainer zien de school; ouder
+en speler hun eigen kind. Eén gedeeld dashboard toonde een ouder schoolbrede
+cijfers en knoppen die hij niet mocht gebruiken.
+
+#### De publieke deel-link
+
+`/kaart/{token}` is de **enige route zonder inlog**, en het gaat om gegevens van
+een kind. Wat die pagina veilig houdt, en dus niet weg mag:
+
+- delen staat standaard **uit** en moet per speler aangezet worden;
+- de link is een willekeurig token van 48 tekens, niet het id van de speler;
+- uitzetten wist het token — een gedeelde link is daarna direct dood;
+- er staat alleen **voornaam + initiaal**, positie en cijfers op. Geen
+  achternaam, leeftijd, geboortedatum, school, groep, notities of ouders;
+- `HandleInertiaRequests` zet de gedeelde props voor deze route **expliciet
+  leeg** (geen `school`, `nav`, `auth`), want Inertia's shared store is statisch;
+- `PreventSearchIndexing` zet `X-Robots-Tag` als **header**; een meta-tag via
+  Inertia komt er pas door JavaScript in en daar reken je bij een crawler niet op;
+- wie mag delen: de **eigenaar** en de **ouders van dit kind**. De trainer niet —
+  die beslist niet of andermans kind op internet komt.
+
+### Datavisualisatie
+
+- **Eén serie per grafiek.** Zes categorieën in één grafiek wordt spaghetti;
+  gebruik kleine grafieken naast elkaar, elk met een eigen titel. Dan is kleur
+  nooit de enige drager van betekenis en hoeft er geen legenda bij.
+- **Grafiekkleuren staan in `--chart-*` en zijn per thema gecontroleerd** op
+  contrast met het vlak eronder (minimaal 3:1). Pas ze niet los aan; het
+  merkgroen `#22E06B` zakt op wit naar 2,5:1 en is daar dus te licht.
+- **Vaste schaal 0-100.** Een meebewegende as laat kleine schommelingen als
+  grote sprongen lezen.
+- **Label alleen het eindpunt**, nooit elk punt. En er is altijd een
+  **tabelweergave**: cijfers mogen nooit alleen in een plaatje zitten.
 
 ### Trainingen en aanwezigheid (fase 4)
 
@@ -372,7 +425,7 @@ houdt, en dus niet mag sneuvelen:
 - [x] Fase 2 — Rapport → spelerskaart
 - [x] Fase 3 — Spelers- & groepsbeheer
 - [x] Fase 4 — Planning & aanwezigheid
-- [ ] Fase 5 — Voortgang & ouder-ervaring
+- [x] Fase 5 — Voortgang & ouder-ervaring
 - [ ] Fase 6 — Eigenaar-dashboard
 - [ ] Fase 7 — Betalingen (Mollie + Cashier)
 - [ ] Fase 8 — Productie & lancering

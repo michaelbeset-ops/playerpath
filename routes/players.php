@@ -4,7 +4,10 @@ use App\Http\Controllers\Groups\GroupController;
 use App\Http\Controllers\Players\GuardianController;
 use App\Http\Controllers\Players\PlayerCardController;
 use App\Http\Controllers\Players\PlayerController;
+use App\Http\Controllers\Players\PlayerProgressController;
+use App\Http\Controllers\Players\SharedCardController;
 use App\Http\Controllers\Reports\ReportController;
+use App\Http\Middleware\PreventSearchIndexing;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -14,6 +17,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('players/{player}/reports', [ReportController::class, 'store'])->name('reports.store');
     Route::get('players/{player}/card', [PlayerCardController::class, 'show'])->name('players.card');
 
+    // Fase 5: groei over de tijd en de tijdlijn.
+    Route::get('players/{player}/progress', [PlayerProgressController::class, 'show'])->name('players.progress');
+
+    // De deel-link aan- en uitzetten. De publieke pagina zelf staat hieronder,
+    // bewust buiten de auth-groep.
+    Route::post('players/{player}/share', [SharedCardController::class, 'store'])->name('players.share');
+    Route::delete('players/{player}/share', [SharedCardController::class, 'destroy'])->name('players.unshare');
+
     // Fase 3: het ledenbestand.
     Route::resource('players', PlayerController::class);
     Route::resource('groups', GroupController::class)->except('show');
@@ -22,3 +33,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('players/{player}/guardians/invite', [GuardianController::class, 'invite'])->name('guardians.invite');
     Route::delete('players/{player}/guardians/{guardian}', [GuardianController::class, 'destroy'])->name('guardians.destroy');
 });
+
+// De enige route zonder inlog. Zie SharedCardController voor waarom dat kan.
+Route::get('kaart/{token}', [SharedCardController::class, 'show'])
+    ->middleware(PreventSearchIndexing::class)
+    ->name('players.shared')
+    ->where('token', '[A-Za-z0-9]{48}');

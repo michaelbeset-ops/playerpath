@@ -39,6 +39,7 @@ class Player extends Model
             'category_ratings' => 'array',
             'overall_rating' => 'integer',
             'rated_at' => 'datetime',
+            'shared_at' => 'datetime',
         ];
     }
 
@@ -87,6 +88,22 @@ class Player extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
+    }
+
+    public function isShared(): bool
+    {
+        return $this->share_token !== null;
+    }
+
+    /**
+     * De naam zoals hij op een publiek gedeelde kaart mag staan.
+     *
+     * Voornaam plus initiaal: genoeg om je kind te herkennen, te weinig om een
+     * vreemde iets te geven waar hij wat mee kan.
+     */
+    public function getPublicNameAttribute(): string
+    {
+        return trim($this->first_name.' '.mb_substr($this->last_name, 0, 1).'.');
     }
 
     /** Heeft deze speler al cijfers op zijn kaart? */
