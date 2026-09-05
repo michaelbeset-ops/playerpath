@@ -111,7 +111,7 @@ class NavigationTest extends TestCase
         $hrefs = array_column(app(MainNavigation::class)->for($eigenaar), 'href');
 
         $this->assertSame([
-            '/dashboard', '/users', '/groups', '/trainings', '/reports',
+            '/dashboard', '/users', '/groups', '/trainings', '/calendar', '/reports',
             '/subscriptions', '/payments', '/plans',
         ], $hrefs);
     }
