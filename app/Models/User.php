@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -53,6 +54,20 @@ class User extends Authenticatable
     public function school(): BelongsTo
     {
         return $this->belongsTo(School::class);
+    }
+
+    /** De rapporten die deze gebruiker als trainer heeft geschreven. */
+    public function reports(): HasMany
+    {
+        return $this->hasMany(Report::class, 'trainer_id');
+    }
+
+    /** De trainingen waar deze trainer bij staat. */
+    public function trainings(): BelongsToMany
+    {
+        return $this->belongsToMany(Training::class)
+            ->withPivotValue('school_id', $this->school_id ?? app(Tenancy::class)->id() ?? 0)
+            ->withTimestamps();
     }
 
     /** Het spelersprofiel van deze gebruiker, als hij zelf speler is. */

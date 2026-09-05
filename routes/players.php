@@ -7,6 +7,8 @@ use App\Http\Controllers\Players\PlayerController;
 use App\Http\Controllers\Players\PlayerProgressController;
 use App\Http\Controllers\Players\SharedCardController;
 use App\Http\Controllers\Reports\ReportController;
+use App\Http\Controllers\Users\TrainerController;
+use App\Http\Controllers\Users\UserDirectoryController;
 use App\Http\Middleware\PreventSearchIndexing;
 use Illuminate\Support\Facades\Route;
 
@@ -25,8 +27,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('players/{player}/share', [SharedCardController::class, 'store'])->name('players.share');
     Route::delete('players/{player}/share', [SharedCardController::class, 'destroy'])->name('players.unshare');
 
-    // Fase 3: het ledenbestand.
-    Route::resource('players', PlayerController::class);
+    // Gebruikers: spelers, trainers en ouders op één scherm met tabbladen.
+    Route::get('users', [UserDirectoryController::class, 'index'])->name('users.index');
+    Route::post('users/trainers', [TrainerController::class, 'store'])->name('trainers.store');
+    Route::delete('users/trainers/{user}', [TrainerController::class, 'destroy'])->name('trainers.destroy');
+
+    // Het spelersoverzicht woont nu onder Gebruikers; oude links blijven werken.
+    Route::get('players', fn () => redirect()->route('users.index'))->name('players.index');
+    Route::resource('players', PlayerController::class)->except(['index']);
     Route::resource('groups', GroupController::class)->except('show');
 
     Route::post('players/{player}/guardians', [GuardianController::class, 'store'])->name('guardians.store');

@@ -8,6 +8,8 @@ use App\Models\Attendance;
 use App\Models\Group;
 use App\Models\Player;
 use App\Models\Training;
+use App\Models\User;
+use App\Enums\Role;
 use App\Support\Trainings\VisibleTrainings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,6 +33,7 @@ class TrainingController extends Controller
             'date' => $training->starts_at->translatedFormat('l j F Y'),
             'time' => $training->starts_at->format('H:i').' - '.$training->ends_at->format('H:i'),
             'location' => $training->location,
+            'trainers' => $training->trainers->pluck('name')->all(),
             'attendance_count' => $training->attendances_count,
             'expected_count' => $training->group->players_count,
             // Alleen relevant voor ouder en speler: wat gaf ik door?
@@ -40,6 +43,7 @@ class TrainingController extends Controller
         ];
 
         $basis = fn () => $this->visible->query($user)
+            ->with('trainers')
             ->withCount(['attendances' => fn ($q) => $q->whereNotNull('status')])
             ->with(['group' => fn ($q) => $q->withCount(['players' => fn ($p) => $p->where('is_active', true)])])
             ->when($eigenSpelers !== [], fn ($q) => $q->with([
@@ -67,13 +71,19 @@ class TrainingController extends Controller
         $herhaalTot = $request->validated('repeat_until');
 
         $trainingen = collect($request->occurrences($gegevens['starts_at'], $gegevens['ends_at'], $herhaalTot))
-            ->map(fn (array $moment) => Training::create([
-                'group_id' => $gegevens['group_id'],
-                'starts_at' => $moment['starts_at'],
-                'ends_at' => $moment['ends_at'],
-                'location' => $gegevens['location'],
-                'note' => $gegevens['note'],
-            ]));
+            ->map(function (array $moment) use ($gegevens, $request) {
+                $training = Training::create([
+                    'group_id' => $gegevens['group_id'],
+                    'starts_at' => $moment['starts_at'],
+                    'ends_at' => $moment['ends_at'],
+                    'location' => $gegevens['location'],
+                    'note' => $gegevens['note'],
+                ]);
+
+                $training->trainers()->sync($request->validated('trainers') ?? []);
+
+                return $training;
+            });
 
         $melding = $trainingen->count() === 1
             ? 'De training is ingepland.'
@@ -107,6 +117,10 @@ class TrainingController extends Controller
                 'time' => $training->starts_at->format('H:i').' - '.$training->ends_at->format('H:i'),
                 'location' => $training->location,
                 'note' => $training->note,
+                'trainers' => $training->trainers->map(fn (User $trainer) => [
+                    'id' => $trainer->id,
+                    'name' => $trainer->name,
+                ]),
                 'has_passed' => $training->hasPassed(),
             ],
             'players' => $spelers->values()->map(fn (Player $speler) => [
@@ -134,6 +148,7 @@ class TrainingController extends Controller
     public function update(TrainingRequest $request, Training $training): RedirectResponse
     {
         $training->update($request->trainingData());
+        $training->trainers()->sync($request->validated('trainers') ?? []);
 
         return redirect()
             ->route('trainings.show', $training)
@@ -151,6 +166,21 @@ class TrainingController extends Controller
             ->with('status', 'De training is verwijderd.');
     }
 
+    /**
+     * Wie kun je aan een training hangen: trainers en de eigenaar.
+     *
+     * De eigenaar staat er bewust bij — bij kleine scholen geeft die zelf ook
+     * training.
+     */
+    protected function beschikbareTrainers()
+    {
+        return User::ofCurrentSchool()
+            ->role([Role::Trainer->value, Role::Eigenaar->value])
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn (User $user) => ['id' => $user->id, 'name' => $user->name]);
+    }
+
     /** @return array<string, mixed> */
     protected function formData(?Training $training): array
     {
@@ -163,7 +193,9 @@ class TrainingController extends Controller
                 'ends_at' => $training->ends_at->format('H:i'),
                 'location' => $training->location,
                 'note' => $training->note,
+                'trainers' => $training->trainers->pluck('id')->all(),
             ] : null,
+            'availableTrainers' => $this->beschikbareTrainers(),
             'groups' => Group::where('is_active', true)
                 ->orderBy('name')
                 ->get(['id', 'name', 'age_category']),

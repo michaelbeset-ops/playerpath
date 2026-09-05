@@ -77,7 +77,7 @@ const kaarten = computed(() => {
             value: s.players,
             hint: `${s.keepers} ${s.keepers === 1 ? 'keeper' : 'keepers'} · ${s.groups} ${s.groups === 1 ? 'groep' : 'groepen'}`,
             icon: Users,
-            href: '/players',
+            href: '/users',
         },
         {
             label: 'Gemiddelde rating',

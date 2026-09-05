@@ -113,17 +113,19 @@ class DemoSchoolsSeeder extends Seeder
     }
 
     /** Eén training geweest, twee komende. */
-    protected function maakTrainingen(\App\Models\Group $groep): void
+    protected function maakTrainingen(\App\Models\Group $groep, User $trainer): void
     {
         foreach ([-7, 7, 14] as $dagen) {
             $start = now()->addDays($dagen)->setTime(18, 0);
 
-            Training::create([
+            $training = Training::create([
                 'group_id' => $groep->id,
                 'starts_at' => $start,
                 'ends_at' => $start->copy()->addMinutes(90),
                 'location' => 'Sportpark De Vliert, veld 3',
             ]);
+
+            $training->trainers()->attach($trainer->id);
         }
     }
 
@@ -211,7 +213,7 @@ class DemoSchoolsSeeder extends Seeder
 
             // Een training vorige week en twee komende, zodat er meteen iets
             // te zien en af te vinken valt.
-            $this->maakTrainingen($gemaakteGroepen->first());
+            $this->maakTrainingen($gemaakteGroepen->first(), $trainer);
 
             // Tarieven, abonnementen en een paar betalingen, zodat het
             // financiële scherm meteen laat zien hoe het eruitziet.

@@ -31,7 +31,7 @@ class MainNavigation
 
         $items = [
             ['title' => 'Dashboard', 'href' => '/dashboard', 'icon' => 'dashboard', 'allowed' => true],
-            ['title' => 'Spelers', 'href' => '/players', 'icon' => 'players', 'allowed' => $user->can('viewAny', Player::class)],
+            ['title' => 'Gebruikers', 'href' => '/users', 'icon' => 'players', 'allowed' => $user->can('viewAny', Player::class)],
             ['title' => 'Groepen', 'href' => '/groups', 'icon' => 'groups', 'allowed' => $user->can('viewAny', Group::class)],
             ['title' => 'Trainingen', 'href' => '/trainings', 'icon' => 'trainings', 'allowed' => $user->can('viewAny', Training::class)],
             ['title' => 'Rapporten', 'href' => '/reports', 'icon' => 'reports', 'allowed' => $user->can('viewAny', Report::class)],

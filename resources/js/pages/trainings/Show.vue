@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Check, MapPin, Pencil, Trash2, X } from 'lucide-vue-next';
+import { Check, MapPin, Pencil, Trash2, UserCog, X } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 interface SpelerRij {
@@ -24,6 +24,7 @@ const props = defineProps<{
         time: string;
         location: string | null;
         note: string | null;
+        trainers: { id: number; name: string }[];
         has_passed: boolean;
     };
     players: SpelerRij[];
@@ -77,6 +78,10 @@ const verwijderen = () => {
                     <p v-if="training.location" class="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
                         <MapPin class="size-4" />
                         {{ training.location }}
+                    </p>
+                    <p v-if="training.trainers.length" class="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+                        <UserCog class="size-4" />
+                        {{ training.trainers.map((t) => t.name).join(', ') }}
                     </p>
                 </div>
 

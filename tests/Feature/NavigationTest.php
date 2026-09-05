@@ -93,7 +93,7 @@ class NavigationTest extends TestCase
 
         $this->assertContains('/dashboard', $hrefs);
         $this->assertContains('/trainings', $hrefs);
-        $this->assertNotContains('/players', $hrefs);
+        $this->assertNotContains('/users', $hrefs);
         $this->assertNotContains('/groups', $hrefs);
         $this->assertNotContains('/reports', $hrefs);
         // De administratie van de school is niet van een ouder; die heeft een
@@ -111,7 +111,7 @@ class NavigationTest extends TestCase
         $hrefs = array_column(app(MainNavigation::class)->for($eigenaar), 'href');
 
         $this->assertSame([
-            '/dashboard', '/players', '/groups', '/trainings', '/reports',
+            '/dashboard', '/users', '/groups', '/trainings', '/reports',
             '/subscriptions', '/payments', '/plans',
         ], $hrefs);
     }
@@ -121,6 +121,6 @@ class NavigationTest extends TestCase
         $ouder = $this->gebruiker(Role::Ouder);
 
         // Een ouder hoort niet te zien welke andere kinderen op de school zitten.
-        $this->actingAs($ouder)->get('/players')->assertForbidden();
+        $this->actingAs($ouder)->get('/users')->assertForbidden();
     }
 }

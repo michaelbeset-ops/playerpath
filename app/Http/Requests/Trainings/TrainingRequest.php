@@ -35,6 +35,14 @@ class TrainingRequest extends FormRequest
             'location' => ['nullable', 'string', 'max:255'],
             'note' => ['nullable', 'string', 'max:2000'],
 
+            // De trainers die erbij staan. Alleen gebruikers van deze school;
+            // exists kent de global scope niet, dus expliciet begrenzen.
+            'trainers' => ['array'],
+            'trainers.*' => [
+                'integer',
+                Rule::exists('users', 'id')->where('school_id', app(Tenancy::class)->id()),
+            ],
+
             // Alleen bij aanmaken: een reeks wekelijkse trainingen in één keer.
             'repeat_until' => ['nullable', 'date', 'after:date', 'before:'.now()->addYear()->toDateString()],
         ];
@@ -50,6 +58,7 @@ class TrainingRequest extends FormRequest
             'location' => 'De locatie',
             'note' => 'De toelichting',
             'repeat_until' => 'De herhaaldatum',
+            'trainers' => 'De trainers',
         ];
     }
 
@@ -60,6 +69,7 @@ class TrainingRequest extends FormRequest
             'group_id.exists' => 'Deze groep bestaat niet binnen jouw school.',
             'repeat_until.after' => 'Herhalen tot moet na de eerste trainingsdatum liggen.',
             'repeat_until.before' => 'Plan maximaal een jaar vooruit.',
+            'trainers.*.exists' => 'Een van de gekozen trainers hoort niet bij deze school.',
         ];
     }
 

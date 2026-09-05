@@ -297,6 +297,27 @@ Relaties:
   `relationship` (moeder/vader/verzorger). Op `User` heet dit `children()`.
 - `Player` → `User`: optioneel eigen inlogaccount van de speler zelf.
 
+#### Speler versus gebruiker
+
+Dit zijn **twee verschillende dingen** en die moet je niet samenvoegen:
+
+- Een **speler** is een profiel in `players`. De school maakt hem aan; een eigen
+  inlog (`players.user_id`) is **optioneel**. Een keeper van acht heeft geen
+  e-mailadres, maar staat wel op de kaart — de ouder heeft het account.
+- Een **trainer** of **ouder** is altijd een account in `users`.
+
+Het menu-item **Gebruikers** (`/users`) toont ze samen in drie tabbladen:
+spelers, trainers en ouders. Trainers nodig je daar uit; ouders koppel je op de
+pagina van een speler, omdat een ouder zonder kind niets betekent.
+
+Een **training** heeft nul of meer **trainers** (`training_user`). Dat is
+**informatief**: het bepaalt niet wie er bij mag. Elke trainer ziet het hele
+rooster en kan overal afvinken, want anders loopt invallen en ruilen vast.
+
+**Rapporten overleven hun trainer.** `reports.trainer_id` is nullable met
+`nullOnDelete`; een trainer verwijderen laat zijn rapporten staan. Die historie
+hoort bij de speler, niet bij de trainer.
+
 Twee afspraken die je niet moet omdraaien:
 
 - **Leeftijd staat niet op de speler.** De speler heeft een `date_of_birth`;

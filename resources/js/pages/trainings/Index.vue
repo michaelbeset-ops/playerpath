@@ -12,6 +12,7 @@ interface TrainingRij {
     date: string;
     time: string;
     location: string | null;
+    trainers: string[];
     attendance_count: number;
     expected_count: number;
     my_registration: string | null;
@@ -90,6 +91,7 @@ const tab = ref<'upcoming' | 'past'>('upcoming');
                         <p class="truncate text-xs text-muted-foreground">
                             <span class="first-letter:uppercase">{{ training.date }}</span> &middot; {{ training.time }}
                             <span v-if="training.location"> &middot; {{ training.location }}</span>
+                            <span v-if="training.trainers.length"> &middot; {{ training.trainers.join(', ') }}</span>
                         </p>
                     </div>
 

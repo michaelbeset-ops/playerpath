@@ -25,52 +25,8 @@ class PlayerController extends Controller
 {
     public function __construct(protected CalculatePlayerCard $calculator) {}
 
-    public function index(Request $request): Response
-    {
-        $this->authorize('viewAny', Player::class);
-
-        $filters = [
-            'search' => trim((string) $request->string('search')),
-            'position' => (string) $request->string('position'),
-            'group' => $request->integer('group') ?: null,
-            'status' => (string) $request->string('status', 'active'),
-        ];
-
-        $players = Player::query()
-            ->with('groups')
-            ->when($filters['search'] !== '', function ($query) use ($filters) {
-                $term = '%'.$filters['search'].'%';
-
-                $query->where(fn ($q) => $q
-                    ->where('first_name', 'like', $term)
-                    ->orWhere('last_name', 'like', $term));
-            })
-            ->when($filters['position'] !== '', fn ($q) => $q->where('position', $filters['position']))
-            ->when($filters['group'], fn ($q, $groupId) => $q->whereHas('groups', fn ($g) => $g->whereKey($groupId)))
-            ->when($filters['status'] === 'active', fn ($q) => $q->where('is_active', true))
-            ->when($filters['status'] === 'inactive', fn ($q) => $q->where('is_active', false))
-            ->orderBy('last_name')
-            ->orderBy('first_name')
-            ->get()
-            ->map(fn (Player $player) => [
-                'id' => $player->id,
-                'name' => $player->full_name,
-                'position' => $player->position->label(),
-                'position_value' => $player->position->value,
-                'age' => $player->age,
-                'is_active' => $player->is_active,
-                'overall_rating' => $player->overall_rating,
-                'groups' => $player->groups->pluck('name')->all(),
-            ]);
-
-        return Inertia::render('players/Index', [
-            'players' => $players,
-            'filters' => $filters,
-            'positions' => PlayerPosition::options(),
-            'groups' => Group::orderBy('name')->get(['id', 'name']),
-            'canManage' => $request->user()->can('create', Player::class),
-        ]);
-    }
+    // Het spelersoverzicht woont in Users\UserDirectoryController: spelers,
+    // trainers en ouders staan daar samen onder Gebruikers.
 
     public function create(Request $request): Response
     {

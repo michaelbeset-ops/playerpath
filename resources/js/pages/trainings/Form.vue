@@ -18,8 +18,10 @@ const props = defineProps<{
         ends_at: string;
         location: string | null;
         note: string | null;
+        trainers: number[];
     } | null;
     groups: { id: number; name: string; age_category: string | null }[];
+    availableTrainers: { id: number; name: string }[];
 }>();
 
 const bewerken = computed(() => props.training !== null);
@@ -38,8 +40,19 @@ const form = useForm({
     ends_at: props.training?.ends_at ?? '19:30',
     location: props.training?.location ?? '',
     note: props.training?.note ?? '',
+    trainers: props.training?.trainers ?? ([] as number[]),
     repeat_until: '',
 });
+
+const wisselTrainer = (id: number) => {
+    const positie = form.trainers.indexOf(id);
+
+    if (positie === -1) {
+        form.trainers.push(id);
+    } else {
+        form.trainers.splice(positie, 1);
+    }
+};
 
 const herhalen = ref(false);
 
@@ -95,6 +108,38 @@ const opslaan = () => {
                         <Input id="ends_at" v-model="form.ends_at" type="time" required />
                         <InputError :message="form.errors.ends_at" />
                     </div>
+                </div>
+
+                <!-- Trainers: tikken in plaats van een multiselect, dat werkt op
+                     mobiel veel prettiger -->
+                <div class="grid gap-2">
+                    <Label>Trainer(s)</Label>
+
+                    <div v-if="availableTrainers.length" class="flex flex-wrap gap-2">
+                        <button
+                            v-for="trainer in availableTrainers"
+                            :key="trainer.id"
+                            type="button"
+                            class="rounded-lg border px-3 py-2 text-sm transition"
+                            :class="
+                                form.trainers.includes(trainer.id)
+                                    ? 'border-primary bg-primary/10 font-medium text-primary'
+                                    : 'border-border bg-background text-muted-foreground hover:border-primary'
+                            "
+                            :aria-pressed="form.trainers.includes(trainer.id)"
+                            @click="wisselTrainer(trainer.id)"
+                        >
+                            {{ trainer.name }}
+                        </button>
+                    </div>
+
+                    <p v-else class="text-sm text-muted-foreground">
+                        Er zijn nog geen trainers.
+                        <Link href="/users?type=trainers" class="font-medium text-primary underline underline-offset-4">Nodig er een uit</Link>.
+                    </p>
+
+                    <p class="text-xs text-muted-foreground">Er mogen er meerdere bij staan, bijvoorbeeld een vaste trainer en een invaller.</p>
+                    <InputError :message="form.errors.trainers" />
                 </div>
 
                 <div class="grid gap-2">

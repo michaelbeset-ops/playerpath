@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Training extends Model
@@ -34,6 +35,19 @@ class Training extends Model
     public function group(): BelongsTo
     {
         return $this->belongsTo(Group::class);
+    }
+
+    /**
+     * De trainer(s) die bij deze training staan.
+     *
+     * Informatief: het bepaalt niet wie er bij mag. Elke trainer ziet het hele
+     * rooster en kan overal afvinken, zodat invallen en ruilen niet vastloopt.
+     */
+    public function trainers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class)
+            ->withPivotValue('school_id', $this->pivotSchoolId())
+            ->withTimestamps();
     }
 
     public function attendances(): HasMany
