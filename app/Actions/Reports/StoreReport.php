@@ -2,6 +2,7 @@
 
 namespace App\Actions\Reports;
 
+use App\Actions\Goals\EvaluateGoals;
 use App\Models\Player;
 use App\Models\Report;
 use App\Models\User;
@@ -22,7 +23,7 @@ use Illuminate\Support\Facades\Notification;
  */
 class StoreReport
 {
-    public function __construct(protected CalculatePlayerCard $calculator) {}
+    public function __construct(protected CalculatePlayerCard $calculator, protected EvaluateGoals $goals) {}
 
     /**
      * @param  array<string, int>  $scores  categorie => cijfer (1-10)
@@ -52,6 +53,9 @@ class StoreReport
         });
 
         $this->meldOuders($player->refresh(), $report, $vorigeRating);
+
+        // Doelen beoordelen na de herberekening; een gehaald doel wordt gevierd.
+        $this->goals->handle($player);
 
         return $report;
     }

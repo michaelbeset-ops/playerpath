@@ -7,6 +7,7 @@ use App\Models\Player;
 use App\Models\Training;
 use App\Models\User;
 use App\Support\Dashboard\SchoolDashboard;
+use App\Support\Goals\GoalProgress;
 use App\Support\Payments\BillingOverview;
 use App\Support\PlayerCard\CalculatePlayerCard;
 use App\Support\PlayerCard\PlayerBadges;
@@ -36,6 +37,7 @@ class DashboardController extends Controller
         protected CalculatePlayerCard $calculator,
         protected PlayerBadges $badges,
         protected PlayerProgress $progress,
+        protected GoalProgress $goals,
     ) {}
 
     public function __invoke(Request $request): Response
@@ -105,6 +107,7 @@ class DashboardController extends Controller
                     'badges' => array_values(array_filter($badges, fn ($b) => $b['earned'])),
                     // De eerstvolgende mijlpaal: iets om naartoe te werken.
                     'next_badge' => collect($badges)->first(fn ($b) => ! $b['earned']),
+                    'goals' => array_values(array_filter($this->goals->forPlayer($speler), fn ($d) => $d['status'] === 'active')),
                 ];
             });
 

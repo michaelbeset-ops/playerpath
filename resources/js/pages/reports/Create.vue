@@ -19,6 +19,7 @@ const props = defineProps<{
     categories: Categorie[];
     previousScores: Record<string, number>;
     previousReportedOn: string | null;
+    goals: Record<string, { target: number; current: number | null; on_track: boolean }>;
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -146,9 +147,18 @@ const opslaan = () => form.post('/players/' + props.player.id + '/reports');
                             <p class="font-medium leading-tight">{{ categorie.label }}</p>
                             <p class="text-xs text-muted-foreground">{{ categorie.hint }}</p>
                         </div>
-                        <p v-if="categorie.rating !== null" class="tabular shrink-0 text-xs text-muted-foreground">
-                            nu {{ categorie.rating }}
-                        </p>
+                        <div class="flex shrink-0 items-center gap-2 text-xs">
+                            <!-- Actief doel: een klein signaal, geen extra klik -->
+                            <span
+                                v-if="goals[categorie.category]"
+                                class="tabular rounded-md px-1.5 py-0.5 font-medium"
+                                :class="goals[categorie.category].on_track ? 'bg-primary/10 text-primary' : 'bg-warning/10 text-warning'"
+                                :title="goals[categorie.category].on_track ? 'Op koers' : 'Achter op schema'"
+                            >
+                                doel {{ goals[categorie.category].target }}
+                            </span>
+                            <p v-if="categorie.rating !== null" class="tabular text-muted-foreground">nu {{ categorie.rating }}</p>
+                        </div>
                     </div>
 
                     <!-- h-11 = 44px tikhoogte, ook op telefoon. Vierkante knoppen zouden

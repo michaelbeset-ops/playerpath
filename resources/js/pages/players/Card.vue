@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import FlashMessage from '@/components/FlashMessage.vue';
+import GoalList, { type Doel } from '@/components/GoalList.vue';
 import PlayerCardVisual from '@/components/PlayerCardVisual.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
@@ -31,6 +32,7 @@ const props = defineProps<{
     level: { key: string; label: string; description: string };
     badges: { key: string; label: string; description: string; earned: boolean }[];
     share: { can: boolean; url: string | null };
+    goals: Doel[];
 }>();
 
 // Bewust alleen de speler zelf: een kruimel naar /reports zou voor een ouder
@@ -88,6 +90,12 @@ const kopieer = async () => {
                 <p v-if="player.rated_at" class="mt-4 text-center text-xs text-muted-foreground">
                     Bijgewerkt op {{ player.rated_at }} &middot; gemiddelde van de laatste 3 rapporten &middot; niveau {{ level.label.toLowerCase() }}
                 </p>
+            </div>
+
+            <div v-if="goals.length" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+                <p class="font-medium">Doelen</p>
+                <p class="mt-1 text-xs text-muted-foreground">Waar de trainer met {{ player.name.split(' ')[0] }} naartoe werkt.</p>
+                <GoalList class="mt-3" :goals="goals" />
             </div>
 
             <div class="mt-4 flex flex-wrap items-center gap-3">

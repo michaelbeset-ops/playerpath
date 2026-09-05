@@ -27,7 +27,7 @@ Status: ✅ klaar · 🟡 deels · ⬜ nog niet. De fase verwijst naar
 | # | Feature | Status | Wat er staat / ontbreekt | Fase |
 |---|---|---|---|---|
 | O1 | Coach-rapporten/assessments per speler, ~30 sec invulbaar | ✅ | Zes categorieën per positie, voorgevuld met vorig rapport, één tik per cijfer, cijfertoetsen, 44px-knoppen. | 2 ✅ |
-| O2 | Meetbare ontwikkelingsdoelen per speler per periode | ⬜ | Bestaat niet. Nodig: doel per speler (categorie, streefcijfer, periode), voortgang t.o.v. doel op kaart en tijdlijn, trainer stelt op, ouder ziet. | 7 |
+| O2 | Meetbare ontwikkelingsdoelen per speler per periode | ✅ | Doel per speler (categorie, streefcijfer, einddatum) op de spelerpagina; op koers/achter op kaart, voortgang, dashboard ouder en rapportscherm; badge + melding bij behalen; eigenaar ziet aantal spelers met doel. | 7 |
 | O3 | Spelerprofiel dat over tijd opbouwt | ✅ | Rapporthistorie, voortgangsgrafieken per categorie, kwartaal-terugblik. | 5 ✅ |
 | O4 | Spelerskaart met gamification: evoluerend, badges, mijlpalen, deelbaar | ✅ | Verzamelkaart met niveau (brons→elite), badges, keeper-/veldspelerlook, publieke deel-link met privacybegrenzing. Wordt in fase 7 uitgebreid met doelen. | 5 ✅ |
 | O5 | Keeper-specifieke categorieën naast veldspeler-categorieën | ✅ | `ReportCategory` per positie. | 2 ✅ |

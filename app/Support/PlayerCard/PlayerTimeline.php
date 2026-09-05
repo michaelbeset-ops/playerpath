@@ -76,6 +76,18 @@ class PlayerTimeline
             ];
         }
 
+        foreach ($player->goals()->where('status', \App\Enums\GoalStatus::Achieved->value)->get() as $goal) {
+            $items[] = [
+                'type' => 'mijlpaal',
+                'date' => $goal->achieved_at->format('d-m-Y'),
+                'sort' => $goal->achieved_at->format('Y-m-d').'-3',
+                'title' => 'Doel gehaald: '.$goal->category->label().' naar '.$goal->target_rating,
+                'body' => $goal->note,
+                'value' => null,
+                'delta' => null,
+            ];
+        }
+
         usort($items, fn ($a, $b) => strcmp($b['sort'], $a['sort']));
 
         return array_slice($items, 0, $limit);

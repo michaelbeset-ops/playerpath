@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Players;
 
 use App\Http\Controllers\Controller;
 use App\Models\Player;
+use App\Support\Goals\GoalProgress;
 use App\Support\PlayerCard\CalculatePlayerCard;
 use App\Support\PlayerCard\PlayerBadges;
 use App\Support\PlayerCard\PlayerProgress;
@@ -16,6 +17,7 @@ class PlayerCardController extends Controller
         protected CalculatePlayerCard $calculator,
         protected PlayerBadges $badges,
         protected PlayerProgress $progress,
+        protected GoalProgress $goals,
     ) {}
 
     public function show(Player $player): Response
@@ -43,6 +45,7 @@ class PlayerCardController extends Controller
             ] : null,
             'canReport' => auth()->user()->can('createReport', $player),
             'level' => $this->badges->level($player->overall_rating),
+            'goals' => $this->goals->forPlayer($player),
             'share' => [
                 'can' => auth()->user()->can('share', $player),
                 'url' => $player->isShared() ? route('players.shared', $player->share_token) : null,

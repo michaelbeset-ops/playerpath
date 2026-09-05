@@ -542,6 +542,13 @@ houdt, en dus niet mag sneuvelen:
 - opslaan zit in een vaste balk onderaan, binnen duimbereik;
 - de toelichting is optioneel en breekt het ritme niet.
 
+### Ontwikkelingsdoelen (Fase 7)
+
+- `goals`: één actief doel per speler per categorie; `start_rating` = kaartcijfer op het moment van stellen, `target_rating` = rapportcijfer × 10. Een nieuw doel in dezelfde categorie annuleert het oude.
+- "Op koers" = afgelegde weg (start → nu → streef) ≥ verstreken tijd (start → vandaag → einddatum). Zie `Support\Goals\GoalProgress`. Geen extra begrippen.
+- Beoordelen gebeurt alleen in `Actions\Goals\EvaluateGoals`, aangeroepen vanuit `StoreReport` na de kaartberekening: gehaald → `DoelBehaald` naar ouders + speler, badge `doel_gehaald`, mijlpaal in de tijdlijn; einddatum voorbij → `missed`.
+- Trainer/eigenaar stelt en stopt (`GoalPolicy`), ouder/speler ziet alleen. Het rapportscherm toont per categorie een chip "doel 80", niets meer.
+
 ## 6. Werkwijze
 
 - **Fase voor fase.** Het bouwplan staat in `bouwplan-keepersplatform-claude-code.md`
@@ -563,7 +570,7 @@ Volledige scope en status per feature: `FEATURES.md`. Volgorde: het bouwplan.
 - [x] Fase 4 — Planning & aanwezigheid (+ kalender, trainers per training)
 - [x] Fase 5 — Voortgang & ouder-ervaring (+ verzamelkaart)
 - [x] Fase 6 — Eigenaar-dashboard (+ exports, online inschrijven)
-- [ ] Fase 7 — Ontwikkelingsdoelen
+- [x] Fase 7 — Ontwikkelingsdoelen (doel per categorie, op koers, badge, tijdlijn)
 - [ ] Fase 8 — Inschrijven compleet & digitaal ondertekenen
 - [ ] Fase 9 — Betalingen (Mollie): schermen en model staan, koppeling niet
 - [ ] Fase 10 — Communicatie

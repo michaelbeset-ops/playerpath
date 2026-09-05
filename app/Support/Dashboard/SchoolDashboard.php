@@ -6,6 +6,7 @@ use App\Enums\AttendanceStatus;
 use App\Enums\PlayerPosition;
 use App\Models\Attendance;
 use App\Models\Enrollment;
+use App\Models\Goal;
 use App\Models\Group;
 use App\Models\Player;
 use App\Models\Report;
@@ -39,6 +40,7 @@ class SchoolDashboard
             'attendanceRate' => $this->opkomst(),
             'groups' => Group::where('is_active', true)->count(),
             'pendingEnrollments' => Enrollment::pending()->count(),
+            'playersWithGoal' => Goal::active()->distinct('player_id')->count('player_id'),
         ];
     }
 

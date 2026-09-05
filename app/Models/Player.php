@@ -70,6 +70,11 @@ class Player extends Model
         return $this->subscriptions()->active()->latest('starts_on')->first();
     }
 
+    public function goals(): HasMany
+    {
+        return $this->hasMany(Goal::class);
+    }
+
     public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class);

@@ -82,6 +82,12 @@ class PlayerBadges
                 'earned' => $ratings !== [] && min($ratings) >= 70,
             ],
             [
+                'key' => 'doel_gehaald',
+                'label' => 'Doelgericht',
+                'description' => 'Een ontwikkelingsdoel gehaald',
+                'earned' => $player->goals()->where('status', \App\Enums\GoalStatus::Achieved->value)->exists(),
+            ],
+            [
                 'key' => 'aanwezig_vijf',
                 'label' => 'Altijd op tijd',
                 'description' => 'Vijf trainingen aanwezig',

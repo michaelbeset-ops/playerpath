@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import FlashMessage from '@/components/FlashMessage.vue';
+import GoalList, { type Doel } from '@/components/GoalList.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ClipboardList, IdCard, Pencil, Trash2, UserPlus, X } from 'lucide-vue-next';
+import { ClipboardList, IdCard, Pencil, Target, Trash2, UserPlus, X } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 interface Categorie {
@@ -36,7 +37,9 @@ const props = defineProps<{
     reports: { id: number; reported_on: string; trainer: string | null; note: string | null }[];
     reportCount: number;
     linkableGuardians: { id: number; name: string; email: string }[];
-    can: { manage: boolean; delete: boolean; report: boolean };
+    goals: Doel[];
+    goalCategories: { value: string; label: string }[];
+    can: { manage: boolean; delete: boolean; report: boolean; goals: boolean };
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -48,6 +51,31 @@ const nieuweOuder = useForm({ name: '', email: '', relationship: '' });
 const bestaandeOuder = useForm({ user_id: '', relationship: '' });
 
 const toonNieuweOuder = ref(false);
+
+// --- Doelen ---
+const toonDoelFormulier = ref(false);
+
+const doelForm = useForm({
+    category: props.goalCategories[0]?.value ?? '',
+    target: 8,
+    due_on: '',
+    note: '',
+});
+
+const stelDoel = () =>
+    doelForm.post('/players/' + props.player.id + '/goals', {
+        preserveScroll: true,
+        onSuccess: () => {
+            doelForm.reset();
+            toonDoelFormulier.value = false;
+        },
+    });
+
+const stopDoel = (id: number) => {
+    if (confirm('Dit doel stoppen?')) {
+        router.delete('/goals/' + id, { preserveScroll: true });
+    }
+};
 
 const koppelBestaande = () => bestaandeOuder.post('/players/' + props.player.id + '/guardians', { preserveScroll: true });
 
@@ -174,6 +202,67 @@ const verwijderen = () => {
                         Groepen aanpassen
                     </Link>
                 </div>
+            </div>
+
+            <!-- Doelen: waar werkt deze speler naartoe -->
+            <div class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <p class="font-medium">Ontwikkelingsdoelen</p>
+                        <p class="mt-1 text-xs text-muted-foreground">Een streefcijfer per categorie, met een einddatum. Ouders zien dit op de kaart.</p>
+                    </div>
+                    <Button v-if="can.goals && !toonDoelFormulier" variant="secondary" @click="toonDoelFormulier = true">
+                        <Target class="mr-2 size-4" />
+                        Doel stellen
+                    </Button>
+                </div>
+
+                <form v-if="toonDoelFormulier" class="mt-4 space-y-4 rounded-lg border border-border p-4" @submit.prevent="stelDoel">
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid gap-2">
+                            <Label for="goal_category">Categorie</Label>
+                            <select id="goal_category" v-model="doelForm.category" class="h-10 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary">
+                                <option v-for="c in goalCategories" :key="c.value" :value="c.value">{{ c.label }}</option>
+                            </select>
+                            <InputError :message="doelForm.errors.category" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label for="goal_due">Halen vóór</Label>
+                            <Input id="goal_due" v-model="doelForm.due_on" type="date" required />
+                            <InputError :message="doelForm.errors.due_on" />
+                        </div>
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label>Streefcijfer <span class="text-muted-foreground">(op de kaart wordt dit maal tien)</span></Label>
+                        <div class="grid grid-cols-10 gap-1">
+                            <button
+                                v-for="n in 10"
+                                :key="n"
+                                type="button"
+                                class="tabular h-10 rounded-lg border text-sm font-semibold transition"
+                                :class="doelForm.target === n ? 'border-transparent bg-primary text-primary-foreground' : 'border-border text-muted-foreground hover:border-primary'"
+                                @click="doelForm.target = n"
+                            >
+                                {{ n }}
+                            </button>
+                        </div>
+                        <InputError :message="doelForm.errors.target" />
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="goal_note">Toelichting <span class="text-muted-foreground">(optioneel)</span></Label>
+                        <Input id="goal_note" v-model="doelForm.note" placeholder="Waar gaan we op letten?" />
+                    </div>
+
+                    <div class="flex items-center gap-3">
+                        <Button type="submit" :disabled="doelForm.processing || !doelForm.due_on">Doel stellen</Button>
+                        <button type="button" class="text-sm text-muted-foreground underline underline-offset-4" @click="toonDoelFormulier = false">Annuleren</button>
+                    </div>
+                </form>
+
+                <GoalList v-if="goals.length" class="mt-4" :goals="goals" :can-stop="can.goals" @stop="stopDoel" />
+                <p v-else-if="!toonDoelFormulier" class="mt-3 text-sm text-muted-foreground">Nog geen doel. Een concreet doel maakt een rapport pas echt spannend.</p>
             </div>
 
             <!-- Ouders -->

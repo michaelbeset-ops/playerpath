@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Goals\GoalController;
 use App\Http\Controllers\Groups\GroupController;
 use App\Http\Controllers\Players\GuardianController;
 use App\Http\Controllers\Players\PlayerCardController;
@@ -21,6 +22,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Fase 5: groei over de tijd en de tijdlijn.
     Route::get('players/{player}/progress', [PlayerProgressController::class, 'show'])->name('players.progress');
+
+    // Fase 7: ontwikkelingsdoelen.
+    Route::post('players/{player}/goals', [GoalController::class, 'store'])->name('goals.store');
+    Route::delete('goals/{goal}', [GoalController::class, 'destroy'])->name('goals.destroy');
 
     // De deel-link aan- en uitzetten. De publieke pagina zelf staat hieronder,
     // bewust buiten de auth-groep.

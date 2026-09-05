@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import GoalList, { type Doel } from '@/components/GoalList.vue';
 import LineChart from '@/components/LineChart.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
@@ -25,6 +26,7 @@ const props = defineProps<{
     };
     timeline: { type: string; date: string; title: string; body: string | null; value: number | null; delta: number | null }[];
     quarter: { reports: number; trainings: number; growth: number | null; best: string | null };
+    goals: Doel[];
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -178,6 +180,11 @@ const deltaTekst = (delta: number | null) => (delta === null ? '' : delta > 0 ? 
                 <p class="mt-1 text-sm text-muted-foreground">
                     Vanaf het tweede rapport kunnen we groei laten zien. Nu zijn het er {{ progress.points.length }}.
                 </p>
+            </div>
+
+            <div v-if="goals.length" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+                <p class="font-medium">Doelen</p>
+                <GoalList class="mt-3" :goals="goals" />
             </div>
 
             <!-- Tijdlijn -->

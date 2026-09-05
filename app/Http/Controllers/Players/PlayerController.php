@@ -9,6 +9,7 @@ use App\Http\Requests\Players\PlayerRequest;
 use App\Models\Group;
 use App\Models\Player;
 use App\Models\User;
+use App\Support\Goals\GoalProgress;
 use App\Support\PlayerCard\CalculatePlayerCard;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -23,7 +24,7 @@ use Inertia\Response;
  */
 class PlayerController extends Controller
 {
-    public function __construct(protected CalculatePlayerCard $calculator) {}
+    public function __construct(protected CalculatePlayerCard $calculator, protected GoalProgress $goals) {}
 
     // Het spelersoverzicht woont in Users\UserDirectoryController: spelers,
     // trainers en ouders staan daar samen onder Gebruikers.
@@ -93,6 +94,9 @@ class PlayerController extends Controller
                     'note' => $report->note,
                 ]),
             'reportCount' => $player->reports()->count(),
+            'goals' => $this->goals->forPlayer($player),
+            'goalCategories' => collect($player->position->categories())
+                ->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()])->values(),
             // Ouders van deze school die nog niet aan deze speler hangen.
             'linkableGuardians' => User::ofCurrentSchool()
                 ->role(Role::Ouder->value)
@@ -103,6 +107,7 @@ class PlayerController extends Controller
                 'manage' => $request->user()->can('update', $player),
                 'delete' => $request->user()->can('delete', $player),
                 'report' => $request->user()->can('createReport', $player),
+                'goals' => $request->user()->can('createFor', [App\Models\Goal::class, $player]),
             ],
         ]);
     }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Players;
 
 use App\Http\Controllers\Controller;
 use App\Models\Player;
+use App\Support\Goals\GoalProgress;
 use App\Support\PlayerCard\PlayerProgress;
 use App\Support\PlayerCard\PlayerTimeline;
 use Inertia\Inertia;
@@ -20,6 +21,7 @@ class PlayerProgressController extends Controller
     public function __construct(
         protected PlayerProgress $progress,
         protected PlayerTimeline $timeline,
+        protected GoalProgress $goals,
     ) {}
 
     public function show(Player $player): Response
@@ -37,6 +39,7 @@ class PlayerProgressController extends Controller
             'progress' => $this->progress->for($player),
             'timeline' => $this->timeline->for($player),
             'quarter' => $this->timeline->quarterSummary($player),
+            'goals' => $this->goals->forPlayer($player),
         ]);
     }
 }

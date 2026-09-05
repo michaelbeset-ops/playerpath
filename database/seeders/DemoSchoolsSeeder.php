@@ -211,6 +211,19 @@ class DemoSchoolsSeeder extends Seeder
             // en je de doorrekening kunt zien.
             $gemaakteSpelers->each(fn (Player $speler) => $this->maakRapporten($speler, $trainer));
 
+            // Een doel voor de eerste speler, zodat "op koers" meteen iets laat zien.
+            $eerste = $gemaakteSpelers->first()->refresh();
+            $categorie = $eerste->position->categories()[0];
+            $eerste->goals()->create([
+                'set_by_id' => $trainer->id,
+                'category' => $categorie->value,
+                'start_rating' => ($eerste->category_ratings ?? [])[$categorie->value] ?? 0,
+                'target_rating' => 80,
+                'starts_on' => now()->subWeeks(2)->toDateString(),
+                'due_on' => now()->addMonths(2)->toDateString(),
+                'note' => 'Focus op de eerste reactie bij schoten van dichtbij.',
+            ]);
+
             // Een training vorige week en twee komende, zodat er meteen iets
             // te zien en af te vinken valt.
             $this->maakTrainingen($gemaakteGroepen->first(), $trainer);

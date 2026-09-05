@@ -241,7 +241,7 @@ class ProgressAndNotificationTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->where('level.key', 'goud')
-                ->has('badges', 8)
+                ->has('badges', 9)
             );
     }
 }

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Reports\StoreReportRequest;
 use App\Models\Player;
 use App\Models\Report;
+use App\Support\Goals\GoalProgress;
 use App\Support\PlayerCard\CalculatePlayerCard;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,7 +16,7 @@ use Inertia\Response;
 
 class ReportController extends Controller
 {
-    public function __construct(protected CalculatePlayerCard $calculator) {}
+    public function __construct(protected CalculatePlayerCard $calculator, protected GoalProgress $goals) {}
 
     /** Wie ga je beoordelen? De lijst is bewust kort en direct klikbaar. */
     public function index(Request $request): Response
@@ -60,6 +61,12 @@ class ReportController extends Controller
             // tikken: hij past alleen aan wat veranderd is.
             'previousScores' => $vorige?->scoresByCategory() ?? (object) [],
             'previousReportedOn' => $vorige?->reported_on->format('d-m-Y'),
+            // Actieve doelen per categorie: een klein 'op koers' naast het cijfer,
+            // zonder het 30-seconden-ritme te breken.
+            'goals' => collect($this->goals->forPlayer($player))
+                ->where('status', 'active')
+                ->keyBy('category')
+                ->map(fn ($d) => ['target' => $d['target'], 'current' => $d['current'], 'on_track' => $d['on_track']]),
         ]);
     }
 

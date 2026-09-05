@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import GoalList, { type Doel } from '@/components/GoalList.vue';
 import PlayerCardVisual from '@/components/PlayerCardVisual.vue';
 import StatCard from '@/components/StatCard.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -36,6 +37,7 @@ interface SpelerKaart {
     level: { key: string; label: string; description: string };
     badges: { key: string; label: string; description: string }[];
     next_badge: { key: string; label: string; description: string } | null;
+    goals: Doel[];
 }
 
 const props = defineProps<{
@@ -49,6 +51,7 @@ const props = defineProps<{
         attendanceRate: { percentage: number | null; present: number; total: number };
         groups: number;
         pendingEnrollments: number;
+        playersWithGoal: number;
     };
     needsAttention?: { id: number; name: string; position: string; overall_rating: number | null; last_report_on: string | null }[];
     attentionAfterDays?: number;
@@ -93,7 +96,7 @@ const kaarten = computed(() => {
         {
             label: 'Gemiddelde rating',
             value: s.averageRating,
-            hint: s.averageRating === null ? 'Nog geen rapporten' : 'over alle spelerskaarten',
+            hint: s.averageRating === null ? 'Nog geen rapporten' : s.playersWithGoal + (s.playersWithGoal === 1 ? ' speler' : ' spelers') + ' met een actief doel',
             icon: Star,
         },
         {
@@ -354,6 +357,11 @@ const kaarten = computed(() => {
                                 <span class="text-muted-foreground"> {{ speler.next_badge.description }}.</span>
                             </p>
                         </div>
+                    </div>
+
+                    <div v-if="speler.goals.length" class="mt-3 rounded-xl border border-border bg-card p-4 shadow-sm">
+                        <p class="text-sm font-medium">Waar {{ speler.first_name }} aan werkt</p>
+                        <GoalList class="mt-2" :goals="speler.goals" />
                     </div>
 
                     <div class="mt-3 grid grid-cols-2 gap-2">
