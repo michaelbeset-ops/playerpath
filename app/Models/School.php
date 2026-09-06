@@ -28,6 +28,7 @@ class School extends Model
         'contact_phone',
         'notes',
         'features',
+        'package',
     ];
 
     protected function casts(): array

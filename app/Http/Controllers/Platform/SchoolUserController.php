@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Models\School;
 use App\Models\User;
 use App\Support\Features\Features;
+use App\Support\Platform\PlatformAudit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
@@ -25,7 +26,10 @@ use Inertia\Response;
  */
 class SchoolUserController extends Controller
 {
-    public function __construct(protected Features $features) {}
+    public function __construct(
+        protected Features $features,
+        protected PlatformAudit $audit,
+    ) {}
 
     public function index(School $school): Response
     {
@@ -80,6 +84,8 @@ class SchoolUserController extends Controller
 
         Password::sendResetLink(['email' => $user->email]);
 
+        $this->audit->log('user.created', "Account {$this->audit->describeUser($user)} aangemaakt als {$validated['role']}", $school);
+
         return back()->with('status', "{$user->name} is toegevoegd en krijgt een e-mail om een wachtwoord te kiezen.");
     }
 
@@ -97,6 +103,12 @@ class SchoolUserController extends Controller
 
         $user->forceFill(['deactivated_at' => $user->isActief() ? now() : null])->save();
 
+        $this->audit->log(
+            $user->isActief() ? 'user.activated' : 'user.deactivated',
+            ($user->isActief() ? 'Account weer aangezet: ' : 'Account gedeactiveerd: ').$this->audit->describeUser($user),
+            $school,
+        );
+
         return back()->with('status', $user->isActief()
             ? "{$user->name} kan weer inloggen."
             : "{$user->name} is gedeactiveerd en kan niet meer inloggen.");
@@ -110,6 +122,8 @@ class SchoolUserController extends Controller
         abort_unless($user->school_id === $school->id, 404);
 
         Password::sendResetLink(['email' => $user->email]);
+
+        $this->audit->log('user.password_reset', 'Wachtwoordreset gestuurd naar '.$this->audit->describeUser($user), $school);
 
         return back()->with('status', "Er is een e-mail naar {$user->email} gestuurd om een wachtwoord te kiezen.");
     }
@@ -125,11 +139,21 @@ class SchoolUserController extends Controller
                 ->all()
         );
 
-        $school->update([
-            'features' => collect(Feature::cases())
-                ->mapWithKeys(fn (Feature $f) => [$f->value => (bool) $validated['features'][$f->value]])
-                ->all(),
-        ]);
+        $voor = $this->features->map($school);
+
+        $na = collect(Feature::cases())
+            ->mapWithKeys(fn (Feature $f) => [$f->value => (bool) $validated['features'][$f->value]])
+            ->all();
+
+        $school->update(['features' => $na]);
+
+        // Alleen loggen als er echt iets veranderde: een logboek vol regels
+        // "niets gewijzigd" maakt de regels die er wel toe doen onvindbaar.
+        $wijziging = $this->audit->describeFeatureChange($voor, $na);
+
+        if ($wijziging !== null) {
+            $this->audit->log('school.features', $wijziging['summary'], $school, $wijziging['details']);
+        }
 
         return back()->with('status', 'De functies van deze school zijn bijgewerkt.');
     }

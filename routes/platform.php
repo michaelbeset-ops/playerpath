@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Platform\DashboardController;
 use App\Http\Controllers\Platform\ImpersonationController;
+use App\Http\Controllers\Platform\LogController;
 use App\Http\Controllers\Platform\SchoolController;
 use App\Http\Controllers\Platform\SchoolUserController;
 use App\Http\Middleware\EnterPlatform;
@@ -32,6 +33,10 @@ Route::middleware(['auth', 'verified', EnterPlatform::class])
         Route::get('scholen/{school}/bewerken', [SchoolController::class, 'edit'])->name('schools.edit');
         Route::patch('scholen/{school}', [SchoolController::class, 'update'])->name('schools.update');
         Route::patch('scholen/{school}/status', [SchoolController::class, 'toggle'])->name('schools.toggle');
+        Route::delete('scholen/{school}', [SchoolController::class, 'destroy'])->name('schools.destroy');
+
+        // Wat je als beheerder hebt gedaan.
+        Route::get('logboek', LogController::class)->name('logs');
 
         // Functies en gebruikers van één school.
         Route::patch('scholen/{school}/functies', [SchoolUserController::class, 'features'])->name('schools.features');

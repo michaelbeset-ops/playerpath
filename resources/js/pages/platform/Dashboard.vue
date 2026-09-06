@@ -26,10 +26,7 @@ defineProps<{
         <p class="text-sm text-muted-foreground">Alle scholen bij elkaar.</p>
 
         <div class="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-            <Link
-                href="/beheer/scholen"
-                class="rounded-xl border border-border bg-card p-4 shadow-sm transition hover:border-primary"
-            >
+            <Link href="/beheer/scholen" class="rounded-xl border border-border bg-card p-4 shadow-sm transition hover:border-primary">
                 <p class="tabular text-2xl font-bold text-primary sm:text-3xl">{{ stats.activeSchools }}</p>
                 <p class="text-xs text-muted-foreground">actieve scholen van {{ stats.schools }}</p>
             </Link>
@@ -53,9 +50,7 @@ defineProps<{
         <div class="mt-4 grid gap-4 lg:grid-cols-2">
             <div class="rounded-xl border border-border bg-card p-5 shadow-sm">
                 <p class="font-medium">Vraagt om aandacht</p>
-                <p class="mt-1 text-xs text-muted-foreground">
-                    Een school die stilvalt zegt je meer dan een school die het goed doet.
-                </p>
+                <p class="mt-1 text-xs text-muted-foreground">Een school die stilvalt zegt je meer dan een school die het goed doet.</p>
 
                 <div v-if="attention.length" class="mt-3 space-y-2">
                     <Link
@@ -79,9 +74,7 @@ defineProps<{
 
             <div class="rounded-xl border border-border bg-card p-5 shadow-sm">
                 <p class="font-medium">Laatst bekeken als</p>
-                <p class="mt-1 text-xs text-muted-foreground">
-                    Elke keer dat je in de omgeving van een school keek, wordt vastgelegd.
-                </p>
+                <p class="mt-1 text-xs text-muted-foreground">Elke keer dat je in de omgeving van een school keek, wordt vastgelegd.</p>
 
                 <div v-if="recentImpersonations.length" class="mt-3 space-y-2">
                     <div v-for="log in recentImpersonations" :key="log.id" class="flex items-center gap-3 rounded-lg border border-border p-3">

@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import PlatformLayout from '@/layouts/PlatformLayout.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { Eye, Pencil, Power, PowerOff, Users } from 'lucide-vue-next';
+import { Eye, Pencil, Power, PowerOff, Trash2, Users } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 
 const props = defineProps<{
     school: {
@@ -22,6 +25,9 @@ const props = defineProps<{
     };
     owners: { id: number; name: string; email: string }[];
     features: { key: string; label: string; description: string; enabled: boolean }[];
+    package: string | null;
+    packages: { value: string; label: string; description: string; price: string; features: string[] }[];
+    deletes: { users: number; players: number; reports: number; trainings: number; payments: number; enrollments: number };
     domain: string | null;
 }>();
 
@@ -36,6 +42,23 @@ const bekijkAls = (id: number) => {
         router.post('/beheer/gebruikers/' + id + '/bekijken');
     }
 };
+
+// Wijkt deze school af van wat zijn pakket normaal aanzet? Dat is geen fout,
+// maar je wilt het wel zien voordat je je afvraagt waarom iets ontbreekt.
+const pakket = computed(() => props.packages.find((p) => p.value === props.package) ?? null);
+
+const afwijkend = computed(() => {
+    if (pakket.value === null) {
+        return false;
+    }
+
+    return props.features.some((f) => f.enabled !== pakket.value!.features.includes(f.label));
+});
+
+const toonVerwijderen = ref(false);
+const verwijderForm = useForm({ confirm: '' });
+
+const verwijder = () => verwijderForm.delete('/beheer/scholen/' + props.school.id);
 
 const wissel = () => {
     const vraag = props.school.is_active
@@ -118,6 +141,12 @@ const wissel = () => {
             </div>
         </div>
 
+        <p v-if="pakket" class="mt-3 text-sm text-muted-foreground">
+            Pakket <span class="font-medium text-foreground">{{ pakket.label }}</span> &middot; {{ pakket.price }} per maand
+            <span v-if="afwijkend" class="text-warning"> &middot; wijkt af van het pakket</span>
+        </p>
+        <p v-else class="mt-3 text-sm text-muted-foreground">Geen pakket gekozen; de functies staan los ingesteld.</p>
+
         <div class="mt-4 grid gap-4 lg:grid-cols-2">
             <div class="rounded-xl border border-border bg-card p-5 shadow-sm">
                 <p class="font-medium">Eigenaren</p>
@@ -151,9 +180,7 @@ const wissel = () => {
 
             <div class="rounded-xl border border-border bg-card p-5 shadow-sm">
                 <p class="font-medium">Functies</p>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    Wat je hier uitzet is voor deze school ook echt dicht, niet alleen verborgen.
-                </p>
+                <p class="mt-1 text-sm text-muted-foreground">Wat je hier uitzet is voor deze school ook echt dicht, niet alleen verborgen.</p>
 
                 <form class="mt-3 space-y-2" @submit.prevent="bewaarFuncties">
                     <label
@@ -196,6 +223,46 @@ const wissel = () => {
 
                 <p v-if="school.notes" class="mt-3 whitespace-pre-line rounded-lg bg-secondary px-3 py-2 text-sm">{{ school.notes }}</p>
             </div>
+        </div>
+
+        <!-- Onomkeerbaar, dus onderaan en met de naam als sleutel -->
+        <div class="mt-6 rounded-xl border border-destructive/25 bg-destructive/5 p-5">
+            <p class="font-medium text-destructive">School verwijderen</p>
+            <p class="mt-1 text-sm">
+                Alles van {{ school.name }} verdwijnt definitief: <span class="tabular font-medium">{{ deletes.users }}</span> accounts,
+                <span class="tabular font-medium">{{ deletes.players }}</span> spelers,
+                <span class="tabular font-medium">{{ deletes.reports }}</span> rapporten,
+                <span class="tabular font-medium">{{ deletes.trainings }}</span> trainingen,
+                <span class="tabular font-medium">{{ deletes.payments }}</span> betalingen en
+                <span class="tabular font-medium">{{ deletes.enrollments }}</span> inschrijvingen. Niemand van deze school kan daarna nog inloggen.
+            </p>
+            <p class="mt-1 text-xs text-muted-foreground">
+                Wil je ze alleen tijdelijk buitensluiten? Gebruik dan "Uitzetten" hierboven; dan blijven de gegevens staan.
+            </p>
+
+            <template v-if="!toonVerwijderen">
+                <Button variant="destructive" class="mt-4" @click="toonVerwijderen = true">
+                    <Trash2 class="mr-2 size-4" />
+                    Definitief verwijderen
+                </Button>
+            </template>
+
+            <form v-else class="mt-4" @submit.prevent="verwijder">
+                <label for="confirm" class="block text-sm font-medium">
+                    Typ <span class="font-semibold">{{ school.name }}</span> over om te bevestigen
+                </label>
+                <Input id="confirm" v-model="verwijderForm.confirm" class="mt-2 max-w-sm" autocomplete="off" />
+                <InputError class="mt-2" :message="verwijderForm.errors.confirm" />
+
+                <div class="mt-3 flex items-center gap-3">
+                    <Button type="submit" variant="destructive" :disabled="verwijderForm.processing || verwijderForm.confirm !== school.name">
+                        Ja, verwijder alles
+                    </Button>
+                    <button type="button" class="text-sm text-muted-foreground underline underline-offset-4" @click="toonVerwijderen = false">
+                        Annuleren
+                    </button>
+                </div>
+            </form>
         </div>
     </PlatformLayout>
 </template>

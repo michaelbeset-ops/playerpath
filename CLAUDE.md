@@ -814,9 +814,60 @@ In `EnterPlatform` staat de impersonatiecontrole **vóór** de rolcontrole.
 Andersom gaat hij nooit af — tijdens het kijken ben je de schoolgebruiker en
 val je al op de rol af, met een 404 die niets uitlegt.
 
-Scholen worden vanuit dit scherm **nooit verwijderd**, alleen aan- en
-uitgezet. Aan een school hangen spelers, rapporten en betalingen; dat weggooien
-hoort geen kwestie van één klik te zijn.
+### Pakketten
+
+`App\Enums\Package` (Start / Ontwikkeling / Academie) is een set functies met
+een prijs eraan. Het kiezen van een pakket zet `schools.features` in één keer
+goed; **daarna dwingt het niets meer af**. Per school kun je losse functies aan-
+of uitzetten, en het detailscherm zegt dan "wijkt af van het pakket".
+
+Twee dingen die daaruit volgen en die je niet moet omdraaien:
+
+- **Alleen een echte pakketwissel zet de functies opnieuw.** Zou elke opslag dat
+  doen, dan draai je stilzwijgend een afwijking terug die je bewust hebt gemaakt.
+- **De prijs is er om te tonen, niet om te factureren.** PlayerPath stuurt
+  zichzelf geen rekeningen; de bedragen komen uit het marktonderzoek.
+
+### Logboek
+
+Elke beheeractie gaat via `Support\Platform\PlatformAudit` naar `platform_logs`.
+Eén plek, zodat geen actie "toevallig" niet gelogd wordt.
+
+- De **samenvatting is een leesbare zin**, geen JSON. Over een jaar wil je
+  "Kalender uitgezet" lezen, niet `{"features":{"kalender":false}}` ontcijferen.
+  De ruwe details staan er los bij.
+- **De naam van de school staat er als tekst bij.** `school_id` is nullOnDelete,
+  dus juist de regel van een verwijderde school moet leesbaar blijven — dat is
+  precies de regel die je later zoekt.
+- Een opslag **zonder wijziging logt niets**. Een logboek vol lege regels lees
+  je niet meer.
+
+`platform_logs` staat los van `impersonations`: dat zijn sessies met een begin
+en een eind, dit zijn losse gebeurtenissen op één moment.
+
+### Een school opzeggen
+
+Twee verschillende dingen, en die moet je niet door elkaar halen:
+
+- **Uitzetten** (`is_active = false`) is omkeerbaar: niemand kan meer inloggen,
+  alle gegevens blijven staan.
+- **Verwijderen** (`Actions\Platform\DeleteSchool`) is definitief. Dat is het
+  einde van een klantrelatie: de gegevens gaan weg en er valt niets te herstellen.
+
+De bevestiging vraagt om **de naam van de school, letterlijk overgetypt**. Een
+`confirm()`-venster klik je weg zonder te lezen; een naam overtypen doe je niet
+per ongeluk.
+
+De databasesleutels doen het meeste werk — elke tabel met `school_id` staat op
+`cascadeOnDelete`. Drie dingen hebben geen `school_id` en worden met de hand
+opgeruimd: **meldingen** (polymorf aan de gebruiker), **sessies** (zodat een
+ingelogde trainer er meteen uit ligt in plaats van bij zijn volgende klik) en
+**wachtwoord-reset-tokens** (een oude link mag geen account meer herstellen).
+
+Valkuil: in de beheeromgeving staat de scope **open**, dus `Player::count()`
+telt daar álle scholen. `DeleteSchool::summarise()` zet de school daarom met de
+hand in de query (`withoutSchoolScope()->where('school_id', ...)`) — anders
+staat er een veel te groot getal in de bevestiging.
 
 ## 6. Werkwijze
 

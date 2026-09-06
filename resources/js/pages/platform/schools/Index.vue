@@ -29,10 +29,7 @@ let wachten: ReturnType<typeof setTimeout> | undefined;
 // belast de server zonder dat iemand er iets aan heeft.
 watch(filters, () => {
     clearTimeout(wachten);
-    wachten = setTimeout(
-        () => router.get('/beheer/scholen', filters, { preserveState: true, preserveScroll: true, replace: true }),
-        250,
-    );
+    wachten = setTimeout(() => router.get('/beheer/scholen', filters, { preserveState: true, preserveScroll: true, replace: true }), 250);
 });
 </script>
 
@@ -43,9 +40,7 @@ watch(filters, () => {
         <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
                 <h1 class="text-2xl font-semibold tracking-tight">Scholen</h1>
-                <p class="tabular text-sm text-muted-foreground">
-                    {{ totals.active }} actief van {{ totals.schools }} in totaal
-                </p>
+                <p class="tabular text-sm text-muted-foreground">{{ totals.active }} actief van {{ totals.schools }} in totaal</p>
             </div>
 
             <Link
@@ -97,9 +92,7 @@ watch(filters, () => {
                 <div class="min-w-0 flex-1">
                     <p class="flex flex-wrap items-center gap-2 font-medium">
                         {{ school.name }}
-                        <span v-if="!school.is_active" class="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                            inactief
-                        </span>
+                        <span v-if="!school.is_active" class="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground"> inactief </span>
                     </p>
                     <p class="text-xs text-muted-foreground">
                         {{ school.slug }}<span v-if="school.created_at"> &middot; sinds {{ school.created_at }}</span>

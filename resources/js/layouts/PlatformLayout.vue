@@ -2,7 +2,7 @@
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import FlashMessage from '@/components/FlashMessage.vue';
 import { Link, usePage } from '@inertiajs/vue3';
-import { Building2, LayoutGrid, LogOut } from 'lucide-vue-next';
+import { Building2, LayoutGrid, LogOut, ScrollText } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 /**
@@ -41,6 +41,14 @@ const naam = computed(() => page.props.auth?.user?.name ?? '');
                     >
                         <Building2 class="size-4" />
                         <span class="hidden sm:inline">Scholen</span>
+                    </Link>
+
+                    <Link
+                        href="/beheer/logboek"
+                        class="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                    >
+                        <ScrollText class="size-4" />
+                        <span class="hidden sm:inline">Logboek</span>
                     </Link>
 
                     <Link

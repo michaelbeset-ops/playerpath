@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Platform;
 use App\Http\Controllers\Controller;
 use App\Models\Impersonation;
 use App\Models\User;
+use App\Support\Platform\PlatformAudit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -62,6 +63,8 @@ class ImpersonationController extends Controller
             'admin_id' => $beheerder->id,
             'log_id' => $log->id,
         ]);
+
+        app(PlatformAudit::class)->log('impersonation.started', 'Bekeken als '.$user->name.' ('.$user->email.')', $user->school);
 
         return redirect()->route('dashboard')
             ->with('status', "Je bekijkt de app nu als {$user->name}.");

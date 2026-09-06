@@ -67,5 +67,23 @@ live draaien en erom vragen.
 | R4 | Verantwoordingsoverzicht voor ouderavond, vereniging of gemeente | ✅ |
 | R5 | Onboarding-checklist van drie stappen voor een nieuwe school | ✅ |
 | R6 | Geen ranglijsten tussen spelers | ✅ bewust niet |
-| R7 | Prijsmodel in drie pakketten (€79 / €129 / €229) | ⬜ commercieel, geen code |
+| R7 | Prijsmodel in drie pakketten (€79 / €129 / €229) | ✅ `App\Enums\Package`, kiesbaar per school |
 | R8 | Transactiemarge doorbelasten (€0,49 tegen €0,32 inkoop) | ⬜ vraagt eigen platformfacturatie |
+
+---
+
+## Platformbeheer (jouw eigen laag, buiten de fasen)
+
+| # | Wat | Status | Waar |
+|---|---|---|---|
+| P1 | Rol platformbeheerder, buiten de school-scope | ✅ | `Tenancy::isPlatform()`, `EnterPlatform` |
+| P2 | Scholenoverzicht met zoeken, filter en tellingen | ✅ | `/beheer/scholen` |
+| P3 | School aanmaken, bewerken, aan- en uitzetten | ✅ | `Platform\SchoolController` |
+| P4 | Functies per school, server-side dicht | ✅ | `Feature`, `RequireFeature` |
+| P5 | Gebruikers per school: uitnodigen, blokkeren, wachtwoord | ✅ | `Platform\SchoolUserController` |
+| P6 | Bekijken als een gebruiker, met balk en logging | ✅ | `Platform\ImpersonationController` |
+| P7 | Platformdashboard met groei en aandachtspunten | ✅ | `/beheer` |
+| P8 | Pakketten: functies en prijs in één keuze | ✅ | `App\Enums\Package` |
+| P9 | Logboek van beheeracties | ✅ | `PlatformAudit`, `/beheer/logboek` |
+| P10 | School opzeggen: definitief verwijderen | ✅ | `Actions\Platform\DeleteSchool` |
+| P11 | Facturatie van scholen aan PlayerPath | ⬜ | vraagt eigen incasso, zie R8 |

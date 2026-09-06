@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers\Platform;
 
+use App\Actions\Platform\DeleteSchool;
+use App\Enums\Package;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\School;
 use App\Models\User;
 use App\Support\Branding\BrandColor;
 use App\Support\Features\Features;
+use App\Support\Money\Money;
+use App\Support\Platform\PlatformAudit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -27,7 +31,10 @@ use Inertia\Response;
  */
 class SchoolController extends Controller
 {
-    public function __construct(protected Features $features) {}
+    public function __construct(
+        protected Features $features,
+        protected PlatformAudit $audit,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -70,6 +77,7 @@ class SchoolController extends Controller
 
         return Inertia::render('platform/schools/Form', [
             'school' => null,
+            'packages' => $this->pakketten(),
             'domain' => config('app.domain'),
         ]);
     }
@@ -90,6 +98,12 @@ class SchoolController extends Controller
                 'contact_email' => $validated['contact_email'] ?? null,
                 'contact_phone' => $validated['contact_phone'] ?? null,
                 'notes' => $validated['notes'] ?? null,
+                'package' => $validated['package'] ?? null,
+                // Het pakket zet de schakelaars in een keer goed; daarna kun je
+                // er per school nog van afwijken.
+                'features' => isset($validated['package'])
+                    ? Package::from($validated['package'])->featureMap()
+                    : null,
             ]);
 
             // Meteen een eigenaar erbij, als die is opgegeven. Zonder eigenaar
@@ -109,6 +123,11 @@ class SchoolController extends Controller
 
             return $school;
         });
+
+        $this->audit->log('school.created', 'School aangemaakt', $school, [
+            'slug' => $school->slug,
+            'package' => $school->package,
+        ]);
 
         if (! empty($validated['owner_email'])) {
             Password::sendResetLink(['email' => $validated['owner_email']]);
@@ -137,6 +156,11 @@ class SchoolController extends Controller
                 ->get(['id', 'name', 'email'])
                 ->map(fn (User $user) => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email]),
             'features' => $this->features->describe($school),
+            'package' => $school->package,
+            'packages' => $this->pakketten(),
+            // Wat er verdwijnt als je verwijdert. Voor de bevestiging tonen,
+            // niet erna: dit is het moment om je te bedenken.
+            'deletes' => app(DeleteSchool::class)->summarise($school),
             'domain' => config('app.domain'),
         ]);
     }
@@ -155,7 +179,9 @@ class SchoolController extends Controller
                 'contact_email' => $school->contact_email,
                 'contact_phone' => $school->contact_phone,
                 'notes' => $school->notes,
+                'package' => $school->package,
             ],
+            'packages' => $this->pakketten(),
             'domain' => config('app.domain'),
         ]);
     }
@@ -166,6 +192,8 @@ class SchoolController extends Controller
 
         $validated = $this->valideer($request, $school);
 
+        $pakketGewijzigd = ($validated['package'] ?? null) !== $school->package;
+
         $school->update([
             'name' => $validated['name'],
             'slug' => $validated['slug'],
@@ -174,7 +202,17 @@ class SchoolController extends Controller
             'contact_email' => $validated['contact_email'] ?? null,
             'contact_phone' => $validated['contact_phone'] ?? null,
             'notes' => $validated['notes'] ?? null,
+            'package' => $validated['package'] ?? null,
         ]);
+
+        // Alleen bij een echte pakketwissel de functies opnieuw zetten. Zou dat
+        // bij elke opslag gebeuren, dan draai je stilzwijgend een afwijking
+        // terug die je bewust hebt gemaakt.
+        if ($pakketGewijzigd && isset($validated['package'])) {
+            $school->update(['features' => Package::from($validated['package'])->featureMap()]);
+        }
+
+        $this->audit->log('school.updated', 'Gegevens bijgewerkt', $school);
 
         return redirect()
             ->route('platform.schools.show', $school)
@@ -182,9 +220,9 @@ class SchoolController extends Controller
     }
 
     /**
-     * Aan- of uitzetten. Een school wordt nooit verwijderd vanuit dit scherm:
-     * daar hangen spelers, rapporten en betalingen aan, en dat weggooien hoort
-     * geen kwestie van één klik te zijn.
+     * Aan- of uitzetten. Dit is de omkeerbare variant: niemand kan meer
+     * inloggen, maar alle gegevens blijven staan. Voor het echte weggooien is
+     * er destroy(), met de naam als bevestiging.
      */
     public function toggle(Request $request, School $school): RedirectResponse
     {
@@ -192,9 +230,56 @@ class SchoolController extends Controller
 
         $school->update(['is_active' => ! $school->is_active]);
 
+        $this->audit->log(
+            $school->is_active ? 'school.activated' : 'school.deactivated',
+            $school->is_active ? 'School weer aangezet' : 'School uitgezet',
+            $school,
+        );
+
         return back()->with('status', $school->is_active
             ? "{$school->name} staat weer aan."
             : "{$school->name} staat uit. Niemand van die school kan nog inloggen.");
+    }
+
+    /**
+     * Een school en al zijn gegevens definitief verwijderen.
+     *
+     * De naam moet letterlijk worden ingetypt. Een bevestigingsvenster klik je
+     * weg zonder te lezen; een naam overtypen doe je niet per ongeluk.
+     */
+    public function destroy(Request $request, School $school, DeleteSchool $verwijder): RedirectResponse
+    {
+        $this->authorize('platform.manageSchools');
+
+        $request->validate([
+            'confirm' => ['required', 'string', Rule::in([$school->name])],
+        ], [
+            'confirm.in' => 'Typ de naam van de school precies over om te bevestigen.',
+        ]);
+
+        $naam = $school->name;
+
+        // Loggen voor het verwijderen: daarna bestaat de school niet meer en
+        // kan de regel er niet meer aan gekoppeld worden.
+        $this->audit->log('school.deleted', "School {$naam} definitief verwijderd", $school, $verwijder->summarise($school));
+
+        $verwijder->handle($school);
+
+        return redirect()
+            ->route('platform.schools.index')
+            ->with('status', "{$naam} is verwijderd. Niemand van die school kan nog inloggen.");
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function pakketten(): array
+    {
+        return array_map(fn (Package $pakket) => [
+            'value' => $pakket->value,
+            'label' => $pakket->label(),
+            'description' => $pakket->description(),
+            'price' => Money::format($pakket->priceCents()),
+            'features' => array_map(fn ($f) => $f->label(), $pakket->features()),
+        ], Package::cases());
     }
 
     /** @return array<string, mixed> */
@@ -213,6 +298,7 @@ class SchoolController extends Controller
             'contact_email' => ['nullable', 'email', 'max:255'],
             'contact_phone' => ['nullable', 'string', 'max:40'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'package' => ['nullable', Rule::in(Package::values())],
             'owner_name' => ['nullable', 'required_with:owner_email', 'string', 'max:255'],
             'owner_email' => ['nullable', 'email', 'max:255', 'unique:users,email'],
         ], [
@@ -251,6 +337,7 @@ class SchoolController extends Controller
             'contact_email' => $school->contact_email,
             'contact_phone' => $school->contact_phone,
             'notes' => $school->notes,
+            'package' => $school->package,
             'created_at' => $school->created_at?->format('d-m-Y'),
         ];
     }

@@ -17,7 +17,9 @@ const props = defineProps<{
         contact_email: string | null;
         contact_phone: string | null;
         notes: string | null;
+        package: string | null;
     } | null;
+    packages: { value: string; label: string; description: string; price: string; features: string[] }[];
     domain: string | null;
 }>();
 
@@ -31,6 +33,7 @@ const form = useForm({
     contact_email: props.school?.contact_email ?? '',
     contact_phone: props.school?.contact_phone ?? '',
     notes: props.school?.notes ?? '',
+    package: props.school?.package ?? '',
     owner_name: '',
     owner_email: '',
 });
@@ -55,8 +58,7 @@ const naamGewijzigd = () => {
     }
 };
 
-const opslaan = () =>
-    bewerken.value ? form.patch('/beheer/scholen/' + props.school!.id) : form.post('/beheer/scholen');
+const opslaan = () => (bewerken.value ? form.patch('/beheer/scholen/' + props.school!.id) : form.post('/beheer/scholen'));
 </script>
 
 <template>
@@ -84,7 +86,9 @@ const opslaan = () =>
                         <Label for="slug">Adres</Label>
                         <Input id="slug" v-model="form.slug" required placeholder="keepersschool-rob" />
                         <p class="text-xs text-muted-foreground">
-                            <template v-if="domain">Wordt <span class="font-medium text-foreground">{{ form.slug || '…' }}.{{ domain }}</span></template>
+                            <template v-if="domain"
+                                >Wordt <span class="font-medium text-foreground">{{ form.slug || '…' }}.{{ domain }}</span></template
+                            >
                             <template v-else>Alleen kleine letters, cijfers en streepjes. Dit wordt later het subdomein.</template>
                         </p>
                         <InputError :message="form.errors.slug" />
@@ -105,6 +109,41 @@ const opslaan = () =>
                         <InputError :message="form.errors.brand_color" />
                     </div>
                 </div>
+            </div>
+
+            <div class="rounded-xl border border-border bg-card p-5 shadow-sm">
+                <p class="font-medium">Pakket</p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    Zet in een keer de juiste functies aan. Je kunt er daarna per school nog van afwijken.
+                </p>
+
+                <div class="mt-4 grid gap-3 sm:grid-cols-3">
+                    <label
+                        v-for="pakket in packages"
+                        :key="pakket.value"
+                        class="flex cursor-pointer flex-col gap-1 rounded-lg border p-3 transition"
+                        :class="form.package === pakket.value ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'"
+                    >
+                        <span class="flex items-center gap-2">
+                            <input v-model="form.package" type="radio" :value="pakket.value" class="size-4 accent-primary" />
+                            <span class="text-sm font-medium">{{ pakket.label }}</span>
+                        </span>
+                        <span class="tabular text-sm font-semibold"
+                            >{{ pakket.price }}<span class="text-xs font-normal text-muted-foreground"> /mnd</span></span
+                        >
+                        <span class="text-xs text-muted-foreground">{{ pakket.description }}</span>
+                    </label>
+                </div>
+
+                <button
+                    v-if="form.package"
+                    type="button"
+                    class="mt-3 text-xs text-muted-foreground underline underline-offset-4"
+                    @click="form.package = ''"
+                >
+                    Geen pakket
+                </button>
+                <InputError class="mt-2" :message="form.errors.package" />
             </div>
 
             <div class="rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -148,8 +187,7 @@ const opslaan = () =>
             <div v-if="!bewerken" class="rounded-xl border border-border bg-card p-5 shadow-sm">
                 <p class="font-medium">Eigenaar</p>
                 <p class="mt-1 text-sm text-muted-foreground">
-                    Zonder eigenaar kan er niemand inloggen. Hij krijgt een e-mail om zelf een wachtwoord te kiezen; jij bedenkt er
-                    dus geen.
+                    Zonder eigenaar kan er niemand inloggen. Hij krijgt een e-mail om zelf een wachtwoord te kiezen; jij bedenkt er dus geen.
                 </p>
 
                 <div class="mt-4 grid gap-4 sm:grid-cols-2">
