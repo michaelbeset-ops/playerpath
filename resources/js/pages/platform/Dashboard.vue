@@ -12,6 +12,10 @@ defineProps<{
         owners: number;
         guardians: number;
         reportsThisMonth: number;
+        mrrCents: number;
+        mrr: string;
+        mrrPerYear: string;
+        withoutPackage: number;
     };
     attention: { id: number; name: string; players_count: number; reason: string }[];
     recentImpersonations: { id: number; user_email: string; school: string | null; started_at: string; ended_at: string | null }[];
@@ -41,9 +45,13 @@ defineProps<{
                 <p class="text-xs text-muted-foreground">trainers</p>
             </div>
 
+            <!-- Groen zodra er echt iets staat; grijs bij nul. De kleur zegt
+                 hier iets, en zou dat niet meer doen als alles groen was. -->
             <div class="rounded-xl border border-border bg-card p-4 shadow-sm">
-                <p class="tabular text-2xl font-bold sm:text-3xl">{{ stats.reportsThisMonth }}</p>
-                <p class="text-xs text-muted-foreground">rapporten deze maand</p>
+                <p class="tabular text-2xl font-bold sm:text-3xl" :class="stats.mrrCents > 0 ? 'text-primary' : ''">
+                    {{ stats.mrr }}
+                </p>
+                <p class="text-xs text-muted-foreground">omzet per maand, ex btw</p>
             </div>
         </div>
 
@@ -95,7 +103,15 @@ defineProps<{
         </div>
 
         <p class="mt-4 text-xs text-muted-foreground">
-            Omzetcijfers staan hier bewust nog niet: die kloppen pas als er over alle scholen heen echt geld binnenkomt.
+            De omzet is wat de pakketten van de actieve scholen waard zijn, exclusief btw &mdash;
+            <span class="tabular font-medium text-foreground">{{ stats.mrrPerYear }}</span> op jaarbasis.
+            <template v-if="stats.withoutPackage">
+                <span class="text-warning">
+                    {{ stats.withoutPackage }} actieve {{ stats.withoutPackage === 1 ? 'school heeft' : 'scholen hebben' }} nog geen pakket en
+                    {{ stats.withoutPackage === 1 ? 'telt' : 'tellen' }} dus voor niets mee.
+                </span>
+            </template>
+            Er wordt nog niets mee gefactureerd; dat doe je voorlopig met de hand.
         </p>
     </PlatformLayout>
 </template>

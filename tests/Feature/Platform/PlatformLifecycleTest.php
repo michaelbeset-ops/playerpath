@@ -12,6 +12,7 @@ use App\Models\Report;
 use App\Models\School;
 use App\Models\User;
 use App\Support\Features\Features;
+use App\Support\Money\Money;
 use App\Support\Tenancy\Tenancy;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -118,6 +119,40 @@ class PlatformLifecycleTest extends TestCase
         $this->actingAs($this->beheerder)
             ->post('/beheer/scholen', ['name' => 'Rob', 'slug' => 'rob', 'package' => 'goud'])
             ->assertSessionHasErrors('package');
+    }
+
+    // ---------------------------------------------------------------
+    // Omzet op het platformoverzicht
+    // ---------------------------------------------------------------
+
+    public function test_de_omzet_telt_de_pakketten_van_actieve_scholen_op(): void
+    {
+        School::factory()->create(['slug' => 'a', 'package' => Package::Start->value]);
+        School::factory()->create(['slug' => 'b', 'package' => Package::Academie->value]);
+
+        // Telt niet mee: uit, en zonder pakket.
+        School::factory()->create(['slug' => 'c', 'package' => Package::Academie->value, 'is_active' => false]);
+        School::factory()->create(['slug' => 'd', 'package' => null]);
+
+        $verwacht = Package::Start->priceCents() + Package::Academie->priceCents();
+
+        $this->actingAs($this->beheerder)
+            ->get('/beheer')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('stats.mrrCents', $verwacht)
+                ->where('stats.mrrPerYear', Money::format($verwacht * 12))
+                ->where('stats.withoutPackage', 1));
+    }
+
+    public function test_zonder_pakketten_staat_de_omzet_op_nul(): void
+    {
+        School::factory()->create(['slug' => 'a', 'package' => null]);
+
+        $this->actingAs($this->beheerder)
+            ->get('/beheer')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('stats.mrrCents', 0));
     }
 
     // ---------------------------------------------------------------

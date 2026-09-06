@@ -34,7 +34,14 @@ enum Package: string
         };
     }
 
-    /** In centen, zoals elk bedrag in dit project. */
+    /**
+     * In centen, zoals elk bedrag in dit project, en **exclusief btw**.
+     *
+     * Een voetbalschool is een onderneming en trekt de btw af, dus een prijs
+     * ex btw is wat er in een gesprek en op het platformoverzicht hoort te
+     * staan. Zet er nooit stilzwijgend een bedrag inclusief btw naast: dan
+     * telt het overzicht 21% op dat nooit van jou was.
+     */
     public function priceCents(): int
     {
         return match ($this) {
