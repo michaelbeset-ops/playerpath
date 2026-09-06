@@ -97,6 +97,18 @@ class User extends Authenticatable
             : $query->where('school_id', $schoolId);
     }
 
+    /**
+     * Beheert dit account het platform in plaats van één school?
+     *
+     * Zo'n account heeft bewust geen school_id: het hoort nergens bij en kan
+     * daardoor ook nooit per ongeluk als gewone gebruiker data van één school
+     * meekrijgen.
+     */
+    public function isPlatformbeheerder(): bool
+    {
+        return $this->hasRole(RoleEnum::Platformbeheerder->value);
+    }
+
     public function isEigenaar(): bool
     {
         return $this->hasRole(RoleEnum::Eigenaar->value);

@@ -15,6 +15,7 @@ use App\Support\PlayerCard\CalculatePlayerCard;
 use App\Support\PlayerCard\PlayerBadges;
 use App\Support\PlayerCard\PlayerProgress;
 use App\Support\Trainings\VisibleTrainings;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -42,9 +43,17 @@ class DashboardController extends Controller
         protected SetupChecklist $checklist,
     ) {}
 
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request): Response|RedirectResponse
     {
         $user = $request->user();
+
+        // Een platformbeheerder hoort niet bij een school en heeft hier dus
+        // niets te zoeken; zijn werkvloer is /beheer. Eén school bekijken doet
+        // hij via impersonatie, en dan heeft hij wél een school.
+        if ($user->isPlatformbeheerder() && $user->school_id === null) {
+            return redirect()->route('platform.schools.index');
+        }
+
         $eigenSpelers = $user->visiblePlayerIds();
 
         return $eigenSpelers === []

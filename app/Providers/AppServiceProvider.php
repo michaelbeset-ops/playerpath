@@ -2,10 +2,12 @@
 
 namespace App\Providers;
 
+use App\Policies\PlatformPolicy;
 use App\Support\Payments\MollieGateway;
 use App\Support\Payments\NotConnectedGateway;
 use App\Support\Payments\PaymentGateway;
 use App\Support\Tenancy\Tenancy;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Mollie\Api\MollieApiClient;
 
@@ -36,6 +38,13 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        // Platformbeheer hangt niet aan een model, dus het gaat via gates in
+        // plaats van een modelpolicy. Ze staan hier zodat de rolcontrole ook
+        // buiten de middleware nog een keer plaatsvindt: twee sloten op
+        // dezelfde deur, net als bij de andere policies.
+        Gate::define('platform.access', [PlatformPolicy::class, 'access']);
+        Gate::define('platform.manageSchools', [PlatformPolicy::class, 'manageSchools']);
+
         // De school komt altijd uit het ingelogde account. Dit is de terugval
         // voor het moment waarop route model binding draait: dat gebeurt in de
         // web-middlewaregroep nog vóór SetCurrentSchool, en zonder deze regel

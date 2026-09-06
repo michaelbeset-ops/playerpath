@@ -30,6 +30,21 @@ class Tenancy
     /** Staat de scope tijdelijk uit? Alleen voor bewuste beheer-acties. */
     protected bool $disabled = false;
 
+    /**
+     * Draaien we in de beheeromgeving van het platform?
+     *
+     * Dit is de enige manier waarop iemand over scholen heen mag kijken. Hij
+     * wordt uitsluitend gezet door de middleware van /beheer, en alleen voor
+     * een account met de rol platformbeheerder. Overal elders blijft de scope
+     * fail-closed: geen school betekent geen data.
+     *
+     * Bewust een aparte stand naast $disabled. Die laatste is een tijdelijke
+     * uitzondering rond één blok code (seeders, een webhook die zijn school nog
+     * moet vinden); dit is een eigenschap van de hele request. Ze uit elkaar
+     * houden maakt in de scope zichtbaar wélke van de twee geldt.
+     */
+    protected bool $platform = false;
+
     public function set(?School $school): void
     {
         $this->school = $school;
@@ -38,6 +53,37 @@ class Tenancy
     public function forget(): void
     {
         $this->school = null;
+    }
+
+    /**
+     * De beheeromgeving betreden: vanaf hier kijkt de scope over alle scholen.
+     *
+     * Roep dit nooit aan vanuit een controller. De middleware van /beheer is
+     * de enige plek die dit mag doen, want daar staat ook de rolcontrole.
+     */
+    public function enterPlatform(): void
+    {
+        $this->platform = true;
+        $this->school = null;
+        $this->resolver = null;
+    }
+
+    /**
+     * De beheeromgeving weer verlaten.
+     *
+     * Alleen de middleware roept dit aan, na afloop van het verzoek. In een
+     * langlevend proces blijft de stand anders hangen en draait het volgende
+     * stuk werk met de scope open.
+     */
+    public function leavePlatform(): void
+    {
+        $this->platform = false;
+        $this->school = null;
+    }
+
+    public function isPlatform(): bool
+    {
+        return $this->platform;
     }
 
     public function resolveUsing(Closure $resolver): void

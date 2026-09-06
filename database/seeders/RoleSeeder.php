@@ -7,8 +7,9 @@ use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 
 /**
- * De vier rollen zijn platformbreed: ze horen niet bij één school.
- * Wie welke rol heeft staat per gebruiker, en die hoort wél bij één school.
+ * De rollen zijn platformbreed: ze horen niet bij één school. Wie welke rol
+ * heeft staat per gebruiker, en die hoort wél bij één school — behalve de
+ * platformbeheerder, die juist geen school heeft.
  */
 class RoleSeeder extends Seeder
 {

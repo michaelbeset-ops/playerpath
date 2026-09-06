@@ -151,7 +151,11 @@ de plek waar geweigerd wordt.
 
 ### 3.4 Rollen
 
-Vier rollen via spatie/laravel-permission:
+Vijf rollen via spatie/laravel-permission. Vier horen bij een school; de
+vijfde staat er juist boven:
+
+- `platformbeheerder` — beheert het platform, heeft **geen** `school_id`
+
 
 - `eigenaar` — beheert de school, ziet alles binnen de eigen school
 - `trainer` — vult rapporten in, ziet zijn groepen
@@ -743,6 +747,39 @@ Daarna nog een tweede ronde op een echte telefoon:
 `clientWidth`. Is hij groter, dan scrollt de pagina zijwaarts. En kijk of een
 tekst wordt afgekapt met `scrollWidth > clientWidth` op de tekstelementen
 zelf.
+
+### Platformbeheer (super-admin)
+
+De beheeromgeving staat op `/beheer` en is de enige plek waar iemand over
+scholen heen kijkt. Vier eigenschappen die je niet moet weghalen:
+
+1. **Eén plek waar de scope opengaat.** `SchoolScope` filtert niet bij
+   `isDisabled()` (een tijdelijke uitzondering rond één blok code) of bij
+   `isPlatform()` (de beheeromgeving). Er is geen derde, en er staan nergens
+   losse uitzonderingen in controllers.
+2. **Openzetten en rolcontrole staan in dezelfde middleware.**
+   `EnterPlatform` doet eerst de rolcontrole en pas daarna
+   `Tenancy::enterPlatform()`. Zolang die twee bij elkaar staan kan er geen
+   route bestaan die het één wel doet en het ander niet.
+3. **De platformmodus wordt weer dichtgezet** in `terminate()`. In een gewone
+   webrequest maakt dat niets uit, maar in een langlevend proces (tests,
+   Octane) zou de scope open blijven staan voor het volgende stuk werk. Er
+   staat een test op die precies dat controleert.
+4. **Een platformbeheerder heeft geen school.** In de gewone app is de scope
+   voor hem dus fail-closed: hij ziet niets. `/dashboard` stuurt hem door naar
+   `/beheer`. Eén school bekijken gaat straks via impersonatie, en dán heeft
+   hij wél een school.
+
+Wie er niet hoort krijgt een **404 en geen 403**: dat de beheeromgeving bestaat
+is niets wat een schooleigenaar hoeft te weten.
+
+Een beheerder maak je met `php artisan platform:create-admin`. Bewust alleen
+via de commandoregel: een scherm waarmee iemand zichzelf boven alle scholen kan
+zetten hoort niet te bestaan.
+
+Scholen worden vanuit dit scherm **nooit verwijderd**, alleen aan- en
+uitgezet. Aan een school hangen spelers, rapporten en betalingen; dat weggooien
+hoort geen kwestie van één klik te zijn.
 
 ## 6. Werkwijze
 

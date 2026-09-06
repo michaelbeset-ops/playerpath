@@ -13,6 +13,10 @@ use Illuminate\Database\Eloquent\Scope;
  * Bewust fail-closed: is er geen actieve school, dan levert de query niets op.
  * Dat is veiliger dan "alles teruggeven" — een vergeten middleware mag nooit
  * per ongeluk de data van alle scholen openzetten.
+ *
+ * De enige uitzondering die over scholen heen kijkt is de beheeromgeving van
+ * het platform, en die wordt hieronder expliciet genoemd. Zo staat op één plek
+ * wanneer er níét gefilterd wordt.
  */
 class SchoolScope implements Scope
 {
@@ -20,7 +24,11 @@ class SchoolScope implements Scope
     {
         $tenancy = app(Tenancy::class);
 
-        if ($tenancy->isDisabled()) {
+        // Twee redenen om niet te filteren, allebei bewust en allebei hier:
+        // een tijdelijke uitzondering rond een blok code, of de beheeromgeving
+        // van het platform. Er is geen derde, en er staan nergens losse
+        // uitzonderingen in controllers.
+        if ($tenancy->isDisabled() || $tenancy->isPlatform()) {
             return;
         }
 

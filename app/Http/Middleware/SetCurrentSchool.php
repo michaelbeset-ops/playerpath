@@ -29,6 +29,16 @@ class SetCurrentSchool
             return $next($request);
         }
 
+        // Een platformbeheerder hoort bij geen enkele school. Hij krijgt hier
+        // dus ook geen school, en de scope blijft voor hem fail-closed: in de
+        // gewone app ziet hij niets. Over scholen heen kijken kan alleen in
+        // /beheer, en één school bekijken alleen via impersonatie.
+        if ($user->isPlatformbeheerder() && $user->school_id === null) {
+            $this->tenancy->forget();
+
+            return $next($request);
+        }
+
         abort_if(
             $user->school_id === null,
             403,

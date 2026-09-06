@@ -23,6 +23,10 @@ class School extends Model
         'retention_months',
         'logo_path',
         'brand_color',
+        'contact_name',
+        'contact_email',
+        'contact_phone',
+        'notes',
     ];
 
     protected function casts(): array
