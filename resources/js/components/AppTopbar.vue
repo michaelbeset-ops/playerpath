@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import AppLogo from '@/components/AppLogo.vue';
-import NotificationBell from '@/components/NotificationBell.vue';
 import { type NavGroup, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
 import {
+    Bell,
     Building2,
     CalendarDays,
     CalendarRange,
@@ -19,9 +19,11 @@ import {
     Megaphone,
     Menu,
     Palette,
+    Plus,
     Receipt,
     Settings,
     Tag,
+    User,
     UserCog,
     Users,
     UsersRound,
@@ -32,13 +34,18 @@ import { computed, onBeforeUnmount, onMounted, ref, watch, type Component } from
 /**
  * De menubalk bovenin.
  *
- * Welke items er staan bepaalt de server (MainNavigation), op basis van de
- * policies. Hier vertalen we alleen de iconennaam naar een component, zodat
- * het menu nooit een item kan tonen dat je toch niet mag openen.
+ * Welke items er staan bepaalt de server (MainNavigation en QuickActions), op
+ * basis van de policies. Hier vertalen we alleen de iconennaam naar een
+ * component, zodat het menu nooit een item kan tonen dat je toch niet mag
+ * openen.
  *
- * De balk is donker en de werkvloer eronder licht. Dat is geen sier: het
+ * De balk is donkerblauw en de werkvloer eronder licht. Dat is geen sier: het
  * scheidt "waar ben ik in de app" van "waar werk ik aan", en het is dezelfde
  * donkere kant van het merk als de spelerskaart.
+ *
+ * Drie dingen staan rechts vast op volle hoogte: de bel, de plusknop en jij.
+ * Die zoek je op positie en niet op vorm, dus ze horen altijd op dezelfde plek
+ * te staan, ook als de balk verder leegloopt bij een ouder.
  */
 const iconen: Record<string, Component> = {
     dashboard: LayoutGrid,
@@ -76,6 +83,21 @@ const groepen = computed<NavGroup[]>(() =>
     })),
 );
 
+const acties = computed(() => page.props.quickAdd ?? []);
+const ongelezen = computed(() => page.props.unreadNotifications ?? 0);
+const rol = computed(() => (page.props.auth.roles ?? [])[0] ?? null);
+
+// De initialen in het rondje. Twee letters: meer wordt onleesbaar klein.
+const initialen = computed(() =>
+    (page.props.auth.user?.name ?? '')
+        .split(' ')
+        .filter(Boolean)
+        .map((deel) => deel[0])
+        .slice(0, 2)
+        .join('')
+        .toUpperCase(),
+);
+
 const huidig = computed(() => page.url.split('?')[0]);
 
 // Ook actief op onderliggende schermen: /players/1/reports/create hoort bij
@@ -83,19 +105,13 @@ const huidig = computed(() => page.url.split('?')[0]);
 // langste treffer wint.
 const raakt = (href: string) => huidig.value === href || huidig.value.startsWith(href + '/');
 
-const isActief = (groep: NavGroup) => {
-    if (groep.href) {
-        return raakt(groep.href);
-    }
-
-    return groep.items.some((item) => raakt(item.href));
-};
+const isActief = (groep: NavGroup) => (groep.href ? raakt(groep.href) : groep.items.some((item) => raakt(item.href)));
 
 // Welke uitklap staat open. Eén tegelijk, en klikken sluit hem weer.
 const open = ref<string | null>(null);
 const mobiel = ref(false);
 
-const wissel = (titel: string) => (open.value = open.value === titel ? null : titel);
+const wissel = (sleutel: string) => (open.value = open.value === sleutel ? null : sleutel);
 
 const sluit = () => {
     open.value = null;
@@ -116,27 +132,29 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
 </script>
 
 <template>
-    <header class="theme-donker sticky top-0 z-40 bg-background text-foreground">
+    <header class="theme-donker sticky top-0 z-40 bg-card text-foreground">
         <!-- Klik naast een open uitklap sluit hem. Zit achter de balk, dus
              hij vangt niets af zolang er niets openstaat. -->
         <div v-if="open" class="fixed inset-0 -z-10" @click="sluit"></div>
 
-        <div class="mx-auto flex h-14 w-full max-w-7xl items-center gap-2 px-3 sm:px-4">
-            <!-- Alleen het merkteken: de naam van de school staat al in de
-                 titel van het tabblad, en tweemaal dezelfde naam in een balk
-                 van veertien pixels hoog is verspilde ruimte. -->
-            <Link href="/dashboard" class="flex shrink-0 items-center rounded-lg p-1" :title="page.props.branding?.name" @click="sluit">
+        <div class="flex h-14 w-full min-w-0 items-center">
+            <Link
+                href="/dashboard"
+                class="flex h-full shrink-0 items-center px-3 sm:px-4"
+                :title="page.props.branding?.name ?? undefined"
+                @click="sluit"
+            >
                 <AppLogo :with-name="false" />
             </Link>
 
             <!-- Groot scherm: de balk zelf -->
-            <nav class="ml-2 hidden min-w-0 flex-1 items-center gap-0.5 lg:flex" aria-label="Hoofdmenu">
+            <nav class="hidden min-w-0 flex-1 items-center gap-0.5 lg:flex" aria-label="Hoofdmenu">
                 <template v-for="groep in groepen" :key="groep.title">
                     <Link
                         v-if="groep.href"
                         :href="groep.href"
                         class="rounded-lg px-3 py-2 text-sm font-medium transition"
-                        :class="isActief(groep) ? 'bg-card text-foreground' : 'text-muted-foreground hover:bg-card/60 hover:text-foreground'"
+                        :class="isActief(groep) ? 'bg-background text-foreground' : 'text-foreground/75 hover:bg-background/50 hover:text-foreground'"
                         @click="sluit"
                     >
                         {{ groep.title }}
@@ -148,8 +166,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                             class="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition"
                             :class="
                                 isActief(groep) || open === groep.title
-                                    ? 'bg-card text-foreground'
-                                    : 'text-muted-foreground hover:bg-card/60 hover:text-foreground'
+                                    ? 'bg-background text-foreground'
+                                    : 'text-foreground/75 hover:bg-background/50 hover:text-foreground'
                             "
                             :aria-expanded="open === groep.title"
                             aria-haspopup="true"
@@ -179,30 +197,106 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                 </template>
             </nav>
 
-            <div class="ml-auto flex shrink-0 items-center gap-1">
-                <NotificationBell />
-
+            <!-- Rechts, alles op volle hoogte -->
+            <div class="ml-auto flex h-full shrink-0 items-stretch">
                 <Link
-                    href="/settings/profile"
-                    class="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-card/60 hover:text-foreground sm:block"
+                    href="/notifications"
+                    class="relative flex items-center px-3 text-foreground/75 transition hover:bg-background/50 hover:text-foreground"
+                    :aria-label="ongelezen > 0 ? ongelezen + ' ongelezen meldingen' : 'Meldingen'"
                 >
-                    <!-- inline-block, want max-width doet niets op een inline span -->
-                    <span class="inline-block max-w-40 truncate align-bottom">{{ page.props.auth.user.name }}</span>
+                    <Bell class="size-5" />
+                    <span
+                        v-if="ongelezen > 0"
+                        class="tabular absolute right-1.5 top-2.5 flex min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold leading-4 text-primary-foreground"
+                    >
+                        {{ ongelezen > 9 ? '9+' : ongelezen }}
+                    </span>
                 </Link>
 
-                <Link
-                    href="/logout"
-                    method="post"
-                    as="button"
-                    class="rounded-lg p-2 text-muted-foreground transition hover:bg-card/60 hover:text-foreground"
-                    aria-label="Uitloggen"
-                >
-                    <LogOut class="size-4" />
-                </Link>
+                <!-- De plus. Geen acties, geen knop: een plus die een leeg
+                     lijstje opent is erger dan geen plus. -->
+                <div v-if="acties.length" class="relative flex">
+                    <button
+                        type="button"
+                        class="flex items-center bg-primary px-4 text-primary-foreground transition hover:opacity-90"
+                        :aria-expanded="open === 'plus'"
+                        aria-haspopup="true"
+                        aria-label="Toevoegen"
+                        @click="wissel('plus')"
+                    >
+                        <Plus class="size-5" />
+                    </button>
+
+                    <div
+                        v-if="open === 'plus'"
+                        class="absolute right-0 top-full mt-1 min-w-56 overflow-hidden rounded-xl border border-border bg-card py-1 shadow-lg"
+                    >
+                        <Link
+                            v-for="actie in acties"
+                            :key="actie.href + actie.title"
+                            :href="actie.href"
+                            class="flex items-center gap-3 px-3 py-2.5 text-sm transition hover:bg-background/60"
+                            @click="sluit"
+                        >
+                            <component :is="iconen[actie.icon] ?? Plus" class="size-4 shrink-0 opacity-70" />
+                            {{ actie.title }}
+                        </Link>
+                    </div>
+                </div>
+
+                <div class="relative flex">
+                    <button
+                        type="button"
+                        class="flex items-center gap-2 bg-background/60 px-3 text-left transition hover:bg-background"
+                        :aria-expanded="open === 'gebruiker'"
+                        aria-haspopup="true"
+                        @click="wissel('gebruiker')"
+                    >
+                        <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
+                            {{ initialen }}
+                        </span>
+                        <span class="hidden min-w-0 leading-tight sm:block">
+                            <span class="block max-w-32 truncate text-sm font-medium">{{ page.props.auth.user?.name }}</span>
+                            <span v-if="rol" class="block truncate text-[11px] text-foreground/60">{{ rol }}</span>
+                        </span>
+                        <ChevronDown class="hidden size-3.5 shrink-0 text-foreground/60 sm:block" />
+                    </button>
+
+                    <div
+                        v-if="open === 'gebruiker'"
+                        class="absolute right-0 top-full mt-1 min-w-48 overflow-hidden rounded-xl border border-border bg-card py-1 shadow-lg"
+                    >
+                        <Link
+                            href="/settings/profile"
+                            class="flex items-center gap-3 px-3 py-2.5 text-sm transition hover:bg-background/60"
+                            @click="sluit"
+                        >
+                            <User class="size-4 shrink-0 opacity-70" />
+                            Mijn profiel
+                        </Link>
+                        <Link
+                            href="/settings/dashboard"
+                            class="flex items-center gap-3 px-3 py-2.5 text-sm transition hover:bg-background/60"
+                            @click="sluit"
+                        >
+                            <LayoutGrid class="size-4 shrink-0 opacity-70" />
+                            Mijn dashboard
+                        </Link>
+                        <Link
+                            href="/logout"
+                            method="post"
+                            as="button"
+                            class="flex w-full items-center gap-3 px-3 py-2.5 text-sm transition hover:bg-background/60"
+                        >
+                            <LogOut class="size-4 shrink-0 opacity-70" />
+                            Uitloggen
+                        </Link>
+                    </div>
+                </div>
 
                 <button
                     type="button"
-                    class="rounded-lg p-2 text-muted-foreground transition hover:bg-card/60 hover:text-foreground lg:hidden"
+                    class="flex items-center px-3 text-foreground/75 transition hover:bg-background/50 hover:text-foreground lg:hidden"
                     :aria-expanded="mobiel"
                     aria-label="Menu"
                     @click="mobiel = !mobiel"
@@ -219,7 +313,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                     v-if="groep.href"
                     :href="groep.href"
                     class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium"
-                    :class="isActief(groep) ? 'bg-card' : 'text-muted-foreground'"
+                    :class="isActief(groep) ? 'bg-background' : 'text-foreground/75'"
                     @click="sluit"
                 >
                     <component :is="groep.icon" class="size-4 shrink-0 opacity-70" />
@@ -227,13 +321,13 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                 </Link>
 
                 <template v-else>
-                    <p class="px-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ groep.title }}</p>
+                    <p class="px-3 text-xs font-medium uppercase tracking-wide text-foreground/50">{{ groep.title }}</p>
                     <Link
                         v-for="item in groep.items"
                         :key="item.href"
                         :href="item.href"
                         class="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm"
-                        :class="raakt(item.href) ? 'bg-primary/10 text-primary' : 'text-muted-foreground'"
+                        :class="raakt(item.href) ? 'bg-primary/10 text-primary' : 'text-foreground/75'"
                         @click="sluit"
                     >
                         <component :is="item.icon" class="size-4 shrink-0 opacity-70" />

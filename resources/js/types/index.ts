@@ -51,6 +51,8 @@ export interface SharedData {
     flash: { status: string | null };
     /** Het hoofdmenu, server-side bepaald op basis van wat je mag. */
     nav: { title: string; href: string | null; icon: string; items: { title: string; href: string; icon: string }[] }[];
+    /** De plusknop in de balk: wat je vanaf hier mag aanmaken. */
+    quickAdd: { title: string; href: string; icon: string }[];
     unreadNotifications: number;
     /** Welke functies deze school heeft; zie App\Enums\Feature. */
     features: Record<string, boolean>;
