@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import InputError from '@/components/InputError.vue';
+import ScoreSlider from '@/components/ScoreSlider.vue';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
@@ -27,8 +28,6 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: props.player.name, href: '/players/' + props.player.id + '/reports/create' },
 ];
 
-const cijfers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
 /**
  * Voorinvullen met het vorige rapport. Dat is de kern van het 30-seconden-
  * scherm: de trainer past alleen aan wat veranderd is, in plaats van zes
@@ -49,6 +48,13 @@ const actieveRij = ref(0);
 const ingevuld = computed(() => props.categories.filter((c) => form.scores[c.category] !== null).length);
 const compleet = computed(() => ingevuld.value === props.categories.length);
 
+/**
+ * Het gemiddelde, naar boven afgerond.
+ *
+ * Dezelfde regel als in CalculatePlayerCard::afronden(): een 74,5 wordt 75.
+ * Zou dit scherm gewoon afronden, dan zie je hier een ander getal dan op de
+ * kaart die er even later uit rolt.
+ */
 const gemiddelde = computed(() => {
     const waarden = props.categories.map((c) => form.scores[c.category]).filter((v): v is number => v !== null);
 
@@ -56,20 +62,12 @@ const gemiddelde = computed(() => {
         return null;
     }
 
-    return Math.round((waarden.reduce((a, b) => a + b, 0) / waarden.length) * 10);
+    return Math.ceil((waarden.reduce((a, b) => a + b, 0) / waarden.length) * 10 - 0.0001);
 });
 
 const zet = (categorie: string, cijfer: number, index: number) => {
     form.scores[categorie] = cijfer;
     actieveRij.value = Math.min(index + 1, props.categories.length - 1);
-};
-
-const kleurVoor = (cijfer: number) => {
-    if (cijfer >= 8) {
-        return 'bg-primary text-primary-foreground';
-    }
-
-    return cijfer >= 6 ? 'bg-foreground text-background' : 'bg-warning text-warning-foreground';
 };
 
 const foutVoor = (categorie: string) => (form.errors as Record<string, string | undefined>)['scores.' + categorie];
@@ -130,7 +128,8 @@ const opslaan = () => form.post('/players/' + props.player.id + '/reports');
             </div>
 
             <p v-if="previousReportedOn" class="mt-4 rounded-lg bg-secondary px-3 py-2 text-xs text-muted-foreground">
-                De cijfers van het vorige rapport staan al ingevuld. Pas alleen aan wat veranderd is.
+                De cijfers van het vorige rapport staan al ingevuld. Pas alleen aan wat veranderd is; met de cijfertoetsen 1 tot 9 en 0 vul je een
+                hele rij in één tik.
             </p>
 
             <!-- De zes categorieen. Eén tik per rij. -->
@@ -161,29 +160,17 @@ const opslaan = () => form.post('/players/' + props.player.id + '/reports');
                         </div>
                     </div>
 
-                    <!-- h-11 = 44px tikhoogte, ook op telefoon.
-                         Twee rijen van vijf op smalle schermen: tien knoppen naast
-                         elkaar is op een telefoon van 360px nog geen 32px per knop,
-                         ruim onder de 44px die Apple en WCAG als ondergrens noemen.
-                         Vanaf 480px passen ze wel op één rij. -->
-                    <div class="mt-3 grid grid-cols-5 gap-1.5 min-[480px]:grid-cols-10 min-[480px]:gap-1 sm:gap-1.5">
-                        <button
-                            v-for="cijfer in cijfers"
-                            :key="cijfer"
-                            type="button"
-                            class="tabular flex h-11 items-center justify-center rounded-lg border text-sm font-semibold transition sm:h-12 sm:text-base"
-                            :class="
-                                form.scores[categorie.category] === cijfer
-                                    ? kleurVoor(cijfer) + ' border-transparent'
-                                    : 'border-border bg-background text-muted-foreground hover:border-primary hover:text-foreground'
-                            "
-                            :aria-label="categorie.label + ': cijfer ' + cijfer"
-                            :aria-pressed="form.scores[categorie.category] === cijfer"
-                            @click.stop="zet(categorie.category, cijfer, index)"
-                        >
-                            {{ cijfer }}
-                        </button>
-                    </div>
+                    <!-- De schuif loopt van 1 tot 10 in stappen van een
+                         tiende, zodat een trainer het verschil tussen "een
+                         zeven" en "een goeie zeven" kwijt kan. De cijfertoetsen
+                         blijven werken: op een laptop is tikken sneller dan
+                         slepen, en dat rapport moet in dertig seconden klaar. -->
+                    <ScoreSlider
+                        :id="'score-' + categorie.category"
+                        v-model="form.scores[categorie.category]"
+                        class="mt-3"
+                        :label="categorie.label"
+                    />
 
                     <InputError class="mt-2" :message="foutVoor(categorie.category)" />
                 </div>

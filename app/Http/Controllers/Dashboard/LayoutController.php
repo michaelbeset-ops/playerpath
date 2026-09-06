@@ -70,6 +70,30 @@ class LayoutController extends Controller
     }
 
     /**
+     * Het aandacht-blok wegklikken.
+     *
+     * Wat er wordt opgeslagen is een vingerafdruk van wat er op dat moment in
+     * stond, niet "verborgen". Verandert er iets — een nieuwe mislukte betaling,
+     * een speler erbij zonder rapport — dan komt het blok vanzelf terug.
+     * "Voorgoed weg" zou betekenen dat een school een half jaar later niet weet
+     * dat er zeven rekeningen openstaan omdat iemand ooit op een kruisje drukte.
+     */
+    public function dismissAttention(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+
+        abort_if($user->visiblePlayerIds() !== [], 404);
+
+        $validated = $request->validate([
+            'signature' => ['required', 'string', 'size:32', 'regex:/^[a-f0-9]+$/'],
+        ], [], ['signature' => 'Het blok']);
+
+        $user->forceFill(['attention_dismissed' => $validated['signature']])->save();
+
+        return back();
+    }
+
+    /**
      * Terug naar de standaard.
      *
      * Leeggooien en niet de standaard wegschrijven: wie niets heeft ingesteld

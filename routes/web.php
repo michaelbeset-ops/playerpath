@@ -36,6 +36,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('dashboard/indeling', [LayoutController::class, 'update'])->name('dashboard.layout.update');
     Route::delete('dashboard/indeling', [LayoutController::class, 'destroy'])->name('dashboard.layout.destroy');
 
+    // Het aandacht-blok wegklikken. Komt terug zodra er iets verandert.
+    Route::post('dashboard/aandacht/gezien', [LayoutController::class, 'dismissAttention'])->name('dashboard.attention.dismiss');
+
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('notifications/read', [NotificationController::class, 'readAll'])->name('notifications.read');
 

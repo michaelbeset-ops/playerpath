@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
-import { AlertTriangle, ClipboardList, CreditCard, UserCog } from 'lucide-vue-next';
+import { Link, router } from '@inertiajs/vue3';
+import { AlertTriangle, ClipboardList, CreditCard, UserCog, X } from 'lucide-vue-next';
 import type { Component } from 'vue';
 
 /**
  * Het antwoord op "wat moet ik doen?".
  *
  * Staat vast bovenaan en is geen widget: het is de reden dat je een dashboard
- * opent, en dat hoort niet weg te klikken te zijn.
+ * opent, dus je kunt het niet verplaatsen. Wegklikken kan wel, maar dat
+ * betekent "gezien": zodra er iets verandert staat het er weer.
  *
  * Elk item heeft een knop. Een signaal zonder knop is een cijfer, en cijfers
  * horen in de kerncijfers thuis.
@@ -22,7 +23,22 @@ export interface AandachtItem {
     action: string;
 }
 
-defineProps<{ items: AandachtItem[] }>();
+const props = defineProps<{
+    items: AandachtItem[];
+    /**
+     * De vingerafdruk van wat er nu in staat. Wegklikken slaat die op, zodat
+     * het blok terugkomt zodra er iets verandert; zie AttentionItems.
+     */
+    signature?: string | null;
+}>();
+
+const wegklikken = () => {
+    if (!props.signature) {
+        return;
+    }
+
+    router.post('/dashboard/aandacht/gezien', { signature: props.signature }, { preserveScroll: true });
+};
 
 const iconen: Record<string, Component> = {
     payment: CreditCard,
@@ -44,10 +60,25 @@ const kleuren: Record<string, { rand: string; vlak: string; tekst: string }> = {
         :class="items.length ? 'border-warning/30 bg-warning/5' : 'border-primary/25 bg-primary/5'"
         aria-label="Vraagt om aandacht"
     >
-        <p class="flex items-center gap-2 font-medium">
-            <AlertTriangle v-if="items.length" class="size-4 shrink-0 text-warning" />
-            {{ items.length ? 'Vraagt om aandacht' : 'Alles loopt' }}
-        </p>
+        <div class="flex items-start justify-between gap-3">
+            <p class="flex items-center gap-2 font-medium">
+                <AlertTriangle v-if="items.length" class="size-4 shrink-0 text-warning" />
+                {{ items.length ? 'Vraagt om aandacht' : 'Alles loopt' }}
+            </p>
+
+            <!-- Wegklikken betekent "gezien", niet "waarschuw me nooit meer":
+                 zodra er iets verandert staat het er weer. -->
+            <button
+                v-if="items.length && signature"
+                type="button"
+                class="-m-1 shrink-0 rounded-lg p-1 text-muted-foreground transition hover:bg-card hover:text-foreground"
+                aria-label="Aandacht-blok wegklikken tot er iets verandert"
+                title="Gezien. Komt terug zodra er iets verandert."
+                @click="wegklikken"
+            >
+                <X class="size-4" />
+            </button>
+        </div>
 
         <!-- Niets te doen is ook een uitkomst, en verdient één rustige regel
              in plaats van een leeg vak met een kopje. -->

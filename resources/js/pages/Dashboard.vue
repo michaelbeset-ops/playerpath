@@ -36,6 +36,10 @@ const props = defineProps<{
     view: 'school' | 'gezin';
     /** Het antwoord op "wat moet ik doen?". Staat vast bovenaan. */
     attention?: AandachtItem[];
+    /** Waarop "wegklikken" wordt onthouden; zie AttentionItems::signature(). */
+    attentionSignature?: string | null;
+    /** Weggeklikt: dan staat het blok er helemaal niet. */
+    attentionDismissed?: boolean;
     /** Waar de widgets staan; de server bepaalt volgorde en breedte. */
     layout?: Plek[];
     /** Wat je erbij kunt zetten in de bewerkmodus. */
@@ -154,8 +158,8 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
                 </div>
 
                 <!-- 2. Wat vraagt om actie. Vastgepind, niet weg te halen. -->
-                <div class="mt-4">
-                    <AttentionPanel :items="attention ?? []" />
+                <div v-if="!attentionDismissed" class="mt-4">
+                    <AttentionPanel :items="attention ?? []" :signature="attentionSignature" />
                 </div>
 
                 <!-- 3 t/m 7. De widgets in het raster van twaalf kolommen; op

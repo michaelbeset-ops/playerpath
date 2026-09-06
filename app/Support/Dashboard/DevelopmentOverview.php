@@ -4,6 +4,7 @@ namespace App\Support\Dashboard;
 
 use App\Models\Player;
 use App\Models\Report;
+use App\Support\PlayerCard\CalculatePlayerCard;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -103,7 +104,8 @@ class DevelopmentOverview
     {
         $scores = $rapport->scores->pluck('score');
 
-        return $scores->isEmpty() ? 0 : (int) round($scores->avg() * 10);
+        // Dezelfde afronding als op de kaart; zie CalculatePlayerCard.
+        return $scores->isEmpty() ? 0 : (CalculatePlayerCard::afronden($scores->avg() * 10) ?? 0);
     }
 
     /**

@@ -446,11 +446,17 @@ slepen met een vinger een eigen project wordt.
   onleesbaar: de knoppen kwamen bovenop de tekst van de widget zelf. In die
   modus gaat het over waar iets staat, niet over wat erin staat.
 
-**Het aandacht-blok is geen widget.** Het staat vast bovenaan en is niet weg te
-halen: het is het antwoord op "wat moet ik doen?", en dat hoort niet weg te
-klikken te zijn. Zou het een widget zijn, dan is "vastgepind" een regel die
-iemand kan omzeilen zodra er ooit een knop bijkomt. Zit er niets in, dan staat
-er één rustige regel — een leeg vak met een kopje leest als een fout.
+**Het aandacht-blok is geen widget.** Het staat vast bovenaan en is niet te
+verplaatsen: het is het antwoord op "wat moet ik doen?". Zit er niets in, dan
+staat er één rustige regel — een leeg vak met een kopje leest als een fout.
+
+**Wegklikken kan wel, maar betekent "gezien".** Er wordt een vingerafdruk van de
+inhoud opgeslagen (`users.attention_dismissed`), niet "verborgen". Verandert er
+iets — een mislukte betaling erbij, een speler die stilvalt — dan komt het blok
+terug. "Voorgoed weg" zou betekenen dat een school een half jaar later niet weet
+dat er zeven rekeningen openstaan omdat iemand ooit op een kruisje drukte. En
+een weggeklikt blok verdwijnt hélemaal: "Alles loopt" tonen terwijl er signalen
+zijn zou een leugen zijn.
 
 **Elk cijfer staat op precies één plek.** Omzet is een kerncijfer bovenaan en
 staat dus níét ook in het financiële vak; "spelers zonder rapport" staat in het
@@ -640,8 +646,19 @@ Doorrekenen gebeurt in `App\Support\PlayerCard\CalculatePlayerCard`:
 1. Per categorie tellen de **laatste 3 rapporten** mee. Een mindere training
    verpest de kaart niet, maar echte groei is binnen een paar rapporten zichtbaar.
 2. Sub-score = gemiddeld cijfer x 10.
-3. Overall = gemiddelde van de sub-scores, afgerond.
+3. Overall = gemiddelde van de sub-scores.
 4. Zonder rapporten: `null`, niet 0. Een lege kaart is geen slechte kaart.
+
+**Precies bewaren, naar boven tonen.** `report_scores.score` heeft één decimaal
+en `category_ratings` bewaart de doorgerekende waarde ongeafrond — daar hangt de
+voortgangsberekening aan, en bij afronden per stap telt een halve punt groei als
+een hele. Naar buiten wordt **altijd naar boven** afgerond: 74,5 wordt 75, nooit
+74. Dat is een keuze in het voordeel van het kind.
+
+Die afronding staat op **één plek**: `CalculatePlayerCard::afronden()`. Gebruik
+die overal in plaats van `round()` of een cast — zodra er twee manieren van
+afronden in de app zitten laat het ene scherm 74 zien waar het andere 75 zegt,
+en dan gelooft niemand het meer.
 
 De uitkomst wordt opgeslagen op `players` (`overall_rating`,
 `category_ratings`, `rated_at`). Dat is een **momentopname**: de waarheid staat
@@ -653,10 +670,16 @@ houdt, en dus niet mag sneuvelen:
 
 - de cijfers van het vorige rapport staan **voorgevuld**; de trainer past alleen
   aan wat veranderd is;
-- een cijfer is **een tik** op een grote knop, geen dropdown of schuifje;
-- cijfertoetsen 1-9 en 0 vullen de actieve rij en springen door naar de volgende;
-- de cijferknoppen zijn minimaal 44px hoog, ook op telefoon (`h-11`), want dit
-  scherm wordt langs de lijn op een telefoon gebruikt;
+- een cijfer is **een schuif van 1 tot 10 in stappen van een tiende**, met de
+  waarde groot ernaast en een plus- en minknop voor het laatste tiende. Een
+  trainer denkt in "een zeven, maar wel een goeie"; met hele cijfers moest hij
+  kiezen tussen 7 en 8 en verdween precies het verschil dat hij zag;
+- **de cijfertoetsen 1-9 en 0 blijven werken** en vullen de actieve rij met een
+  heel cijfer. Op een laptop is tikken sneller dan slepen, en dat rapport moet
+  in dertig seconden klaar;
+- de schuif is 44px hoog met een grijper van 32px en `touch-action: none`.
+  Zonder dat laatste scrollt de pagina mee zodra je verticaal afwijkt, en dan
+  springt het cijfer terug;
 - opslaan zit in een vaste balk onderaan, binnen duimbereik;
 - de toelichting is optioneel en breekt het ritme niet.
 

@@ -6,6 +6,7 @@ use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use App\Models\Player;
 use App\Models\Report;
+use App\Support\PlayerCard\CalculatePlayerCard;
 use Illuminate\Support\Carbon;
 
 /**
@@ -94,7 +95,8 @@ class DashboardTrends
             ->map(fn (Report $rapport) => $rapport->scores->isEmpty() ? null : $rapport->scores->avg('score') * 10)
             ->filter();
 
-        return $cijfers->isEmpty() ? null : (int) round($cijfers->avg());
+        // Dezelfde afronding als op de kaart; zie CalculatePlayerCard.
+        return $cijfers->isEmpty() ? null : CalculatePlayerCard::afronden($cijfers->avg());
     }
 
     /**

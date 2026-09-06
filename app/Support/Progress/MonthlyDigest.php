@@ -8,6 +8,7 @@ use App\Models\Player;
 use App\Models\Report;
 use App\Models\Training;
 use App\Support\Goals\GoalProgress;
+use App\Support\PlayerCard\CalculatePlayerCard;
 use Carbon\CarbonImmutable;
 
 /**
@@ -127,7 +128,8 @@ class MonthlyDigest
                     'category' => $categorie,
                     'label' => $rapporten->last()->scores->firstWhere('category.value', $categorie)?->category->label() ?? $categorie,
                     'delta' => $verschil,
-                    'now' => $cijfer * 10,
+                    // Naar boven, net als op de kaart; zie CalculatePlayerCard.
+                    'now' => CalculatePlayerCard::afronden($cijfer * 10),
                 ];
             }
         }
@@ -139,7 +141,7 @@ class MonthlyDigest
     {
         $cijfers = $rapport->scoresByCategory();
 
-        return $cijfers === [] ? null : (int) round(array_sum($cijfers) / count($cijfers) * 10);
+        return $cijfers === [] ? null : CalculatePlayerCard::afronden(array_sum($cijfers) / count($cijfers) * 10);
     }
 
     /** Is dit doel in de afgelopen periode gehaald? */

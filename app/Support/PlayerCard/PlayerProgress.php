@@ -39,8 +39,10 @@ class PlayerProgress
             return [
                 'date' => $report->reported_on->format('Y-m-d'),
                 'label' => $report->reported_on->format('d-m-Y'),
-                'overall' => $scores === [] ? 0 : (int) round(array_sum($scores) / count($scores) * 10),
-                'scores' => array_map(fn (int $score) => $score * 10, $scores),
+                // Naar boven afgerond, net als op de kaart: anders staat er
+                // in de grafiek een ander getal dan op het profiel.
+                'overall' => $scores === [] ? 0 : (CalculatePlayerCard::afronden(array_sum($scores) / count($scores) * 10) ?? 0),
+                'scores' => array_map(fn (float $score) => CalculatePlayerCard::afronden($score * 10), $scores),
             ];
         })->values()->all();
 

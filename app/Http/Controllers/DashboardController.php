@@ -87,6 +87,9 @@ class DashboardController extends Controller
         $zichtbaar = array_column($layout, 'key');
         $toont = fn (DashboardWidget $widget) => in_array($widget->value, $zichtbaar, true);
 
+        $aandacht = $this->attention->for($user);
+        $aandachtVingerafdruk = $this->attention->signature($aandacht);
+
         // Eén keer ophalen voor alle vier de kerncijfers; ze delen hun bron.
         $trends = array_intersect($zichtbaar, ['kpi_players', 'kpi_rating', 'kpi_reports', 'kpi_revenue']) !== []
             ? $this->trends->all()
@@ -97,8 +100,13 @@ class DashboardController extends Controller
             // Verdwijnt zodra de school draait; zie SetupChecklist. Bewust
             // geen widget: wie hem wegklikt weet nooit meer wat er nog moet.
             'checklist' => $this->checklist->for($user),
-            // Het antwoord op "wat moet ik doen?". Staat vast bovenaan.
-            'attention' => $this->attention->for($user),
+            // Het antwoord op "wat moet ik doen?". Staat vast bovenaan, en
+            // blijft weg zolang er hetzelfde in staat als toen je het wegklikte.
+            'attention' => $aandacht,
+            'attentionSignature' => $aandachtVingerafdruk,
+            // Weggeklikt: dan verdwijnt het blok helemaal. "Alles loopt" tonen
+            // terwijl er zeven rekeningen openstaan zou een leugen zijn.
+            'attentionDismissed' => $user->heeftAandachtWeggeklikt($aandachtVingerafdruk),
             'layout' => $layout,
             // Wat je erbij kunt zetten in de bewerkmodus. Alleen wat deze rol
             // mag zien; wat hier niet in staat kan ook niet opgeslagen worden.

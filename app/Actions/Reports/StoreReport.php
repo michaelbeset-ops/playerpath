@@ -26,7 +26,7 @@ class StoreReport
     public function __construct(protected CalculatePlayerCard $calculator, protected EvaluateGoals $goals) {}
 
     /**
-     * @param  array<string, int>  $scores  categorie => cijfer (1-10)
+     * @param  array<string, float>  $scores  categorie => cijfer (1-10, met een decimaal)
      */
     public function handle(Player $player, User $trainer, array $scores, ?string $note, ?string $reportedOn = null): Report
     {

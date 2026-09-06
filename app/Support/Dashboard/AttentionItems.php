@@ -15,8 +15,9 @@ use App\Support\Money\Money;
  * Wat er nú actie vraagt, in één lijst.
  *
  * Dit is het antwoord op de tweede vraag die een dashboard hoort te
- * beantwoorden: "wat moet ik doen?". Het staat daarom bovenaan en is niet weg
- * te klikken.
+ * beantwoorden: "wat moet ik doen?". Het staat daarom bovenaan, boven de
+ * widgets, en is geen widget: je kunt het niet verplaatsen. Wegklikken kan wel,
+ * maar alleen tot er iets verandert — zie signature() hieronder.
  *
  * Vier regels die deze lijst bruikbaar houden:
  *
@@ -39,6 +40,25 @@ class AttentionItems
     public const RAPPORT_NA_DAGEN = 30;
 
     public function __construct(protected Features $features) {}
+
+    /**
+     * De vingerafdruk van wat er nu in het blok staat.
+     *
+     * Hierop wordt bepaald of een weggeklikt blok weg mag blijven. Hij bevat
+     * de soorten signalen en hun tekst, dus "zeven rekeningen" wordt "acht
+     * rekeningen" en dan komt het blok terug. Wegklikken betekent "dit heb ik
+     * gezien", niet "waarschuw me nooit meer".
+     *
+     * @param  list<array<string, mixed>>  $items
+     */
+    public function signature(array $items): ?string
+    {
+        if ($items === []) {
+            return null;
+        }
+
+        return substr(hash('sha256', collect($items)->map(fn (array $i) => $i['key'].'|'.$i['title'])->join("\n")), 0, 32);
+    }
 
     /**
      * @return list<array<string, mixed>>

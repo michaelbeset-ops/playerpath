@@ -22,11 +22,11 @@ class StoreReportRequest extends FormRequest
 
         return [
             'scores' => ['required', 'array', 'size:'.count($toegestaan)],
-            'scores.*' => ['required', 'integer', 'between:1,10'],
+            'scores.*' => ['required', 'numeric', 'between:1,10', 'decimal:0,1'],
             'note' => ['nullable', 'string', 'max:2000'],
         ] + collect($toegestaan)
             ->mapWithKeys(fn (string $categorie) => [
-                'scores.'.$categorie => ['required', 'integer', 'between:1,10'],
+                'scores.'.$categorie => ['required', 'numeric', 'between:1,10', 'decimal:0,1'],
             ])
             ->all();
     }
@@ -38,7 +38,7 @@ class StoreReportRequest extends FormRequest
             'scores.size' => 'Vul voor elke categorie een cijfer in.',
             'scores.*.required' => 'Vul voor elke categorie een cijfer in.',
             'scores.*.between' => 'Een cijfer moet tussen 1 en 10 liggen.',
-            'scores.*.integer' => 'Een cijfer moet een heel getal zijn.',
+            'scores.*.decimal' => 'Gebruik hooguit één cijfer achter de komma, bijvoorbeeld 7,4.',
         ];
     }
 
@@ -49,7 +49,7 @@ class StoreReportRequest extends FormRequest
         ];
     }
 
-    /** @return array<string, int> */
+    /** @return array<string, float> */
     public function scores(): array
     {
         /** @var Player $player */
@@ -59,7 +59,9 @@ class StoreReportRequest extends FormRequest
         // extra's binnensluipt via het formulier.
         return collect($this->validated('scores'))
             ->only(ReportCategory::valuesForPosition($player->position))
-            ->map(fn ($score) => (int) $score)
+            // Als float: een cijfer heeft nu een decimaal. (int) maakte er
+            // stilzwijgend een 7 van waar de trainer 7,4 bedoelde.
+            ->map(fn ($score) => round((float) $score, 1))
             ->all();
     }
 }

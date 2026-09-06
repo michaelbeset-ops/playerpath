@@ -53,6 +53,15 @@ class User extends Authenticatable
      */
     protected $appends = ['photo_url'];
 
+    /**
+     * Heeft deze gebruiker het aandacht-blok weggeklikt, en stond er toen
+     * hetzelfde in als nu?
+     */
+    public function heeftAandachtWeggeklikt(?string $vingerafdruk): bool
+    {
+        return $vingerafdruk !== null && $this->attention_dismissed === $vingerafdruk;
+    }
+
     /** Zie Player::getPhotoUrlAttribute(): ook hier gaat de foto via ProfilePhoto. */
     public function getPhotoUrlAttribute(): ?string
     {

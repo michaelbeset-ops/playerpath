@@ -49,7 +49,7 @@ class Report extends Model
         return $query->orderByDesc('reported_on')->orderByDesc('id');
     }
 
-    /** @return array<string, int> categorie => cijfer */
+    /** @return array<string, float> categorie => cijfer, met een decimaal */
     public function scoresByCategory(): array
     {
         return $this->scores

@@ -24,7 +24,9 @@ class ReportScore extends Model
     {
         return [
             'category' => ReportCategory::class,
-            'score' => 'integer',
+            // Eén decimaal: een trainer denkt in "een zeven, maar wel een
+            // goeie", en dat is een 7,4.
+            'score' => 'float',
         ];
     }
 
