@@ -32,8 +32,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('notifications/read', [NotificationController::class, 'readAll'])->name('notifications.read');
 
     // Overzichten exporteren (eigenaar). Zie Support/Exports.
-    Route::get('exports', [ExportController::class, 'index'])->name('exports.index');
-    Route::get('exports/{key}', [ExportController::class, 'download'])->name('exports.download');
+    Route::middleware('feature:exports')->group(function () {
+        Route::get('exports', [ExportController::class, 'index'])->name('exports.index');
+        Route::get('exports/{key}', [ExportController::class, 'download'])->name('exports.download');
+    });
 
     // Wat de school naar buiten kan laten zien. Alleen de eigenaar.
     Route::get('verantwoording', AccountabilityController::class)->name('accountability');
@@ -43,8 +45,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('branding', [BrandingController::class, 'update'])->name('branding.update');
 
     // Fase 10: mededelingen van de school aan ouders en spelers.
-    Route::get('announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
-    Route::post('announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
+    Route::middleware('feature:mededelingen')->group(function () {
+        Route::get('announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
+        Route::post('announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
+    });
 
     // Fase 8: bewaartermijn, inzage en verwijderen (AVG). Alleen de eigenaar.
     Route::get('privacy', [PrivacyController::class, 'index'])->name('privacy.index');

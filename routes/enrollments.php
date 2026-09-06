@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 
 // De inbox van de eigenaar.
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('enrollments', [EnrollmentController::class, 'index'])->name('enrollments.index');
+    Route::get('enrollments', [EnrollmentController::class, 'index'])->middleware('feature:inschrijvingen')->name('enrollments.index');
     Route::post('enrollments/{enrollment}/approve', [EnrollmentController::class, 'approve'])->name('enrollments.approve');
     Route::post('enrollments/{enrollment}/decline', [EnrollmentController::class, 'decline'])->name('enrollments.decline');
 });

@@ -3,9 +3,11 @@
 namespace App\Console\Commands;
 
 use App\Actions\Payments\SyncPayment;
+use App\Enums\Feature;
 use App\Enums\PaymentMethod;
 use App\Models\Payment;
 use App\Models\School;
+use App\Support\Features\Features;
 use App\Support\Money\Money;
 use App\Support\Payments\PaymentGateway;
 use App\Support\Tenancy\Tenancy;
@@ -46,6 +48,13 @@ class CollectDuePayments extends Command
         $totaal = 0;
 
         foreach (School::where('is_active', true)->cursor() as $school) {
+            // Staat de functie uit voor deze school, dan gebeurt er ook in de
+            // achtergrond niets. Alleen het scherm verbergen zou betekenen dat
+            // de incassoronde gewoon doorloopt bij een school die er niet voor betaalt.
+            if (! Features::enabledFor($school, Feature::Betalingen)) {
+                continue;
+            }
+
             $tenancy->forSchool($school, function () use ($gateway, $sync, $droog, &$totaal) {
                 $betalingen = Payment::query()
                     ->outstanding()

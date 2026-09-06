@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { Button } from '@/components/ui/button';
 import PlatformLayout from '@/layouts/PlatformLayout.vue';
-import { Head, Link, router } from '@inertiajs/vue3';
-import { Pencil, Power, PowerOff } from 'lucide-vue-next';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Eye, Pencil, Power, PowerOff, Users } from 'lucide-vue-next';
 
 const props = defineProps<{
     school: {
@@ -21,8 +21,21 @@ const props = defineProps<{
         created_at: string | null;
     };
     owners: { id: number; name: string; email: string }[];
+    features: { key: string; label: string; description: string; enabled: boolean }[];
     domain: string | null;
 }>();
+
+const functies = useForm({
+    features: Object.fromEntries(props.features.map((f) => [f.key, f.enabled])) as Record<string, boolean>,
+});
+
+const bewaarFuncties = () => functies.patch('/beheer/scholen/' + props.school.id + '/functies', { preserveScroll: true });
+
+const bekijkAls = (id: number) => {
+    if (confirm('Je gaat de app bekijken als deze gebruiker. Dit wordt vastgelegd.')) {
+        router.post('/beheer/gebruikers/' + id + '/bekijken');
+    }
+};
 
 const wissel = () => {
     const vraag = props.school.is_active
@@ -65,6 +78,14 @@ const wissel = () => {
                     Bewerken
                 </Link>
 
+                <Link
+                    :href="'/beheer/scholen/' + school.id + '/gebruikers'"
+                    class="inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium shadow-sm transition hover:border-primary"
+                >
+                    <Users class="size-4" />
+                    Gebruikers
+                </Link>
+
                 <Button :variant="school.is_active ? 'secondary' : 'default'" @click="wissel">
                     <component :is="school.is_active ? PowerOff : Power" class="mr-2 size-4" />
                     {{ school.is_active ? 'Uitzetten' : 'Aanzetten' }}
@@ -102,15 +123,57 @@ const wissel = () => {
                 <p class="font-medium">Eigenaren</p>
 
                 <div v-if="owners.length" class="mt-3 space-y-2">
-                    <div v-for="eigenaar in owners" :key="eigenaar.id" class="rounded-lg border border-border p-3">
-                        <p class="text-sm font-medium">{{ eigenaar.name }}</p>
-                        <p class="truncate text-xs text-muted-foreground">{{ eigenaar.email }}</p>
+                    <div
+                        v-for="eigenaar in owners"
+                        :key="eigenaar.id"
+                        class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-3"
+                    >
+                        <div class="min-w-0">
+                            <p class="text-sm font-medium">{{ eigenaar.name }}</p>
+                            <p class="truncate text-xs text-muted-foreground">{{ eigenaar.email }}</p>
+                        </div>
+
+                        <button
+                            type="button"
+                            class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs font-medium hover:border-primary"
+                            @click="bekijkAls(eigenaar.id)"
+                        >
+                            <Eye class="size-3.5" />
+                            Bekijk als
+                        </button>
                     </div>
                 </div>
 
                 <p v-else class="mt-3 rounded-lg border border-warning/30 bg-warning/10 p-3 text-sm">
                     Deze school heeft nog geen eigenaar. Er kan dus niemand inloggen.
                 </p>
+            </div>
+
+            <div class="rounded-xl border border-border bg-card p-5 shadow-sm">
+                <p class="font-medium">Functies</p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    Wat je hier uitzet is voor deze school ook echt dicht, niet alleen verborgen.
+                </p>
+
+                <form class="mt-3 space-y-2" @submit.prevent="bewaarFuncties">
+                    <label
+                        v-for="functie in features"
+                        :key="functie.key"
+                        class="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3"
+                    >
+                        <input
+                            v-model="functies.features[functie.key]"
+                            type="checkbox"
+                            class="mt-0.5 size-4 shrink-0 rounded border-input accent-primary"
+                        />
+                        <span class="min-w-0">
+                            <span class="block text-sm font-medium">{{ functie.label }}</span>
+                            <span class="block text-xs text-muted-foreground">{{ functie.description }}</span>
+                        </span>
+                    </label>
+
+                    <Button type="submit" size="sm" :disabled="functies.processing">Functies opslaan</Button>
+                </form>
             </div>
 
             <div class="rounded-xl border border-border bg-card p-5 shadow-sm">

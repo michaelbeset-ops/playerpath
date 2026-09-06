@@ -51,7 +51,7 @@ class DashboardController extends Controller
         // niets te zoeken; zijn werkvloer is /beheer. Eén school bekijken doet
         // hij via impersonatie, en dan heeft hij wél een school.
         if ($user->isPlatformbeheerder() && $user->school_id === null) {
-            return redirect()->route('platform.schools.index');
+            return redirect()->route('platform.dashboard');
         }
 
         $eigenSpelers = $user->visiblePlayerIds();

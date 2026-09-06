@@ -86,7 +86,7 @@ class PlatformSchoolTest extends TestCase
 
         // Een platformbeheerder heeft geen school, dus in de gewone app is de
         // scope voor hem fail-closed: hij ziet niets, en dat is de bedoeling.
-        $this->actingAs($this->beheerder)->get('/dashboard')->assertRedirect('/beheer/scholen');
+        $this->actingAs($this->beheerder)->get('/dashboard')->assertRedirect('/beheer');
 
         $this->assertSame(4, app(Tenancy::class)->forSchool($school, fn () => Player::count()));
         $this->assertFalse(app(Tenancy::class)->isPlatform());

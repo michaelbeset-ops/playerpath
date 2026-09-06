@@ -39,6 +39,14 @@ class SetCurrentSchool
             return $next($request);
         }
 
+        // Een gedeactiveerd account komt nergens meer bij. Hier en niet in de
+        // inlogflow, want een sessie die al liep moet net zo goed stoppen.
+        abort_if(
+            ! $user->isActief(),
+            403,
+            'Dit account is gedeactiveerd. Neem contact op met je schoolbeheerder.'
+        );
+
         abort_if(
             $user->school_id === null,
             403,

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\RequireFeature;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetCurrentSchool;
 use App\Http\Middleware\ShareBranding;
@@ -22,6 +23,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // browser ze als mixed content: Ziggy-routes, formulieren en de
         // deel-link lopen dan stuk. We vertrouwen alleen loopback, want alleen
         // een proces op deze machine mag zeggen wat het schema was.
+        // 'feature:kalender' op een route sluit hem af als de school die
+        // functie uit heeft staan. Zie App\Enums\Feature.
+        $middleware->alias(['feature' => RequireFeature::class]);
+
         // Op elk antwoord, ook op de webhook en de publieke pagina's.
         $middleware->append(SecurityHeaders::class);
 

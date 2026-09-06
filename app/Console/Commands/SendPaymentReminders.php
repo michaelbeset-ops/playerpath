@@ -2,9 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\Feature;
 use App\Models\Payment;
 use App\Models\School;
 use App\Notifications\BetalingHerinnering;
+use App\Support\Features\Features;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Notification;
@@ -40,6 +42,13 @@ class SendPaymentReminders extends Command
 
         // Per school, zodat de global scope en de tenant-context kloppen.
         foreach (School::where('is_active', true)->cursor() as $school) {
+            // Staat de functie uit voor deze school, dan gebeurt er ook in de
+            // achtergrond niets. Alleen het scherm verbergen zou betekenen dat
+            // herinneringen gewoon doorloopt bij een school die er niet voor betaalt.
+            if (! Features::enabledFor($school, Feature::Betalingen)) {
+                continue;
+            }
+
             $tenancy->forSchool($school, function () use ($grens, $droog, &$verstuurd) {
                 $betalingen = Payment::query()
                     ->outstanding()

@@ -8,7 +8,7 @@ use App\Http\Controllers\Trainings\TrainingController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('calendar', [CalendarController::class, 'index'])->name('calendar.index');
+    Route::middleware('feature:kalender')->get('calendar', [CalendarController::class, 'index'])->name('calendar.index');
     Route::resource('trainings', TrainingController::class);
 
     // Afvinken doet de trainer; aan-/afmelden doet de speler of ouder.

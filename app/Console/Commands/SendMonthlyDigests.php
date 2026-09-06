@@ -2,9 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\Feature;
 use App\Models\Player;
 use App\Models\School;
 use App\Notifications\MaandelijkseUpdate;
+use App\Support\Features\Features;
 use App\Support\Progress\MonthlyDigest;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Console\Command;
@@ -30,6 +32,13 @@ class SendMonthlyDigests extends Command
         $overgeslagen = 0;
 
         foreach (School::where('is_active', true)->cursor() as $school) {
+            // Staat de ontwikkelingslaag uit, dan gaat er ook geen samenvatting
+            // over uit. Alleen het scherm verbergen zou betekenen dat ouders van
+            // een school zonder rapporten toch een maandmail krijgen.
+            if (! Features::enabledFor($school, Feature::Ontwikkeling)) {
+                continue;
+            }
+
             $tenancy->forSchool($school, function () use ($digest, $droog, &$verstuurd, &$overgeslagen) {
                 $spelers = Player::query()
                     ->where('is_active', true)

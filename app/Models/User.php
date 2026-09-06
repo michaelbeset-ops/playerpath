@@ -48,6 +48,7 @@ class User extends Authenticatable
     {
         return [
             'notification_preferences' => 'array',
+            'deactivated_at' => 'datetime',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
@@ -104,6 +105,17 @@ class User extends Authenticatable
      * daardoor ook nooit per ongeluk als gewone gebruiker data van één school
      * meekrijgen.
      */
+    /**
+     * Mag dit account nog inloggen?
+     *
+     * Deactiveren en niet verwijderen: aan een trainer hangen rapporten en aan
+     * een ouder de koppeling met zijn kind. Die historie hoort te blijven staan.
+     */
+    public function isActief(): bool
+    {
+        return $this->deactivated_at === null;
+    }
+
     public function isPlatformbeheerder(): bool
     {
         return $this->hasRole(RoleEnum::Platformbeheerder->value);

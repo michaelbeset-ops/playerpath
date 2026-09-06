@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\School;
 use App\Models\User;
 use App\Support\Branding\BrandColor;
+use App\Support\Features\Features;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -26,6 +27,8 @@ use Inertia\Response;
  */
 class SchoolController extends Controller
 {
+    public function __construct(protected Features $features) {}
+
     public function index(Request $request): Response
     {
         $this->authorize('platform.manageSchools');
@@ -133,6 +136,7 @@ class SchoolController extends Controller
                 ->orderBy('name')
                 ->get(['id', 'name', 'email'])
                 ->map(fn (User $user) => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email]),
+            'features' => $this->features->describe($school),
             'domain' => config('app.domain'),
         ]);
     }

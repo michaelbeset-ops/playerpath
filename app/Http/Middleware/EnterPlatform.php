@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Http\Controllers\Platform\ImpersonationController;
 use App\Support\Tenancy\Tenancy;
 use Closure;
 use Illuminate\Http\Request;
@@ -26,11 +27,18 @@ class EnterPlatform
     {
         $user = $request->user();
 
-        abort_unless($user !== null && $user->isPlatformbeheerder(), 404);
+        // Eerst de impersonatie, dán de rol. Andersom zou deze controle nooit
+        // afgaan: tijdens het bekijken ben je de schoolgebruiker en val je al
+        // op de rolcontrole af — met een 404 die niets uitlegt. Nu krijgt de
+        // beheerder die per ongeluk terugklikt een melding waar hij iets aan
+        // heeft, en blijft de scope net zo goed dicht.
+        abort_if(
+            $request->session()->has(ImpersonationController::SESSIE),
+            403,
+            'Je bekijkt op dit moment een school. Ga eerst terug naar het beheer.'
+        );
 
-        // Tijdens impersonatie beheert hij één school en niet het platform;
-        // dan hoort hij ook niet over scholen heen te kunnen kijken.
-        abort_if($request->session()->has('impersonating'), 403, 'Verlaat eerst de school die je bekijkt.');
+        abort_unless($user !== null && $user->isPlatformbeheerder(), 404);
 
         $this->tenancy->enterPlatform();
 

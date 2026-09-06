@@ -3,8 +3,10 @@
 namespace App\Console\Commands;
 
 use App\Actions\Payments\GeneratePayments;
+use App\Enums\Feature;
 use App\Models\School;
 use App\Models\Subscription;
+use App\Support\Features\Features;
 use App\Support\Money\Money;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Console\Command;
@@ -29,6 +31,13 @@ class GenerateSubscriptionPayments extends Command
         $totaal = 0;
 
         foreach (School::where('is_active', true)->cursor() as $school) {
+            // Staat de functie uit voor deze school, dan gebeurt er ook in de
+            // achtergrond niets. Alleen het scherm verbergen zou betekenen dat
+            // de facturenloop gewoon doorloopt bij een school die er niet voor betaalt.
+            if (! Features::enabledFor($school, Feature::Betalingen)) {
+                continue;
+            }
+
             $tenancy->forSchool($school, function () use ($actie, $droog, &$totaal) {
                 $abonnementen = Subscription::query()->active()->with('plan', 'player')->get();
 

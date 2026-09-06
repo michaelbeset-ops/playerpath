@@ -27,6 +27,7 @@ class School extends Model
         'contact_email',
         'contact_phone',
         'notes',
+        'features',
     ];
 
     protected function casts(): array
@@ -34,6 +35,7 @@ class School extends Model
         return [
             'is_active' => 'boolean',
             'retention_months' => 'integer',
+            'features' => 'array',
         ];
     }
 

@@ -8,7 +8,10 @@ use App\Http\Controllers\Billing\SubscriptionController;
 use App\Http\Controllers\Billing\WebhookController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['auth', 'verified'])->group(function () {
+// De hele financiële kant hangt aan één feature: staat betalingen uit, dan
+// bestaan tarieven, abonnementen, facturen en de betaalpagina van de ouder
+// simpelweg niet voor die school.
+Route::middleware(['auth', 'verified', 'feature:betalingen'])->group(function () {
     // Beheer: alleen de eigenaar, zie de policies.
     Route::resource('plans', PlanController::class)->except(['show']);
 

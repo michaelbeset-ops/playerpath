@@ -14,18 +14,23 @@ use App\Http\Middleware\PreventSearchIndexing;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    // Fase 2: het spoor rapport -> spelerskaart.
-    Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('players/{player}/reports/create', [ReportController::class, 'create'])->name('reports.create');
-    Route::post('players/{player}/reports', [ReportController::class, 'store'])->name('reports.store');
-    Route::get('players/{player}/card', [PlayerCardController::class, 'show'])->name('players.card');
+    // De hele ontwikkelingslaag achter één feature: rapport, kaart, voortgang
+    // en doelen horen bij elkaar. Los aan te zetten zou een school opleveren
+    // met rapporten maar zonder kaart, en dat is niemand.
+    Route::middleware('feature:ontwikkeling')->group(function () {
+        // Fase 2: het spoor rapport -> spelerskaart.
+        Route::get('reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('players/{player}/reports/create', [ReportController::class, 'create'])->name('reports.create');
+        Route::post('players/{player}/reports', [ReportController::class, 'store'])->name('reports.store');
+        Route::get('players/{player}/card', [PlayerCardController::class, 'show'])->name('players.card');
 
-    // Fase 5: groei over de tijd en de tijdlijn.
-    Route::get('players/{player}/progress', [PlayerProgressController::class, 'show'])->name('players.progress');
+        // Fase 5: groei over de tijd en de tijdlijn.
+        Route::get('players/{player}/progress', [PlayerProgressController::class, 'show'])->name('players.progress');
 
-    // Fase 7: ontwikkelingsdoelen.
-    Route::post('players/{player}/goals', [GoalController::class, 'store'])->name('goals.store');
-    Route::delete('goals/{goal}', [GoalController::class, 'destroy'])->name('goals.destroy');
+        // Fase 7: ontwikkelingsdoelen.
+        Route::post('players/{player}/goals', [GoalController::class, 'store'])->name('goals.store');
+        Route::delete('goals/{goal}', [GoalController::class, 'destroy'])->name('goals.destroy');
+    });
 
     // De deel-link aan- en uitzetten. De publieke pagina zelf staat hieronder,
     // bewust buiten de auth-groep.

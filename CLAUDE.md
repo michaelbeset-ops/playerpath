@@ -777,6 +777,43 @@ Een beheerder maak je met `php artisan platform:create-admin`. Bewust alleen
 via de commandoregel: een scherm waarmee iemand zichzelf boven alle scholen kan
 zetten hoort niet te bestaan.
 
+### Functies per school
+
+`App\Enums\Feature` is de enige lijst met featurenamen. Een feature toevoegen
+is één case erbij; het beheerscherm, de opslag, de middleware, het menu en de
+geplande taken lezen allemaal die enum. **Hernoem een sleutel nooit** zonder
+migratie: hij staat opgeslagen in `schools.features`, en een school die iets
+had uitgezet zou het stilzwijgend terugkrijgen.
+
+Drie regels:
+
+- **Onbekend betekent aan.** Een nieuwe feature staat bij bestaande scholen aan;
+  andersom zouden scholen zonder het te weten iets kwijtraken.
+- **Uit is echt dicht.** `RequireFeature` (`'feature:kalender'` op een route)
+  geeft een 404. Het menu weglaten is cosmetica; wie de URL intypt moet
+  stuklopen.
+- **Ook de achtergrondtaken stoppen.** `payments:generate`, `payments:collect`,
+  `payments:remind` en `players:digest` slaan een school over waar de functie
+  uitstaat. Anders lopen er rekeningen door bij een school die betalingen niet
+  heeft.
+
+### Bekijken als (impersonatie)
+
+Onmisbaar voor support en tegelijk het gevoeligste dat er in het product zit.
+Vier voorwaarden, geen ervan optioneel: alleen de platformbeheerder start het,
+nooit als een andere platformbeheerder, alles wordt vastgelegd in
+`impersonations` (wie, bij wie, welke school, wanneer, vanaf welk adres,
+wanneer gestopt), en er staat een niet-weg-te-klikken balk bovenaan met een
+knop terug.
+
+**De uitgang staat buiten `/beheer`** (`POST /stop-bekijken`). `EnterPlatform`
+weigert verzoeken zolang je aan het kijken bent; zat de uitgang binnen die
+groep, dan lag hij achter de deur die hij zelf op slot doet.
+
+In `EnterPlatform` staat de impersonatiecontrole **vóór** de rolcontrole.
+Andersom gaat hij nooit af — tijdens het kijken ben je de schoolgebruiker en
+val je al op de rol af, met een 404 die niets uitlegt.
+
 Scholen worden vanuit dit scherm **nooit verwijderd**, alleen aan- en
 uitgezet. Aan een school hangen spelers, rapporten en betalingen; dat weggooien
 hoort geen kwestie van één klik te zijn.

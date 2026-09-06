@@ -44,6 +44,10 @@ export interface SharedData {
     /** Het hoofdmenu, server-side bepaald op basis van wat je mag. */
     nav: { section: string; title: string; href: string; icon: string }[];
     unreadNotifications: number;
+    /** Welke functies deze school heeft; zie App\Enums\Feature. */
+    features: Record<string, boolean>;
+    /** Gevuld zolang de platformbeheerder als iemand anders kijkt. */
+    impersonating: { name: string | null; school: string | null } | null;
     ziggy: {
         location: string;
         url: string;
