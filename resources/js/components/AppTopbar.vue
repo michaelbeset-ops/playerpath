@@ -277,14 +277,6 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                             Mijn profiel
                         </Link>
                         <Link
-                            href="/settings/dashboard"
-                            class="flex items-center gap-3 px-3 py-2.5 text-sm transition hover:bg-background/60"
-                            @click="sluit"
-                        >
-                            <LayoutGrid class="size-4 shrink-0 opacity-70" />
-                            Mijn dashboard
-                        </Link>
-                        <Link
                             href="/logout"
                             method="post"
                             as="button"

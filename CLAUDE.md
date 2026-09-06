@@ -395,30 +395,54 @@ Rollen: tarieven, abonnementen en het betaaloverzicht zijn van de **eigenaar**.
 Een trainer komt er niet bij. Een ouder heeft een eigen scherm (`/billing`) met
 alleen het abonnement en de betalingen van zijn eigen kind.
 
-### Het dashboard richt de gebruiker zelf in
+### Het dashboard is opgebouwd uit widgets
 
-Boven staat een **donkere cijferband** die doorloopt in de menubalk; daaronder
-begint de lichte werkvloer. Wat erin staat kiest de gebruiker zelf, via
-`/settings/dashboard`.
+Een dashboard beantwoordt twee vragen, in deze volgorde: **"hoe gaat het?"** en
+**"wat moet ik doen?"**. Vandaar de volgorde op het scherm: snelle acties, het
+aandacht-blok, de kerncijfers, de verdieping, en onderaan wat aardig is om te
+weten.
 
-- `App\Enums\DashboardTile` en `DashboardBlock` zijn de enige lijsten. Een
-  cijfer of blok erbij is één case; **hernoem een waarde nooit** zonder
-  migratie, want hij staat in `users.dashboard_preferences`.
-- **Per gebruiker, niet per school.** Een trainer kijkt naar zijn rapporten en
-  de eigenaar naar zijn omzet; die twee op één instelling zetten betekent dat
-  er altijd één van de twee ontevreden is.
-- **Alleen afwijkingen worden opgeslagen.** Wie niets instelt krijgt de
-  standaard (vier cijfers, alle blokken). Wie wél iets instelt krijgt een
-  nieuwe tegel later volgens diens eigen standaard — anders zou iemand die ooit
-  één vinkje zette nooit meer iets nieuws te zien krijgen.
-- **Je kunt alleen aanzetten wat je mag zien.** `DashboardPreferences::save()`
-  gooit eruit wat deze rol of deze school niet toekomt; het formulier omzeilen
-  helpt dus niet.
-- **Wat uitstaat wordt ook niet berekend.** De controller vraagt de cijfers van
-  een uitgezet blok niet op. Het is een keuze in de weergave, geen kwestie van
-  iets verbergen dat toch al opgehaald is.
-- De **opstartchecklist** staat er bewust niet tussen: die verdwijnt vanzelf
-  zodra hij af is, en wie hem kan wegklikken weet nooit meer wat er nog moet.
+- **`App\Enums\DashboardWidget` is de enige lijst.** Een widget erbij is één
+  case plus één Vue-component. **Hernoem een waarde nooit** zonder migratie: hij
+  staat in `users.dashboard_layout`.
+- **De standaardindeling staat in code** (`WidgetRegistry::defaultLayout()`),
+  niet in de database. Wie niets heeft ingesteld krijgt hem, en een widget die
+  er later bijkomt verschijnt dan vanzelf. Zou de standaard bij het aanmaken
+  van een account worden weggeschreven, dan zag een bestaande school nieuwe
+  widgets nooit.
+- **Wat je niet mag zien, bestaat niet.** De registry filtert op rol en op de
+  functies van de school, dus zo'n widget kan niet in een opgeslagen indeling
+  opduiken en het scherm berekent er ook niets voor.
+- **Er wordt alleen berekend wat er staat.** Een weggehaalde widget kost geen
+  enkele query — dat is een keuze in de weergave, geen kwestie van iets
+  verbergen dat toch al opgehaald is.
+- **Per gebruiker.** Een trainer kijkt naar zijn rapporten en de eigenaar naar
+  zijn omzet; die twee op één indeling zetten betekent dat er altijd één van de
+  twee ontevreden is.
+
+**Het aandacht-blok is geen widget.** Het staat vast bovenaan en is niet weg te
+halen: het is het antwoord op "wat moet ik doen?", en dat hoort niet weg te
+klikken te zijn. Zou het een widget zijn, dan is "vastgepind" een regel die
+iemand kan omzeilen zodra er ooit een knop bijkomt. Zit er niets in, dan staat
+er één rustige regel — een leeg vak met een kopje leest als een fout.
+
+**Elk cijfer staat op precies één plek.** Omzet is een kerncijfer bovenaan en
+staat dus níét ook in het financiële vak; "spelers zonder rapport" staat in het
+aandacht-blok en niet meer als los blok; "groepen" is als kerncijfer geschrapt
+omdat het nooit verandert.
+
+#### Groei komt uit de rapporten, niet uit de kaart
+
+`players.overall_rating` is een momentopname zonder historie: het zegt hoe een
+speler er nú voor staat, niet waar hij vandaan komt. `DashboardTrends` en
+`DevelopmentOverview` rekenen daarom met `reports` + `report_scores`, met
+dezelfde omrekening als de kaart (gemiddelde × 10), zodat een stijging van "5"
+overal hetzelfde betekent.
+
+Een speler telt alleen als stijger of daler bij **twee** rapporten binnen de
+periode. Met één rapport valt er niets te vergelijken, en een ouder rapport van
+maanden terug erbij halen zou "groei deze maand" iets anders laten betekenen
+dan het zegt.
 
 **Verjaardagen** (`SchoolDashboard::birthdays()`) gaan op **dag en maand**, niet
 op datum: het jaar in `date_of_birth` is het geboortejaar. De leeftijd die

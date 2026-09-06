@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\DashboardBlock;
+use App\Enums\DashboardWidget;
 use App\Models\Group;
 use App\Models\Player;
 use App\Models\Training;
 use App\Models\User;
-use App\Support\Dashboard\DashboardPreferences;
-use App\Support\Dashboard\DashboardTiles;
+use App\Support\Dashboard\AttentionItems;
+use App\Support\Dashboard\DashboardTrends;
+use App\Support\Dashboard\DevelopmentOverview;
 use App\Support\Dashboard\SchoolDashboard;
 use App\Support\Dashboard\SetupChecklist;
+use App\Support\Dashboard\WidgetRegistry;
 use App\Support\Goals\GoalProgress;
+use App\Support\Money\Money;
 use App\Support\Payments\BillingOverview;
 use App\Support\Payments\PaymentGateway;
 use App\Support\PlayerCard\CalculatePlayerCard;
@@ -30,7 +33,16 @@ use Inertia\Response;
  * eigen kind. Eén gedeeld dashboard toonde een ouder schoolbrede cijfers en
  * een knop "Rapport invullen" die hij toch niet mag gebruiken.
  *
- * De cijfers voor de schoolweergave staan in Support/Dashboard/SchoolDashboard.
+ * ## De schoolweergave is opgebouwd uit widgets
+ *
+ * Een dashboard beantwoordt twee vragen, in deze volgorde: "hoe gaat het?" en
+ * "wat moet ik doen?". Vandaar de volgorde op het scherm: snelle acties, dan
+ * het aandacht-blok, dan de cijfers, dan de verdieping.
+ *
+ * Het **aandacht-blok staat vast** bovenaan en is geen widget: het is het
+ * antwoord op de tweede vraag, en dat hoort niet weg te klikken te zijn.
+ * Al het andere komt uit `WidgetRegistry`, en **er wordt alleen berekend wat er
+ * ook staat** — een widget die iemand heeft weggehaald kost geen enkele query.
  */
 class DashboardController extends Controller
 {
@@ -44,8 +56,10 @@ class DashboardController extends Controller
         protected PlayerProgress $progress,
         protected GoalProgress $goals,
         protected SetupChecklist $checklist,
-        protected DashboardPreferences $preferences,
-        protected DashboardTiles $tiles,
+        protected WidgetRegistry $widgets,
+        protected AttentionItems $attention,
+        protected DashboardTrends $trends,
+        protected DevelopmentOverview $development,
     ) {}
 
     public function __invoke(Request $request): Response|RedirectResponse
@@ -66,43 +80,84 @@ class DashboardController extends Controller
             : $this->voorGezin($user, $eigenSpelers);
     }
 
-    /**
-     * Eigenaar en trainer: de cijfers van de school.
-     *
-     * Wat er staat kiest de gebruiker zelf (DashboardPreferences). Een blok
-     * dat uitstaat wordt ook niet berekend: het is een keuze in de weergave,
-     * geen kwestie van iets verbergen dat toch al opgehaald is.
-     */
+    /** Eigenaar en trainer: de cijfers van de school. */
     protected function voorSchool(User $user): Response
     {
-        $blokken = $this->preferences->blocks($user);
-        $toont = fn (DashboardBlock $blok) => in_array($blok, $blokken, true);
+        $layout = $this->widgets->layoutFor($user);
+        $zichtbaar = array_column($layout, 'key');
+        $toont = fn (DashboardWidget $widget) => in_array($widget->value, $zichtbaar, true);
+
+        // Eén keer ophalen voor alle vier de kerncijfers; ze delen hun bron.
+        $trends = array_intersect($zichtbaar, ['kpi_players', 'kpi_rating', 'kpi_reports', 'kpi_revenue']) !== []
+            ? $this->trends->all()
+            : [];
 
         return Inertia::render('Dashboard', [
             'view' => 'school',
             // Verdwijnt zodra de school draait; zie SetupChecklist. Bewust
-            // niet uit te zetten: wie hem wegklikt weet nooit meer wat er nog moet.
+            // geen widget: wie hem wegklikt weet nooit meer wat er nog moet.
             'checklist' => $this->checklist->for($user),
-            'tiles' => $this->tiles->for($user),
-            'blocks' => array_map(fn (DashboardBlock $blok) => $blok->value, $blokken),
-            'needsAttention' => $toont(DashboardBlock::Attention) ? $this->dashboard->needsAttention() : [],
-            'attentionAfterDays' => SchoolDashboard::AANDACHT_NA_DAGEN,
-            'upcomingTrainings' => $toont(DashboardBlock::Trainings) ? $this->dashboard->upcomingTrainings() : [],
-            'birthdays' => $toont(DashboardBlock::Birthdays) ? $this->dashboard->birthdays() : [],
+            // Het antwoord op "wat moet ik doen?". Staat vast bovenaan.
+            'attention' => $this->attention->for($user),
+            'layout' => $layout,
+            'widgets' => [
+                'kpi_players' => $toont(DashboardWidget::KpiPlayers) ? $trends['players'] : null,
+                'kpi_rating' => $toont(DashboardWidget::KpiRating) ? $trends['rating'] : null,
+                'kpi_reports' => $toont(DashboardWidget::KpiReports) ? $trends['reports'] : null,
+                'kpi_revenue' => $toont(DashboardWidget::KpiRevenue) ? $this->omzet($trends['revenue'] ?? []) : null,
+                'development' => $toont(DashboardWidget::Development) ? $this->development->for() : null,
+                'finance' => $toont(DashboardWidget::Finance) ? $this->financieel() : null,
+                'trainings' => $toont(DashboardWidget::Trainings) ? $this->dashboard->upcomingTrainings(3) : null,
+                'birthdays' => $toont(DashboardWidget::Birthdays) ? $this->dashboard->birthdays(limit: 4) : null,
+            ],
             'can' => [
                 'managePlayers' => $user->can('create', Player::class),
                 'manageGroups' => $user->can('create', Group::class),
                 'planTrainings' => $user->can('create', Training::class),
             ],
-            // Het financiële vak. De cijfers komen uit de administratie; of er
-            // ook echt geïncasseerd wordt hangt af van de gateway.
-            'finance' => $toont(DashboardBlock::Finance) ? $this->billing->summary() : null,
+        ]);
+    }
+
+    /**
+     * De omzettegel. Centen komen als geformatteerd bedrag naar buiten; de
+     * trend is een percentage, want een verschil in euro's zegt niets zonder
+     * te weten waarvan.
+     *
+     * @param  array<string, mixed>  $ruw
+     * @return array<string, mixed>
+     */
+    protected function omzet(array $ruw): array
+    {
+        return [
+            'value' => Money::format($ruw['cents'] ?? 0),
+            'change' => $ruw['change'] ?? null,
+            'unit' => 'procent',
+            'hint' => $ruw['hint'] ?? null,
+        ];
+    }
+
+    /**
+     * Het financiële vak, compacter dan het was.
+     *
+     * "Omzet deze maand" staat er bewust niet in: dat is een kerncijfer
+     * bovenaan, en elk cijfer hoort op precies één plek te staan.
+     *
+     * @return array<string, mixed>
+     */
+    protected function financieel(): array
+    {
+        $samenvatting = $this->billing->summary();
+
+        return [
+            'outstanding' => $samenvatting['outstanding'],
+            'outstandingCount' => $samenvatting['outstandingCount'],
+            'activeSubscriptions' => $samenvatting['activeSubscriptions'],
+            'yearlyValue' => $samenvatting['yearlyValue'],
             'gateway' => [
                 'connected' => $this->gateway->isConnected(),
                 'name' => $this->gateway->name(),
-                'message' => $this->gateway->statusMessage(),
             ],
-        ]);
+        ];
     }
 
     /**

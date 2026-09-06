@@ -115,9 +115,13 @@ class BirthdayTest extends TestCase
             ->get('/dashboard')
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->where('blocks', fn ($blocks) => collect($blocks)->contains('birthdays'))
-                ->count('birthdays', 1)
-                ->where('birthdays.0.first_name', 'Sem')
+                ->where('layout', fn ($layout) => collect($layout)->pluck('key')->contains('birthdays'))
+                ->where('widgets', function ($widgets) {
+                    $this->assertCount(1, $widgets['birthdays']);
+                    $this->assertSame('Sem', $widgets['birthdays'][0]['first_name']);
+
+                    return true;
+                })
             );
     }
 }

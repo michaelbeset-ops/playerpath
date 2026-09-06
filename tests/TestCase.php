@@ -7,29 +7,28 @@ use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 abstract class TestCase extends BaseTestCase
 {
     /**
-     * De waarde van één kerncijfer op het dashboard.
+     * De waarde van één widget op het dashboard.
      *
-     * De tegels komen als lijst binnen, in de volgorde die de gebruiker ziet.
-     * Een tegel die uitstaat zit er niet in, en dat is precies wat een test
-     * die daarop controleert wil weten.
+     * Een widget die niet op het dashboard staat, wordt ook niet berekend; die
+     * komt hier als null terug, en dat is precies wat een test die daarop
+     * controleert wil weten.
      *
-     * @param  iterable<int, array<string, mixed>>  $tiles
+     * @param  array<string, mixed>  $props
      */
-    protected function tileValue(iterable $tiles, string $key): mixed
+    protected function widget(array $props, string $key): mixed
     {
-        foreach ($tiles as $tegel) {
-            if ($tegel['key'] === $key) {
-                return $tegel['value'];
-            }
-        }
-
-        return null;
+        return $props['widgets'][$key] ?? null;
     }
 
-    /** @param  iterable<int, array<string, mixed>>  $tiles */
-    protected function tileKeys(iterable $tiles): array
+    /**
+     * Welke widgets er op dit dashboard staan.
+     *
+     * @param  iterable<int, array<string, mixed>>  $layout
+     * @return list<string>
+     */
+    protected function widgetKeys(iterable $layout): array
     {
-        return array_column(is_array($tiles) ? $tiles : iterator_to_array($tiles), 'key');
+        return array_column(is_array($layout) ? $layout : iterator_to_array($layout), 'key');
     }
 
     /**

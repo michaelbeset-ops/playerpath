@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Enums\PlayerPosition;
+use App\Enums\ReportCategory;
 use App\Enums\Role;
 use App\Models\Attendance;
 use App\Models\Group;
@@ -10,6 +12,7 @@ use App\Models\Report;
 use App\Models\School;
 use App\Models\Training;
 use App\Models\User;
+use App\Support\Dashboard\SchoolDashboard;
 use App\Support\Tenancy\Tenancy;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -58,12 +61,12 @@ class DashboardTest extends TestCase
             ->get('/dashboard')
             ->assertOk()
             ->assertInertia(function ($page) {
-                $tegels = $page->toArray()['props']['tiles'];
+                $tegels = $page->toArray()['props']['widgets'];
 
                 $page->component('Dashboard')->where('view', 'school');
 
-                $this->assertSame(3, $this->tileValue($tegels, 'players'));
-                $this->assertSame(0, $this->tileValue($tegels, 'reports'));
+                $this->assertSame(3, $tegels['kpi_players']['value']);
+                $this->assertSame(0, $tegels['kpi_reports']['value']);
             });
     }
 
@@ -76,7 +79,7 @@ class DashboardTest extends TestCase
 
         $this->actingAs($this->eigenaar($school))
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $this->assertSame(2, $this->tileValue($page->toArray()['props']['tiles'], 'players')));
+            ->assertInertia(fn ($page) => $this->assertSame(2, $this->widget($page->toArray()['props'], 'kpi_players')['value']));
     }
 
     public function test_een_ouder_krijgt_het_eigen_kind_te_zien_en_geen_schoolcijfers(): void
@@ -134,8 +137,9 @@ class DashboardTest extends TestCase
         $this->actingAs($eigenaar)
             ->get('/dashboard')
             ->assertInertia(fn ($page) => $page
-                ->count('needsAttention', 1)
-                ->where('needsAttention.0.name', 'Vergeten Speler')
+                ->count('attention', 1)
+                ->where('attention.0.key', 'silent_players')
+                ->where('attention.0.title', fn ($titel) => str_contains($titel, 'Vergeten Speler'))
             );
     }
 
@@ -149,25 +153,42 @@ class DashboardTest extends TestCase
         $this->actingAs($eigenaar)
             ->get('/dashboard')
             ->assertInertia(fn ($page) => $page
-                ->count('needsAttention', 1)
-                ->where('needsAttention.0.last_report_on', null)
+                ->count('attention', 1)
+                ->where('attention.0.key', 'silent_players')
             );
     }
 
-    public function test_de_gemiddelde_rating_telt_alleen_spelers_met_cijfers(): void
+    public function test_de_gemiddelde_rating_komt_uit_de_rapporten(): void
     {
         $school = School::factory()->create();
         $eigenaar = $this->eigenaar($school);
 
         app(Tenancy::class)->set($school);
 
-        Player::factory()->for($school)->create()->forceFill(['overall_rating' => 60])->save();
-        Player::factory()->for($school)->create()->forceFill(['overall_rating' => 80])->save();
-        Player::factory()->for($school)->create(); // nog geen cijfers
+        // Bewust niet uit players.overall_rating: dat veld heeft geen historie,
+        // dus daarmee valt geen "vorige maand" te maken. Zie DashboardTrends.
+        $this->rapporteer(Player::factory()->for($school)->keeper()->create(), $eigenaar, 6);
+        $this->rapporteer(Player::factory()->for($school)->keeper()->create(), $eigenaar, 8);
+        Player::factory()->for($school)->keeper()->create(); // nog geen rapport
 
         $this->actingAs($eigenaar)
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $this->assertSame(70, $this->tileValue($page->toArray()['props']['tiles'], 'rating')));
+            ->assertInertia(fn ($page) => $this->assertSame(70, $this->widget($page->toArray()['props'], 'kpi_rating')['value']));
+    }
+
+    /**
+     * Een rapport met overal hetzelfde cijfer, via het echte scherm.
+     *
+     * Niet met factories: die zetten hun eigen school_id, en dan valt het
+     * rapport buiten de scope van de school waar de test over gaat.
+     */
+    protected function rapporteer(Player $speler, User $trainer, int $cijfer): void
+    {
+        $cijfers = collect(ReportCategory::forPosition(PlayerPosition::Keeper))
+            ->mapWithKeys(fn ($categorie) => [$categorie->value => $cijfer])
+            ->all();
+
+        $this->actingAs($trainer)->post("/players/{$speler->id}/reports", ['scores' => $cijfers]);
     }
 
     public function test_de_opkomst_telt_alleen_wat_echt_is_afgevinkt(): void
@@ -198,14 +219,13 @@ class DashboardTest extends TestCase
 
         $this->actingAs($eigenaar)
             ->get('/dashboard')
-            ->assertInertia(function ($page) {
-                $tegels = $page->toArray()['props']['tiles'];
+            ->assertOk();
 
-                // Twee van de drie afgevinkt aanwezig; de niet-afgevinkte
-                // speler telt niet mee, want dat is geen "afwezig".
-                $this->assertSame('67%', $this->tileValue($tegels, 'attendance'));
-                $this->assertStringContainsString('2 van 3', collect($tegels)->firstWhere('key', 'attendance')['hint']);
-            });
+        // Twee van de drie afgevinkt aanwezig; de niet-afgevinkte speler telt
+        // niet mee, want "niet afgevinkt" is geen "afwezig". De opkomst staat
+        // sinds de nieuwe indeling niet meer als kerncijfer op het dashboard,
+        // maar de berekening klopt nog steeds.
+        $this->assertSame(67, app(SchoolDashboard::class)->stats()['attendanceRate']['percentage']);
     }
 
     public function test_een_trainer_ziet_geen_financieel_overzicht_en_geen_beheeracties(): void
@@ -222,8 +242,8 @@ class DashboardTest extends TestCase
                 ->where('view', 'school')
                 // Het financiele vak is van de eigenaar; een trainer krijgt
                 // het niet eens aangeboden, dus het wordt ook niet berekend.
-                ->where('finance', null)
-                ->where('blocks', fn ($blocks) => ! collect($blocks)->contains('finance'))
+                ->where('layout', fn ($layout) => ! collect($layout)->pluck('key')->contains('finance'))
+                ->where('widgets', fn ($widgets) => ($widgets['finance'] ?? null) === null)
                 ->where('can.managePlayers', false)
                 ->where('can.manageGroups', false)
                 // Trainingen inplannen mag hij wel.
@@ -238,8 +258,8 @@ class DashboardTest extends TestCase
         $this->actingAs($this->eigenaar($school))
             ->get('/dashboard')
             ->assertInertia(fn ($page) => $page
-                ->where('blocks', fn ($blocks) => collect($blocks)->contains('finance'))
-                ->has('finance')
+                ->where('layout', fn ($layout) => collect($layout)->pluck('key')->contains('finance'))
+                ->where('widgets', fn ($widgets) => ($widgets['finance'] ?? null) !== null)
             );
     }
 
@@ -259,13 +279,10 @@ class DashboardTest extends TestCase
         $this->actingAs($this->eigenaar($schoolA))
             ->get('/dashboard')
             ->assertInertia(function ($page) {
-                $page->count('upcomingTrainings', 0)->count('needsAttention', 2);
+                $props = $page->toArray()['props'];
 
-                $tegels = $page->toArray()['props']['tiles'];
-
-                $this->assertSame(2, $this->tileValue($tegels, 'players'));
-                // De hint van de spelerstegel noemt het aantal groepen.
-                $this->assertStringContainsString('0 groepen', collect($tegels)->firstWhere('key', 'players')['hint']);
+                $this->assertSame([], $props['widgets']['trainings']);
+                $this->assertSame(2, $props['widgets']['kpi_players']['value']);
             });
     }
 
@@ -292,6 +309,6 @@ class DashboardTest extends TestCase
 
         $this->actingAs($eigenaar)
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $this->assertSame(1, $this->tileValue($page->toArray()['props']['tiles'], 'reports')));
+            ->assertInertia(fn ($page) => $this->assertSame(1, $this->widget($page->toArray()['props'], 'kpi_reports')['value']));
     }
 }
