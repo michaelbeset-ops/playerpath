@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Users;
+namespace Tests\Feature\Clients;
 
 use App\Enums\Role;
 use App\Models\Group;
@@ -16,7 +16,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
-class UserDirectoryTest extends TestCase
+class ClientDirectoryTest extends TestCase
 {
     use RefreshDatabase;
 
@@ -47,7 +47,7 @@ class UserDirectoryTest extends TestCase
 
     // --- Het overzicht ---
 
-    public function test_het_gebruikersoverzicht_toont_spelers_trainers_en_ouders(): void
+    public function test_het_klantenoverzicht_toont_spelers_en_ouders(): void
     {
         Player::factory()->count(2)->for($this->school)->create();
         $this->trainer();
@@ -56,20 +56,29 @@ class UserDirectoryTest extends TestCase
         $ouder->assignRole(Role::Ouder->value);
 
         $this->actingAs($this->eigenaar)
-            ->get('/users')
+            ->get('/clients')
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->component('users/Index')
-                ->where('type', 'players')
+                ->component('clients/Players')
                 ->where('counts.players', 2)
-                ->where('counts.trainers', 1)
                 ->where('counts.guardians', 1)
             );
     }
 
-    public function test_het_spelersoverzicht_verhuisde_naar_gebruikers(): void
+    public function test_een_trainer_staat_niet_bij_de_klanten(): void
     {
-        $this->actingAs($this->eigenaar)->get('/players')->assertRedirect('/users');
+        $this->trainer('Piet Trainer');
+
+        // Personeel hoort bij het bedrijf, niet bij de klanten.
+        $this->actingAs($this->eigenaar)->get('/clients')->assertDontSee('Piet Trainer');
+        $this->actingAs($this->eigenaar)->get('/clients/guardians')->assertDontSee('Piet Trainer');
+        $this->actingAs($this->eigenaar)->get('/staff')->assertSee('Piet Trainer');
+    }
+
+    public function test_de_oude_adressen_wijzen_naar_klanten(): void
+    {
+        $this->actingAs($this->eigenaar)->get('/players')->assertRedirect('/clients');
+        $this->actingAs($this->eigenaar)->get('/users')->assertRedirect('/clients');
     }
 
     public function test_de_spelerslijst_laat_zien_wie_een_eigen_inlog_heeft(): void
@@ -81,7 +90,7 @@ class UserDirectoryTest extends TestCase
         Player::factory()->for($this->school)->create(['first_name' => 'Sem', 'last_name' => 'de Vries']);
 
         $this->actingAs($this->eigenaar)
-            ->get('/users?type=players')
+            ->get('/clients')
             ->assertInertia(function ($page) {
                 $spelers = collect($page->toArray()['props']['players'])->keyBy('name');
 
@@ -93,14 +102,14 @@ class UserDirectoryTest extends TestCase
             });
     }
 
-    public function test_het_trainersoverzicht_toont_de_eigenaar_erbij(): void
+    public function test_het_personeelsoverzicht_toont_de_eigenaar_erbij(): void
     {
         $this->trainer();
 
         $this->actingAs($this->eigenaar)
-            ->get('/users?type=trainers')
+            ->get('/staff')
             ->assertInertia(fn ($page) => $page
-                ->where('type', 'trainers')
+                ->component('staff/Index')
                 // De eigenaar geeft bij kleine scholen zelf ook training.
                 ->count('trainers', 2)
             );
@@ -115,7 +124,7 @@ class UserDirectoryTest extends TestCase
         $ouder->children()->attach($kind->id, ['relationship' => 'moeder']);
 
         $this->actingAs($this->eigenaar)
-            ->get('/users?type=guardians')
+            ->get('/clients/guardians')
             ->assertInertia(fn ($page) => $page
                 ->count('guardians', 1)
                 ->where('guardians.0.children.0.name', 'Sem de Vries')
@@ -134,20 +143,24 @@ class UserDirectoryTest extends TestCase
         Player::factory()->for($this->school)->create();
 
         $this->actingAs($this->eigenaar)
-            ->get('/users')
+            ->get('/clients')
             ->assertInertia(fn ($page) => $page
                 ->where('counts.players', 1)
-                ->where('counts.trainers', 0)
                 ->count('players', 1)
             );
+
+        $this->actingAs($this->eigenaar)
+            ->get('/staff')
+            ->assertInertia(fn ($page) => $page->count('trainers', 1));
     }
 
-    public function test_een_ouder_komt_niet_bij_het_gebruikersoverzicht(): void
+    public function test_een_ouder_komt_niet_bij_het_klantenoverzicht(): void
     {
         $ouder = User::factory()->for($this->school)->create();
         $ouder->assignRole(Role::Ouder->value);
 
-        $this->actingAs($ouder)->get('/users')->assertForbidden();
+        $this->actingAs($ouder)->get('/clients')->assertForbidden();
+        $this->actingAs($ouder)->get('/staff')->assertForbidden();
     }
 
     // --- Trainers uitnodigen ---
@@ -157,7 +170,7 @@ class UserDirectoryTest extends TestCase
         Notification::fake();
 
         $this->actingAs($this->eigenaar)
-            ->post('/users/trainers', ['name' => 'Nieuwe Trainer', 'email' => 'trainer@voorbeeld.nl'])
+            ->post('/staff/trainers', ['name' => 'Nieuwe Trainer', 'email' => 'trainer@voorbeeld.nl'])
             ->assertRedirect();
 
         $trainer = User::where('email', 'trainer@voorbeeld.nl')->firstOrFail();
@@ -172,14 +185,14 @@ class UserDirectoryTest extends TestCase
     public function test_een_trainer_mag_zelf_geen_trainers_uitnodigen(): void
     {
         $this->actingAs($this->trainer())
-            ->post('/users/trainers', ['name' => 'X', 'email' => 'x@voorbeeld.nl'])
+            ->post('/staff/trainers', ['name' => 'X', 'email' => 'x@voorbeeld.nl'])
             ->assertForbidden();
     }
 
     public function test_een_bestaand_e_mailadres_wordt_geweigerd(): void
     {
         $this->actingAs($this->eigenaar)
-            ->post('/users/trainers', ['name' => 'Dubbel', 'email' => $this->eigenaar->email])
+            ->post('/staff/trainers', ['name' => 'Dubbel', 'email' => $this->eigenaar->email])
             ->assertSessionHasErrors('email');
     }
 
@@ -195,7 +208,7 @@ class UserDirectoryTest extends TestCase
             'trainer_id' => $trainer->id,
         ]);
 
-        $this->actingAs($this->eigenaar)->delete('/users/trainers/'.$trainer->id)->assertRedirect();
+        $this->actingAs($this->eigenaar)->delete('/staff/trainers/'.$trainer->id)->assertRedirect();
 
         $this->assertDatabaseMissing('users', ['id' => $trainer->id]);
 
@@ -207,7 +220,7 @@ class UserDirectoryTest extends TestCase
     public function test_de_eigenaar_kan_zichzelf_niet_verwijderen(): void
     {
         $this->actingAs($this->eigenaar)
-            ->delete('/users/trainers/'.$this->eigenaar->id)
+            ->delete('/staff/trainers/'.$this->eigenaar->id)
             ->assertStatus(422);
 
         $this->assertDatabaseHas('users', ['id' => $this->eigenaar->id]);

@@ -27,7 +27,7 @@ class PlayerController extends Controller
 {
     public function __construct(protected CalculatePlayerCard $calculator, protected GoalProgress $goals) {}
 
-    // Het spelersoverzicht woont in Users\UserDirectoryController: spelers,
+    // Het spelersoverzicht woont in Clients\ClientDirectoryController: spelers,
     // trainers en ouders staan daar samen onder Gebruikers.
 
     public function create(Request $request): Response

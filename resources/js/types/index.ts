@@ -19,6 +19,14 @@ export interface NavItem {
     isActive?: boolean;
 }
 
+/** Een menu-item in de balk: zelf een link, of een uitklap met items. */
+export interface NavGroup {
+    title: string;
+    href: string | null;
+    icon: LucideIcon;
+    items: { title: string; href: string; icon: LucideIcon }[];
+}
+
 export interface School {
     id: number;
     name: string;
@@ -42,7 +50,7 @@ export interface SharedData {
     school: School | null;
     flash: { status: string | null };
     /** Het hoofdmenu, server-side bepaald op basis van wat je mag. */
-    nav: { section: string; title: string; href: string; icon: string }[];
+    nav: { title: string; href: string | null; icon: string; items: { title: string; href: string; icon: string }[] }[];
     unreadNotifications: number;
     /** Welke functies deze school heeft; zie App\Enums\Feature. */
     features: Record<string, boolean>;

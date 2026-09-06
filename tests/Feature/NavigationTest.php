@@ -70,12 +70,36 @@ class NavigationTest extends TestCase
         return $user;
     }
 
+    /**
+     * Alle adressen die deze rol in de balk ziet, groepen platgeslagen.
+     *
+     * @return list<array{title: string, href: string}>
+     */
+    protected function menu(User $user): array
+    {
+        $plat = [];
+
+        foreach (app(MainNavigation::class)->for($user) as $groep) {
+            if ($groep['href'] !== null) {
+                $plat[] = ['title' => $groep['title'], 'href' => $groep['href']];
+
+                continue;
+            }
+
+            foreach ($groep['items'] as $item) {
+                $plat[] = ['title' => $groep['title'].' > '.$item['title'], 'href' => $item['href']];
+            }
+        }
+
+        return $plat;
+    }
+
     #[DataProvider('rollen')]
     public function test_elk_getoond_menu_item_werkt_ook_echt(Role $rol): void
     {
         $user = $this->gebruiker($rol);
 
-        $items = app(MainNavigation::class)->for($user);
+        $items = $this->menu($user);
 
         $this->assertNotEmpty($items, "De rol {$rol->value} ziet helemaal geen menu.");
 
@@ -86,15 +110,38 @@ class NavigationTest extends TestCase
         }
     }
 
+    public function test_een_lege_groep_verdwijnt_en_een_groep_van_een_wordt_het_item(): void
+    {
+        $eigenaar = $this->gebruiker(Role::Eigenaar);
+
+        $groepen = app(MainNavigation::class)->for($eigenaar);
+
+        foreach ($groepen as $groep) {
+            // Of het is zelf een link, of het is een uitklap met minstens twee
+            // items. Een uitklap met een is een woord dat iets anders belooft.
+            if ($groep['href'] === null) {
+                $this->assertGreaterThan(1, count($groep['items']), "De groep {$groep['title']} klapt uit naar te weinig items.");
+            } else {
+                $this->assertSame([], $groep['items']);
+            }
+        }
+
+        // Ontwikkeling heeft maar een item (Rapporten) en toont dat dus zelf.
+        $titels = array_column($groepen, 'title');
+        $this->assertContains('Rapporten', $titels);
+        $this->assertNotContains('Ontwikkeling', $titels);
+    }
+
     public function test_een_ouder_krijgt_geen_beheer_items_te_zien(): void
     {
         $ouder = $this->gebruiker(Role::Ouder);
 
-        $hrefs = array_column(app(MainNavigation::class)->for($ouder), 'href');
+        $hrefs = array_column($this->menu($ouder), 'href');
 
         $this->assertContains('/dashboard', $hrefs);
         $this->assertContains('/trainings', $hrefs);
-        $this->assertNotContains('/users', $hrefs);
+        $this->assertNotContains('/clients', $hrefs);
+        $this->assertNotContains('/staff', $hrefs);
         $this->assertNotContains('/groups', $hrefs);
         $this->assertNotContains('/reports', $hrefs);
         // De administratie van de school is niet van een ouder; die heeft een
@@ -109,11 +156,16 @@ class NavigationTest extends TestCase
     {
         $eigenaar = $this->gebruiker(Role::Eigenaar);
 
-        $hrefs = array_column(app(MainNavigation::class)->for($eigenaar), 'href');
+        $hrefs = array_column($this->menu($eigenaar), 'href');
 
         $this->assertSame([
-            '/dashboard', '/users', '/groups', '/trainings', '/calendar', '/reports', '/announcements',
-            '/enrollments', '/subscriptions', '/payments', '/plans', '/exports', '/verantwoording', '/branding',
+            '/dashboard',
+            '/calendar', '/trainings',
+            '/clients', '/clients/guardians', '/groups', '/enrollments',
+            '/reports',
+            '/payments', '/subscriptions', '/plans', '/exports',
+            '/announcements',
+            '/staff', '/branding', '/verantwoording', '/settings/profile',
         ], $hrefs);
     }
 
@@ -122,6 +174,8 @@ class NavigationTest extends TestCase
         $ouder = $this->gebruiker(Role::Ouder);
 
         // Een ouder hoort niet te zien welke andere kinderen op de school zitten.
-        $this->actingAs($ouder)->get('/users')->assertForbidden();
+        $this->actingAs($ouder)->get('/clients')->assertForbidden();
+        $this->actingAs($ouder)->get('/clients/guardians')->assertForbidden();
+        $this->actingAs($ouder)->get('/staff')->assertForbidden();
     }
 }

@@ -101,7 +101,7 @@ class PlatformControlTest extends TestCase
         $this->actingAs($this->eigenaar)->get("/players/{$speler->id}/progress")->assertNotFound();
 
         // De ledenadministratie blijft wel bestaan.
-        $this->actingAs($this->eigenaar)->get('/users')->assertOk();
+        $this->actingAs($this->eigenaar)->get('/clients')->assertOk();
     }
 
     public function test_het_menu_laat_uitgezette_functies_weg(): void
@@ -110,9 +110,13 @@ class PlatformControlTest extends TestCase
 
         $this->actingAs($this->eigenaar)
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('nav', fn ($nav) => ! collect($nav)->contains('href', '/payments')
-                && ! collect($nav)->contains('href', '/calendar')
-                && collect($nav)->contains('href', '/trainings')));
+            ->assertInertia(function ($page) {
+                $hrefs = $this->navHrefs($page->toArray()['props']['nav']);
+
+                $this->assertNotContains('/payments', $hrefs);
+                $this->assertNotContains('/calendar', $hrefs);
+                $this->assertContains('/trainings', $hrefs);
+            });
     }
 
     public function test_de_achtergrondtaken_slaan_een_uitgezette_school_over(): void

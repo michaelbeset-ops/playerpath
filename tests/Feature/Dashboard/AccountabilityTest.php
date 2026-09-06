@@ -172,10 +172,10 @@ class AccountabilityTest extends TestCase
     {
         $this->actingAs($this->eigenaar)
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('nav', fn ($nav) => collect($nav)->contains('href', '/verantwoording')));
+            ->assertInertia(fn ($page) => $page->where('nav', fn ($nav) => in_array('/verantwoording', $this->navHrefs($nav), true)));
 
         $this->actingAs($this->trainer)
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('nav', fn ($nav) => ! collect($nav)->contains('href', '/verantwoording')));
+            ->assertInertia(fn ($page) => $page->where('nav', fn ($nav) => ! in_array('/verantwoording', $this->navHrefs($nav), true)));
     }
 }

@@ -135,9 +135,9 @@ class PlayerManagementTest extends TestCase
         Player::factory()->for($this->school)->create();
 
         $this->actingAs($trainer)
-            ->get('/users?type=players')
+            ->get('/clients')
             ->assertOk()
-            ->assertInertia(fn ($page) => $page->component('users/Index')->where('can.managePlayers', false));
+            ->assertInertia(fn ($page) => $page->component('clients/Players')->where('can.managePlayers', false));
     }
 
     public function test_het_overzicht_filtert_op_naam_positie_groep_en_status(): void
@@ -150,22 +150,22 @@ class PlayerManagementTest extends TestCase
         Player::factory()->for($this->school)->veldspeler()->create(['first_name' => 'Daan', 'last_name' => 'Visser']);
         Player::factory()->for($this->school)->keeper()->create(['first_name' => 'Oud', 'last_name' => 'Lid', 'is_active' => false]);
 
-        $this->actingAs($this->eigenaar)->get('/users?type=players')
+        $this->actingAs($this->eigenaar)->get('/clients')
             ->assertInertia(fn ($page) => $page->count('players', 2));
 
-        $this->actingAs($this->eigenaar)->get('/users?type=players&search=Sem')
+        $this->actingAs($this->eigenaar)->get('/clients?search=Sem')
             ->assertInertia(fn ($page) => $page->count('players', 1)->where('players.0.name', 'Sem de Vries'));
 
-        $this->actingAs($this->eigenaar)->get('/users?type=players&position=field')
+        $this->actingAs($this->eigenaar)->get('/clients?position=field')
             ->assertInertia(fn ($page) => $page->count('players', 1)->where('players.0.name', 'Daan Visser'));
 
-        $this->actingAs($this->eigenaar)->get('/users?type=players&group='.$groep->id)
+        $this->actingAs($this->eigenaar)->get('/clients?group='.$groep->id)
             ->assertInertia(fn ($page) => $page->count('players', 1)->where('players.0.name', 'Sem de Vries'));
 
-        $this->actingAs($this->eigenaar)->get('/users?type=players&status=inactive')
+        $this->actingAs($this->eigenaar)->get('/clients?status=inactive')
             ->assertInertia(fn ($page) => $page->count('players', 1)->where('players.0.name', 'Oud Lid'));
 
-        $this->actingAs($this->eigenaar)->get('/users?type=players&status=all')
+        $this->actingAs($this->eigenaar)->get('/clients?status=all')
             ->assertInertia(fn ($page) => $page->count('players', 3));
     }
 
@@ -188,7 +188,7 @@ class PlayerManagementTest extends TestCase
         Player::factory()->count(4)->for($andereSchool)->create();
 
         $this->actingAs($this->eigenaar)
-            ->get('/users?type=players')
+            ->get('/clients')
             ->assertInertia(fn ($page) => $page->count('players', 1)->where('players.0.name', 'Eigen Speler'));
     }
 

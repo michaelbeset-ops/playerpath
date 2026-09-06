@@ -82,7 +82,7 @@ const kaarten = computed(() => {
             value: s.players,
             hint: `${s.keepers} ${s.keepers === 1 ? 'keeper' : 'keepers'} · ${s.groups} ${s.groups === 1 ? 'groep' : 'groepen'}`,
             icon: Users,
-            href: '/users',
+            href: '/clients',
         },
         {
             label: 'Gemiddelde rating',
@@ -166,7 +166,7 @@ const kaarten = computed(() => {
 
                     <p v-if="!checklist.hasTrainer" class="mt-3 text-xs text-muted-foreground">
                         Werk je met meer trainers? Nodig ze uit bij
-                        <Link href="/users" class="underline underline-offset-4">Gebruikers</Link>.
+                        <Link href="/clients" class="underline underline-offset-4">Klanten</Link>.
                     </p>
                 </div>
 

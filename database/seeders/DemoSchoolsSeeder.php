@@ -25,7 +25,7 @@ use Illuminate\Support\Str;
 
 /**
  * Twee scholen met eigen data, zodat je met eigen ogen kunt controleren dat de
- * één niets van de ander ziet. Dit is de proef op de som van fase 1.
+ * ????n niets van de ander ziet. Dit is de proef op de som van fase 1.
  */
 class DemoSchoolsSeeder extends Seeder
 {
@@ -112,7 +112,7 @@ class DemoSchoolsSeeder extends Seeder
         }
     }
 
-    /** Eén training geweest, twee komende. */
+    /** E??n training geweest, twee komende. */
     protected function maakTrainingen(Group $groep, User $trainer): void
     {
         foreach ([-7, 7, 14] as $dagen) {
@@ -157,8 +157,6 @@ class DemoSchoolsSeeder extends Seeder
     protected function maakSchool(string $naam, string $eigenaarEmail, array $spelers, array $groepen): void
     {
         $school = School::create([
-            // Twee jaar bewaren; zo laat het privacyscherm meteen iets zien.
-            'retention_months' => 24,
             'name' => $naam,
             'slug' => Str::slug($naam),
         ]);
@@ -182,7 +180,7 @@ class DemoSchoolsSeeder extends Seeder
         $trainer->assignRole(Role::Trainer->value);
 
         // Alles hieronder draait binnen deze school, zodat de scope het
-        // school_id automatisch invult — precies zoals de app het straks doet.
+        // school_id automatisch invult ??? precies zoals de app het straks doet.
         app(Tenancy::class)->forSchool($school, function () use ($spelers, $groepen, $school, $eigenaarEmail, $trainer) {
             $gemaakteGroepen = collect($groepen)->map(fn (array $groep) => Group::create([
                 'name' => $groep[0],
@@ -231,7 +229,7 @@ class DemoSchoolsSeeder extends Seeder
             $this->maakTrainingen($gemaakteGroepen->first(), $trainer);
 
             // Tarieven, abonnementen en een paar betalingen, zodat het
-            // financiële scherm meteen laat zien hoe het eruitziet.
+            // financi??le scherm meteen laat zien hoe het eruitziet.
             // Een oud-lid waarvan de bewaartermijn allang verstreken is, zodat
             // het privacyscherm niet leeg staat.
             $gestopt = $gemaakteSpelers->last();

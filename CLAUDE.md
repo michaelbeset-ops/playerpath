@@ -85,11 +85,41 @@ component. Dat is geen cosmetica: een hardgecodeerd menu liet een ouder
 Spelers, Groepen en Rapporten zien die allemaal 403 gaven.
 
 **Nieuw scherm erbij? Voeg het toe aan `MainNavigation`, niet aan
-`AppSidebar.vue`.** `NavigationTest` loopt per rol elk getoond item echt af.
+`AppTopbar.vue`.** `NavigationTest` loopt per rol elk getoond item echt af.
 
-Elk item heeft een `section` (School of Financieel); `NavMain` groepeert erop.
+#### De balk bovenin
+
+Het menu staat in een **donkere balk bovenaan** (`AppTopbar`), met de lichte
+werkvloer eronder. Dat scheidt "waar ben ik in de app" van "waar werk ik aan",
+en het is dezelfde donkere kant van het merk als de spelerskaart — geen derde
+kleurwereld.
+
+De items zitten in **groepen met een uitklap**: Agenda, Klanten, Financiën,
+Mijn bedrijf. Twee regels houden dat eerlijk, allebei in `MainNavigation`:
+
+- **Een groep zonder zichtbare items verdwijnt.** Een lege uitklap laat je
+  zoeken naar iets wat er niet is.
+- **Een groep met één zichtbaar item wórdt dat item.** "Financiën" met alleen
+  Betalingen erin is een woord dat iets anders belooft dan het doet.
+
+Een test die wil weten óf iets in het menu staat moet dus een niveau dieper
+kijken; daar is `TestCase::navHrefs()` voor.
+
 Een verlopen sessie (419) wordt in `bootstrap/app.php` afgevangen met een
 melding in plaats van een foutpagina.
+
+#### Klanten, Personeel en Mijn bedrijf
+
+Het menu-item **Gebruikers** heette naar de tabel, niet naar de werkelijkheid.
+Het is nu **Klanten** (`/clients` en `/clients/guardians`): spelers en ouders,
+in twee lijsten. Je zoekt zelden een speler en een ouder tegelijk.
+
+**Trainers staan niet bij de klanten**, maar onder Mijn bedrijf → Personeel
+(`/staff`). Een trainer is geen klant, en hem tussen de spelers zetten maakt
+beide lijsten onbruikbaar.
+
+`/users` en `/players` sturen door naar `/clients`; die adressen stonden in
+bladwijzers voordat dit Klanten heette.
 
 #### Valkuil: validatieregels kennen de global scope niet
 

@@ -248,10 +248,10 @@ class AnnouncementTest extends TestCase
 
         $this->actingAs($this->trainer)
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('nav', fn ($nav) => collect($nav)->contains('href', '/announcements')));
+            ->assertInertia(fn ($page) => $page->where('nav', fn ($nav) => in_array('/announcements', $this->navHrefs($nav), true)));
 
         $this->actingAs($ouder)
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('nav', fn ($nav) => ! collect($nav)->contains('href', '/announcements')));
+            ->assertInertia(fn ($page) => $page->where('nav', fn ($nav) => ! in_array('/announcements', $this->navHrefs($nav), true)));
     }
 }

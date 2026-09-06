@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Users;
+namespace App\Http\Controllers\Clients;
 
 use App\Enums\PlayerPosition;
 use App\Enums\Role;
@@ -13,52 +13,25 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Gebruikers: spelers, trainers en ouders bij elkaar.
+ * Klanten: de spelers en hun ouders.
  *
- * Eén scherm met drie tabbladen in plaats van drie losse menu-items — je
- * zoekt zelden iets over "trainers" los van "wie zitten er op mijn school".
+ * "Klanten" en niet "Gebruikers", omdat een school in mensen denkt en niet in
+ * accounts. Trainers horen hier niet bij; die staan onder Personeel — een
+ * trainer is geen klant, en zoeken tussen de klanten naar je eigen collega's
+ * is precies de verwarring die dat menu-item veroorzaakte.
  *
- * Let op het verschil: een **speler** is een profiel (tabel players) met een
- * optioneel eigen inlogaccount; een **trainer** of **ouder** is altijd een
- * account (tabel users). Die twee dingen zijn bewust niet samengevoegd: een
- * kind van acht heeft geen e-mailadres, maar staat wel op de kaart.
+ * Let op het verschil dat hieronder overal doorwerkt: een **speler** is een
+ * profiel (tabel `players`) met een optioneel eigen inlogaccount; een **ouder**
+ * is altijd een account (tabel `users`). Die twee zijn bewust niet
+ * samengevoegd: een kind van acht heeft geen e-mailadres, maar staat wel op
+ * de kaart.
  */
-class UserDirectoryController extends Controller
+class ClientDirectoryController extends Controller
 {
-    public function index(Request $request): Response
+    public function players(Request $request): Response
     {
         $this->authorize('viewAny', Player::class);
 
-        $type = in_array($request->string('type')->toString(), ['players', 'trainers', 'guardians'], strict: true)
-            ? $request->string('type')->toString()
-            : 'players';
-
-        $user = $request->user();
-
-        return Inertia::render('users/Index', [
-            'type' => $type,
-            'counts' => [
-                'players' => Player::active()->count(),
-                'trainers' => User::ofCurrentSchool()->role(Role::Trainer->value)->count(),
-                'guardians' => User::ofCurrentSchool()->role(Role::Ouder->value)->count(),
-            ],
-            'can' => [
-                'managePlayers' => $user->can('create', Player::class),
-                // Accounts uitnodigen en verwijderen is werk van de eigenaar.
-                'manageAccounts' => $user->isEigenaar(),
-            ],
-
-            ...match ($type) {
-                'trainers' => $this->trainers(),
-                'guardians' => $this->guardians(),
-                default => $this->players($request),
-            },
-        ]);
-    }
-
-    /** @return array<string, mixed> */
-    protected function players(Request $request): array
-    {
         $filters = [
             'search' => trim((string) $request->string('search')),
             'position' => (string) $request->string('position'),
@@ -95,38 +68,19 @@ class UserDirectoryController extends Controller
                 'email' => $player->user?->email,
             ]);
 
-        return [
+        return Inertia::render('clients/Players', [
+            ...$this->gedeeld($request),
             'players' => $players,
             'filters' => $filters,
             'positions' => PlayerPosition::options(),
             'groups' => Group::orderBy('name')->get(['id', 'name']),
-        ];
+        ]);
     }
 
-    /** @return array<string, mixed> */
-    protected function trainers(): array
+    public function guardians(Request $request): Response
     {
-        $trainers = User::ofCurrentSchool()
-            ->role([Role::Trainer->value, Role::Eigenaar->value])
-            ->withCount(['trainings', 'reports'])
-            ->orderBy('name')
-            ->get()
-            ->map(fn (User $trainer) => [
-                'id' => $trainer->id,
-                'name' => $trainer->name,
-                'email' => $trainer->email,
-                'roles' => $trainer->getRoleNames()->all(),
-                'is_owner' => $trainer->isEigenaar(),
-                'trainings_count' => $trainer->trainings_count,
-                'reports_count' => $trainer->reports_count,
-            ]);
+        $this->authorize('viewAny', Player::class);
 
-        return ['trainers' => $trainers];
-    }
-
-    /** @return array<string, mixed> */
-    protected function guardians(): array
-    {
         $guardians = User::ofCurrentSchool()
             ->role(Role::Ouder->value)
             ->with('children')
@@ -143,6 +97,27 @@ class UserDirectoryController extends Controller
                 ]),
             ]);
 
-        return ['guardians' => $guardians];
+        return Inertia::render('clients/Guardians', [
+            ...$this->gedeeld($request),
+            'guardians' => $guardians,
+        ]);
+    }
+
+    /**
+     * Wat op beide tabbladen staat: de tellingen en wat je mag.
+     *
+     * @return array<string, mixed>
+     */
+    protected function gedeeld(Request $request): array
+    {
+        return [
+            'counts' => [
+                'players' => Player::active()->count(),
+                'guardians' => User::ofCurrentSchool()->role(Role::Ouder->value)->count(),
+            ],
+            'can' => [
+                'managePlayers' => $request->user()->can('create', Player::class),
+            ],
+        ];
     }
 }

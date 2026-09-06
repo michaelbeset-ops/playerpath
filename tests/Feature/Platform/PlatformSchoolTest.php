@@ -55,7 +55,7 @@ class PlatformSchoolTest extends TestCase
 
         // De eigenaar van A ziet alleen zijn eigen spelers.
         $this->actingAs($eigenaarA)
-            ->get('/users')
+            ->get('/clients')
             ->assertOk()
             ->assertDontSee($spelerVanB->first_name);
 

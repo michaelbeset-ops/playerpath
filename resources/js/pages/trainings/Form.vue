@@ -135,7 +135,7 @@ const opslaan = () => {
 
                     <p v-else class="text-sm text-muted-foreground">
                         Er zijn nog geen trainers.
-                        <Link href="/users?type=trainers" class="font-medium text-primary underline underline-offset-4">Nodig er een uit</Link>.
+                        <Link href="/staff" class="font-medium text-primary underline underline-offset-4">Nodig er een uit</Link>.
                     </p>
 
                     <p class="text-xs text-muted-foreground">Er mogen er meerdere bij staan, bijvoorbeeld een vaste trainer en een invaller.</p>

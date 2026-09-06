@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Clients\ClientDirectoryController;
 use App\Http\Controllers\Goals\GoalController;
 use App\Http\Controllers\Groups\GroupController;
 use App\Http\Controllers\Players\GuardianController;
@@ -8,8 +9,8 @@ use App\Http\Controllers\Players\PlayerController;
 use App\Http\Controllers\Players\PlayerProgressController;
 use App\Http\Controllers\Players\SharedCardController;
 use App\Http\Controllers\Reports\ReportController;
-use App\Http\Controllers\Users\TrainerController;
-use App\Http\Controllers\Users\UserDirectoryController;
+use App\Http\Controllers\Staff\StaffController;
+use App\Http\Controllers\Staff\TrainerController;
 use App\Http\Middleware\PreventSearchIndexing;
 use Illuminate\Support\Facades\Route;
 
@@ -37,13 +38,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('players/{player}/share', [SharedCardController::class, 'store'])->name('players.share');
     Route::delete('players/{player}/share', [SharedCardController::class, 'destroy'])->name('players.unshare');
 
-    // Gebruikers: spelers, trainers en ouders op één scherm met tabbladen.
-    Route::get('users', [UserDirectoryController::class, 'index'])->name('users.index');
-    Route::post('users/trainers', [TrainerController::class, 'store'])->name('trainers.store');
-    Route::delete('users/trainers/{user}', [TrainerController::class, 'destroy'])->name('trainers.destroy');
+    // Klanten: de spelers en hun ouders. Twee lijsten, want je zoekt zelden
+    // een speler en een ouder tegelijk.
+    Route::get('clients', [ClientDirectoryController::class, 'players'])->name('clients.players');
+    Route::get('clients/guardians', [ClientDirectoryController::class, 'guardians'])->name('clients.guardians');
 
-    // Het spelersoverzicht woont nu onder Gebruikers; oude links blijven werken.
-    Route::get('players', fn () => redirect()->route('users.index'))->name('players.index');
+    // Personeel hoort bij het bedrijf, niet bij de klanten.
+    Route::get('staff', [StaffController::class, 'index'])->name('staff.index');
+    Route::post('staff/trainers', [TrainerController::class, 'store'])->name('trainers.store');
+    Route::delete('staff/trainers/{user}', [TrainerController::class, 'destroy'])->name('trainers.destroy');
+
+    // Oude adressen blijven werken: /users en /players stonden in bladwijzers
+    // en verwijzingen voordat dit Klanten heette.
+    Route::get('users', fn () => redirect()->route('clients.players'))->name('users.index');
+    Route::get('players', fn () => redirect()->route('clients.players'))->name('players.index');
     Route::resource('players', PlayerController::class)->except(['index']);
     Route::resource('groups', GroupController::class)->except('show');
 

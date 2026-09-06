@@ -153,7 +153,7 @@ class BrandingTest extends TestCase
         // van school B.
         $response = $this->actingAs($this->eigenaar)
             ->withServerVariables(['HTTP_HOST' => 'voetbalschool-yoel.playerpath.nl'])
-            ->get('/users');
+            ->get('/clients');
 
         $response->assertOk();
 
