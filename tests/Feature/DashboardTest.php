@@ -57,12 +57,14 @@ class DashboardTest extends TestCase
         $this->actingAs($this->eigenaar($schoolA))
             ->get('/dashboard')
             ->assertOk()
-            ->assertInertia(fn ($page) => $page
-                ->component('Dashboard')
-                ->where('view', 'school')
-                ->where('stats.players', 3)
-                ->where('stats.reportsThisWeek', 0)
-            );
+            ->assertInertia(function ($page) {
+                $tegels = $page->toArray()['props']['tiles'];
+
+                $page->component('Dashboard')->where('view', 'school');
+
+                $this->assertSame(3, $this->tileValue($tegels, 'players'));
+                $this->assertSame(0, $this->tileValue($tegels, 'reports'));
+            });
     }
 
     public function test_inactieve_spelers_tellen_niet_mee(): void
@@ -74,7 +76,7 @@ class DashboardTest extends TestCase
 
         $this->actingAs($this->eigenaar($school))
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('stats.players', 2));
+            ->assertInertia(fn ($page) => $this->assertSame(2, $this->tileValue($page->toArray()['props']['tiles'], 'players')));
     }
 
     public function test_een_ouder_krijgt_het_eigen_kind_te_zien_en_geen_schoolcijfers(): void
@@ -165,7 +167,7 @@ class DashboardTest extends TestCase
 
         $this->actingAs($eigenaar)
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('stats.averageRating', 70));
+            ->assertInertia(fn ($page) => $this->assertSame(70, $this->tileValue($page->toArray()['props']['tiles'], 'rating')));
     }
 
     public function test_de_opkomst_telt_alleen_wat_echt_is_afgevinkt(): void
@@ -196,10 +198,14 @@ class DashboardTest extends TestCase
 
         $this->actingAs($eigenaar)
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page
-                ->where('stats.attendanceRate.percentage', 67)
-                ->where('stats.attendanceRate.total', 3)
-            );
+            ->assertInertia(function ($page) {
+                $tegels = $page->toArray()['props']['tiles'];
+
+                // Twee van de drie afgevinkt aanwezig; de niet-afgevinkte
+                // speler telt niet mee, want dat is geen "afwezig".
+                $this->assertSame('67%', $this->tileValue($tegels, 'attendance'));
+                $this->assertStringContainsString('2 van 3', collect($tegels)->firstWhere('key', 'attendance')['hint']);
+            });
     }
 
     public function test_een_trainer_ziet_geen_financieel_overzicht_en_geen_beheeracties(): void
@@ -214,7 +220,10 @@ class DashboardTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->where('view', 'school')
-                ->where('can.seeFinance', false)
+                // Het financiele vak is van de eigenaar; een trainer krijgt
+                // het niet eens aangeboden, dus het wordt ook niet berekend.
+                ->where('finance', null)
+                ->where('blocks', fn ($blocks) => ! collect($blocks)->contains('finance'))
                 ->where('can.managePlayers', false)
                 ->where('can.manageGroups', false)
                 // Trainingen inplannen mag hij wel.
@@ -228,7 +237,10 @@ class DashboardTest extends TestCase
 
         $this->actingAs($this->eigenaar($school))
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('can.seeFinance', true));
+            ->assertInertia(fn ($page) => $page
+                ->where('blocks', fn ($blocks) => collect($blocks)->contains('finance'))
+                ->has('finance')
+            );
     }
 
     public function test_de_dashboardcijfers_blijven_binnen_de_eigen_school(): void
@@ -246,12 +258,15 @@ class DashboardTest extends TestCase
 
         $this->actingAs($this->eigenaar($schoolA))
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page
-                ->where('stats.players', 2)
-                ->where('stats.groups', 0)
-                ->count('upcomingTrainings', 0)
-                ->count('needsAttention', 2)
-            );
+            ->assertInertia(function ($page) {
+                $page->count('upcomingTrainings', 0)->count('needsAttention', 2);
+
+                $tegels = $page->toArray()['props']['tiles'];
+
+                $this->assertSame(2, $this->tileValue($tegels, 'players'));
+                // De hint van de spelerstegel noemt het aantal groepen.
+                $this->assertStringContainsString('0 groepen', collect($tegels)->firstWhere('key', 'players')['hint']);
+            });
     }
 
     public function test_rapporten_van_deze_week_worden_geteld(): void
@@ -277,6 +292,6 @@ class DashboardTest extends TestCase
 
         $this->actingAs($eigenaar)
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('stats.reportsThisWeek', 1));
+            ->assertInertia(fn ($page) => $this->assertSame(1, $this->tileValue($page->toArray()['props']['tiles'], 'reports')));
     }
 }

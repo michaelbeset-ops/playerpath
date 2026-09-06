@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\DashboardBlock;
 use App\Models\Group;
 use App\Models\Player;
 use App\Models\Training;
 use App\Models\User;
+use App\Support\Dashboard\DashboardPreferences;
+use App\Support\Dashboard\DashboardTiles;
 use App\Support\Dashboard\SchoolDashboard;
 use App\Support\Dashboard\SetupChecklist;
 use App\Support\Goals\GoalProgress;
@@ -41,6 +44,8 @@ class DashboardController extends Controller
         protected PlayerProgress $progress,
         protected GoalProgress $goals,
         protected SetupChecklist $checklist,
+        protected DashboardPreferences $preferences,
+        protected DashboardTiles $tiles,
     ) {}
 
     public function __invoke(Request $request): Response|RedirectResponse
@@ -61,27 +66,37 @@ class DashboardController extends Controller
             : $this->voorGezin($user, $eigenSpelers);
     }
 
-    /** Eigenaar en trainer: de cijfers van de school. */
+    /**
+     * Eigenaar en trainer: de cijfers van de school.
+     *
+     * Wat er staat kiest de gebruiker zelf (DashboardPreferences). Een blok
+     * dat uitstaat wordt ook niet berekend: het is een keuze in de weergave,
+     * geen kwestie van iets verbergen dat toch al opgehaald is.
+     */
     protected function voorSchool(User $user): Response
     {
+        $blokken = $this->preferences->blocks($user);
+        $toont = fn (DashboardBlock $blok) => in_array($blok, $blokken, true);
+
         return Inertia::render('Dashboard', [
             'view' => 'school',
-            // Verdwijnt zodra de school draait; zie SetupChecklist.
+            // Verdwijnt zodra de school draait; zie SetupChecklist. Bewust
+            // niet uit te zetten: wie hem wegklikt weet nooit meer wat er nog moet.
             'checklist' => $this->checklist->for($user),
-            'stats' => $this->dashboard->stats(),
-            'needsAttention' => $this->dashboard->needsAttention(),
+            'tiles' => $this->tiles->for($user),
+            'blocks' => array_map(fn (DashboardBlock $blok) => $blok->value, $blokken),
+            'needsAttention' => $toont(DashboardBlock::Attention) ? $this->dashboard->needsAttention() : [],
             'attentionAfterDays' => SchoolDashboard::AANDACHT_NA_DAGEN,
-            'upcomingTrainings' => $this->dashboard->upcomingTrainings(),
+            'upcomingTrainings' => $toont(DashboardBlock::Trainings) ? $this->dashboard->upcomingTrainings() : [],
+            'birthdays' => $toont(DashboardBlock::Birthdays) ? $this->dashboard->birthdays() : [],
             'can' => [
                 'managePlayers' => $user->can('create', Player::class),
                 'manageGroups' => $user->can('create', Group::class),
                 'planTrainings' => $user->can('create', Training::class),
-                // Het financiële overzicht is van de eigenaar, niet van de trainer.
-                'seeFinance' => $user->isEigenaar(),
             ],
             // Het financiële vak. De cijfers komen uit de administratie; of er
             // ook echt geïncasseerd wordt hangt af van de gateway.
-            'finance' => $user->isEigenaar() ? $this->billing->summary() : null,
+            'finance' => $toont(DashboardBlock::Finance) ? $this->billing->summary() : null,
             'gateway' => [
                 'connected' => $this->gateway->isConnected(),
                 'name' => $this->gateway->name(),

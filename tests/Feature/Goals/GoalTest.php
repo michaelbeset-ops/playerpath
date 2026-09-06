@@ -11,6 +11,7 @@ use App\Models\Player;
 use App\Models\School;
 use App\Models\User;
 use App\Notifications\DoelBehaald;
+use App\Support\Dashboard\DashboardPreferences;
 use App\Support\Goals\GoalProgress;
 use App\Support\Tenancy\Tenancy;
 use Database\Seeders\RoleSeeder;
@@ -244,6 +245,12 @@ class GoalTest extends TestCase
 
         Goal::factory()->for($this->school)->create(['player_id' => $this->keeper->id]);
 
-        $this->actingAs($eigenaar)->get('/dashboard')->assertInertia(fn ($page) => $page->where('stats.playersWithGoal', 1));
+        // De doelentegel staat standaard uit; zet hem aan zoals de eigenaar
+        // dat zelf zou doen en controleer dan het cijfer.
+        app(DashboardPreferences::class)->save($eigenaar, ['goals' => true], []);
+
+        $this->actingAs($eigenaar)
+            ->get('/dashboard')
+            ->assertInertia(fn ($page) => $this->assertSame(1, $this->tileValue($page->toArray()['props']['tiles'], 'goals')));
     }
 }

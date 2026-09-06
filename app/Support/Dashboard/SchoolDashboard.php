@@ -42,7 +42,59 @@ class SchoolDashboard
             'groups' => Group::where('is_active', true)->count(),
             'pendingEnrollments' => Enrollment::pending()->count(),
             'playersWithGoal' => Goal::active()->distinct('player_id')->count('player_id'),
+            'birthdaysThisMonth' => (clone $actief)->whereMonth('date_of_birth', now()->month)->count(),
         ];
+    }
+
+    /**
+     * Wie er de komende weken jarig is.
+     *
+     * Op dag en maand, niet op datum: het jaar in `date_of_birth` is het
+     * geboortejaar en zegt hier niets. Rond de jaarwisseling loopt het venster
+     * over 31 december heen, dus dan zijn het twee stukken in plaats van één.
+     *
+     * De leeftijd die erbij staat is de leeftijd die het kind *wordt*. Dat is
+     * wat je in een berichtje zet.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function birthdays(int $days = 30, int $limit = 8): array
+    {
+        $vandaag = now()->startOfDay();
+        $tot = $vandaag->copy()->addDays($days);
+
+        return Player::active()
+            ->whereNotNull('date_of_birth')
+            ->get()
+            ->map(function (Player $speler) use ($vandaag) {
+                // De eerstvolgende verjaardag: dit jaar, of anders volgend jaar.
+                $jarig = $speler->date_of_birth->copy()->setYear($vandaag->year)->startOfDay();
+
+                if ($jarig->lt($vandaag)) {
+                    $jarig->addYear();
+                }
+
+                return [
+                    'id' => $speler->id,
+                    'name' => $speler->full_name,
+                    'first_name' => $speler->first_name,
+                    'date' => $jarig,
+                    'turns' => $jarig->year - $speler->date_of_birth->year,
+                ];
+            })
+            ->filter(fn (array $rij) => $rij['date']->lte($tot))
+            ->sortBy(fn (array $rij) => $rij['date'])
+            ->take($limit)
+            ->map(fn (array $rij) => [
+                'id' => $rij['id'],
+                'name' => $rij['name'],
+                'first_name' => $rij['first_name'],
+                'date' => $rij['date']->translatedFormat('j F'),
+                'turns' => $rij['turns'],
+                'today' => $rij['date']->isSameDay($vandaag),
+            ])
+            ->values()
+            ->all();
     }
 
     /** Het gemiddelde van alle spelerskaarten met een cijfer. */

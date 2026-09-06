@@ -395,6 +395,37 @@ Rollen: tarieven, abonnementen en het betaaloverzicht zijn van de **eigenaar**.
 Een trainer komt er niet bij. Een ouder heeft een eigen scherm (`/billing`) met
 alleen het abonnement en de betalingen van zijn eigen kind.
 
+### Het dashboard richt de gebruiker zelf in
+
+Boven staat een **donkere cijferband** die doorloopt in de menubalk; daaronder
+begint de lichte werkvloer. Wat erin staat kiest de gebruiker zelf, via
+`/settings/dashboard`.
+
+- `App\Enums\DashboardTile` en `DashboardBlock` zijn de enige lijsten. Een
+  cijfer of blok erbij is één case; **hernoem een waarde nooit** zonder
+  migratie, want hij staat in `users.dashboard_preferences`.
+- **Per gebruiker, niet per school.** Een trainer kijkt naar zijn rapporten en
+  de eigenaar naar zijn omzet; die twee op één instelling zetten betekent dat
+  er altijd één van de twee ontevreden is.
+- **Alleen afwijkingen worden opgeslagen.** Wie niets instelt krijgt de
+  standaard (vier cijfers, alle blokken). Wie wél iets instelt krijgt een
+  nieuwe tegel later volgens diens eigen standaard — anders zou iemand die ooit
+  één vinkje zette nooit meer iets nieuws te zien krijgen.
+- **Je kunt alleen aanzetten wat je mag zien.** `DashboardPreferences::save()`
+  gooit eruit wat deze rol of deze school niet toekomt; het formulier omzeilen
+  helpt dus niet.
+- **Wat uitstaat wordt ook niet berekend.** De controller vraagt de cijfers van
+  een uitgezet blok niet op. Het is een keuze in de weergave, geen kwestie van
+  iets verbergen dat toch al opgehaald is.
+- De **opstartchecklist** staat er bewust niet tussen: die verdwijnt vanzelf
+  zodra hij af is, en wie hem kan wegklikken weet nooit meer wat er nog moet.
+
+**Verjaardagen** (`SchoolDashboard::birthdays()`) gaan op **dag en maand**, niet
+op datum: het jaar in `date_of_birth` is het geboortejaar. De leeftijd die
+erbij staat is de leeftijd die het kind *wordt* — dat is wat je in een berichtje
+zet. Rond de jaarwisseling loopt het venster over 31 december heen; daar staat
+een test op.
+
 ### Het eigenaar-dashboard (fase 6)
 
 De cijfers staan in `Support/Dashboard/SchoolDashboard`, niet in de controller.

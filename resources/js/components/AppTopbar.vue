@@ -122,8 +122,11 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
         <div v-if="open" class="fixed inset-0 -z-10" @click="sluit"></div>
 
         <div class="mx-auto flex h-14 w-full max-w-7xl items-center gap-2 px-3 sm:px-4">
-            <Link href="/dashboard" class="flex shrink-0 items-center gap-2 rounded-lg px-1 py-1" @click="sluit">
-                <AppLogo />
+            <!-- Alleen het merkteken: de naam van de school staat al in de
+                 titel van het tabblad, en tweemaal dezelfde naam in een balk
+                 van veertien pixels hoog is verspilde ruimte. -->
+            <Link href="/dashboard" class="flex shrink-0 items-center rounded-lg p-1" :title="page.props.branding?.name" @click="sluit">
+                <AppLogo :with-name="false" />
             </Link>
 
             <!-- Groot scherm: de balk zelf -->
@@ -183,7 +186,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                     href="/settings/profile"
                     class="hidden rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-card/60 hover:text-foreground sm:block"
                 >
-                    <span class="max-w-32 truncate">{{ page.props.auth.user.name }}</span>
+                    <!-- inline-block, want max-width doet niets op een inline span -->
+                    <span class="inline-block max-w-40 truncate align-bottom">{{ page.props.auth.user.name }}</span>
                 </Link>
 
                 <Link

@@ -5,8 +5,28 @@ import StatCard from '@/components/StatCard.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import { CalendarDays, CalendarPlus, Check, ClipboardList, CreditCard, IdCard, Inbox, MapPin, Plug, Star, TrendingUp, Trophy, UserPlus, UserRoundCheck, Users } from 'lucide-vue-next';
-import { computed } from 'vue';
+import {
+    Cake,
+    CalendarDays,
+    CalendarPlus,
+    Check,
+    ClipboardList,
+    Euro,
+    IdCard,
+    Inbox,
+    MapPin,
+    Plug,
+    Receipt,
+    Star,
+    Target,
+    TrendingUp,
+    Trophy,
+    UserPlus,
+    UserRoundCheck,
+    Users,
+    UsersRound,
+} from 'lucide-vue-next';
+import { computed, type Component } from 'vue';
 
 interface SpelerKaart {
     id: number;
@@ -25,19 +45,23 @@ interface SpelerKaart {
     goals: Doel[];
 }
 
+interface Tegel {
+    key: string;
+    label: string;
+    value: number | string | null;
+    hint?: string;
+    icon: string;
+    href?: string;
+    tone?: 'warning' | 'danger' | null;
+}
+
 const props = defineProps<{
     view: 'school' | 'gezin';
-    stats?: {
-        players: number;
-        keepers: number;
-        averageRating: number | null;
-        reportsThisWeek: number;
-        trainingsThisWeek: number;
-        attendanceRate: { percentage: number | null; present: number; total: number };
-        groups: number;
-        pendingEnrollments: number;
-        playersWithGoal: number;
-    };
+    /** De kerncijfers die deze gebruiker heeft gekozen; zie DashboardPreferences. */
+    tiles?: Tegel[];
+    /** Welke blokken er staan. Wat hier niet in zit is ook niet berekend. */
+    blocks?: string[];
+    birthdays?: { id: number; name: string; first_name: string; date: string; turns: number; today: boolean }[];
     checklist?: {
         steps: { key: string; title: string; body: string; href: string; action: string; done: boolean }[];
         done: number;
@@ -47,7 +71,7 @@ const props = defineProps<{
     needsAttention?: { id: number; name: string; position: string; overall_rating: number | null; last_report_on: string | null }[];
     attentionAfterDays?: number;
     upcomingTrainings?: { id: number; group: string; date: string; time: string; location: string | null }[];
-    can?: { managePlayers: boolean; manageGroups: boolean; planTrainings: boolean; seeFinance: boolean };
+    can?: { managePlayers: boolean; manageGroups: boolean; planTrainings: boolean };
     finance?: {
         revenueThisMonth: string;
         outstanding: string;
@@ -69,54 +93,106 @@ const rollen = computed(() => page.props.auth.roles ?? []);
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' }];
 
-const kaarten = computed(() => {
-    if (props.view !== 'school' || !props.stats) {
-        return [];
-    }
+// De server bepaalt welke tegels er staan en met welke tekst; hier vertalen we
+// alleen de iconennaam naar een component.
+const tegelIconen: Record<string, Component> = {
+    players: Users,
+    groups: UsersRound,
+    rating: Star,
+    reports: ClipboardList,
+    goals: Target,
+    trainings: CalendarDays,
+    attendance: UserRoundCheck,
+    birthdays: Cake,
+    enrollments: Inbox,
+    revenue: Euro,
+    subscriptions: Receipt,
+};
 
-    const s = props.stats;
-
-    return [
-        {
-            label: 'Actieve spelers',
-            value: s.players,
-            hint: `${s.keepers} ${s.keepers === 1 ? 'keeper' : 'keepers'} · ${s.groups} ${s.groups === 1 ? 'groep' : 'groepen'}`,
-            icon: Users,
-            href: '/clients',
-        },
-        {
-            label: 'Gemiddelde rating',
-            value: s.averageRating,
-            hint: s.averageRating === null ? 'Nog geen rapporten' : s.playersWithGoal + (s.playersWithGoal === 1 ? ' speler' : ' spelers') + ' met een actief doel',
-            icon: Star,
-        },
-        {
-            label: 'Rapporten',
-            value: s.reportsThisWeek,
-            hint: s.reportsThisWeek === 0 ? 'deze week nog niemand beoordeeld' : 'deze week, ingevuld door je trainers',
-            icon: ClipboardList,
-            href: '/reports',
-        },
-        {
-            label: 'Opkomst',
-            value: s.attendanceRate.percentage === null ? null : `${s.attendanceRate.percentage}%`,
-            hint:
-                s.attendanceRate.percentage === null
-                    ? 'Nog niets afgevinkt'
-                    : `${s.attendanceRate.present} van ${s.attendanceRate.total} laatste 30 dagen`,
-            icon: UserRoundCheck,
-            href: '/trainings',
-        },
-    ];
-});
+const toont = (blok: string) => (props.blocks ?? []).includes(blok);
 </script>
 
 <template>
     <Head title="Dashboard" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
+        <!--
+            De cijferband loopt door in de donkere menubalk erboven: samen zijn
+            ze "waar ben ik en hoe staat het ervoor", en daaronder begint de
+            lichte werkvloer. Wat er in staat kiest de gebruiker zelf.
+        -->
+        <div v-if="view === 'school'" class="theme-donker bg-background text-foreground">
+            <div class="mx-auto w-full max-w-5xl px-4 pb-6 pt-5">
+                <div class="flex flex-wrap items-baseline gap-x-3">
+                    <h1 class="text-2xl font-semibold tracking-tight">Dashboard</h1>
+                    <p class="text-sm text-muted-foreground">
+                        <template v-if="school">{{ school.name }}</template>
+                        <span v-if="rollen.length" class="text-muted-foreground/70"> &middot; {{ rollen.join(', ') }}</span>
+                    </p>
+                </div>
+
+                <!-- Snelle acties boven de cijfers, niet eronder: je opent een
+                     dashboard om iets te doen. Op een telefoon stond de eerste
+                     knop ooit op 712 pixels, een volledig scherm scrollen. -->
+                <div v-if="toont('quick_actions')" class="mt-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                    <Link
+                        href="/reports"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 sm:justify-start sm:px-4"
+                    >
+                        <ClipboardList class="size-4" />
+                        Rapport invullen
+                    </Link>
+
+                    <Link
+                        v-if="can?.planTrainings"
+                        href="/trainings/create"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:border-primary sm:justify-start sm:px-4"
+                    >
+                        <CalendarPlus class="size-4" />
+                        Training inplannen
+                    </Link>
+
+                    <Link
+                        v-if="can?.managePlayers"
+                        href="/players/create"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:border-primary sm:justify-start sm:px-4"
+                    >
+                        <UserPlus class="size-4" />
+                        Speler toevoegen
+                    </Link>
+
+                    <Link
+                        v-if="can?.manageGroups"
+                        href="/groups/create"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:border-primary sm:justify-start sm:px-4"
+                    >
+                        <Users class="size-4" />
+                        Groep toevoegen
+                    </Link>
+                </div>
+
+                <div v-if="tiles?.length" class="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+                    <StatCard
+                        v-for="tegel in tiles"
+                        :key="tegel.key"
+                        :label="tegel.label"
+                        :value="tegel.value"
+                        :hint="tegel.hint"
+                        :icon="tegelIconen[tegel.icon] ?? Star"
+                        :href="tegel.href"
+                        :tone="tegel.tone ?? 'default'"
+                    />
+                </div>
+
+                <p v-else class="mt-4 text-sm text-muted-foreground">
+                    Je hebt geen kerncijfers aanstaan.
+                    <Link href="/settings/dashboard" class="font-medium text-primary underline underline-offset-4">Kies wat je wilt zien</Link>.
+                </p>
+            </div>
+        </div>
+
         <div class="mx-auto w-full max-w-5xl p-4">
-            <div class="flex flex-wrap items-baseline gap-x-3">
+            <div v-if="view !== 'school'" class="flex flex-wrap items-baseline gap-x-3">
                 <h1 class="text-2xl font-semibold tracking-tight">Dashboard</h1>
                 <p class="text-sm text-muted-foreground">
                     <template v-if="school">{{ school.name }}</template>
@@ -170,83 +246,12 @@ const kaarten = computed(() => {
                     </p>
                 </div>
 
-                <!-- Snelle acties staan boven de cijfers, niet eronder. Je opent
-                     een dashboard om iets te dóén; op een telefoon stond de eerste
-                     knop op 712 pixels, een volledig scherm scrollen. -->
-                <!-- Alleen wat deze rol echt mag; zie de policies. -->
-                <div class="mt-6 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-                    <Link
-                        href="/reports"
-                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 sm:justify-start sm:px-4"
-                    >
-                        <ClipboardList class="size-4" />
-                        Rapport invullen
-                    </Link>
-
-                    <Link
-                        v-if="can?.planTrainings"
-                        href="/trainings/create"
-                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-medium shadow-sm transition hover:border-primary sm:justify-start sm:px-4"
-                    >
-                        <CalendarPlus class="size-4" />
-                        Training inplannen
-                    </Link>
-
-                    <Link
-                        v-if="can?.managePlayers"
-                        href="/players/create"
-                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-medium shadow-sm transition hover:border-primary sm:justify-start sm:px-4"
-                    >
-                        <UserPlus class="size-4" />
-                        Speler toevoegen
-                    </Link>
-
-                    <Link
-                        v-if="can?.manageGroups"
-                        href="/groups/create"
-                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-medium shadow-sm transition hover:border-primary sm:justify-start sm:px-4"
-                    >
-                        <Users class="size-4" />
-                        Groep toevoegen
-                    </Link>
-                </div>
-
-                <div class="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-                    <StatCard
-                        v-for="kaart in kaarten"
-                        :key="kaart.label"
-                        :label="kaart.label"
-                        :value="kaart.value"
-                        :hint="kaart.hint"
-                        :icon="kaart.icon"
-                        :href="kaart.href"
-                    />
-                </div>
-
-                <!-- Nieuwe inschrijvingen: alleen voor de eigenaar, en alleen als er iets ligt -->
-                <Link
-                    v-if="can?.seeFinance && stats && stats.pendingEnrollments > 0"
-                    href="/enrollments"
-                    class="mt-4 flex items-center gap-3 rounded-xl border border-warning/40 bg-warning/5 p-4 transition hover:border-warning"
-                >
-                    <span class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-warning/10 text-warning">
-                        <Inbox class="size-5" />
-                    </span>
-                    <div class="min-w-0 flex-1">
-                        <p class="font-medium">
-                            {{ stats.pendingEnrollments }} {{ stats.pendingEnrollments === 1 ? 'nieuwe inschrijving' : 'nieuwe inschrijvingen' }}
-                        </p>
-                        <p class="text-xs text-muted-foreground">Wacht op je goedkeuring.</p>
-                    </div>
-                </Link>
-
-                <div class="mt-4 grid gap-4 lg:grid-cols-2">
+                <div class="mt-2 grid gap-4 lg:grid-cols-2">
                     <!-- Waar valt het stil: het belangrijkste lijstje voor een eigenaar -->
-                    <div class="rounded-xl border border-border bg-card p-5 shadow-sm">
+                    <div v-if="toont('attention')" class="rounded-xl border border-border bg-card p-5 shadow-sm">
                         <p class="font-medium">Vraagt om aandacht</p>
                         <p class="mt-1 text-xs text-muted-foreground">
-                            Spelers zonder rapport in de laatste {{ attentionAfterDays }} dagen. Een lege kaart is precies waarom een ouder
-                            afhaakt.
+                            Spelers zonder rapport in de laatste {{ attentionAfterDays }} dagen. Een lege kaart is precies waarom een ouder afhaakt.
                         </p>
 
                         <div v-if="needsAttention?.length" class="mt-4 space-y-2">
@@ -274,13 +279,11 @@ const kaarten = computed(() => {
                             </Link>
                         </div>
 
-                        <p v-else class="mt-4 rounded-lg border border-primary/25 bg-primary/5 p-3 text-sm">
-                            Iedereen is recent beoordeeld. Netjes.
-                        </p>
+                        <p v-else class="mt-4 rounded-lg border border-primary/25 bg-primary/5 p-3 text-sm">Iedereen is recent beoordeeld. Netjes.</p>
                     </div>
 
                     <!-- Komende trainingen -->
-                    <div class="rounded-xl border border-border bg-card p-5 shadow-sm">
+                    <div v-if="toont('trainings')" class="rounded-xl border border-border bg-card p-5 shadow-sm">
                         <div class="flex items-baseline justify-between gap-2">
                             <p class="font-medium">Komende trainingen</p>
                             <Link href="/trainings" class="text-xs font-medium text-primary underline underline-offset-4">Alles</Link>
@@ -314,13 +317,52 @@ const kaarten = computed(() => {
                             </Link>
                         </p>
                     </div>
+
+                    <!-- Verjaardagen: op dag en maand, niet op datum, en de
+                         leeftijd die het kind wordt. Dat is wat je in een
+                         berichtje zet. -->
+                    <div v-if="toont('birthdays')" class="rounded-xl border border-border bg-card p-5 shadow-sm">
+                        <p class="flex items-center gap-2 font-medium">
+                            <Cake class="size-4 text-muted-foreground" />
+                            Verjaardagen
+                        </p>
+                        <p class="mt-1 text-xs text-muted-foreground">De komende 30 dagen.</p>
+
+                        <div v-if="birthdays?.length" class="mt-4 space-y-2">
+                            <Link
+                                v-for="jarig in birthdays"
+                                :key="jarig.id"
+                                :href="'/players/' + jarig.id"
+                                class="flex items-center gap-3 rounded-lg border p-3 transition"
+                                :class="jarig.today ? 'border-primary/40 bg-primary/5' : 'border-border hover:border-primary'"
+                            >
+                                <span
+                                    class="flex size-9 shrink-0 items-center justify-center rounded-lg"
+                                    :class="jarig.today ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground'"
+                                >
+                                    <Cake class="size-4" />
+                                </span>
+
+                                <div class="min-w-0 flex-1">
+                                    <p class="truncate text-sm font-medium">{{ jarig.name }}</p>
+                                    <p class="truncate text-xs text-muted-foreground">
+                                        <template v-if="jarig.today">vandaag jarig</template>
+                                        <template v-else>{{ jarig.date }}</template>
+                                        &middot; wordt {{ jarig.turns }}
+                                    </p>
+                                </div>
+                            </Link>
+                        </div>
+
+                        <p v-else class="mt-4 text-sm text-muted-foreground">Niemand jarig de komende 30 dagen.</p>
+                    </div>
                 </div>
 
                 <!--
                     Financieel overzicht. De cijfers komen uit de administratie;
                     of er ook echt geïncasseerd wordt hangt af van de gateway.
                 -->
-                <div v-if="can?.seeFinance && finance" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+                <div v-if="finance" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
                     <div class="flex flex-wrap items-baseline justify-between gap-2">
                         <p class="font-medium">Financieel overzicht</p>
                         <Link href="/payments" class="text-xs font-medium text-primary underline underline-offset-4">Alle betalingen</Link>
@@ -352,10 +394,7 @@ const kaarten = computed(() => {
                         </div>
                     </div>
 
-                    <p
-                        v-if="finance.needsAttentionCount"
-                        class="mt-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm"
-                    >
+                    <p v-if="finance.needsAttentionCount" class="mt-4 rounded-lg border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm">
                         {{ finance.needsAttentionCount }}
                         {{ finance.needsAttentionCount === 1 ? 'betaling is mislukt of gestorneerd' : 'betalingen zijn mislukt of gestorneerd' }}.
                         <Link href="/payments?status=failed" class="font-medium text-destructive underline underline-offset-4">Bekijken</Link>
@@ -363,11 +402,10 @@ const kaarten = computed(() => {
 
                     <p v-if="!gateway?.connected" class="mt-4 flex items-start gap-2 text-xs text-muted-foreground">
                         <Plug class="mt-0.5 size-3.5 shrink-0" />
-                        {{ gateway?.name }} is nog niet aangesloten, dus er wordt niets automatisch geïncasseerd. Deze cijfers komen uit wat
-                        je zelf hebt vastgelegd.
+                        {{ gateway?.name }} is nog niet aangesloten, dus er wordt niets automatisch geïncasseerd. Deze cijfers komen uit wat je zelf
+                        hebt vastgelegd.
                     </p>
                 </div>
-
             </template>
 
             <!-- Ouder en speler: het eigen kind -->
@@ -388,7 +426,10 @@ const kaarten = computed(() => {
                         />
 
                         <!-- Iets om naartoe te werken -->
-                        <div v-if="speler.next_badge" class="mx-auto mt-4 flex max-w-[22.5rem] items-start gap-3 rounded-xl border border-border bg-card/60 p-3">
+                        <div
+                            v-if="speler.next_badge"
+                            class="mx-auto mt-4 flex max-w-[22.5rem] items-start gap-3 rounded-xl border border-border bg-card/60 p-3"
+                        >
                             <Trophy class="mt-0.5 size-4 shrink-0 text-gold" />
                             <p class="text-sm">
                                 <span class="font-medium">Volgende mijlpaal: {{ speler.next_badge.label }}.</span>
@@ -441,7 +482,6 @@ const kaarten = computed(() => {
 
                     <p v-else class="mt-2 text-sm text-muted-foreground">Er staat nog geen training gepland.</p>
                 </div>
-
             </template>
         </div>
     </AppLayout>

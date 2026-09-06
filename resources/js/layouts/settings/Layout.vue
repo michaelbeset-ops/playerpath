@@ -2,10 +2,21 @@
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { type NavItem } from '@/types';
-import { Link } from '@inertiajs/vue3';
+import { type NavItem, type SharedData } from '@/types';
+import { Link, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
-const sidebarNavItems: NavItem[] = [
+const page = usePage<SharedData>();
+
+// Ouders en spelers hebben geen schooldashboard om in te richten; hun dat
+// tabblad tonen zou een klik naar een 404 zijn.
+const heeftSchooldashboard = computed(() => {
+    const rollen = page.props.auth.roles ?? [];
+
+    return rollen.includes('eigenaar') || rollen.includes('trainer');
+});
+
+const sidebarNavItems = computed<NavItem[]>(() => [
     {
         title: 'Profiel',
         href: '/settings/profile',
@@ -18,7 +29,8 @@ const sidebarNavItems: NavItem[] = [
         title: 'Meldingen',
         href: '/settings/notifications',
     },
-];
+    ...(heeftSchooldashboard.value ? [{ title: 'Dashboard', href: '/settings/dashboard' }] : []),
+]);
 
 const currentPath = window.location.pathname;
 </script>

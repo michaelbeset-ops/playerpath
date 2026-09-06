@@ -48,6 +48,9 @@ class User extends Authenticatable
     {
         return [
             'notification_preferences' => 'array',
+            // Niet in $fillable: dit gaat alleen via DashboardPreferences,
+            // want daar staat de controle op wat je mag zien.
+            'dashboard_preferences' => 'array',
             'deactivated_at' => 'datetime',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
