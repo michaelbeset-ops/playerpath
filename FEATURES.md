@@ -54,3 +54,18 @@ live draaien en erom vragen.
 | 10 | Communicatie | M6 |
 | 11 | White-label & subdomein | M10 |
 | 12 | Productie & lancering | M7 (PWA), deploy, hardening |
+
+---
+
+## Uit het marktonderzoek (6-9-2026)
+
+| # | Wat | Status |
+|---|---|---|
+| R1 | Contrast admin-groen naar `#12813D` (wit erop haalde 2,5:1) | ✅ |
+| R2 | Cijferknoppen twee rijen van vijf onder 480px | ✅ |
+| R3 | Maandelijkse samenvatting aan ouder en speler (`players:digest`) | ✅ |
+| R4 | Verantwoordingsoverzicht voor ouderavond, vereniging of gemeente | ✅ |
+| R5 | Onboarding-checklist van drie stappen voor een nieuwe school | ✅ |
+| R6 | Geen ranglijsten tussen spelers | ✅ bewust niet |
+| R7 | Prijsmodel in drie pakketten (€79 / €129 / €229) | ⬜ commercieel, geen code |
+| R8 | Transactiemarge doorbelasten (€0,49 tegen €0,32 inkoop) | ⬜ vraagt eigen platformfacturatie |

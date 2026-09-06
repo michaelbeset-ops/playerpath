@@ -7,6 +7,7 @@ use App\Models\Player;
 use App\Models\Training;
 use App\Models\User;
 use App\Support\Dashboard\SchoolDashboard;
+use App\Support\Dashboard\SetupChecklist;
 use App\Support\Goals\GoalProgress;
 use App\Support\Payments\BillingOverview;
 use App\Support\Payments\PaymentGateway;
@@ -38,6 +39,7 @@ class DashboardController extends Controller
         protected PlayerBadges $badges,
         protected PlayerProgress $progress,
         protected GoalProgress $goals,
+        protected SetupChecklist $checklist,
     ) {}
 
     public function __invoke(Request $request): Response
@@ -55,6 +57,8 @@ class DashboardController extends Controller
     {
         return Inertia::render('Dashboard', [
             'view' => 'school',
+            // Verdwijnt zodra de school draait; zie SetupChecklist.
+            'checklist' => $this->checklist->for($user),
             'stats' => $this->dashboard->stats(),
             'needsAttention' => $this->dashboard->needsAttention(),
             'attentionAfterDays' => SchoolDashboard::AANDACHT_NA_DAGEN,

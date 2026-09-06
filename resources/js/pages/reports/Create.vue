@@ -161,9 +161,12 @@ const opslaan = () => form.post('/players/' + props.player.id + '/reports');
                         </div>
                     </div>
 
-                    <!-- h-11 = 44px tikhoogte, ook op telefoon. Vierkante knoppen zouden
-                         op 375px maar 30px hoog worden, en dat tikt niet lekker. -->
-                    <div class="mt-3 grid grid-cols-10 gap-1 sm:gap-1.5">
+                    <!-- h-11 = 44px tikhoogte, ook op telefoon.
+                         Twee rijen van vijf op smalle schermen: tien knoppen naast
+                         elkaar is op een telefoon van 360px nog geen 32px per knop,
+                         ruim onder de 44px die Apple en WCAG als ondergrens noemen.
+                         Vanaf 480px passen ze wel op één rij. -->
+                    <div class="mt-3 grid grid-cols-5 gap-1.5 min-[480px]:grid-cols-10 min-[480px]:gap-1 sm:gap-1.5">
                         <button
                             v-for="cijfer in cijfers"
                             :key="cijfer"

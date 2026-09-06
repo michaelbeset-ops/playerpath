@@ -5,22 +5,7 @@ import StatCard from '@/components/StatCard.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import {
-    CalendarDays,
-    CalendarPlus,
-    ClipboardList,
-    CreditCard,
-    IdCard,
-    Inbox,
-    MapPin,
-    Star,
-    TrendingUp,
-    Trophy,
-    UserPlus,
-    UserRoundCheck,
-    Plug,
-    Users,
-} from 'lucide-vue-next';
+import { CalendarDays, CalendarPlus, Check, ClipboardList, CreditCard, IdCard, Inbox, MapPin, Plug, Star, TrendingUp, Trophy, UserPlus, UserRoundCheck, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 interface SpelerKaart {
@@ -53,6 +38,12 @@ const props = defineProps<{
         pendingEnrollments: number;
         playersWithGoal: number;
     };
+    checklist?: {
+        steps: { key: string; title: string; body: string; href: string; action: string; done: boolean }[];
+        done: number;
+        total: number;
+        hasTrainer: boolean;
+    } | null;
     needsAttention?: { id: number; name: string; position: string; overall_rating: number | null; last_report_on: string | null }[];
     attentionAfterDays?: number;
     upcomingTrainings?: { id: number; group: string; date: string; time: string; location: string | null }[];
@@ -135,6 +126,50 @@ const kaarten = computed(() => {
 
             <!-- Eigenaar en trainer: de school -->
             <template v-if="view === 'school'">
+                <!-- Drie stappen voor een nieuwe school. Verdwijnt zodra ze
+                     gedaan zijn en komt nooit terug. -->
+                <div v-if="checklist" class="mt-6 rounded-xl border border-primary/30 bg-primary/5 p-5">
+                    <div class="flex flex-wrap items-baseline justify-between gap-2">
+                        <p class="font-medium">Nog even dit, dan draait je school</p>
+                        <p class="tabular text-xs text-muted-foreground">{{ checklist.done }} van {{ checklist.total }} gedaan</p>
+                    </div>
+
+                    <ol class="mt-4 space-y-2">
+                        <li
+                            v-for="stap in checklist.steps"
+                            :key="stap.key"
+                            class="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card p-3"
+                            :class="stap.done ? 'opacity-60' : ''"
+                        >
+                            <span
+                                class="flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
+                                :class="stap.done ? 'bg-primary text-primary-foreground' : 'border border-border text-muted-foreground'"
+                            >
+                                <Check v-if="stap.done" class="size-3.5" />
+                                <template v-else>{{ checklist.steps.indexOf(stap) + 1 }}</template>
+                            </span>
+
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-medium" :class="stap.done ? 'line-through' : ''">{{ stap.title }}</p>
+                                <p v-if="!stap.done" class="text-xs text-muted-foreground">{{ stap.body }}</p>
+                            </div>
+
+                            <Link
+                                v-if="!stap.done"
+                                :href="stap.href"
+                                class="inline-flex h-9 shrink-0 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground"
+                            >
+                                {{ stap.action }}
+                            </Link>
+                        </li>
+                    </ol>
+
+                    <p v-if="!checklist.hasTrainer" class="mt-3 text-xs text-muted-foreground">
+                        Werk je met meer trainers? Nodig ze uit bij
+                        <Link href="/users" class="underline underline-offset-4">Gebruikers</Link>.
+                    </p>
+                </div>
+
                 <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <StatCard
                         v-for="kaart in kaarten"

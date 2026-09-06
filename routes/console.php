@@ -20,3 +20,7 @@ Schedule::command('payments:generate')->dailyAt('08:00');
 
 // De incassoronde, na de facturenloop zodat verse rekeningen meteen meegaan.
 Schedule::command('payments:collect')->dailyAt('08:30');
+
+// De maandelijkse samenvatting aan ouders en spelers. Op de eerste van de
+// maand, ná de facturenloop: eerst de rekening, dan het goede nieuws.
+Schedule::command('players:digest')->monthlyOn(1, '10:00');

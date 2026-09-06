@@ -201,7 +201,7 @@ schermvullende wrapper — zie `layouts/auth/AuthSimpleLayout.vue` als voorbeeld
 | Kaarten | Wit, met subtiele rand + lichte schaduw | `#FFFFFF` |
 | Rand | Lichtgrijs | `#E2E8F0` |
 | Zijbalk | Iets dieper grijs, zodat de werkvloer afsteekt | `#EBEEF2` |
-| Primair / actie | Groen (iets dieper, leesbaar op wit) | `#1BB85E` |
+| Primair / actie | Groen, diep genoeg om wit op te lezen | `#12813D` |
 | Tekst primair | Donker marineblauw | `#0F172A` |
 | Tekst secundair | Grijsblauw | `#5A677D` |
 
@@ -669,6 +669,41 @@ houdt, en dus niet mag sneuvelen:
 - `php artisan playerpath:check` scheidt **blokkerend** van **aandachtspunt**.
   Draai het na elke deploy. Deploystappen die niet in code kunnen staan:
   `DEPLOY.md`.
+
+### Wat het marktonderzoek opleverde (na fase 12)
+
+Het onderzoek (6-9-2026) leidde tot vier wijzigingen die je niet moet terugdraaien:
+
+- **Het admin-groen is verdiept naar `#12813D`** (`143 75% 29%`). Op `42%`
+  haalde witte tekst 2,5:1 waar 4,5:1 de norm is; datzelfde groen als tékst op
+  de werkvloer haalde 2,7:1. Op 29% klopt het aan beide kanten (4,96:1 en
+  4,67:1) en blijft de tint gelijk. Het felle `#22E06B` op de donkere kant
+  verandert niet.
+- **Cijferknoppen staan onder 480px in twee rijen van vijf.** Tien naast elkaar
+  is op een telefoon van 360px nog geen 32px per knop, ruim onder de 44px die
+  Apple en WCAG als ondergrens noemen.
+- **`Support\Progress\MonthlyDigest` + `players:digest`**: één keer per maand
+  naar ouder en speler wat er veranderd is. **Geen bericht zonder inhoud** — een
+  maandmail die vier keer "geen nieuws" zegt, leert de ouder hem weg te klikken.
+- **`/verantwoording`**: wat de school over een periode kan laten zien aan een
+  ouderavond, een vereniging of een gemeente. Steeds meer steden stellen eisen
+  aan commerciële voetbalscholen; cijfers over wat er feitelijk is vastgelegd
+  zijn daar het tegenargument. Alleen totalen, nooit een kind bij naam.
+- **`Support\Dashboard\SetupChecklist`**: drie stappen voor een verse school,
+  die **verdwijnen zodra ze gedaan zijn**. Meer dan negentig procent van de
+  gebruikers maakt een onboarding nooit af; drie stappen halveert de uitval
+  bijna ten opzichte van zeven.
+
+**Bewust niet gebouwd, en dat blijft zo: ranglijsten tussen spelers.** Onderzoek
+naar jeugdsport laat zien dat op beheersing gerichte feedback de motivatie
+verhoogt terwijl vergelijkende feedback het ego-gerichte klimaat versterkt, juist
+schadelijk bij minder ervaren sporters. Het is bovendien precies waar de sector
+publiek op wordt aangesproken.
+
+**Valkuil: `reported_on` heeft een tijdcomponent.** De kolom is een `date`, maar
+wordt als `"2026-09-06 00:00:00"` opgeslagen. `whereBetween(...,
+[$van->toDateString(), $tot->toDateString()])` sluit een rapport van de laatste
+dag dan lexicografisch buiten. Gebruik `whereDate()`.
 
 ## 6. Werkwijze
 

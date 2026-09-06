@@ -56,9 +56,10 @@ class NotificationPreferenceTest extends TestCase
     {
         $this->actingAs($this->ouder)
             ->patch('/settings/notifications', [
-                'preferences' => ['rapport' => true, 'doel' => true, 'mededeling' => false, 'betaling' => true],
+                'preferences' => ['rapport' => true, 'doel' => true, 'mededeling' => false, 'samenvatting' => true, 'betaling' => true],
             ])
-            ->assertRedirect();
+            ->assertRedirect()
+            ->assertSessionHasNoErrors();
 
         $this->assertFalse($this->ouder->refresh()->wantsEmail('mededeling'));
 

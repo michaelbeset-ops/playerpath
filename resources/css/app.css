@@ -28,8 +28,15 @@
         --popover: 0 0% 100%;
         --popover-foreground: 222 47% 11%;
 
-        /* Primair: fel groen blijft het accent, ook in licht */
-        --primary: 143 75% 42%; /* iets dieper voor leesbaarheid op wit */
+        /* Primair: fel groen blijft het accent, ook in licht — maar dieper.
+         *
+         * Op 42% haalde witte tekst op deze knop 2,5:1, waar 4,5:1 de norm is;
+         * langs de lijn in de zon las een trainer zijn eigen opslaan-knop niet.
+         * Datzelfde groen als tekst op de werkvloer haalde 2,7:1 en viel dus
+         * ook af. Op 29% klopt het aan beide kanten: 4,96:1 met wit erop,
+         * 4,67:1 als tekst erop. De tint blijft ongewijzigd, dus het is
+         * hetzelfde groen — alleen donkerder. */
+        --primary: 143 75% 29%; /* #12813D */
         --primary-foreground: 0 0% 100%;
 
         /* Rustige vlakken */
@@ -55,7 +62,7 @@
         /* Randen en velden */
         --border: 214 32% 91%; /* #E2E8F0 */
         --input: 214 32% 88%;
-        --ring: 143 75% 42%;
+        --ring: 143 75% 29%;
 
         /* Grafieken. Deze tinten zijn met de palet-validator gecontroleerd op
            contrast met het vlak eronder; pas ze niet los aan. */
@@ -71,7 +78,7 @@
         /* Zijbalk: iets dieper grijs, zodat de werkvloer ertegen afsteekt */
         --sidebar-background: 210 20% 94%;
         --sidebar-foreground: 222 47% 11%;
-        --sidebar-primary: 143 75% 42%;
+        --sidebar-primary: 143 75% 29%;
         --sidebar-primary-foreground: 0 0% 100%;
         --sidebar-accent: 210 30% 89%;
         --sidebar-accent-foreground: 222 47% 11%;
