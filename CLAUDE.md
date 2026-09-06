@@ -716,6 +716,47 @@ Drie eigenschappen die je niet moet weghalen:
 3. **Zonder kaart gebeurt er niets.** Aanwezigheid vastleggen mag nooit
    stuklopen op de administratie.
 
+### Het financiële overzicht
+
+`/payments` heeft vijf tabbladen die elk één vraag beantwoorden: wat kwam er
+binnen, wat staat er open, wat is te laat, wat komt eraan, en alles. De filters
+staan op één plek (`Support\Payments\PaymentQuery`), want de lijst en het
+totaal onder de kop moeten dezelfde rijen tellen. Stonden ze twee keer, dan
+wijzen ze vroeg of laat naar iets anders — en een boekhouder die een verschil
+van drie euro vindt belt niet over drie euro maar over de vraag of hij het
+systeem kan vertrouwen.
+
+Twee dingen die je niet moet omdraaien:
+
+- **De periode filtert op een andere kolom per tabblad.** "Ontvangen in maart"
+  gaat over `paid_at`, "openstaand in maart" over `due_on`. Dat is geen detail:
+  een rekening van februari die in maart betaald wordt hoort bij de omzet van
+  maart.
+- **Btw wordt per regel teruggerekend, niet over het totaal.** Negen procent
+  over een rittenkaart en eenentwintig over een shirt bij elkaar optellen en er
+  één percentage vanaf halen geeft een getal dat nergens op slaat.
+
+**Een rekening bewaart zijn eigen btw-tarief**, net zoals hij zijn eigen bedrag
+bewaart: product → abonnement of aankoop → betaling, en elke stap neemt over.
+Een omzetoverzicht van vorig jaar mag niet veranderen doordat iemand vandaag het
+tarief van een product aanpast.
+
+### De verjaardagsmail
+
+`players:birthday` draait elke ochtend om 08:00. Vier eigenschappen:
+
+- **De school zet hem zelf aan** (`schools.birthday_greeting`, standaard uit).
+  Het is een berichtje met haar naam eronder.
+- **Idempotent via `players.greeted_on`.** Twee keer draaien feliciteert niet
+  twee keer — precies het soort fout dat je klanten opmerken.
+- **Op dag en maand**, en alleen bij actieve spelers.
+- **Naar de speler zelf als die een eigen inlog heeft, anders naar de ouders.**
+  Allebei zou betekenen dat een kind van acht en zijn moeder allebei
+  "gefeliciteerd, jij bent jarig" krijgen.
+
+Een lege eigen zin valt terug op de standaardtekst; een lege felicitatie is
+erger dan geen.
+
 ### Betalingen met Mollie (Fase 9)
 
 - De app praat alleen met `Support\Payments\PaymentGateway`. Zonder `MOLLIE_KEY`

@@ -9,6 +9,7 @@ use App\Models\Payment;
 use App\Support\Money\Money;
 use App\Support\Payments\BillingOverview;
 use App\Support\Payments\PaymentGateway;
+use App\Support\Payments\PaymentQuery;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -27,6 +28,7 @@ class PaymentController extends Controller
     public function __construct(
         protected BillingOverview $overview,
         protected PaymentGateway $gateway,
+        protected PaymentQuery $filter,
     ) {}
 
     public function index(Request $request): Response
@@ -34,29 +36,29 @@ class PaymentController extends Controller
         $this->authorize('viewAny', Payment::class);
 
         $filters = [
-            'status' => (string) $request->string('status'),
+            'tab' => PaymentQuery::kies($request->string('tab'), PaymentQuery::TABBLADEN, 'all'),
+            'period' => PaymentQuery::kies($request->string('period'), PaymentQuery::PERIODEN, 'this_month'),
+            'method' => (string) $request->string('method'),
             'search' => trim((string) $request->string('search')),
         ];
 
-        $payments = Payment::query()
-            ->with('player')
-            ->when($filters['status'] !== '', fn ($q) => $q->where('status', $filters['status']))
-            ->when($filters['search'] !== '', function ($query) use ($filters) {
-                $term = '%'.$filters['search'].'%';
+        $query = $this->filter->build($filters);
 
-                $query->whereHas('player', fn ($p) => $p
-                    ->where('first_name', 'like', $term)
-                    ->orWhere('last_name', 'like', $term));
-            })
-            ->orderByDesc('due_on')
+        // Het totaal telt precies de rijen die je eronder ziet; daarom eerst
+        // optellen en pas daarna de lijst afkappen.
+        $totalen = $this->filter->totals($query);
+
+        $payments = (clone $query)
+            ->orderByDesc($this->filter->datumkolom($filters['tab']))
             ->orderByDesc('id')
-            ->limit(100)
+            ->limit(200)
             ->get()
             ->map(fn (Payment $payment) => [
                 'id' => $payment->id,
                 'player' => $payment->player?->full_name,
                 'player_id' => $payment->player_id,
                 'amount' => Money::format($payment->amount_cents),
+                'vat_rate' => $payment->vat_rate,
                 'status' => $payment->status->value,
                 'status_label' => $payment->status->label(),
                 'method' => $payment->method?->label(),
@@ -70,6 +72,17 @@ class PaymentController extends Controller
         return Inertia::render('billing/Payments', [
             'payments' => $payments,
             'filters' => $filters,
+            'tabs' => PaymentQuery::TABBLADEN,
+            'periods' => PaymentQuery::PERIODEN,
+            'totals' => [
+                'count' => $totalen['count'],
+                'total' => Money::format($totalen['total']),
+                'excl_vat' => Money::format($totalen['excl_vat']),
+                'vat' => Money::format($totalen['vat']),
+                // Meer dan er getoond worden: dan is de lijst afgekapt en moet
+                // het scherm dat zeggen, anders lijkt het totaal niet te kloppen.
+                'shown' => min($totalen['count'], 200),
+            ],
             'statuses' => PaymentStatus::options(),
             'methods' => PaymentMethod::options(),
             'summary' => $this->overview->summary(),

@@ -22,6 +22,7 @@ class SubscriptionFactory extends Factory
             'player_id' => Player::factory(),
             'product_id' => null,
             'amount_cents' => 2750,
+            'vat_rate' => 21,
             'interval' => BillingInterval::Monthly,
             'status' => SubscriptionStatus::Active,
             'payment_method' => PaymentMethod::DirectDebit,

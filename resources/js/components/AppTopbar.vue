@@ -5,6 +5,7 @@ import { Link, usePage } from '@inertiajs/vue3';
 import {
     Bell,
     Building2,
+    Cake,
     CalendarDays,
     CalendarRange,
     ChevronDown,
@@ -63,6 +64,7 @@ const iconen: Record<string, Component> = {
     branding: Palette,
     accountability: FileCheck2,
     announcements: Megaphone,
+    birthdays: Cake,
     business: Building2,
     staff: UserCog,
     settings: Settings,

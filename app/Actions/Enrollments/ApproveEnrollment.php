@@ -76,6 +76,7 @@ class ApproveEnrollment
                     'player_id' => $player->id,
                     'product_id' => $enrollment->product->id,
                     'amount_cents' => $enrollment->product->amount_cents,
+                    'vat_rate' => $enrollment->product->vat_rate,
                     'interval' => $enrollment->product->interval,
                     'status' => SubscriptionStatus::Active,
                     'payment_method' => $enrollment->payment_method,

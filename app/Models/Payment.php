@@ -21,6 +21,7 @@ class Payment extends Model
         'subscription_id',
         'purchase_id',
         'amount_cents',
+        'vat_rate',
         'status',
         'method',
         'description',
@@ -36,6 +37,7 @@ class Payment extends Model
     {
         return [
             'amount_cents' => 'integer',
+            'vat_rate' => 'integer',
             'status' => PaymentStatus::class,
             'method' => PaymentMethod::class,
             'due_on' => 'date',

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Branding\BrandingController;
 use App\Http\Controllers\Communication\AnnouncementController;
+use App\Http\Controllers\Communication\BirthdayGreetingController;
 use App\Http\Controllers\Dashboard\AccountabilityController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
@@ -48,6 +49,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('feature:mededelingen')->group(function () {
         Route::get('announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
         Route::post('announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
+
+        // De automatische verjaardagsfelicitatie. Alleen de eigenaar: dit gaat
+        // namens de school de deur uit.
+        Route::get('announcements/verjaardagen', [BirthdayGreetingController::class, 'edit'])->name('birthdays.edit');
+        Route::patch('announcements/verjaardagen', [BirthdayGreetingController::class, 'update'])->name('birthdays.update');
     });
 
     // Inzageverzoek: alles wat de school over één speler bewaart, in één

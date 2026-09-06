@@ -42,6 +42,7 @@ class Player extends Model
             'rated_at' => 'datetime',
             'shared_at' => 'datetime',
             'deactivated_at' => 'datetime',
+            'greeted_on' => 'date',
         ];
     }
 

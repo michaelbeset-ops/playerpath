@@ -109,6 +109,10 @@ class SubscriptionController extends Controller
             'player_id' => $validated['player_id'],
             'product_id' => $product->id,
             'amount_cents' => $product->amount_cents,
+            // Het tarief wordt overgenomen: een latere wijziging aan het
+            // product mag een lopende afspraak niet met terugwerkende kracht
+            // van btw-tarief laten veranderen.
+            'vat_rate' => $product->vat_rate,
             'interval' => $product->interval,
             'installments' => ($validated['installments'] ?? 1) > 1 ? $validated['installments'] : null,
             'status' => SubscriptionStatus::Active,

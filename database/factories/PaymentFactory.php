@@ -21,6 +21,7 @@ class PaymentFactory extends Factory
             'player_id' => Player::factory(),
             'subscription_id' => null,
             'amount_cents' => 2750,
+            'vat_rate' => 21,
             'status' => PaymentStatus::Open,
             'method' => PaymentMethod::DirectDebit,
             'description' => 'Contributie',

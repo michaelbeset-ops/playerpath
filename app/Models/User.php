@@ -204,6 +204,7 @@ class User extends Authenticatable
             'rapport' => 'Een nieuw rapport voor mijn kind',
             'doel' => 'Een doel dat gehaald is',
             'mededeling' => 'Mededelingen van de school',
+            'verjaardag' => 'Een felicitatie op mijn verjaardag',
             'samenvatting' => 'De maandelijkse samenvatting van mijn kind',
             'betaling' => 'Betalingen en herinneringen',
         ];

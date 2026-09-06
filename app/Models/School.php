@@ -28,6 +28,8 @@ class School extends Model
         'notes',
         'features',
         'package',
+        'birthday_greeting',
+        'birthday_message',
     ];
 
     protected function casts(): array
@@ -35,6 +37,7 @@ class School extends Model
         return [
             'is_active' => 'boolean',
             'features' => 'array',
+            'birthday_greeting' => 'boolean',
         ];
     }
 

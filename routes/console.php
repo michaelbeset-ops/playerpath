@@ -24,3 +24,7 @@ Schedule::command('payments:collect')->dailyAt('08:30');
 // De maandelijkse samenvatting aan ouders en spelers. Op de eerste van de
 // maand, ná de facturenloop: eerst de rekening, dan het goede nieuws.
 Schedule::command('players:digest')->monthlyOn(1, '10:00');
+
+// De verjaardagsfelicitatie. Vroeg genoeg om 's ochtends binnen te komen, en
+// alleen bij scholen die hem zelf hebben aangezet.
+Schedule::command('players:birthday')->dailyAt('08:00');

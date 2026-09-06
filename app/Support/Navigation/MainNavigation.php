@@ -98,8 +98,10 @@ class MainNavigation
                 ],
             ],
             [
-                'title' => 'Mededelingen', 'icon' => 'announcements', 'href' => '/announcements',
-                'allowed' => $user->can('viewAny', Announcement::class), 'feature' => Feature::Mededelingen, 'items' => [],
+                'title' => 'Mededelingen', 'icon' => 'announcements', 'items' => [
+                    ['title' => 'Berichten', 'href' => '/announcements', 'icon' => 'announcements', 'allowed' => $user->can('viewAny', Announcement::class), 'feature' => Feature::Mededelingen],
+                    ['title' => 'Verjaardagsmail', 'href' => '/announcements/verjaardagen', 'icon' => 'birthdays', 'allowed' => $user->isEigenaar(), 'feature' => Feature::Mededelingen],
+                ],
             ],
             [
                 // Alles wat over de school zelf gaat en niet over een klant.

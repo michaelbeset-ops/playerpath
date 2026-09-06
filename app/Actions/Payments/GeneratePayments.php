@@ -62,6 +62,7 @@ class GeneratePayments
                 'player_id' => $subscription->player_id,
                 'subscription_id' => $subscription->id,
                 'amount_cents' => $bedragInCenten,
+                'vat_rate' => $subscription->vat_rate,
                 'status' => PaymentStatus::Open,
                 'method' => $subscription->payment_method,
                 'description' => $this->omschrijving($subscription, $periode, $nummer, $termijnen),

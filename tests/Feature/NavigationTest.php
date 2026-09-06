@@ -164,7 +164,7 @@ class NavigationTest extends TestCase
             '/clients', '/clients/guardians', '/groups', '/enrollments',
             '/reports',
             '/payments', '/subscriptions', '/products', '/exports',
-            '/announcements',
+            '/announcements', '/announcements/verjaardagen',
             '/staff', '/branding', '/verantwoording', '/settings/profile',
         ], $hrefs);
     }

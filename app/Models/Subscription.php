@@ -22,6 +22,7 @@ class Subscription extends Model
         'player_id',
         'product_id',
         'amount_cents',
+        'vat_rate',
         'interval',
         'installments',
         'status',
@@ -35,6 +36,7 @@ class Subscription extends Model
     {
         return [
             'amount_cents' => 'integer',
+            'vat_rate' => 'integer',
             'interval' => BillingInterval::class,
             'installments' => 'integer',
             'status' => SubscriptionStatus::class,

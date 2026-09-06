@@ -63,6 +63,7 @@ class SellProduct
                     'player_id' => $player->id,
                     'purchase_id' => $aankoop->id,
                     'amount_cents' => $aankoop->amount_cents,
+                    'vat_rate' => $aankoop->vat_rate,
                     'status' => PaymentStatus::Open,
                     'description' => $aankoop->name,
                     'due_on' => $start->toDateString(),
