@@ -170,7 +170,48 @@ const kaarten = computed(() => {
                     </p>
                 </div>
 
-                <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <!-- Snelle acties staan boven de cijfers, niet eronder. Je opent
+                     een dashboard om iets te dóén; op een telefoon stond de eerste
+                     knop op 712 pixels, een volledig scherm scrollen. -->
+                <!-- Alleen wat deze rol echt mag; zie de policies. -->
+                <div class="mt-6 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                    <Link
+                        href="/reports"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 sm:justify-start sm:px-4"
+                    >
+                        <ClipboardList class="size-4" />
+                        Rapport invullen
+                    </Link>
+
+                    <Link
+                        v-if="can?.planTrainings"
+                        href="/trainings/create"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-medium shadow-sm transition hover:border-primary sm:justify-start sm:px-4"
+                    >
+                        <CalendarPlus class="size-4" />
+                        Training inplannen
+                    </Link>
+
+                    <Link
+                        v-if="can?.managePlayers"
+                        href="/players/create"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-medium shadow-sm transition hover:border-primary sm:justify-start sm:px-4"
+                    >
+                        <UserPlus class="size-4" />
+                        Speler toevoegen
+                    </Link>
+
+                    <Link
+                        v-if="can?.manageGroups"
+                        href="/groups/create"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-medium shadow-sm transition hover:border-primary sm:justify-start sm:px-4"
+                    >
+                        <Users class="size-4" />
+                        Groep toevoegen
+                    </Link>
+                </div>
+
+                <div class="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                     <StatCard
                         v-for="kaart in kaarten"
                         :key="kaart.label"
@@ -198,44 +239,6 @@ const kaarten = computed(() => {
                         <p class="text-xs text-muted-foreground">Wacht op je goedkeuring.</p>
                     </div>
                 </Link>
-
-                <!-- Snelle acties: alleen wat deze rol echt mag -->
-                <div class="mt-4 flex flex-wrap gap-2">
-                    <Link
-                        href="/reports"
-                        class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
-                    >
-                        <ClipboardList class="size-4" />
-                        Rapport invullen
-                    </Link>
-
-                    <Link
-                        v-if="can?.planTrainings"
-                        href="/trainings/create"
-                        class="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium shadow-sm transition hover:border-primary"
-                    >
-                        <CalendarPlus class="size-4" />
-                        Training inplannen
-                    </Link>
-
-                    <Link
-                        v-if="can?.managePlayers"
-                        href="/players/create"
-                        class="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium shadow-sm transition hover:border-primary"
-                    >
-                        <UserPlus class="size-4" />
-                        Speler toevoegen
-                    </Link>
-
-                    <Link
-                        v-if="can?.manageGroups"
-                        href="/groups/create"
-                        class="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium shadow-sm transition hover:border-primary"
-                    >
-                        <Users class="size-4" />
-                        Groep toevoegen
-                    </Link>
-                </div>
 
                 <div class="mt-4 grid gap-4 lg:grid-cols-2">
                     <!-- Waar valt het stil: het belangrijkste lijstje voor een eigenaar -->
@@ -323,7 +326,7 @@ const kaarten = computed(() => {
                         <Link href="/payments" class="text-xs font-medium text-primary underline underline-offset-4">Alle betalingen</Link>
                     </div>
 
-                    <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    <div class="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                         <div>
                             <p class="tabular text-2xl font-bold leading-none text-primary">{{ finance.revenueThisMonth }}</p>
                             <p class="mt-1 text-xs text-muted-foreground">ontvangen deze maand</p>

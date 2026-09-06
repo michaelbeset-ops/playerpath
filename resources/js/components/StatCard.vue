@@ -51,28 +51,31 @@ const kleuren = computed(() => {
     <component
         :is="href ? Link : 'div'"
         :href="href"
-        class="group relative block overflow-hidden rounded-xl border border-border bg-card p-5 shadow-sm transition"
+        class="group relative block overflow-hidden rounded-xl border border-border bg-card p-4 shadow-sm transition sm:p-5"
         :class="href ? 'hover:border-primary/40 hover:shadow' : ''"
     >
         <!-- Het groene streepje bovenaan de kaart -->
         <span class="absolute inset-x-0 top-0 h-1" :class="kleuren.balk" aria-hidden="true"></span>
 
-        <div class="flex items-start justify-between gap-4">
+        <div class="flex items-start justify-between gap-2 sm:gap-4">
             <div class="min-w-0">
-                <p class="truncate text-sm font-medium text-muted-foreground">{{ label }}</p>
-                <p class="tabular mt-2 text-3xl font-bold leading-none" :class="kleuren.tekst">
+                <!-- Afbreken en niet afkappen: op twee kaarten naast elkaar werd
+                     "Gemiddelde rating" anders "Gemiddelde r…". Overlopen kan niet
+                     meer sinds rasteritems mogen krimpen (zie app.css). -->
+                <p class="text-xs font-medium leading-snug text-muted-foreground sm:text-sm">{{ label }}</p>
+                <p class="tabular mt-1.5 text-2xl font-bold leading-none sm:mt-2 sm:text-3xl" :class="kleuren.tekst">
                     {{ heeftWaarde ? value : '—' }}
                 </p>
             </div>
 
             <span
-                class="flex size-10 shrink-0 items-center justify-center rounded-lg transition"
+                class="flex size-8 shrink-0 items-center justify-center rounded-lg transition sm:size-10"
                 :class="kleuren.icoon"
             >
-                <component :is="icon" class="size-5" />
+                <component :is="icon" class="size-4 sm:size-5" />
             </span>
         </div>
 
-        <p v-if="hint" class="mt-3 text-xs text-muted-foreground">{{ hint }}</p>
+        <p v-if="hint" class="mt-2 text-[11px] leading-snug text-muted-foreground sm:mt-3 sm:text-xs">{{ hint }}</p>
     </component>
 </template>

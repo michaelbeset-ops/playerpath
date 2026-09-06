@@ -126,7 +126,7 @@ const verwijderTrainer = (id: number, naam: string) => {
                     </Link>
                 </div>
 
-                <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div class="mt-3 grid gap-3 grid-cols-2 lg:grid-cols-4">
                     <div class="relative sm:col-span-2 lg:col-span-1">
                         <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                         <input

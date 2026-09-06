@@ -156,4 +156,22 @@
     .tabular {
         font-variant-numeric: tabular-nums;
     }
+
+    /*
+     * Raster- en flex-items mogen onder hun inhoud krimpen.
+     *
+     * Standaard hebben ze `min-width: auto` en weigeren ze smaller te worden
+     * dan hun min-content. Eén regel tekst met `truncate` — die is namelijk
+     * `white-space: nowrap` — maakt de kolom dan zo breed als die hele regel,
+     * en daarmee de pagina. Op een telefoon van 375px werd het dashboard zo
+     * 480px breed, met een horizontale schuifbalk over álles heen.
+     *
+     * Dit is een ondergrens weghalen, geen breedte opleggen: iets met
+     * `shrink-0` blijft even hard staan als eerst, en breed materiaal hoort
+     * in zijn eigen `overflow-x-auto` te schuiven.
+     */
+    .grid > *,
+    .flex > * {
+        min-width: 0;
+    }
 }

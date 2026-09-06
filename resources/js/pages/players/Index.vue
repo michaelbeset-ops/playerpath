@@ -79,7 +79,7 @@ const leegmaken = () => {
             </div>
 
             <!-- Filters -->
-            <div class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="mt-6 grid gap-3 grid-cols-2 lg:grid-cols-4">
                 <div class="relative">
                     <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <input

@@ -705,6 +705,29 @@ wordt als `"2026-09-06 00:00:00"` opgeslagen. `whereBetween(...,
 [$van->toDateString(), $tot->toDateString()])` sluit een rapport van de laatste
 dag dan lexicografisch buiten. Gebruik `whereDate()`.
 
+### Mobiel (gemeten, niet aangenomen)
+
+Het marktonderzoek gaf de richtlijnen; een echte meting op 375px gaf de fouten.
+Vier dingen die je niet moet terugdraaien:
+
+- **`min-width: 0` op raster- en flex-items** (`app.css`) en op `SidebarInset`.
+  Standaard is dat `auto`, en dan weigert een item onder de min-content-breedte
+  van zijn inhoud te krimpen. Eén regel met `truncate` — dat is
+  `white-space: nowrap` — maakte de kolom zo breed als die hele regel: het
+  dashboard werd 480px op een telefoon van 375, met een horizontale schuifbalk
+  over álles heen. Breed materiaal hoort in zijn eigen `overflow-x-auto`.
+- **Snelle acties staan boven de cijfers.** De eerste knop stond op y=712 —
+  een volledig scherm scrollen voordat je iets kon doen.
+- **Kerncijfers staan twee op een rij op mobiel** en zijn daar compacter
+  (`p-4`, `text-2xl`, icoon `size-8`). Het dashboard ging van 1788 naar 1312
+  pixels: van 2,2 naar 1,6 schermen.
+- **Labels breken af, ze kappen niet af.** Met `truncate` werd "Gemiddelde
+  rating" op twee kaarten naast elkaar "Gemiddelde r…".
+
+**Meet het zelf na een layoutwijziging** in plaats van te kijken:
+`document.documentElement.scrollWidth` hoort gelijk te zijn aan
+`clientWidth`. Is hij groter, dan scrollt de pagina zijwaarts.
+
 ## 6. Werkwijze
 
 - **Fase voor fase.** Het bouwplan staat in `bouwplan-keepersplatform-claude-code.md`

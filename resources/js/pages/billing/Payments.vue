@@ -87,7 +87,7 @@ const zetStatus = (betaling: Betaling, status: string) =>
             <h1 class="text-2xl font-semibold tracking-tight">Betalingen</h1>
             <p class="mt-1 text-sm text-muted-foreground">Wat er binnenkomt, wat openstaat en wat misging.</p>
 
-            <div class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="mt-6 grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
                 <StatCard label="Ontvangen" :value="summary.revenueThisMonth" hint="deze maand, betaalde facturen" :icon="Euro" />
                 <StatCard
                     label="Openstaand"
