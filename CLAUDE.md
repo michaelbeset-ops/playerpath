@@ -420,6 +420,32 @@ weten.
   zijn omzet; die twee op één indeling zetten betekent dat er altijd één van de
   twee ontevreden is.
 
+#### De bewerkmodus
+
+`DashboardGrid` gebruikt **grid-layout-plus** (de onderhouden Vue 3-opvolger van
+vue-grid-layout) voor het raster en het slepen. Zelf schrijven zou betekenen dat
+slepen met een vinger een eigen project wordt.
+
+- **Opslaan gaat altijd via de server** (`PATCH /dashboard/indeling`). Een
+  indeling die alleen in de browser bestaat staat op je telefoon anders dan op
+  je laptop, en dat is niet wat "mijn indeling" hoort te betekenen.
+- **De server vertrouwt niets.** Een widget die deze rol niet mag zien valt
+  eruit, een dubbele sleutel wordt er één, en een breedte die niet bestaat valt
+  terug op de standaard. Het formulier omzeilen levert dus nooit een dashboard
+  op met cijfers waar iemand niet bij mag.
+- **Herstellen maakt leeg, het schrijft de standaard niet weg.** Anders zou een
+  widget die er later bijkomt bij die gebruiker nooit verschijnen.
+- **Niets opgeslagen is de standaard; een opgeslagen lege lijst is een leeg
+  dashboard.** Wie alles weghaalt hoort niet stiekem de standaard terug te
+  krijgen.
+- **Op een telefoon gaat het alleen over volgorde.** Een raster van twaalf
+  kolommen op 375 pixels is geen raster. Wat je daar versleept verandert dus
+  alleen de volgorde; de breedtes van je grote scherm blijven staan, anders is
+  je laptopindeling weg zodra je hem op je telefoon aanraakt.
+- **Bewerken toont een dekkende laag met alleen de naam.** Half doorzichtig was
+  onleesbaar: de knoppen kwamen bovenop de tekst van de widget zelf. In die
+  modus gaat het over waar iets staat, niet over wat erin staat.
+
 **Het aandacht-blok is geen widget.** Het staat vast bovenaan en is niet weg te
 halen: het is het antwoord op "wat moet ik doen?", en dat hoort niet weg te
 klikken te zijn. Zou het een widget zijn, dan is "vastgepind" een regel die

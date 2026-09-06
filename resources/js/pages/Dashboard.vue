@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AttentionPanel, { type AandachtItem } from '@/components/dashboard/AttentionPanel.vue';
 import BirthdaysWidget from '@/components/dashboard/BirthdaysWidget.vue';
+import DashboardGrid, { type Beschikbaar, type Plek } from '@/components/dashboard/DashboardGrid.vue';
 import DevelopmentWidget from '@/components/dashboard/DevelopmentWidget.vue';
 import FinanceWidget from '@/components/dashboard/FinanceWidget.vue';
 import KpiWidget from '@/components/dashboard/KpiWidget.vue';
@@ -10,8 +11,8 @@ import PlayerCardVisual from '@/components/PlayerCardVisual.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import { CalendarPlus, Check, ClipboardList, Euro, IdCard, MapPin, Star, TrendingUp, Trophy, UserPlus, Users } from 'lucide-vue-next';
-import { computed, type Component } from 'vue';
+import { CalendarPlus, Check, ClipboardList, Euro, IdCard, MapPin, Star, Trophy, UserPlus, Users } from 'lucide-vue-next';
+import { computed } from 'vue';
 
 interface SpelerKaart {
     id: number;
@@ -31,21 +32,14 @@ interface SpelerKaart {
     goals: Doel[];
 }
 
-/** Een plek in het raster: welke widget, hoe breed, waar. */
-interface Plek {
-    key: string;
-    size: number;
-    height: number;
-    x: number;
-    y: number;
-}
-
 const props = defineProps<{
     view: 'school' | 'gezin';
     /** Het antwoord op "wat moet ik doen?". Staat vast bovenaan. */
     attention?: AandachtItem[];
     /** Waar de widgets staan; de server bepaalt volgorde en breedte. */
     layout?: Plek[];
+    /** Wat je erbij kunt zetten in de bewerkmodus. */
+    availableWidgets?: Beschikbaar[];
     /** De inhoud per widget. Null betekent: staat niet op dit dashboard. */
     widgets?: Record<string, any>;
     checklist?: {
@@ -64,40 +58,6 @@ const school = computed(() => page.props.school);
 const rollen = computed(() => page.props.auth.roles ?? []);
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' }];
-
-// De volgorde in het raster is ook de volgorde op een telefoon: van boven naar
-// beneden, dan van links naar rechts. Zo staat het belangrijkste op een klein
-// scherm bovenaan zonder een tweede lijst bij te houden.
-const plekken = computed<Plek[]>(() => [...(props.layout ?? [])].sort((a, b) => a.y - b.y || a.x - b.x));
-
-// Tailwind heeft de klasse als hele naam nodig, dus geen samengestelde string.
-const kolomKlasse: Record<number, string> = {
-    3: 'lg:col-span-3',
-    4: 'lg:col-span-4',
-    6: 'lg:col-span-6',
-    8: 'lg:col-span-8',
-    12: 'lg:col-span-12',
-};
-
-const kpiIconen: Record<string, Component> = {
-    kpi_players: Users,
-    kpi_rating: Star,
-    kpi_reports: ClipboardList,
-    kpi_revenue: Euro,
-};
-
-const kpiLabels: Record<string, string> = {
-    kpi_players: 'Actieve spelers',
-    kpi_rating: 'Gemiddelde rating',
-    kpi_reports: 'Rapporten deze week',
-    kpi_revenue: 'Omzet deze maand',
-};
-
-const kpiLinks: Record<string, string | undefined> = {
-    kpi_players: '/clients',
-    kpi_reports: '/reports',
-    kpi_revenue: '/payments?tab=paid&period=this_month',
-};
 </script>
 
 <template>
@@ -200,36 +160,74 @@ const kpiLinks: Record<string, string | undefined> = {
 
                 <!-- 3 t/m 7. De widgets in het raster van twaalf kolommen; op
                      een telefoon een kolom, in dezelfde volgorde. -->
-                <div class="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-12">
-                    <div
-                        v-for="plek in plekken"
-                        :key="plek.key"
-                        :class="[kolomKlasse[plek.size] ?? 'lg:col-span-6', plek.size > 3 ? 'col-span-2' : '']"
-                    >
+                <DashboardGrid class="mt-4" :layout="layout ?? []" :available="availableWidgets ?? []">
+                    <template #kpi_players>
                         <KpiWidget
-                            v-if="plek.key.startsWith('kpi_') && widgets?.[plek.key]"
-                            :label="kpiLabels[plek.key]"
-                            :value="widgets[plek.key].value"
-                            :change="widgets[plek.key].change"
-                            :unit="widgets[plek.key].unit"
-                            :hint="widgets[plek.key].hint"
-                            :icon="kpiIconen[plek.key] ?? TrendingUp"
-                            :href="kpiLinks[plek.key]"
+                            v-if="widgets?.kpi_players"
+                            label="Actieve spelers"
+                            :value="widgets.kpi_players.value"
+                            :change="widgets.kpi_players.change"
+                            :unit="widgets.kpi_players.unit"
+                            :hint="widgets.kpi_players.hint"
+                            :icon="Users"
+                            href="/clients"
                         />
+                    </template>
 
-                        <DevelopmentWidget v-else-if="plek.key === 'development' && widgets?.development" :data="widgets.development" />
-
-                        <FinanceWidget v-else-if="plek.key === 'finance' && widgets?.finance" :data="widgets.finance" />
-
-                        <TrainingsWidget
-                            v-else-if="plek.key === 'trainings' && widgets?.trainings"
-                            :data="widgets.trainings"
-                            :can-plan="can?.planTrainings ?? false"
+                    <template #kpi_rating>
+                        <KpiWidget
+                            v-if="widgets?.kpi_rating"
+                            label="Gemiddelde rating"
+                            :value="widgets.kpi_rating.value"
+                            :change="widgets.kpi_rating.change"
+                            :unit="widgets.kpi_rating.unit"
+                            :hint="widgets.kpi_rating.hint"
+                            :icon="Star"
                         />
+                    </template>
 
-                        <BirthdaysWidget v-else-if="plek.key === 'birthdays' && widgets?.birthdays" :data="widgets.birthdays" />
-                    </div>
-                </div>
+                    <template #kpi_reports>
+                        <KpiWidget
+                            v-if="widgets?.kpi_reports"
+                            label="Rapporten deze week"
+                            :value="widgets.kpi_reports.value"
+                            :change="widgets.kpi_reports.change"
+                            :unit="widgets.kpi_reports.unit"
+                            :hint="widgets.kpi_reports.hint"
+                            :icon="ClipboardList"
+                            href="/reports"
+                        />
+                    </template>
+
+                    <template #kpi_revenue>
+                        <KpiWidget
+                            v-if="widgets?.kpi_revenue"
+                            label="Omzet deze maand"
+                            :value="widgets.kpi_revenue.value"
+                            :change="widgets.kpi_revenue.change"
+                            :unit="widgets.kpi_revenue.unit"
+                            :hint="widgets.kpi_revenue.hint"
+                            :icon="Euro"
+                            href="/payments?tab=paid&period=this_month"
+                        />
+                    </template>
+
+                    <template #development>
+                        <DevelopmentWidget v-if="widgets?.development" :data="widgets.development" />
+                    </template>
+
+                    <template #finance>
+                        <FinanceWidget v-if="widgets?.finance" :data="widgets.finance" />
+                    </template>
+
+                    <template #trainings>
+                        <TrainingsWidget v-if="widgets?.trainings" :data="widgets.trainings" :can-plan="can?.planTrainings ?? false" />
+                    </template>
+
+                    <template #birthdays>
+                        <BirthdaysWidget v-if="widgets?.birthdays" :data="widgets.birthdays" />
+                    </template>
+                </DashboardGrid>
             </template>
 
             <!-- Ouder en speler: het eigen kind -->

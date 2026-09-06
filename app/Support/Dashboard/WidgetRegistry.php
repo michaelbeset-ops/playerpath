@@ -63,7 +63,10 @@ class WidgetRegistry
     {
         $opgeslagen = $user->dashboard_layout['widgets'] ?? null;
 
-        $rijen = is_array($opgeslagen) && $opgeslagen !== []
+        // Niets opgeslagen betekent de standaard; een opgeslagen lege lijst
+        // betekent een leeg dashboard. Wie alles weghaalt hoort niet stiekem
+        // de standaard terug te krijgen.
+        $rijen = is_array($opgeslagen)
             ? $this->uitOpslag($opgeslagen)
             : $this->defaultLayout();
 

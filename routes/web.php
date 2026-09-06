@@ -4,6 +4,7 @@ use App\Http\Controllers\Branding\BrandingController;
 use App\Http\Controllers\Communication\AnnouncementController;
 use App\Http\Controllers\Communication\BirthdayGreetingController;
 use App\Http\Controllers\Dashboard\AccountabilityController;
+use App\Http\Controllers\Dashboard\LayoutController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\NotificationController;
@@ -29,6 +30,12 @@ Route::get('dashboard', DashboardController::class)
     ->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    // Je eigen indeling van het dashboard. Alles via de server: een indeling
+    // die alleen in de browser bestaat staat op je telefoon anders dan op je
+    // laptop, en dat is niet wat "mijn indeling" hoort te betekenen.
+    Route::patch('dashboard/indeling', [LayoutController::class, 'update'])->name('dashboard.layout.update');
+    Route::delete('dashboard/indeling', [LayoutController::class, 'destroy'])->name('dashboard.layout.destroy');
+
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('notifications/read', [NotificationController::class, 'readAll'])->name('notifications.read');
 

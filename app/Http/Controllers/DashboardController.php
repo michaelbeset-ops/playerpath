@@ -100,6 +100,9 @@ class DashboardController extends Controller
             // Het antwoord op "wat moet ik doen?". Staat vast bovenaan.
             'attention' => $this->attention->for($user),
             'layout' => $layout,
+            // Wat je erbij kunt zetten in de bewerkmodus. Alleen wat deze rol
+            // mag zien; wat hier niet in staat kan ook niet opgeslagen worden.
+            'availableWidgets' => $this->widgets->describe($user),
             'widgets' => [
                 'kpi_players' => $toont(DashboardWidget::KpiPlayers) ? $trends['players'] : null,
                 'kpi_rating' => $toont(DashboardWidget::KpiRating) ? $trends['rating'] : null,
