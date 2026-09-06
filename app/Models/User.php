@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
@@ -43,6 +44,20 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
+    /**
+     * De foto gaat mee zodra een gebruiker ergens in beeld komt.
+     *
+     * Nodig omdat de ingelogde gebruiker als gedeelde prop naar elke pagina
+     * gaat; zonder appends zou de balk bovenin nooit een foto zien.
+     */
+    protected $appends = ['photo_url'];
+
+    /** Zie Player::getPhotoUrlAttribute(): ook hier gaat de foto via ProfilePhoto. */
+    public function getPhotoUrlAttribute(): ?string
+    {
+        return $this->photo_path === null ? null : Storage::url($this->photo_path);
+    }
 
     protected function casts(): array
     {

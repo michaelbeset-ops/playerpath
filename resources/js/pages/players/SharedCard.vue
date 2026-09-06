@@ -8,7 +8,8 @@ import { Head } from '@inertiajs/vue3';
  * alleen de kaart. Bewust zonder achternaam, leeftijd, school of groep.
  */
 defineProps<{
-    player: { name: string; position: string; position_key: 'keeper' | 'field'; overall_rating: number | null };
+    player: { name: string;
+        photo: string | null; position: string; position_key: 'keeper' | 'field'; overall_rating: number | null };
     categories: { category: string; label: string; rating: number | null }[];
     level: { key: string; label: string; description: string };
     badges: { key: string; label: string; description: string }[];
@@ -25,6 +26,7 @@ defineProps<{
         <div class="w-full max-w-sm">
             <PlayerCardVisual
                 :name="player.name"
+                :photo="player.photo"
                 :position="player.position"
                 :position-key="player.position_key"
                 :overall="player.overall_rating"

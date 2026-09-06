@@ -30,6 +30,7 @@ class PlayerCardController extends Controller
             'player' => [
                 'id' => $player->id,
                 'name' => $player->full_name,
+                'photo' => $player->photo_url,
                 'position' => $player->position->label(),
                 'position_key' => $player->position->value,
                 'age' => $player->age,

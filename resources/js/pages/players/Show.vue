@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import Avatar from '@/components/Avatar.vue';
 import FlashMessage from '@/components/FlashMessage.vue';
 import GoalList, { type Doel } from '@/components/GoalList.vue';
 import InputError from '@/components/InputError.vue';
+import PhotoUpload from '@/components/PhotoUpload.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,6 +26,7 @@ const props = defineProps<{
         first_name: string;
         last_name: string;
         name: string;
+        photo: string | null;
         date_of_birth: string;
         age: number | null;
         position: string;
@@ -106,16 +109,20 @@ const verwijderen = () => {
 
             <!-- Kop met acties -->
             <div class="flex flex-wrap items-start justify-between gap-4">
-                <div class="min-w-0">
-                    <h1 class="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-                        {{ player.name }}
-                        <span v-if="!player.is_active" class="rounded bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                            niet actief
-                        </span>
-                    </h1>
-                    <p class="mt-1 text-sm text-muted-foreground">
-                        {{ player.position }} &middot; {{ player.date_of_birth }}<span v-if="player.age"> ({{ player.age }} jaar)</span>
-                    </p>
+                <div class="flex min-w-0 items-center gap-4">
+                    <Avatar :name="player.name" :photo="player.photo" size="size-14" />
+
+                    <div class="min-w-0">
+                        <h1 class="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+                            {{ player.name }}
+                            <span v-if="!player.is_active" class="rounded bg-secondary px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                                niet actief
+                            </span>
+                        </h1>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            {{ player.position }} &middot; {{ player.date_of_birth }}<span v-if="player.age"> ({{ player.age }} jaar)</span>
+                        </p>
+                    </div>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2">
@@ -396,6 +403,19 @@ const verwijderen = () => {
                 </div>
 
                 <p v-else class="mt-3 text-sm text-muted-foreground">Er is nog geen rapport ingevuld voor deze speler.</p>
+            </div>
+
+            <!-- De foto komt ook op de spelerskaart terecht; daarom staat de
+                 uitleg erbij dat dit niet zomaar een lijstplaatje is. -->
+            <div v-if="can.manage" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+                <p class="font-medium">Pasfoto</p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    Deze foto staat op de spelerskaart van {{ player.first_name }}, ook op een gedeelde kaart.
+                </p>
+
+                <div class="mt-4">
+                    <PhotoUpload :name="player.name" :photo="player.photo" :action="'/players/' + player.id + '/photo'" />
+                </div>
             </div>
 
             <!-- Verwijderen staat apart en onderaan: het is onomkeerbaar -->

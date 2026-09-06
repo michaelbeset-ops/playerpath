@@ -31,6 +31,7 @@ import { computed, type Component } from 'vue';
 interface SpelerKaart {
     id: number;
     name: string;
+    photo: string | null;
     first_name: string;
     position: string;
     position_key: 'keeper' | 'field';
@@ -117,12 +118,12 @@ const toont = (blok: string) => (props.blocks ?? []).includes(blok);
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <!--
-            De cijferband loopt door in de donkere menubalk erboven: samen zijn
-            ze "waar ben ik en hoe staat het ervoor", en daaronder begint de
-            lichte werkvloer. Wat er in staat kiest de gebruiker zelf.
+            De donkere kant van het merk houdt op bij de menubalk. Het dashboard
+            zelf is werkvloer: licht, waar je uren op kijkt. Een zwart vlak dat
+            halverwege de pagina in wit overgaat leest als twee pagina's.
         -->
-        <div v-if="view === 'school'" class="theme-donker bg-background text-foreground">
-            <div class="mx-auto w-full max-w-5xl px-4 pb-6 pt-5">
+        <div v-if="view === 'school'" class="border-b border-border bg-card">
+            <div class="mx-auto w-full max-w-6xl px-4 pb-6 pt-6">
                 <div class="flex flex-wrap items-baseline gap-x-3">
                     <h1 class="text-2xl font-semibold tracking-tight">Dashboard</h1>
                     <p class="text-sm text-muted-foreground">
@@ -146,7 +147,7 @@ const toont = (blok: string) => (props.blocks ?? []).includes(blok);
                     <Link
                         v-if="can?.planTrainings"
                         href="/trainings/create"
-                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:border-primary sm:justify-start sm:px-4"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 text-sm font-medium transition hover:border-primary sm:justify-start sm:px-4"
                     >
                         <CalendarPlus class="size-4" />
                         Training inplannen
@@ -155,7 +156,7 @@ const toont = (blok: string) => (props.blocks ?? []).includes(blok);
                     <Link
                         v-if="can?.managePlayers"
                         href="/players/create"
-                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:border-primary sm:justify-start sm:px-4"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 text-sm font-medium transition hover:border-primary sm:justify-start sm:px-4"
                     >
                         <UserPlus class="size-4" />
                         Speler toevoegen
@@ -164,14 +165,14 @@ const toont = (blok: string) => (props.blocks ?? []).includes(blok);
                     <Link
                         v-if="can?.manageGroups"
                         href="/groups/create"
-                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-medium transition hover:border-primary sm:justify-start sm:px-4"
+                        class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-background px-3 py-2.5 text-sm font-medium transition hover:border-primary sm:justify-start sm:px-4"
                     >
                         <Users class="size-4" />
                         Groep toevoegen
                     </Link>
                 </div>
 
-                <div v-if="tiles?.length" class="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+                <div v-if="tiles?.length" class="mt-5 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                     <StatCard
                         v-for="tegel in tiles"
                         :key="tegel.key"
@@ -191,7 +192,7 @@ const toont = (blok: string) => (props.blocks ?? []).includes(blok);
             </div>
         </div>
 
-        <div class="mx-auto w-full max-w-5xl p-4">
+        <div class="mx-auto w-full max-w-6xl p-4">
             <div v-if="view !== 'school'" class="flex flex-wrap items-baseline gap-x-3">
                 <h1 class="text-2xl font-semibold tracking-tight">Dashboard</h1>
                 <p class="text-sm text-muted-foreground">
@@ -246,7 +247,7 @@ const toont = (blok: string) => (props.blocks ?? []).includes(blok);
                     </p>
                 </div>
 
-                <div class="mt-2 grid gap-4 lg:grid-cols-2">
+                <div class="mt-2 grid items-start gap-4 lg:grid-cols-2">
                     <!-- Waar valt het stil: het belangrijkste lijstje voor een eigenaar -->
                     <div v-if="toont('attention')" class="rounded-xl border border-border bg-card p-5 shadow-sm">
                         <p class="font-medium">Vraagt om aandacht</p>
@@ -415,6 +416,7 @@ const toont = (blok: string) => (props.blocks ?? []).includes(blok);
                     <div class="theme-donker rounded-3xl bg-background p-4 text-foreground sm:p-6">
                         <PlayerCardVisual
                             :name="speler.name"
+                            :photo="speler.photo"
                             :position="speler.position"
                             :position-key="speler.position_key"
                             :age="speler.age"

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Clients\ClientDirectoryController;
 use App\Http\Controllers\Goals\GoalController;
 use App\Http\Controllers\Groups\GroupController;
+use App\Http\Controllers\Media\PhotoController;
 use App\Http\Controllers\Players\GuardianController;
 use App\Http\Controllers\Players\PlayerCardController;
 use App\Http\Controllers\Players\PlayerController;
@@ -47,6 +48,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('staff', [StaffController::class, 'index'])->name('staff.index');
     Route::post('staff/trainers', [TrainerController::class, 'store'])->name('trainers.store');
     Route::delete('staff/trainers/{user}', [TrainerController::class, 'destroy'])->name('trainers.destroy');
+
+    // Profielfoto's. Wie wat mag staat in de policies: update op de speler
+    // (de eigenaar) en update op de gebruiker (jezelf, of de eigenaar).
+    Route::post('players/{player}/photo', [PhotoController::class, 'storePlayer'])->name('players.photo.store');
+    Route::delete('players/{player}/photo', [PhotoController::class, 'destroyPlayer'])->name('players.photo.destroy');
+    Route::post('users/{user}/photo', [PhotoController::class, 'storeUser'])->name('users.photo.store');
+    Route::delete('users/{user}/photo', [PhotoController::class, 'destroyUser'])->name('users.photo.destroy');
 
     // Oude adressen blijven werken: /users en /players stonden in bladwijzers
     // en verwijzingen voordat dit Klanten heette.

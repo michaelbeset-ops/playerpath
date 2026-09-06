@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Avatar from '@/components/Avatar.vue';
 import FlashMessage from '@/components/FlashMessage.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -7,11 +8,19 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { ClipboardList, Plus, Trash2, UserCog } from 'lucide-vue-next';
+import { ClipboardList, Plus, Trash2 } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 defineProps<{
-    trainers: { id: number; name: string; email: string; is_owner: boolean; trainings_count: number; reports_count: number }[];
+    trainers: {
+        id: number;
+        name: string;
+        photo: string | null;
+        email: string;
+        is_owner: boolean;
+        trainings_count: number;
+        reports_count: number;
+    }[];
     can: { manageAccounts: boolean };
 }>();
 
@@ -97,9 +106,7 @@ const verwijder = (id: number, naam: string) => {
                     class="flex items-center gap-4 p-4"
                     :class="index > 0 ? 'border-t border-border' : ''"
                 >
-                    <span class="flex size-11 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                        <UserCog class="size-5" />
-                    </span>
+                    <Avatar :name="trainer.name" :photo="trainer.photo" size="size-11" />
 
                     <div class="min-w-0 flex-1">
                         <p class="flex items-center gap-2 truncate font-medium">

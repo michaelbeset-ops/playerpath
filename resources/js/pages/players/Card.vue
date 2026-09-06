@@ -19,6 +19,7 @@ const props = defineProps<{
     player: {
         id: number;
         name: string;
+        photo: string | null;
         position: string;
         position_key: 'keeper' | 'field';
         age: number | null;
@@ -77,6 +78,7 @@ const kopieer = async () => {
             <div class="theme-donker rounded-3xl bg-background p-4 text-foreground sm:p-8">
                 <PlayerCardVisual
                     :name="player.name"
+                    :photo="player.photo"
                     :position="player.position"
                     :position-key="player.position_key"
                     :age="player.age"

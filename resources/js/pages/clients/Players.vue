@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import Avatar from '@/components/Avatar.vue';
 import ClientTabs from '@/components/ClientTabs.vue';
 import FlashMessage from '@/components/FlashMessage.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -10,6 +11,7 @@ import { reactive, watch } from 'vue';
 interface SpelerRij {
     id: number;
     name: string;
+    photo: string | null;
     position: string;
     age: number | null;
     is_active: boolean;
@@ -113,6 +115,8 @@ watch(
                     class="flex items-center gap-4 p-4 transition hover:bg-secondary/60"
                     :class="index > 0 ? 'border-t border-border' : ''"
                 >
+                    <Avatar :name="speler.name" :photo="speler.photo" size="size-11" />
+
                     <div
                         class="tabular flex size-11 shrink-0 items-center justify-center rounded-lg text-base font-bold"
                         :class="speler.overall_rating ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground'"

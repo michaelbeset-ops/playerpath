@@ -5,6 +5,7 @@ import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import DeleteUser from '@/components/DeleteUser.vue';
 import HeadingSmall from '@/components/HeadingSmall.vue';
 import InputError from '@/components/InputError.vue';
+import PhotoUpload from '@/components/PhotoUpload.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -48,12 +49,21 @@ const submit = () => {
 
         <SettingsLayout>
             <div class="flex flex-col space-y-6">
-                <HeadingSmall title="Profielgegevens" description="Pas je naam en e-mailadres aan" />
+                <HeadingSmall title="Profielgegevens" description="Pas je foto, naam en e-mailadres aan" />
+
+                <PhotoUpload :name="user.name" :photo="user.photo_url ?? null" :action="'/users/' + user.id + '/photo'" />
 
                 <form @submit.prevent="submit" class="space-y-6">
                     <div class="grid gap-2">
                         <Label for="name">Naam</Label>
-                        <Input id="name" class="mt-1 block w-full" v-model="form.name" required autocomplete="name" placeholder="Voor- en achternaam" />
+                        <Input
+                            id="name"
+                            class="mt-1 block w-full"
+                            v-model="form.name"
+                            required
+                            autocomplete="name"
+                            placeholder="Voor- en achternaam"
+                        />
                         <InputError class="mt-2" :message="form.errors.name" />
                     </div>
 

@@ -58,7 +58,10 @@ class SharedCardController extends Controller
 
         return Inertia::render('players/SharedCard', [
             'player' => [
+                // De foto hoort bij de kaart; de achternaam niet. Zie de
+                // afspraken over de publieke deel-link in CLAUDE.md.
                 'name' => $player->public_name,
+                'photo' => $player->photo_url,
                 'position' => $player->position->label(),
                 'position_key' => $player->position->value,
                 'overall_rating' => $player->overall_rating,

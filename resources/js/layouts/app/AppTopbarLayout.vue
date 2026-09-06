@@ -19,7 +19,7 @@ withDefaults(defineProps<Props>(), {
         <AppTopbar />
 
         <div v-if="breadcrumbs.length > 1" class="border-b border-border bg-card/40">
-            <div class="mx-auto w-full max-w-7xl px-4 py-2">
+            <div class="mx-auto w-full max-w-6xl px-4 py-2">
                 <Breadcrumb>
                     <BreadcrumbList>
                         <template v-for="(item, index) in breadcrumbs" :key="index">

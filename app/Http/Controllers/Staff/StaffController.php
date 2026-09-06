@@ -30,6 +30,7 @@ class StaffController extends Controller
             ->map(fn (User $trainer) => [
                 'id' => $trainer->id,
                 'name' => $trainer->name,
+                'photo' => $trainer->photo_url,
                 'email' => $trainer->email,
                 'roles' => $trainer->getRoleNames()->all(),
                 'is_owner' => $trainer->isEigenaar(),

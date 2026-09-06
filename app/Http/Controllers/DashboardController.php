@@ -122,6 +122,7 @@ class DashboardController extends Controller
                 return [
                     'id' => $speler->id,
                     'name' => $speler->full_name,
+                    'photo' => $speler->photo_url,
                     'first_name' => $speler->first_name,
                     'position' => $speler->position->label(),
                     'position_key' => $speler->position->value,

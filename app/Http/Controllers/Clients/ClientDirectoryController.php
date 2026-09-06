@@ -58,6 +58,7 @@ class ClientDirectoryController extends Controller
             ->map(fn (Player $player) => [
                 'id' => $player->id,
                 'name' => $player->full_name,
+                'photo' => $player->photo_url,
                 'position' => $player->position->label(),
                 'age' => $player->age,
                 'is_active' => $player->is_active,
@@ -89,6 +90,7 @@ class ClientDirectoryController extends Controller
             ->map(fn (User $ouder) => [
                 'id' => $ouder->id,
                 'name' => $ouder->name,
+                'photo' => $ouder->photo_url,
                 'email' => $ouder->email,
                 'children' => $ouder->children->map(fn (Player $kind) => [
                     'id' => $kind->id,

@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class Player extends Model
 {
@@ -121,6 +122,18 @@ class Player extends Model
     public function getAgeAttribute(): ?int
     {
         return $this->date_of_birth?->age;
+    }
+
+    /**
+     * De profielfoto, of null.
+     *
+     * `photo_path` staat niet in $fillable: een foto gaat altijd via
+     * Support\Media\ProfilePhoto, want daar wordt het oude bestand opgeruimd
+     * en de nieuwe vierkant gemaakt.
+     */
+    public function getPhotoUrlAttribute(): ?string
+    {
+        return $this->photo_path === null ? null : Storage::url($this->photo_path);
     }
 
     public function scopeActive(Builder $query): Builder

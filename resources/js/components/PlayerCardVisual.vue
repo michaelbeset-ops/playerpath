@@ -26,8 +26,10 @@ const props = withDefaults(
         level: { key: string; label: string };
         badges: { key: string; label: string }[];
         reportCount?: number;
+        /** De pasfoto. Zonder foto blijft het medaillon de initialen tonen. */
+        photo?: string | null;
     }>(),
-    { age: null, reportCount: 0 },
+    { age: null, reportCount: 0, photo: null },
 );
 
 const initialen = computed(() =>
@@ -92,7 +94,11 @@ const balk = (rating: number | null) => (rating === null ? '0%' : rating + '%');
             <!-- Medaillon met initialen: het "portret" -->
             <div class="my-5 flex flex-col items-center">
                 <div class="pp-medaillon">
-                    <span class="pp-initialen">{{ initialen }}</span>
+                    <!-- De foto vult het medaillon; zonder foto de initialen.
+                         De foto is bij het uploaden al vierkant gemaakt, dus
+                         hier is object-fit genoeg en snijdt er niets scheef af. -->
+                    <img v-if="photo" :src="photo" :alt="name" class="pp-foto" />
+                    <span v-else class="pp-initialen">{{ initialen }}</span>
                 </div>
                 <p class="pp-naam mt-3">{{ name }}</p>
                 <p class="pp-sub">
@@ -159,8 +165,7 @@ const balk = (rating: number | null) => (rating === null ? '0%' : rating + '%');
     color: var(--pp-tekst);
     background:
         radial-gradient(120% 70% at 20% -10%, var(--pp-gloed), transparent 60%),
-        radial-gradient(90% 60% at 100% 110%, var(--pp-accent-zacht), transparent 60%),
-        linear-gradient(160deg, var(--pp-bg-1), var(--pp-bg-2));
+        radial-gradient(90% 60% at 100% 110%, var(--pp-accent-zacht), transparent 60%), linear-gradient(160deg, var(--pp-bg-1), var(--pp-bg-2));
     box-shadow:
         inset 0 0 0 1px var(--pp-rand),
         inset 0 1px 0 rgba(255, 255, 255, 0.14),
@@ -295,9 +300,17 @@ const balk = (rating: number | null) => (rating === null ? '0%' : rating + '%');
     box-shadow: inset 0 0 0 1px var(--pp-rand);
 }
 
+.pp-foto {
+    width: 100%;
+    height: 100%;
+    border-radius: 999px;
+    object-fit: cover;
+}
+
 .pp-medaillon {
     display: grid;
     place-items: center;
+    overflow: hidden;
     width: 5.5rem;
     height: 5.5rem;
     border-radius: 999px;

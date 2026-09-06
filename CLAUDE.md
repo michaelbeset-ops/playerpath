@@ -617,6 +617,31 @@ houdt, en dus niet mag sneuvelen:
 - Beoordelen gebeurt alleen in `Actions\Goals\EvaluateGoals`, aangeroepen vanuit `StoreReport` na de kaartberekening: gehaald → `DoelBehaald` naar ouders + speler, badge `doel_gehaald`, mijlpaal in de tijdlijn; einddatum voorbij → `missed`.
 - Trainer/eigenaar stelt en stopt (`GoalPolicy`), ouder/speler ziet alleen. Het rapportscherm toont per categorie een chip "doel 80", niets meer.
 
+### Profielfoto's
+
+`Support\Media\ProfilePhoto` is de enige plek waar een foto binnenkomt, voor
+spelers en accounts allebei. Drie dingen die die klasse doet en die je niet
+moet weglaten:
+
+- **Vierkant maken en verkleinen naar 512 pixels.** De foto komt op een rond
+  medaillon en op de spelerskaart; een liggende foto die met CSS wordt
+  bijgesneden ziet er op elke plek net anders uit. En een telefoonfoto van vier
+  megabyte in een medaillon van veertig pixels is verspilling van de bundel van
+  een ouder die langs het veld staat.
+- **Het oude bestand opruimen.** Anders blijft elke poging staan.
+- **Een willekeurige bestandsnaam van veertig tekens**, niet het id. De foto van
+  een kind hoort niet te raden te zijn aan de hand van een nummer in een URL —
+  hij staat namelijk ook op een gedeelde kaart.
+
+`photo_path` staat bij `Player` en `User` **niet in `$fillable`**: hij gaat
+alleen via die klasse. Wie wat mag staat in de policies: `update` op de speler
+(de eigenaar) en `update` op de gebruiker (jezelf, of de eigenaar binnen zijn
+eigen school). **Geen svg**: dat is uitvoerbare opmaak op een deelbare pagina.
+
+De gedeelde kaart toont de foto wél en de achternaam niet. Dat is een bewuste
+afweging: een foto zonder naam of school laat een vreemde niets doen, en zonder
+foto is de kaart voor een kind de helft minder waard.
+
 ### Inzageverzoek (was: Privacy en bewaartermijn, fase 8)
 
 Het aparte Privacy-scherm is **weggehaald**. Het liet een school een

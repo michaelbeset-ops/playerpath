@@ -1,14 +1,22 @@
 <script setup lang="ts">
+import Avatar from '@/components/Avatar.vue';
 import ClientTabs from '@/components/ClientTabs.vue';
 import FlashMessage from '@/components/FlashMessage.vue';
+import PhotoUpload from '@/components/PhotoUpload.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
-import { Contact } from 'lucide-vue-next';
 
 defineProps<{
     counts: { players: number; guardians: number };
-    guardians: { id: number; name: string; email: string; children: { id: number; name: string; relationship: string | null }[] }[];
+    can: { managePlayers: boolean };
+    guardians: {
+        id: number;
+        name: string;
+        photo: string | null;
+        email: string;
+        children: { id: number; name: string; relationship: string | null }[];
+    }[];
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -34,9 +42,16 @@ const breadcrumbs: BreadcrumbItem[] = [
             <div v-if="guardians.length" class="mt-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
                 <div v-for="(ouder, index) in guardians" :key="ouder.id" class="p-4" :class="index > 0 ? 'border-t border-border' : ''">
                     <div class="flex items-center gap-4">
-                        <span class="flex size-11 shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
-                            <Contact class="size-5" />
-                        </span>
+                        <!-- De eigenaar mag de foto zetten; wie dat niet mag
+                             ziet dezelfde avatar, alleen niet klikbaar. -->
+                        <PhotoUpload
+                            v-if="can.managePlayers"
+                            compact
+                            :name="ouder.name"
+                            :photo="ouder.photo"
+                            :action="'/users/' + ouder.id + '/photo'"
+                        />
+                        <Avatar v-else :name="ouder.name" :photo="ouder.photo" size="size-11" />
 
                         <div class="min-w-0 flex-1">
                             <p class="truncate font-medium">{{ ouder.name }}</p>
