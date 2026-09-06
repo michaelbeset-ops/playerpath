@@ -6,7 +6,7 @@ use App\Http\Controllers\Dashboard\AccountabilityController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\Privacy\PrivacyController;
+use App\Http\Controllers\Players\PlayerDataController;
 use App\Http\Controllers\Pwa\ManifestController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -50,11 +50,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('announcements', [AnnouncementController::class, 'store'])->name('announcements.store');
     });
 
-    // Fase 8: bewaartermijn, inzage en verwijderen (AVG). Alleen de eigenaar.
-    Route::get('privacy', [PrivacyController::class, 'index'])->name('privacy.index');
-    Route::patch('privacy', [PrivacyController::class, 'update'])->name('privacy.update');
-    Route::get('players/{player}/gegevens', [PrivacyController::class, 'download'])->name('privacy.player-data');
-    Route::delete('privacy/players/{player}', [PrivacyController::class, 'erase'])->name('privacy.erase');
+    // Inzageverzoek: alles wat de school over één speler bewaart, in één
+    // werkmap. Staat op de pagina van die speler, want daar stelt een ouder de
+    // vraag. Alleen de eigenaar.
+    Route::get('players/{player}/gegevens', PlayerDataController::class)->name('players.data');
 });
 
 require __DIR__.'/players.php';

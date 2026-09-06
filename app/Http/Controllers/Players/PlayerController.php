@@ -109,7 +109,7 @@ class PlayerController extends Controller
                 'delete' => $request->user()->can('delete', $player),
                 'report' => $request->user()->can('createReport', $player),
                 'goals' => $request->user()->can('createFor', [Goal::class, $player]),
-                'privacy' => $request->user()->isEigenaar(),
+                'dataExport' => $request->user()->isEigenaar(),
             ],
         ]);
     }

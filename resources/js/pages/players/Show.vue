@@ -39,7 +39,7 @@ const props = defineProps<{
     linkableGuardians: { id: number; name: string; email: string }[];
     goals: Doel[];
     goalCategories: { value: string; label: string }[];
-    can: { manage: boolean; delete: boolean; report: boolean; goals: boolean; privacy: boolean };
+    can: { manage: boolean; delete: boolean; report: boolean; goals: boolean; dataExport: boolean };
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -88,8 +88,7 @@ const nodigUit = () =>
         },
     });
 
-const ontkoppel = (id: number) =>
-    router.delete('/players/' + props.player.id + '/guardians/' + id, { preserveScroll: true });
+const ontkoppel = (id: number) => router.delete('/players/' + props.player.id + '/guardians/' + id, { preserveScroll: true });
 
 const verwijderen = () => {
     if (confirm('Weet je zeker dat je ' + props.player.name + ' wilt verwijderen? Ook alle rapporten van deze speler verdwijnen.')) {
@@ -153,7 +152,10 @@ const verwijderen = () => {
                 <div class="rounded-xl border border-border bg-card p-5 shadow-sm">
                     <div class="flex items-baseline justify-between">
                         <p class="font-medium">Huidige cijfers</p>
-                        <p class="tabular text-3xl font-bold leading-none" :class="player.overall_rating ? 'text-primary' : 'text-muted-foreground/60'">
+                        <p
+                            class="tabular text-3xl font-bold leading-none"
+                            :class="player.overall_rating ? 'text-primary' : 'text-muted-foreground/60'"
+                        >
                             {{ player.overall_rating ?? '—' }}
                         </p>
                     </div>
@@ -209,7 +211,9 @@ const verwijderen = () => {
                 <div class="flex flex-wrap items-center justify-between gap-2">
                     <div>
                         <p class="font-medium">Ontwikkelingsdoelen</p>
-                        <p class="mt-1 text-xs text-muted-foreground">Een streefcijfer per categorie, met een einddatum. Ouders zien dit op de kaart.</p>
+                        <p class="mt-1 text-xs text-muted-foreground">
+                            Een streefcijfer per categorie, met een einddatum. Ouders zien dit op de kaart.
+                        </p>
                     </div>
                     <Button v-if="can.goals && !toonDoelFormulier" variant="secondary" @click="toonDoelFormulier = true">
                         <Target class="mr-2 size-4" />
@@ -221,7 +225,11 @@ const verwijderen = () => {
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="grid gap-2">
                             <Label for="goal_category">Categorie</Label>
-                            <select id="goal_category" v-model="doelForm.category" class="h-10 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary">
+                            <select
+                                id="goal_category"
+                                v-model="doelForm.category"
+                                class="h-10 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
+                            >
                                 <option v-for="c in goalCategories" :key="c.value" :value="c.value">{{ c.label }}</option>
                             </select>
                             <InputError :message="doelForm.errors.category" />
@@ -241,7 +249,11 @@ const verwijderen = () => {
                                 :key="n"
                                 type="button"
                                 class="tabular h-10 rounded-lg border text-sm font-semibold transition"
-                                :class="doelForm.target === n ? 'border-transparent bg-primary text-primary-foreground' : 'border-border text-muted-foreground hover:border-primary'"
+                                :class="
+                                    doelForm.target === n
+                                        ? 'border-transparent bg-primary text-primary-foreground'
+                                        : 'border-border text-muted-foreground hover:border-primary'
+                                "
                                 @click="doelForm.target = n"
                             >
                                 {{ n }}
@@ -257,12 +269,16 @@ const verwijderen = () => {
 
                     <div class="flex items-center gap-3">
                         <Button type="submit" :disabled="doelForm.processing || !doelForm.due_on">Doel stellen</Button>
-                        <button type="button" class="text-sm text-muted-foreground underline underline-offset-4" @click="toonDoelFormulier = false">Annuleren</button>
+                        <button type="button" class="text-sm text-muted-foreground underline underline-offset-4" @click="toonDoelFormulier = false">
+                            Annuleren
+                        </button>
                     </div>
                 </form>
 
                 <GoalList v-if="goals.length" class="mt-4" :goals="goals" :can-stop="can.goals" @stop="stopDoel" />
-                <p v-else-if="!toonDoelFormulier" class="mt-3 text-sm text-muted-foreground">Nog geen doel. Een concreet doel maakt een rapport pas echt spannend.</p>
+                <p v-else-if="!toonDoelFormulier" class="mt-3 text-sm text-muted-foreground">
+                    Nog geen doel. Een concreet doel maakt een rapport pas echt spannend.
+                </p>
             </div>
 
             <!-- Ouders -->
@@ -317,9 +333,7 @@ const verwijderen = () => {
                             <Input id="relationship" v-model="bestaandeOuder.relationship" placeholder="moeder" />
                         </div>
 
-                        <Button type="submit" variant="secondary" :disabled="bestaandeOuder.processing || !bestaandeOuder.user_id">
-                            Koppelen
-                        </Button>
+                        <Button type="submit" variant="secondary" :disabled="bestaandeOuder.processing || !bestaandeOuder.user_id"> Koppelen </Button>
                     </form>
 
                     <button
@@ -360,11 +374,7 @@ const verwijderen = () => {
 
                         <div class="flex items-center gap-3">
                             <Button type="submit" :disabled="nieuweOuder.processing">Uitnodigen</Button>
-                            <button
-                                type="button"
-                                class="text-sm text-muted-foreground underline underline-offset-4"
-                                @click="toonNieuweOuder = false"
-                            >
+                            <button type="button" class="text-sm text-muted-foreground underline underline-offset-4" @click="toonNieuweOuder = false">
                                 Annuleren
                             </button>
                         </div>
@@ -390,11 +400,11 @@ const verwijderen = () => {
 
             <!-- Verwijderen staat apart en onderaan: het is onomkeerbaar -->
             <!-- AVG: een ouder mag opvragen wat de school over zijn kind bewaart -->
-            <div v-if="can.privacy" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+            <div v-if="can.dataExport" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
                 <p class="font-medium">Inzageverzoek</p>
                 <p class="mt-1 text-sm text-muted-foreground">
-                    Alles wat de school over {{ player.name }} bewaart in één Excel-bestand: profiel, ouders, rapporten, cijfers,
-                    aanwezigheid, doelen en betalingen. Bedoeld om aan een ouder te geven die daarom vraagt.
+                    Alles wat de school over {{ player.name }} bewaart in één Excel-bestand: profiel, ouders, rapporten, cijfers, aanwezigheid, doelen
+                    en betalingen. Bedoeld om aan een ouder te geven die daarom vraagt.
                 </p>
                 <a
                     :href="'/players/' + player.id + '/gegevens'"
@@ -408,8 +418,8 @@ const verwijderen = () => {
             <div v-if="can.delete" class="mt-4 rounded-xl border border-destructive/25 bg-destructive/5 p-5">
                 <p class="font-medium text-destructive">Speler verwijderen</p>
                 <p class="mt-1 text-sm text-muted-foreground">
-                    Hiermee verdwijnen ook alle rapporten van deze speler. Wil je alleen dat hij niet meer meetelt, zet hem dan op
-                    niet-actief via Bewerken.
+                    Hiermee verdwijnen ook alle rapporten van deze speler. Wil je alleen dat hij niet meer meetelt, zet hem dan op niet-actief via
+                    Bewerken.
                 </p>
                 <Button variant="destructive" class="mt-4" @click="verwijderen">
                     <Trash2 class="mr-2 size-4" />

@@ -49,7 +49,7 @@ live draaien en erom vragen.
 | Fase | Naam | Features |
 |---|---|---|
 | 7 | Ontwikkelingsdoelen | O2 |
-| 8 | Bewaartermijn, inzage en verwijderen (AVG) | privacy |
+| 8 | Inzageverzoek per speler (bewaartermijn geschrapt 6-9-2026) | privacy |
 | 9 | Betalingen (Mollie) | M2, betaaldata in M9 |
 | 10 | Communicatie | M6 |
 | 11 | White-label & subdomein | M10 |

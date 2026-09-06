@@ -556,21 +556,30 @@ houdt, en dus niet mag sneuvelen:
 - Beoordelen gebeurt alleen in `Actions\Goals\EvaluateGoals`, aangeroepen vanuit `StoreReport` na de kaartberekening: gehaald → `DoelBehaald` naar ouders + speler, badge `doel_gehaald`, mijlpaal in de tijdlijn; einddatum voorbij → `missed`.
 - Trainer/eigenaar stelt en stopt (`GoalPolicy`), ouder/speler ziet alleen. Het rapportscherm toont per categorie een chip "doel 80", niets meer.
 
-### Privacy en bewaartermijn (Fase 8)
+### Inzageverzoek (was: Privacy en bewaartermijn, fase 8)
 
-- `schools.retention_months` is de termijn in maanden; **null betekent "nog niets
-  besloten"**, niet "alles mag weg". Zonder termijn signaleert het scherm niets.
-- De klok start bij `players.deactivated_at`, gezet in een `saving`-hook op het
-  model — niet in een controller, want een speler gaat op meer dan één plek op
-  niet-actief en de datum mag niet van de plek afhangen. Staat niet in `$fillable`.
-- **Er verwijdert nooit iets zichzelf.** `Support\Privacy\RetentionOverview`
-  signaleert alleen; de eigenaar drukt per persoon op de knop. Een verkeerd
-  ingestelde termijn merk je anders pas als de rapporten al weg zijn.
-- Inzageverzoek: `Support\Exports\PlayerDataExport` zet alles van één speler in
-  één werkmap. Die staat bewust **niet** in `ExportRegistry` — dat register is
-  voor schoolbrede overzichten die je uit een lijst kiest.
+Het aparte Privacy-scherm is **weggehaald**. Het liet een school een
+bewaartermijn vastleggen en signaleerde welke oud-leden die termijn voorbij
+waren. In de praktijk was dat een scherm waar niemand kwam, en een instelling
+die nergens toe leidde wekt de indruk dat er iets mee gebeurt. Bouw het niet
+terug zonder dat een school er zelf om vraagt.
+
+Wat er wél staat, en waarom:
+
+- **Inzageverzoek per speler.** `Players\PlayerDataController` +
+  `Support\Exports\PlayerDataExport` zetten alles van één speler in één werkmap:
+  profiel, ouders, rapporten, cijfers, aanwezigheid, doelen en betalingen. De
+  knop staat op de pagina van die speler, want daar stelt een ouder de vraag.
+  Deze export staat bewust **niet** in `ExportRegistry` — dat register is voor
+  schoolbrede overzichten die je uit een lijst kiest.
+- **Verwijderen** loopt via de gewone weg onderaan de spelerspagina, met
+  `PlayerPolicy`. Er is geen tweede knop die hetzelfde doet.
+- **`players.deactivated_at` blijft**, gezet in een `saving`-hook op het model —
+  niet in een controller, want een speler gaat op meer dan één plek op
+  niet-actief en de datum mag niet van de plek afhangen. Staat niet in
+  `$fillable`. Dat is een feit over de speler, geen instelling.
 - Alles hier is van de **eigenaar**. Een trainer beslist niet welke gegevens van
-  een oud-lid verdwijnen.
+  andermans kind het gebouw uit gaan.
 
 ### Betalingen met Mollie (Fase 9)
 
@@ -891,7 +900,7 @@ Volledige scope en status per feature: `FEATURES.md`. Volgorde: het bouwplan.
 - [x] Fase 5 — Voortgang & ouder-ervaring (+ verzamelkaart)
 - [x] Fase 6 — Eigenaar-dashboard (+ exports, online inschrijven)
 - [x] Fase 7 — Ontwikkelingsdoelen (doel per categorie, op koers, badge, tijdlijn)
-- [x] Fase 8 — Bewaartermijn, inzage en verwijderen (AVG); ondertekenen geschrapt
+- [x] Fase 8 — Inzageverzoek per speler; bewaartermijn en ondertekenen geschrapt
 - [x] Fase 9 — Betalingen (Mollie): eenmalig, doorlopende incasso, termijnen, herinneringen
 - [x] Fase 10 — Communicatie (mededelingen, afzeggen, meldingsvoorkeuren)
 - [x] Fase 11 — White-label & subdomein (logo, merkkleur, branding per adres)

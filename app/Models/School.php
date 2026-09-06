@@ -20,7 +20,6 @@ class School extends Model
         'name',
         'slug',
         'is_active',
-        'retention_months',
         'logo_path',
         'brand_color',
         'contact_name',
@@ -35,7 +34,6 @@ class School extends Model
     {
         return [
             'is_active' => 'boolean',
-            'retention_months' => 'integer',
             'features' => 'array',
         ];
     }
