@@ -67,7 +67,9 @@ const deltaTekst = (delta: number | null) => (delta === null ? '' : delta > 0 ? 
                 <!-- Kwartaal-terugblik: de kop van het verhaal, in woorden -->
                 <div class="mt-6 rounded-xl border border-border bg-card p-5 shadow-sm">
                     <p class="font-medium">De afgelopen drie maanden</p>
-                    <div class="mt-4 grid gap-4 sm:grid-cols-4">
+                    <!-- Twee op een rij op een telefoon: vier cijfers onder
+                         elkaar kostte bijna zeshonderd pixels voor vier getallen. -->
+                    <div class="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
                         <div>
                             <p class="tabular text-2xl font-bold leading-none text-primary">{{ quarter.reports }}</p>
                             <p class="mt-1 text-xs text-muted-foreground">rapporten</p>

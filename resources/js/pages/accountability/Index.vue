@@ -79,14 +79,14 @@ const afdrukken = () => window.print();
                     <p class="text-sm text-muted-foreground">Overzicht over {{ report.period.label }}</p>
                 </header>
 
-                <div class="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                <div class="mt-5 grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-3">
                     <div>
-                        <p class="tabular text-3xl font-semibold">{{ report.players }}</p>
+                        <p class="tabular text-2xl font-semibold sm:text-3xl">{{ report.players }}</p>
                         <p class="text-sm text-muted-foreground">actieve spelers</p>
                     </div>
 
                     <div>
-                        <p class="tabular text-3xl font-semibold">
+                        <p class="tabular text-2xl font-semibold sm:text-3xl">
                             {{ report.playersWithReport }}
                             <span v-if="report.coverage !== null" class="text-base font-normal text-muted-foreground">
                                 ({{ report.coverage }}%)
@@ -96,12 +96,12 @@ const afdrukken = () => window.print();
                     </div>
 
                     <div>
-                        <p class="tabular text-3xl font-semibold">{{ report.reports }}</p>
+                        <p class="tabular text-2xl font-semibold sm:text-3xl">{{ report.reports }}</p>
                         <p class="text-sm text-muted-foreground">rapporten geschreven</p>
                     </div>
 
                     <div>
-                        <p class="tabular text-3xl font-semibold">
+                        <p class="tabular text-2xl font-semibold sm:text-3xl">
                             {{ report.playersWithGoal }}
                             <span v-if="report.goalCoverage !== null" class="text-base font-normal text-muted-foreground">
                                 ({{ report.goalCoverage }}%)
@@ -111,19 +111,19 @@ const afdrukken = () => window.print();
                     </div>
 
                     <div>
-                        <p class="tabular text-3xl font-semibold">{{ report.goalsAchieved }}</p>
+                        <p class="tabular text-2xl font-semibold sm:text-3xl">{{ report.goalsAchieved }}</p>
                         <p class="text-sm text-muted-foreground">doelen gehaald in deze periode</p>
                     </div>
 
                     <div>
-                        <p class="tabular text-3xl font-semibold">{{ report.trainings }}</p>
+                        <p class="tabular text-2xl font-semibold sm:text-3xl">{{ report.trainings }}</p>
                         <p class="text-sm text-muted-foreground">
                             trainingen gegeven<span v-if="report.cancelled > 0">, {{ report.cancelled }} afgezegd</span>
                         </p>
                     </div>
 
                     <div>
-                        <p class="tabular text-3xl font-semibold">
+                        <p class="tabular text-2xl font-semibold sm:text-3xl">
                             {{ report.attendance.percentage !== null ? report.attendance.percentage + '%' : '—' }}
                         </p>
                         <p class="text-sm text-muted-foreground">
@@ -134,8 +134,8 @@ const afdrukken = () => window.print();
                         </p>
                     </div>
 
-                    <div class="sm:col-span-2">
-                        <p class="tabular text-3xl font-semibold">
+                    <div class="col-span-2">
+                        <p class="tabular text-2xl font-semibold sm:text-3xl">
                             <template v-if="report.development.average !== null">
                                 {{ report.development.average > 0 ? '+' : '' }}{{ report.development.average }}
                             </template>

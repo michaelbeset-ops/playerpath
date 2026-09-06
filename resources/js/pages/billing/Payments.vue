@@ -134,18 +134,23 @@ const zetStatus = (betaling: Betaling, status: string) =>
                 <div
                     v-for="(betaling, index) in payments"
                     :key="betaling.id"
-                    class="flex flex-wrap items-center gap-4 p-4"
+                    class="flex flex-col gap-3 p-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4"
                     :class="index > 0 ? 'border-t border-border' : ''"
                 >
                     <div class="min-w-0 flex-1">
                         <p class="truncate font-medium">{{ betaling.player ?? 'Onbekende speler' }}</p>
-                        <p class="truncate text-xs text-muted-foreground">
+                        <p class="text-xs leading-snug text-muted-foreground">
                             {{ betaling.description }} &middot; vervalt {{ betaling.due_on }}
                             <span v-if="betaling.paid_at"> &middot; betaald {{ betaling.paid_at }}</span>
                             <span v-if="betaling.method"> &middot; {{ betaling.method }}</span>
                         </p>
                     </div>
 
+                    <!-- Op mobiel een tweede regel: naast de naam pasten drie
+                         vaste elementen, waardoor "Sem de Vries" tot "S..." werd
+                         geknepen. sm:contents laat ze op een groot scherm weer
+                         gewoon in dezelfde rij vallen. -->
+                    <div class="flex flex-wrap items-center gap-3 sm:contents">
                     <p class="tabular shrink-0 font-semibold">{{ betaling.amount }}</p>
 
                     <span class="shrink-0 rounded-lg px-2 py-1 text-xs font-medium" :class="kleurVoor(betaling.status)">
@@ -163,6 +168,7 @@ const zetStatus = (betaling: Betaling, status: string) =>
                     >
                         <option v-for="(label, waarde) in statuses" :key="waarde" :value="waarde">{{ label }}</option>
                     </select>
+                    </div>
                 </div>
             </div>
 

@@ -28,8 +28,9 @@ class NotConnectedGateway implements PaymentGateway
 
     public function statusMessage(): string
     {
-        return 'Betalingen zijn nog niet aangesloten. Je kunt abonnementen en bedragen alvast inrichten; '
-            .'zodra Mollie gekoppeld is, gaan betalingen automatisch lopen.';
+        // De kop zegt al dat het niet is aangesloten; die zin hier herhalen
+        // kostte op een telefoon twee regels zonder iets toe te voegen.
+        return 'Je kunt abonnementen en bedragen alvast inrichten. Zodra Mollie gekoppeld is, gaan betalingen automatisch lopen.';
     }
 
     public function start(Payment $payment, string $returnUrl, string $webhookUrl, ?string $customerReference = null): RemotePayment

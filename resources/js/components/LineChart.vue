@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 
 /**
  * Eén-serie lijngrafiek voor "cijfer over de tijd".
@@ -19,8 +19,7 @@ const props = withDefaults(
         /** Labels per punt, voor de tooltip. */
         labels: string[];
         height?: number;
-        /** Breedte van de viewBox. Bepaalt de verhouding: de SVG schaalt naar
-         *  de volle breedte, dus een bredere viewBox geeft een lagere grafiek. */
+        /** Terugvalbreedte tot de echte breedte gemeten is. */
         width?: number;
         /** Toont het laatste cijfer als label aan het eind van de lijn. */
         showEndLabel?: boolean;
@@ -28,7 +27,38 @@ const props = withDefaults(
     { height: 120, width: 300, showEndLabel: true },
 );
 
-const breedte = computed(() => props.width);
+/*
+ * De viewBox is even breed als het vak waarin de grafiek staat, gemeten met
+ * een ResizeObserver. Daardoor is één viewBox-eenheid altijd één beeldpunt en
+ * blijft de tekst op elk scherm even groot.
+ *
+ * Met een vaste breedte ging dat mis: de bovenste grafiek had een viewBox van
+ * 640 in een vak van 301 breed, dus alles schaalde met 0,47 mee en werden de
+ * aslabels vier pixels hoog — op precies het scherm waarop een ouder kijkt.
+ */
+const vak = ref<HTMLElement | null>(null);
+const gemeten = ref<number | null>(null);
+let waarnemer: ResizeObserver | null = null;
+
+onMounted(() => {
+    if (vak.value === null || typeof ResizeObserver === 'undefined') {
+        return;
+    }
+
+    waarnemer = new ResizeObserver(([entry]) => {
+        const breed = Math.round(entry.contentRect.width);
+
+        if (breed > 0) {
+            gemeten.value = breed;
+        }
+    });
+
+    waarnemer.observe(vak.value);
+});
+
+onBeforeUnmount(() => waarnemer?.disconnect());
+
+const breedte = computed(() => gemeten.value ?? props.width);
 const padding = { top: 14, right: 40, bottom: 18, left: 28 };
 
 const punten = computed(() =>
@@ -78,7 +108,7 @@ const actief = ref<number | null>(null);
 </script>
 
 <template>
-    <div class="relative">
+    <div ref="vak" class="relative">
         <svg :viewBox="`0 0 ${breedte} ${height}`" class="w-full" role="img" :aria-label="'Verloop van ' + series.length + ' rapporten'">
             <!-- Hulplijnen: hairline, terughoudend -->
             <line
@@ -97,7 +127,7 @@ const actief = ref<number | null>(null);
                 :x="padding.left - 6"
                 :y="y(waarde) + 3"
                 text-anchor="end"
-                class="fill-[hsl(var(--muted-foreground))] text-[8px]"
+                class="fill-[hsl(var(--muted-foreground))] text-[10px]"
             >
                 {{ waarde }}
             </text>

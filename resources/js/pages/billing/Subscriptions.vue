@@ -170,19 +170,21 @@ const kleurVoor = (status: string) =>
                 <div
                     v-for="(abonnement, index) in subscriptions"
                     :key="abonnement.id"
-                    class="flex flex-wrap items-center gap-4 p-4"
+                    class="flex flex-col gap-3 p-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-4"
                     :class="index > 0 ? 'border-t border-border' : ''"
                 >
                     <div class="min-w-0 flex-1">
                         <p class="truncate font-medium">{{ abonnement.player ?? 'Onbekende speler' }}</p>
-                        <p class="truncate text-xs text-muted-foreground">
+                        <p class="text-xs leading-snug text-muted-foreground">
                             {{ abonnement.plan ?? 'Tarief verwijderd' }} &middot; sinds {{ abonnement.starts_on }}
                             <span v-if="abonnement.method"> &middot; {{ abonnement.method }}</span>
                             <span v-if="abonnement.ends_on"> &middot; tot {{ abonnement.ends_on }}</span>
                         </p>
                     </div>
 
-                    <div class="shrink-0 text-right">
+                    <!-- Zelfde reden als bij Betalingen: op mobiel een tweede regel. -->
+                    <div class="flex flex-wrap items-center gap-3 sm:contents">
+                    <div class="shrink-0 sm:text-right">
                         <p class="tabular font-semibold">{{ abonnement.amount }}</p>
                         <p class="text-xs text-muted-foreground">{{ abonnement.interval.toLowerCase() }}</p>
                     </div>
@@ -199,6 +201,7 @@ const kleurVoor = (status: string) =>
                     >
                         <option v-for="(label, waarde) in statuses" :key="waarde" :value="waarde">{{ label }}</option>
                     </select>
+                    </div>
                 </div>
             </div>
 

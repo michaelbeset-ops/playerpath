@@ -724,9 +724,25 @@ Vier dingen die je niet moet terugdraaien:
 - **Labels breken af, ze kappen niet af.** Met `truncate` werd "Gemiddelde
   rating" op twee kaarten naast elkaar "Gemiddelde r…".
 
+Daarna nog een tweede ronde op een echte telefoon:
+
+- **Rijen met vaste elementen naast een naam stapelen op mobiel.** Bij
+  Betalingen stonden bedrag, status en keuzelijst naast de naam; die drie zijn
+  `shrink-0`, dus "Sem de Vries" werd "S…". Het patroon is: de rij is
+  `flex-col` en wordt `sm:flex-row`, met de vaste elementen in een wrapper die
+  op groot scherm `sm:contents` is en dus verdwijnt.
+- **Kerncijfers staan overal twee op een rij op mobiel**: dashboard,
+  betalingen, verantwoording en de kwartaalsamenvatting op de voortgangspagina.
+- **`LineChart` meet zijn eigen breedte** met een ResizeObserver, zodat één
+  viewBox-eenheid altijd één beeldpunt is. Met een vaste `width` van 640 in een
+  vak van 301 schaalde álles mee met 0,47 en werden de aslabels vier pixels
+  hoog — op precies het scherm waarop een ouder kijkt.
+
 **Meet het zelf na een layoutwijziging** in plaats van te kijken:
 `document.documentElement.scrollWidth` hoort gelijk te zijn aan
-`clientWidth`. Is hij groter, dan scrollt de pagina zijwaarts.
+`clientWidth`. Is hij groter, dan scrollt de pagina zijwaarts. En kijk of een
+tekst wordt afgekapt met `scrollWidth > clientWidth` op de tekstelementen
+zelf.
 
 ## 6. Werkwijze
 
