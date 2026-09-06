@@ -79,7 +79,7 @@ class GeneratePayments
 
     private function omschrijving(Subscription $subscription, BillingPeriod $periode, ?int $nummer, int $totaal): string
     {
-        $basis = ($subscription->plan?->name ?? 'Contributie').' '.$periode->label();
+        $basis = ($subscription->product?->name ?? 'Contributie').' '.$periode->label();
 
         return $nummer === null ? $basis : "{$basis} (termijn {$nummer} van {$totaal})";
     }

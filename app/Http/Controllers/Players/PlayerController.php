@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Players;
 
+use App\Enums\Feature;
 use App\Enums\PlayerPosition;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
@@ -9,8 +10,12 @@ use App\Http\Requests\Players\PlayerRequest;
 use App\Models\Goal;
 use App\Models\Group;
 use App\Models\Player;
+use App\Models\Product;
+use App\Models\Purchase;
 use App\Models\User;
+use App\Support\Features\Features;
 use App\Support\Goals\GoalProgress;
+use App\Support\Money\Money;
 use App\Support\PlayerCard\CalculatePlayerCard;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,10 +30,14 @@ use Inertia\Response;
  */
 class PlayerController extends Controller
 {
-    public function __construct(protected CalculatePlayerCard $calculator, protected GoalProgress $goals) {}
+    public function __construct(
+        protected CalculatePlayerCard $calculator,
+        protected GoalProgress $goals,
+        protected Features $features,
+    ) {}
 
-    // Het spelersoverzicht woont in Clients\ClientDirectoryController: spelers,
-    // trainers en ouders staan daar samen onder Gebruikers.
+    // Het spelersoverzicht woont in Clients\ClientDirectoryController: spelers
+    // en ouders staan daar samen onder Klanten.
 
     public function create(Request $request): Response
     {
@@ -55,6 +64,10 @@ class PlayerController extends Controller
         // te komen; die hebben de spelerskaart en de voortgangspagina.
         $this->authorize('viewAny', Player::class);
         $this->authorize('view', $player);
+
+        // Zonder de functie Betalingen bestaan producten niet voor deze school;
+        // dan hoeft er ook geen leeg vak op dit scherm te staan.
+        $betalingen = $this->features->enabled(Feature::Betalingen);
 
         $player->load(['groups', 'guardians']);
 
@@ -96,6 +109,37 @@ class PlayerController extends Controller
                     'note' => $report->note,
                 ]),
             'reportCount' => $player->reports()->count(),
+            // Wat deze speler afneemt. Alleen als de school betalingen gebruikt;
+            // anders is het een leeg vak dat nergens over gaat.
+            'purchases' => $betalingen ? $player->purchases()
+                ->latest('starts_on')
+                ->get()
+                ->map(fn (Purchase $aankoop) => [
+                    'id' => $aankoop->id,
+                    'name' => $aankoop->name,
+                    'type' => $aankoop->type->value,
+                    'type_label' => $aankoop->type->label(),
+                    'amount' => Money::format($aankoop->amount_cents),
+                    'credits_total' => $aankoop->credits_total,
+                    'credits_left' => $aankoop->creditsLeft(),
+                    'starts_on' => $aankoop->starts_on->format('d-m-Y'),
+                    'expires_on' => $aankoop->expires_on?->format('d-m-Y'),
+                    'expired' => $aankoop->isExpired(),
+                    'status' => $aankoop->status,
+                    'note' => $aankoop->note,
+                ]) : [],
+            // Wat je hem kunt geven. Abonnementen niet: die lopen via het
+            // abonnementenscherm, met termijnen en incasso.
+            'sellableProducts' => $betalingen && $request->user()->can('update', $player)
+                ? Product::active()->purchasable()->orderBy('name')->get()
+                    ->map(fn (Product $product) => [
+                        'id' => $product->id,
+                        'name' => $product->name,
+                        'type_label' => $product->type->label(),
+                        'amount' => Money::format($product->amount_cents),
+                        'credits' => $product->credits,
+                    ])
+                : [],
             'goals' => $this->goals->forPlayer($player),
             'goalCategories' => collect($player->position->categories())
                 ->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()])->values(),

@@ -19,6 +19,7 @@ class Payment extends Model
     protected $fillable = [
         'player_id',
         'subscription_id',
+        'purchase_id',
         'amount_cents',
         'status',
         'method',
@@ -52,6 +53,12 @@ class Payment extends Model
     public function subscription(): BelongsTo
     {
         return $this->belongsTo(Subscription::class);
+    }
+
+    /** De eenmalige aankoop waar deze rekening bij hoort, als die er is. */
+    public function purchase(): BelongsTo
+    {
+        return $this->belongsTo(Purchase::class);
     }
 
     public function scopePaid(Builder $query): Builder

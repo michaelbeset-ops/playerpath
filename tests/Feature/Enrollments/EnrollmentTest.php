@@ -5,8 +5,8 @@ namespace Tests\Feature\Enrollments;
 use App\Enums\EnrollmentStatus;
 use App\Enums\Role;
 use App\Models\Enrollment;
-use App\Models\Plan;
 use App\Models\Player;
+use App\Models\Product;
 use App\Models\School;
 use App\Models\Subscription;
 use App\Models\User;
@@ -57,7 +57,7 @@ class EnrollmentTest extends TestCase
     public function test_het_formulier_is_openbaar_en_toont_de_tarieven(): void
     {
         app(Tenancy::class)->set($this->school);
-        Plan::factory()->for($this->school)->create(['name' => 'Keeperstraining', 'amount_cents' => 2750]);
+        Product::factory()->for($this->school)->create(['name' => 'Keeperstraining', 'amount_cents' => 2750]);
         app(Tenancy::class)->forget();
 
         $this->get('/inschrijven/keepersschool-rob')
@@ -65,8 +65,8 @@ class EnrollmentTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('enrollments/Public')
                 ->where('school.name', $this->school->name)
-                ->count('plans', 1)
-                ->where('plans.0.amount', '€ 27,50')
+                ->count('products', 1)
+                ->where('products.0.amount', '€ 27,50')
                 // Geen app-props op een openbare pagina.
                 ->where('auth.user', null)
                 ->where('nav', [])
@@ -113,10 +113,10 @@ class EnrollmentTest extends TestCase
     public function test_een_tarief_van_een_andere_school_wordt_geweigerd(): void
     {
         $andere = School::factory()->create();
-        $vreemdPlan = Plan::factory()->for($andere)->create();
+        $vreemdPlan = Product::factory()->for($andere)->create();
 
-        $this->post('/inschrijven/keepersschool-rob', $this->formulier(['plan_id' => $vreemdPlan->id]))
-            ->assertSessionHasErrors('plan_id');
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier(['product_id' => $vreemdPlan->id]))
+            ->assertSessionHasErrors('product_id');
     }
 
     public function test_goedkeuren_maakt_speler_ouder_en_abonnement_aan(): void
@@ -124,11 +124,11 @@ class EnrollmentTest extends TestCase
         Notification::fake();
 
         app(Tenancy::class)->set($this->school);
-        $plan = Plan::factory()->for($this->school)->create(['amount_cents' => 2750]);
+        $product = Product::factory()->for($this->school)->create(['amount_cents' => 2750]);
         $inschrijving = Enrollment::factory()->for($this->school)->create([
             'first_name' => 'Sem', 'last_name' => 'de Vries',
             'guardian_name' => 'Marieke', 'guardian_email' => 'marieke@voorbeeld.nl',
-            'relationship' => 'moeder', 'plan_id' => $plan->id,
+            'relationship' => 'moeder', 'product_id' => $product->id,
         ]);
 
         $this->actingAs($this->eigenaar)

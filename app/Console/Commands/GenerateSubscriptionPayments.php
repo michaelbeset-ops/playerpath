@@ -39,7 +39,7 @@ class GenerateSubscriptionPayments extends Command
             }
 
             $tenancy->forSchool($school, function () use ($actie, $droog, &$totaal) {
-                $abonnementen = Subscription::query()->active()->with('plan', 'player')->get();
+                $abonnementen = Subscription::query()->active()->with('product', 'player')->get();
 
                 foreach ($abonnementen as $abonnement) {
                     if ($droog) {

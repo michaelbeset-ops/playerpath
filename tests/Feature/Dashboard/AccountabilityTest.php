@@ -5,8 +5,8 @@ namespace Tests\Feature\Dashboard;
 use App\Enums\PlayerPosition;
 use App\Enums\ReportCategory;
 use App\Enums\Role;
-use App\Models\Plan;
 use App\Models\Player;
+use App\Models\Product;
 use App\Models\School;
 use App\Models\User;
 use App\Support\Tenancy\Tenancy;
@@ -147,7 +147,7 @@ class AccountabilityTest extends TestCase
             ->assertInertia(fn ($page) => $page->where('checklist.done', 0)->has('checklist.steps', 3));
 
         $speler = Player::factory()->for($this->school)->keeper()->create();
-        Plan::factory()->for($this->school)->create();
+        Product::factory()->for($this->school)->create();
 
         $this->actingAs($this->eigenaar)
             ->get('/dashboard')

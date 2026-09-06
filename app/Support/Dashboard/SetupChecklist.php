@@ -3,8 +3,8 @@
 namespace App\Support\Dashboard;
 
 use App\Enums\Role;
-use App\Models\Plan;
 use App\Models\Player;
+use App\Models\Product;
 use App\Models\Report;
 use App\Models\User;
 
@@ -41,12 +41,12 @@ class SetupChecklist
                 'done' => Player::query()->exists(),
             ],
             [
-                'key' => 'plan',
-                'title' => 'Stel een tarief in',
-                'body' => 'Daarmee kun je abonnementen vastleggen en online laten inschrijven.',
-                'href' => '/plans/create',
-                'action' => 'Tarief instellen',
-                'done' => Plan::query()->exists(),
+                'key' => 'product',
+                'title' => 'Zet je eerste product neer',
+                'body' => 'Een abonnement of een rittenkaart. Daarmee kun je afspraken vastleggen en online laten inschrijven.',
+                'href' => '/products/create',
+                'action' => 'Product toevoegen',
+                'done' => Product::query()->exists(),
             ],
             [
                 'key' => 'report',

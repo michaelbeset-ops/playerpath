@@ -38,7 +38,7 @@ class MyBillingController extends Controller
                     'id' => $speler->id,
                     'name' => $speler->full_name,
                     'subscription' => $abonnement ? [
-                        'plan' => $abonnement->plan?->name,
+                        'plan' => $abonnement->product?->name,
                         'amount' => Money::format($abonnement->amount_cents),
                         'interval' => $abonnement->interval->label(),
                         'method' => $abonnement->payment_method?->label(),

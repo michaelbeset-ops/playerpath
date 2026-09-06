@@ -20,7 +20,7 @@ class SubscriptionFactory extends Factory
         return [
             'school_id' => School::factory(),
             'player_id' => Player::factory(),
-            'plan_id' => null,
+            'product_id' => null,
             'amount_cents' => 2750,
             'interval' => BillingInterval::Monthly,
             'status' => SubscriptionStatus::Active,

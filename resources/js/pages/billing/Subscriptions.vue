@@ -40,7 +40,7 @@ const toonFormulier = ref(false);
 
 const form = useForm({
     player_id: '',
-    plan_id: '',
+    product_id: '',
     payment_method: 'directdebit',
     starts_on: new Date().toISOString().slice(0, 10),
     installments: 1,
@@ -55,8 +55,7 @@ const opslaan = () =>
         },
     });
 
-const zetStatus = (abonnement: Abonnement, status: string) =>
-    router.patch('/subscriptions/' + abonnement.id, { status }, { preserveScroll: true });
+const zetStatus = (abonnement: Abonnement, status: string) => router.patch('/subscriptions/' + abonnement.id, { status }, { preserveScroll: true });
 
 const kleurVoor = (status: string) =>
     status === 'active' ? 'bg-primary/10 text-primary' : status === 'paused' ? 'bg-warning/10 text-warning' : 'bg-secondary text-muted-foreground';
@@ -76,15 +75,15 @@ const kleurVoor = (status: string) =>
                     <p class="mt-1 text-sm text-muted-foreground">Wie zit op welk tarief, en hoe wordt er betaald.</p>
                 </div>
 
-                <Button v-if="!toonFormulier && plans.length" @click="toonFormulier = true">
+                <Button v-if="!toonFormulier && products.length" @click="toonFormulier = true">
                     <Plus class="mr-2 size-4" />
                     Abonnement toevoegen
                 </Button>
             </div>
 
-            <p v-if="!plans.length" class="mt-6 rounded-xl border border-dashed border-border bg-card/50 p-6 text-center text-sm">
+            <p v-if="!products.length" class="mt-6 rounded-xl border border-dashed border-border bg-card/50 p-6 text-center text-sm">
                 Je hebt nog geen actieve tarieven.
-                <Link href="/plans/create" class="font-medium text-primary underline underline-offset-4">Maak er eerst een aan</Link>.
+                <Link href="/products/create" class="font-medium text-primary underline underline-offset-4">Maak er eerst een aan</Link>.
             </p>
 
             <!-- Inschrijven: hier wordt straks ook de incasso of iDEAL-betaling gestart -->
@@ -107,10 +106,10 @@ const kleurVoor = (status: string) =>
                     </div>
 
                     <div class="grid gap-2">
-                        <Label for="plan_id">Tarief</Label>
+                        <Label for="product_id">Tarief</Label>
                         <select
-                            id="plan_id"
-                            v-model="form.plan_id"
+                            id="product_id"
+                            v-model="form.product_id"
                             class="h-10 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
                         >
                             <option value="">Kies een tarief...</option>
@@ -118,7 +117,7 @@ const kleurVoor = (status: string) =>
                                 {{ plan.name }} — {{ plan.amount }} {{ plan.interval.toLowerCase() }}
                             </option>
                         </select>
-                        <InputError :message="form.errors.plan_id" />
+                        <InputError :message="form.errors.product_id" />
                     </div>
 
                     <div class="grid gap-2">
@@ -159,7 +158,7 @@ const kleurVoor = (status: string) =>
                 </p>
 
                 <div class="flex items-center gap-3">
-                    <Button type="submit" :disabled="form.processing || !form.player_id || !form.plan_id">Abonnement vastleggen</Button>
+                    <Button type="submit" :disabled="form.processing || !form.player_id || !form.product_id">Abonnement vastleggen</Button>
                     <button type="button" class="text-sm text-muted-foreground underline underline-offset-4" @click="toonFormulier = false">
                         Annuleren
                     </button>
@@ -184,28 +183,28 @@ const kleurVoor = (status: string) =>
 
                     <!-- Zelfde reden als bij Betalingen: op mobiel een tweede regel. -->
                     <div class="flex flex-wrap items-center gap-3 sm:contents">
-                    <div class="shrink-0 sm:text-right">
-                        <p class="tabular font-semibold">{{ abonnement.amount }}</p>
-                        <p class="text-xs text-muted-foreground">{{ abonnement.interval.toLowerCase() }}</p>
-                    </div>
+                        <div class="shrink-0 sm:text-right">
+                            <p class="tabular font-semibold">{{ abonnement.amount }}</p>
+                            <p class="text-xs text-muted-foreground">{{ abonnement.interval.toLowerCase() }}</p>
+                        </div>
 
-                    <span class="shrink-0 rounded-lg px-2 py-1 text-xs font-medium" :class="kleurVoor(abonnement.status)">
-                        {{ abonnement.status_label }}
-                    </span>
+                        <span class="shrink-0 rounded-lg px-2 py-1 text-xs font-medium" :class="kleurVoor(abonnement.status)">
+                            {{ abonnement.status_label }}
+                        </span>
 
-                    <select
-                        :value="abonnement.status"
-                        class="shrink-0 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
-                        :aria-label="'Status van het abonnement van ' + (abonnement.player ?? 'onbekend')"
-                        @change="zetStatus(abonnement, ($event.target as HTMLSelectElement).value)"
-                    >
-                        <option v-for="(label, waarde) in statuses" :key="waarde" :value="waarde">{{ label }}</option>
-                    </select>
+                        <select
+                            :value="abonnement.status"
+                            class="shrink-0 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                            :aria-label="'Status van het abonnement van ' + (abonnement.player ?? 'onbekend')"
+                            @change="zetStatus(abonnement, ($event.target as HTMLSelectElement).value)"
+                        >
+                            <option v-for="(label, waarde) in statuses" :key="waarde" :value="waarde">{{ label }}</option>
+                        </select>
                     </div>
                 </div>
             </div>
 
-            <div v-else-if="plans.length" class="mt-4 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
+            <div v-else-if="products.length" class="mt-4 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
                 <p class="font-medium">Nog geen abonnementen</p>
                 <p class="mt-1 text-sm text-muted-foreground">Koppel een speler aan een tarief om te beginnen.</p>
             </div>

@@ -91,18 +91,14 @@ const kleurVoor = (status: string) => {
                         </p>
                     </template>
 
-                    <p v-else class="mt-2 text-sm text-muted-foreground">
-                        Er loopt nog geen abonnement. Je schoolbeheerder regelt dat.
-                    </p>
+                    <p v-else class="mt-2 text-sm text-muted-foreground">Er loopt nog geen abonnement. Je schoolbeheerder regelt dat.</p>
                 </div>
             </div>
 
             <div v-if="hasOutstanding" class="mt-4 rounded-xl border border-warning/30 bg-warning/5 p-4">
                 <p class="text-sm">
                     Er staat nog <span class="tabular font-semibold">{{ outstanding }}</span> open.
-                    <template v-if="!gateway.connected">
-                        Online betalen kan nog niet; je school neemt contact met je op.
-                    </template>
+                    <template v-if="!gateway.connected"> Online betalen kan nog niet; je school neemt contact met je op. </template>
                 </p>
             </div>
 

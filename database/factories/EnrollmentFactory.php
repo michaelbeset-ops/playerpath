@@ -26,7 +26,7 @@ class EnrollmentFactory extends Factory
             'guardian_email' => fake()->unique()->safeEmail(),
             'guardian_phone' => fake()->phoneNumber(),
             'relationship' => 'moeder',
-            'plan_id' => null,
+            'product_id' => null,
             'payment_method' => PaymentMethod::DirectDebit,
             'note' => null,
             'status' => EnrollmentStatus::Pending,

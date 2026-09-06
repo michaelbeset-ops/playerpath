@@ -7,7 +7,7 @@ use App\Enums\PlayerPosition;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Enrollment;
-use App\Models\Plan;
+use App\Models\Product;
 use App\Models\School;
 use App\Models\User;
 use App\Notifications\NieuweInschrijving;
@@ -36,20 +36,20 @@ class PublicEnrollmentController extends Controller
     {
         abort_unless($school->is_active, 404);
 
-        $tarieven = $this->tenancy->forSchool($school, fn () => Plan::where('is_active', true)
+        $tarieven = $this->tenancy->forSchool($school, fn () => Product::where('is_active', true)
             ->orderBy('amount_cents')
             ->get()
-            ->map(fn (Plan $plan) => [
-                'id' => $plan->id,
-                'name' => $plan->name,
-                'description' => $plan->description,
-                'amount' => Money::format($plan->amount_cents),
-                'interval' => $plan->interval->label(),
+            ->map(fn (Product $product) => [
+                'id' => $product->id,
+                'name' => $product->name,
+                'description' => $product->description,
+                'amount' => Money::format($product->amount_cents),
+                'interval' => $product->interval->label(),
             ]));
 
         return Inertia::render('enrollments/Public', [
             'school' => ['name' => $school->name, 'slug' => $school->slug],
-            'plans' => $tarieven,
+            'products' => $tarieven,
             'positions' => PlayerPosition::options(),
             'methods' => PaymentMethod::options(),
             'submitted' => (bool) session('enrollment_submitted'),
@@ -69,7 +69,7 @@ class PublicEnrollmentController extends Controller
             'guardian_email' => ['required', 'email', 'max:255'],
             'guardian_phone' => ['nullable', 'string', 'max:40'],
             'relationship' => ['nullable', 'string', 'max:50'],
-            'plan_id' => ['nullable', 'integer', Rule::exists('plans', 'id')->where('school_id', $school->id)->where('is_active', true)],
+            'product_id' => ['nullable', 'integer', Rule::exists('products', 'id')->where('school_id', $school->id)->where('is_active', true)],
             'payment_method' => ['nullable', Rule::enum(PaymentMethod::class)],
             'note' => ['nullable', 'string', 'max:2000'],
             'privacy' => ['accepted'],
@@ -85,7 +85,7 @@ class PublicEnrollmentController extends Controller
             'guardian_email' => 'Je e-mailadres',
             'guardian_phone' => 'Je telefoonnummer',
             'relationship' => 'De relatie',
-            'plan_id' => 'Het tarief',
+            'product_id' => 'Het tarief',
             'payment_method' => 'De betaalmethode',
             'note' => 'De opmerking',
         ]);

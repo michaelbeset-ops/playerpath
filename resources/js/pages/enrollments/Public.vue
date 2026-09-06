@@ -15,7 +15,7 @@ import { CheckCircle2, LoaderCircle } from 'lucide-vue-next';
  */
 const props = defineProps<{
     school: { name: string; slug: string };
-    plans: { id: number; name: string; description: string | null; amount: string; interval: string }[];
+    products: { id: number; name: string; description: string | null; amount: string; interval: string }[];
     positions: Record<string, string>;
     methods: Record<string, string>;
     submitted: boolean;
@@ -30,7 +30,7 @@ const form = useForm({
     guardian_email: '',
     guardian_phone: '',
     relationship: '',
-    plan_id: props.plans[0]?.id ?? null,
+    product_id: props.products[0]?.id ?? null,
     payment_method: 'directdebit',
     note: '',
     privacy: false,
@@ -61,8 +61,8 @@ const verstuur = () => form.post('/inschrijven/' + props.school.slug);
                     <div>
                         <p class="text-lg font-semibold">Inschrijving ontvangen</p>
                         <p class="mt-1 text-sm text-muted-foreground">
-                            Bedankt! {{ school.name }} bekijkt de inschrijving en neemt contact met je op. Zodra hij is goedgekeurd krijg je
-                            een e-mail om in te loggen — daarmee zie je de spelerskaart, de trainingen en de voortgang van je kind.
+                            Bedankt! {{ school.name }} bekijkt de inschrijving en neemt contact met je op. Zodra hij is goedgekeurd krijg je een
+                            e-mail om in te loggen — daarmee zie je de spelerskaart, de trainingen en de voortgang van je kind.
                         </p>
                     </div>
                 </div>
@@ -97,7 +97,9 @@ const verstuur = () => form.post('/inschrijven/' + props.school.slug);
                                     :key="waarde"
                                     type="button"
                                     class="h-11 rounded-lg border text-sm font-medium transition"
-                                    :class="form.position === waarde ? 'border-primary bg-primary/15 text-primary' : 'border-border text-muted-foreground'"
+                                    :class="
+                                        form.position === waarde ? 'border-primary bg-primary/15 text-primary' : 'border-border text-muted-foreground'
+                                    "
                                     @click="form.position = waarde"
                                 >
                                     {{ label }}
@@ -137,30 +139,30 @@ const verstuur = () => form.post('/inschrijven/' + props.school.slug);
                 </section>
 
                 <!-- Het tarief -->
-                <section v-if="plans.length" class="rounded-2xl border border-border bg-card p-5">
+                <section v-if="products.length" class="rounded-2xl border border-border bg-card p-5">
                     <p class="font-semibold">Abonnement</p>
                     <p class="mt-0.5 text-xs text-muted-foreground">De school bevestigt dit bij de goedkeuring. Er wordt nu nog niets betaald.</p>
 
                     <div class="mt-4 space-y-2">
                         <button
-                            v-for="plan in plans"
-                            :key="plan.id"
+                            v-for="product in products"
+                            :key="product.id"
                             type="button"
                             class="flex w-full items-center justify-between gap-3 rounded-xl border p-4 text-left transition"
-                            :class="form.plan_id === plan.id ? 'border-primary bg-primary/10' : 'border-border'"
-                            @click="form.plan_id = plan.id"
+                            :class="form.product_id === product.id ? 'border-primary bg-primary/10' : 'border-border'"
+                            @click="form.product_id = product.id"
                         >
                             <div class="min-w-0">
-                                <p class="font-medium">{{ plan.name }}</p>
-                                <p v-if="plan.description" class="text-xs text-muted-foreground">{{ plan.description }}</p>
+                                <p class="font-medium">{{ product.name }}</p>
+                                <p v-if="product.description" class="text-xs text-muted-foreground">{{ product.description }}</p>
                             </div>
                             <p class="tabular shrink-0 text-right">
-                                <span class="font-bold">{{ plan.amount }}</span>
-                                <span class="block text-xs text-muted-foreground">{{ plan.interval.toLowerCase() }}</span>
+                                <span class="font-bold">{{ product.amount }}</span>
+                                <span class="block text-xs text-muted-foreground">{{ product.interval.toLowerCase() }}</span>
                             </p>
                         </button>
                     </div>
-                    <InputError :message="form.errors.plan_id" />
+                    <InputError :message="form.errors.product_id" />
 
                     <div class="mt-4 grid gap-2">
                         <Label>Betaalmethode</Label>
@@ -170,7 +172,11 @@ const verstuur = () => form.post('/inschrijven/' + props.school.slug);
                                 :key="waarde"
                                 type="button"
                                 class="h-11 rounded-lg border text-xs font-medium transition sm:text-sm"
-                                :class="form.payment_method === waarde ? 'border-primary bg-primary/15 text-primary' : 'border-border text-muted-foreground'"
+                                :class="
+                                    form.payment_method === waarde
+                                        ? 'border-primary bg-primary/15 text-primary'
+                                        : 'border-border text-muted-foreground'
+                                "
                                 @click="form.payment_method = waarde"
                             >
                                 {{ label }}
@@ -192,7 +198,8 @@ const verstuur = () => form.post('/inschrijven/' + props.school.slug);
                     <label class="mt-4 flex items-start gap-3 text-sm">
                         <input v-model="form.privacy" type="checkbox" class="mt-0.5 size-4 accent-[hsl(var(--primary))]" />
                         <span>
-                            Ik ga ermee akkoord dat {{ school.name }} deze gegevens gebruikt om de inschrijving af te handelen en contact met me op te nemen.
+                            Ik ga ermee akkoord dat {{ school.name }} deze gegevens gebruikt om de inschrijving af te handelen en contact met me op te
+                            nemen.
                         </span>
                     </label>
                     <InputError :message="form.errors.privacy" />

@@ -173,13 +173,13 @@ final class PlayerDataExport implements WorkbookExport
     {
         $rijen = Subscription::query()
             ->where('player_id', $this->player->id)
-            ->with('plan')
+            ->with('product')
             ->orderBy('starts_on')
             ->get();
 
         foreach ($rijen as $abonnement) {
             yield [
-                $abonnement->plan?->name,
+                $abonnement->product?->name,
                 // Centen worden hier pas een getal in euro's, zodat Excel kan rekenen.
                 $abonnement->amount_cents / 100,
                 $abonnement->interval->label(),

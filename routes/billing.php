@@ -3,7 +3,8 @@
 use App\Http\Controllers\Billing\CheckoutController;
 use App\Http\Controllers\Billing\MyBillingController;
 use App\Http\Controllers\Billing\PaymentController;
-use App\Http\Controllers\Billing\PlanController;
+use App\Http\Controllers\Billing\ProductController;
+use App\Http\Controllers\Billing\PurchaseController;
 use App\Http\Controllers\Billing\SubscriptionController;
 use App\Http\Controllers\Billing\WebhookController;
 use Illuminate\Support\Facades\Route;
@@ -13,7 +14,12 @@ use Illuminate\Support\Facades\Route;
 // simpelweg niet voor die school.
 Route::middleware(['auth', 'verified', 'feature:betalingen'])->group(function () {
     // Beheer: alleen de eigenaar, zie de policies.
-    Route::resource('plans', PlanController::class)->except(['show']);
+    Route::resource('products', ProductController::class)->except(['show']);
+
+    // Een product toekennen aan een speler. Staat op de pagina van die speler,
+    // want daar zit je als een ouder om een rittenkaart vraagt.
+    Route::post('players/{player}/purchases', [PurchaseController::class, 'store'])->name('purchases.store');
+    Route::delete('players/{player}/purchases/{purchase}', [PurchaseController::class, 'destroy'])->name('purchases.destroy');
 
     Route::get('subscriptions', [SubscriptionController::class, 'index'])->name('subscriptions.index');
     Route::post('subscriptions', [SubscriptionController::class, 'store'])->name('subscriptions.store');

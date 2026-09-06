@@ -96,7 +96,7 @@ const zetMethode = (betaling: Betaling, method: string) =>
             <h1 class="text-2xl font-semibold tracking-tight">Betalingen</h1>
             <p class="mt-1 text-sm text-muted-foreground">Wat er binnenkomt, wat openstaat en wat misging.</p>
 
-            <div class="mt-6 grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+            <div class="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                 <StatCard label="Ontvangen" :value="summary.revenueThisMonth" hint="deze maand, betaalde facturen" :icon="Euro" />
                 <StatCard
                     label="Openstaand"
@@ -160,45 +160,43 @@ const zetMethode = (betaling: Betaling, method: string) =>
                          geknepen. sm:contents laat ze op een groot scherm weer
                          gewoon in dezelfde rij vallen. -->
                     <div class="flex flex-wrap items-center gap-3 sm:contents">
-                    <p class="tabular shrink-0 font-semibold">{{ betaling.amount }}</p>
+                        <p class="tabular shrink-0 font-semibold">{{ betaling.amount }}</p>
 
-                    <span class="shrink-0 rounded-lg px-2 py-1 text-xs font-medium" :class="kleurVoor(betaling.status)">
-                        {{ betaling.status_label }}
-                        <span v-if="betaling.is_overdue"> &middot; te laat</span>
-                    </span>
+                        <span class="shrink-0 rounded-lg px-2 py-1 text-xs font-medium" :class="kleurVoor(betaling.status)">
+                            {{ betaling.status_label }}
+                            <span v-if="betaling.is_overdue"> &middot; te laat</span>
+                        </span>
 
-                    <!-- Met de hand bijwerken; nodig zolang er geen provider is,
+                        <!-- Met de hand bijwerken; nodig zolang er geen provider is,
                          en daarna nog steeds voor overboekingen en contant. -->
-                    <select
-                        :value="betaling.status"
-                        class="shrink-0 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
-                        :aria-label="'Status van de betaling van ' + (betaling.player ?? 'onbekend')"
-                        @change="zetStatus(betaling, ($event.target as HTMLSelectElement).value)"
-                    >
-                        <option v-for="(label, waarde) in statuses" :key="waarde" :value="waarde">{{ label }}</option>
-                    </select>
+                        <select
+                            :value="betaling.status"
+                            class="shrink-0 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                            :aria-label="'Status van de betaling van ' + (betaling.player ?? 'onbekend')"
+                            @change="zetStatus(betaling, ($event.target as HTMLSelectElement).value)"
+                        >
+                            <option v-for="(label, waarde) in statuses" :key="waarde" :value="waarde">{{ label }}</option>
+                        </select>
 
-                    <!-- Alleen als er daadwerkelijk geld binnen is: bij een
+                        <!-- Alleen als er daadwerkelijk geld binnen is: bij een
                          openstaande rekening valt er nog niets vast te leggen. -->
-                    <select
-                        v-if="betaling.status === 'paid'"
-                        :value="betaling.method_value ?? ''"
-                        class="shrink-0 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
-                        :aria-label="'Hoe de betaling van ' + (betaling.player ?? 'onbekend') + ' binnenkwam'"
-                        @change="zetMethode(betaling, ($event.target as HTMLSelectElement).value)"
-                    >
-                        <option value="" disabled>Hoe betaald?</option>
-                        <option v-for="(label, waarde) in methods" :key="waarde" :value="waarde">{{ label }}</option>
-                    </select>
+                        <select
+                            v-if="betaling.status === 'paid'"
+                            :value="betaling.method_value ?? ''"
+                            class="shrink-0 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                            :aria-label="'Hoe de betaling van ' + (betaling.player ?? 'onbekend') + ' binnenkwam'"
+                            @change="zetMethode(betaling, ($event.target as HTMLSelectElement).value)"
+                        >
+                            <option value="" disabled>Hoe betaald?</option>
+                            <option v-for="(label, waarde) in methods" :key="waarde" :value="waarde">{{ label }}</option>
+                        </select>
                     </div>
                 </div>
             </div>
 
             <div v-else class="mt-4 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
                 <p class="font-medium">Nog geen betalingen</p>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    Zodra {{ gateway.name }} is aangesloten komen betalingen hier vanzelf binnen.
-                </p>
+                <p class="mt-1 text-sm text-muted-foreground">Zodra {{ gateway.name }} is aangesloten komen betalingen hier vanzelf binnen.</p>
             </div>
         </div>
     </AppLayout>

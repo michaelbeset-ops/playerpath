@@ -20,7 +20,7 @@ class Subscription extends Model
 
     protected $fillable = [
         'player_id',
-        'plan_id',
+        'product_id',
         'amount_cents',
         'interval',
         'installments',
@@ -49,9 +49,9 @@ class Subscription extends Model
         return $this->belongsTo(Player::class);
     }
 
-    public function plan(): BelongsTo
+    public function product(): BelongsTo
     {
-        return $this->belongsTo(Plan::class);
+        return $this->belongsTo(Product::class);
     }
 
     public function payments(): HasMany

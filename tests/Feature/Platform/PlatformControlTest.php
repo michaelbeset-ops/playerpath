@@ -81,7 +81,7 @@ class PlatformControlTest extends TestCase
         $this->actingAs($this->eigenaar)->get('/calendar')->assertNotFound();
         $this->actingAs($this->eigenaar)->get('/payments')->assertNotFound();
         $this->actingAs($this->eigenaar)->get('/subscriptions')->assertNotFound();
-        $this->actingAs($this->eigenaar)->get('/plans')->assertNotFound();
+        $this->actingAs($this->eigenaar)->get('/products')->assertNotFound();
         $this->actingAs($this->eigenaar)->get('/exports')->assertNotFound();
 
         // Wat aan blijft, blijft gewoon werken.
@@ -125,7 +125,7 @@ class PlatformControlTest extends TestCase
 
         Subscription::factory()->for($this->school)->create([
             'player_id' => $speler->id,
-            'plan_id' => null,
+            'product_id' => null,
             'starts_on' => now()->subMonth()->toDateString(),
         ]);
 

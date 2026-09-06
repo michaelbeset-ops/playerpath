@@ -7,8 +7,8 @@ use App\Models\Announcement;
 use App\Models\Enrollment;
 use App\Models\Group;
 use App\Models\Payment;
-use App\Models\Plan;
 use App\Models\Player;
+use App\Models\Product;
 use App\Models\Report;
 use App\Models\Subscription;
 use App\Models\Training;
@@ -91,7 +91,7 @@ class MainNavigation
                 'title' => 'Financiën', 'icon' => 'payments', 'items' => [
                     ['title' => 'Betalingen', 'href' => '/payments', 'icon' => 'payments', 'allowed' => $user->can('viewAny', Payment::class), 'feature' => Feature::Betalingen],
                     ['title' => 'Abonnementen', 'href' => '/subscriptions', 'icon' => 'subscriptions', 'allowed' => $user->can('viewAny', Subscription::class), 'feature' => Feature::Betalingen],
-                    ['title' => 'Tarieven', 'href' => '/plans', 'icon' => 'plans', 'allowed' => $user->can('viewAny', Plan::class), 'feature' => Feature::Betalingen],
+                    ['title' => 'Producten', 'href' => '/products', 'icon' => 'products', 'allowed' => $user->can('viewAny', Product::class), 'feature' => Feature::Betalingen],
                     ['title' => 'Overzichten', 'href' => '/exports', 'icon' => 'exports', 'allowed' => $user->isEigenaar(), 'feature' => Feature::Exports],
                     // Ouder en speler: hun eigen abonnement, niet dat van de school.
                     ['title' => 'Mijn abonnement', 'href' => '/billing', 'icon' => 'payments', 'allowed' => $user->visiblePlayerIds() !== [], 'feature' => Feature::Betalingen],

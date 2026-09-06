@@ -155,7 +155,7 @@ class CashPaymentTest extends TestCase
     {
         $abonnement = Subscription::factory()->for($this->school)->create([
             'player_id' => $this->speler->id,
-            'plan_id' => null,
+            'product_id' => null,
             'payment_method' => PaymentMethod::Cash,
             'interval' => BillingInterval::Monthly,
             'status' => SubscriptionStatus::Active,
@@ -181,7 +181,7 @@ class CashPaymentTest extends TestCase
     {
         $abonnement = Subscription::factory()->for($this->school)->create([
             'player_id' => $this->speler->id,
-            'plan_id' => null,
+            'product_id' => null,
             'payment_method' => PaymentMethod::Cash,
             'interval' => BillingInterval::Monthly,
             'status' => SubscriptionStatus::Active,

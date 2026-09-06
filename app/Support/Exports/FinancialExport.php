@@ -152,7 +152,7 @@ class FinancialExport implements WorkbookExport
     protected function abonnementen(): iterable
     {
         $rijen = Subscription::query()
-            ->with(['player', 'plan'])
+            ->with(['player', 'product'])
             ->orderBy('status')
             ->orderBy('starts_on')
             ->get();
@@ -160,7 +160,7 @@ class FinancialExport implements WorkbookExport
         foreach ($rijen as $abonnement) {
             yield [
                 $abonnement->player?->full_name,
-                $abonnement->plan?->name,
+                $abonnement->product?->name,
                 self::euro($abonnement->amount_cents),
                 $abonnement->interval->label(),
                 $abonnement->status->label(),

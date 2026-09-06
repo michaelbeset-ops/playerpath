@@ -667,6 +667,55 @@ Wat er wél staat, en waarom:
 - Alles hier is van de **eigenaar**. Een trainer beslist niet welke gegevens van
   andermans kind het gebouw uit gaan.
 
+### Producten (Fase 16)
+
+`plans` heette naar de tijd dat een school alleen abonnementen verkocht. Het is
+nu **`products`**, met `App\Enums\ProductType`: abonnement, rittenkaart, losse
+training, kamp, overig. Eén prijslijst, want twee lijsten naast elkaar betekent
+dat je bij elke vraag moet nadenken waar iets ook alweer staat.
+
+- **Het type bepaalt het gedrag, niet alleen de naam.** Een abonnement heeft een
+  frequentie, een rittenkaart heeft beurten. Wat niet bij het soort hoort wordt
+  bij het opslaan **leeggemaakt** — een kamp met een maandfrequentie is een veld
+  dat later niemand meer snapt.
+- **`vat_rate` staat per product.** Sportlessen vallen in Nederland vaak onder
+  het lage tarief en soms onder een vrijstelling; dat verschilt per school. De
+  ingevulde prijs is wat de ouder betaalt, dus inclusief btw;
+  `Product::amountExclVatCents()` rekent terug.
+- **Nul euro mag.** Een proefles is gratis, en levert dan ook geen rekening op.
+
+#### Aankopen versus abonnementen
+
+Een **abonnement** loopt door en brengt telkens een nieuwe rekening voort; dat
+blijft `Subscription`, met termijnen en incasso. Al het andere is een
+**`Purchase`**: één keer afnemen, één rekening. `PurchaseController` weigert
+daarom een abonnement — die twee door elkaar halen levert dubbele rekeningen op.
+
+Naam en bedrag worden **overgenomen** uit het product, niet opgezocht. Een
+prijsverhoging of een hernoeming raakt een gedane afspraak dus niet, precies
+zoals bij abonnementen. `product_id` is nullOnDelete: die verwijzing is voor het
+overzicht, niet voor de waarheid.
+
+Intrekken zet de aankoop op `cancelled` en verwijdert niets. Wat er is afgenomen
+hoort in de historie te blijven, en de rekening die eraan hangt ook.
+
+#### Beurten van een rittenkaart
+
+Een kaart zonder afschrijven is een prijslijst. `Actions\Products\ConsumeCredit`
+haalt er een beurt af op het moment dat de trainer iemand **aanwezig** meldt —
+niet bij het aanmelden. Wie zich aanmeldt en niet komt heeft niets afgenomen, en
+dat verschil is precies waarom `registration` en `status` twee losse velden zijn.
+
+Drie eigenschappen die je niet moet weghalen:
+
+1. **De oudste bruikbare kaart gaat eerst.** Die verloopt als eerste; andersom
+   raakt een ouder beurten kwijt die hij had kunnen gebruiken.
+2. **Het is omkeerbaar.** `attendances.purchase_id` legt vast van welke kaart de
+   beurt kwam, dus een trainer die zich vergist krijgt hem terug op dezelfde
+   kaart — ook als die inmiddels verlopen is.
+3. **Zonder kaart gebeurt er niets.** Aanwezigheid vastleggen mag nooit
+   stuklopen op de administratie.
+
 ### Betalingen met Mollie (Fase 9)
 
 - De app praat alleen met `Support\Payments\PaymentGateway`. Zonder `MOLLIE_KEY`

@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ClipboardList, FileDown, IdCard, Pencil, Target, Trash2, UserPlus, X } from 'lucide-vue-next';
+import { ClipboardList, FileDown, IdCard, Pencil, Plus, Target, Trash2, UserPlus, X } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 interface Categorie {
@@ -39,6 +39,21 @@ const props = defineProps<{
     guardians: { id: number; name: string; email: string; relationship: string | null }[];
     reports: { id: number; reported_on: string; trainer: string | null; note: string | null }[];
     reportCount: number;
+    purchases: {
+        id: number;
+        name: string;
+        type: string;
+        type_label: string;
+        amount: string;
+        credits_total: number | null;
+        credits_left: number | null;
+        starts_on: string;
+        expires_on: string | null;
+        expired: boolean;
+        status: string;
+        note: string | null;
+    }[];
+    sellableProducts: { id: number; name: string; type_label: string; amount: string; credits: number | null }[];
     linkableGuardians: { id: number; name: string; email: string }[];
     goals: Doel[];
     goalCategories: { value: string; label: string }[];
@@ -73,6 +88,26 @@ const stelDoel = () =>
             toonDoelFormulier.value = false;
         },
     });
+
+// --- Producten ---
+const toonProductFormulier = ref(false);
+
+const productForm = useForm({ product_id: '', starts_on: '', note: '' });
+
+const kenToe = () =>
+    productForm.post('/players/' + props.player.id + '/purchases', {
+        preserveScroll: true,
+        onSuccess: () => {
+            productForm.reset();
+            toonProductFormulier.value = false;
+        },
+    });
+
+const trekIn = (id: number, naam: string) => {
+    if (confirm(`${naam} intrekken? De rekening die eraan hangt blijft staan.`)) {
+        router.delete('/players/' + props.player.id + '/purchases/' + id, { preserveScroll: true });
+    }
+};
 
 const stopDoel = (id: number) => {
     if (confirm('Dit doel stoppen?')) {
@@ -403,6 +438,112 @@ const verwijderen = () => {
                 </div>
 
                 <p v-else class="mt-3 text-sm text-muted-foreground">Er is nog geen rapport ingevuld voor deze speler.</p>
+            </div>
+
+            <!-- Wat deze speler afneemt. Abonnementen staan er bewust niet
+                 bij: die hebben hun eigen scherm met termijnen en incasso. -->
+            <div v-if="purchases.length || sellableProducts.length" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <p class="font-medium">Producten</p>
+                    <Button v-if="sellableProducts.length && !toonProductFormulier" size="sm" @click="toonProductFormulier = true">
+                        <Plus class="mr-2 size-4" />
+                        Toekennen
+                    </Button>
+                </div>
+
+                <form v-if="toonProductFormulier" class="mt-4 space-y-4 rounded-lg border border-border p-4" @submit.prevent="kenToe">
+                    <div class="grid gap-2">
+                        <Label for="product_id">Product</Label>
+                        <select
+                            id="product_id"
+                            v-model="productForm.product_id"
+                            required
+                            class="h-10 rounded-lg border border-input bg-background px-3 text-base outline-none focus:border-primary sm:text-sm"
+                        >
+                            <option value="">Kies een product...</option>
+                            <option v-for="product in sellableProducts" :key="product.id" :value="product.id">
+                                {{ product.name }} &middot; {{ product.amount
+                                }}<template v-if="product.credits"> &middot; {{ product.credits }} beurten</template>
+                            </option>
+                        </select>
+                        <InputError :message="productForm.errors.product_id" />
+                    </div>
+
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid gap-2">
+                            <Label for="starts_on">Ingangsdatum <span class="text-muted-foreground">(optioneel)</span></Label>
+                            <Input id="starts_on" v-model="productForm.starts_on" type="date" />
+                            <InputError :message="productForm.errors.starts_on" />
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label for="purchase_note">Notitie <span class="text-muted-foreground">(optioneel)</span></Label>
+                            <Input id="purchase_note" v-model="productForm.note" placeholder="Contant betaald" />
+                            <InputError :message="productForm.errors.note" />
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-muted-foreground">
+                        Er ontstaat meteen een openstaande rekening. Die zet je zelf op betaald zodra het geld binnen is.
+                    </p>
+
+                    <div class="flex items-center gap-3">
+                        <Button type="submit" :disabled="productForm.processing">Toekennen</Button>
+                        <button
+                            type="button"
+                            class="text-sm text-muted-foreground underline underline-offset-4"
+                            @click="toonProductFormulier = false"
+                        >
+                            Annuleren
+                        </button>
+                    </div>
+                </form>
+
+                <div v-if="purchases.length" class="mt-4 space-y-2">
+                    <div
+                        v-for="aankoop in purchases"
+                        :key="aankoop.id"
+                        class="flex flex-wrap items-center gap-3 rounded-lg border border-border p-3"
+                        :class="aankoop.status !== 'active' || aankoop.expired ? 'opacity-60' : ''"
+                    >
+                        <div class="min-w-0 flex-1">
+                            <p class="flex flex-wrap items-center gap-2 text-sm font-medium">
+                                {{ aankoop.name }}
+                                <span class="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                    {{ aankoop.type_label }}
+                                </span>
+                                <span v-if="aankoop.status === 'cancelled'" class="text-[10px] text-muted-foreground">ingetrokken</span>
+                                <span v-else-if="aankoop.expired" class="text-[10px] text-warning">verlopen</span>
+                            </p>
+                            <p class="tabular text-xs text-muted-foreground">
+                                {{ aankoop.amount }} &middot; vanaf {{ aankoop.starts_on }}
+                                <template v-if="aankoop.expires_on"> &middot; tot {{ aankoop.expires_on }}</template>
+                                <template v-if="aankoop.note"> &middot; {{ aankoop.note }}</template>
+                            </p>
+                        </div>
+
+                        <!-- Het saldo van een rittenkaart: het enige cijfer dat
+                             een ouder aan de telefoon van je wil horen. -->
+                        <p v-if="aankoop.credits_total" class="tabular shrink-0 text-sm">
+                            <span class="font-bold" :class="(aankoop.credits_left ?? 0) > 0 ? 'text-primary' : 'text-muted-foreground'">
+                                {{ aankoop.credits_left }}
+                            </span>
+                            <span class="text-xs text-muted-foreground">/ {{ aankoop.credits_total }} over</span>
+                        </p>
+
+                        <button
+                            v-if="can.manage && aankoop.status === 'active'"
+                            type="button"
+                            class="shrink-0 rounded-lg p-2 text-muted-foreground transition hover:bg-secondary hover:text-destructive"
+                            :aria-label="aankoop.name + ' intrekken'"
+                            @click="trekIn(aankoop.id, aankoop.name)"
+                        >
+                            <Trash2 class="size-4" />
+                        </button>
+                    </div>
+                </div>
+
+                <p v-else-if="!toonProductFormulier" class="mt-3 text-sm text-muted-foreground">Nog niets afgenomen.</p>
             </div>
 
             <!-- De foto komt ook op de spelerskaart terecht; daarom staat de

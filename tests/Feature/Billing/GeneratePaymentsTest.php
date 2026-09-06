@@ -38,7 +38,7 @@ class GeneratePaymentsTest extends TestCase
     {
         return Subscription::factory()->for($this->school)->create(array_merge([
             'player_id' => $this->speler->id,
-            'plan_id' => null,
+            'product_id' => null,
             'amount_cents' => 2750,
             'interval' => BillingInterval::Monthly,
             'status' => SubscriptionStatus::Active,
@@ -173,7 +173,7 @@ class GeneratePaymentsTest extends TestCase
             $speler = Player::factory()->for($andere)->create();
             Subscription::factory()->for($andere)->create([
                 'player_id' => $speler->id,
-                'plan_id' => null,
+                'product_id' => null,
                 'status' => SubscriptionStatus::Active,
                 'interval' => BillingInterval::Monthly,
                 'starts_on' => now()->subMonths(2)->toDateString(),

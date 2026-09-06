@@ -57,7 +57,7 @@ const iconen: Record<string, Component> = {
     reports: ClipboardList,
     subscriptions: Receipt,
     payments: CreditCard,
-    plans: Tag,
+    products: Tag,
     exports: FileDown,
     enrollments: Inbox,
     branding: Palette,

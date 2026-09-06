@@ -30,7 +30,7 @@ class NieuweInschrijving extends Notification implements ShouldQueue
             ->subject("Nieuwe inschrijving: {$this->enrollment->child_name}")
             ->greeting('Hallo!')
             ->line("{$this->enrollment->guardian_name} heeft {$this->enrollment->child_name} ({$this->enrollment->position->label()}, {$this->enrollment->age} jaar) ingeschreven.")
-            ->line($this->enrollment->plan ? "Gewenst tarief: {$this->enrollment->plan->name}." : 'Er is nog geen tarief gekozen.')
+            ->line($this->enrollment->product ? "Gewenst tarief: {$this->enrollment->product->name}." : 'Er is nog geen tarief gekozen.')
             ->action('Bekijk de inschrijving', route('enrollments.index'))
             ->salutation($this->schoolSalutation($notifiable));
     }

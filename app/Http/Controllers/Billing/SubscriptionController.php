@@ -6,8 +6,8 @@ use App\Actions\Payments\GeneratePayments;
 use App\Enums\PaymentMethod;
 use App\Enums\SubscriptionStatus;
 use App\Http\Controllers\Controller;
-use App\Models\Plan;
 use App\Models\Player;
+use App\Models\Product;
 use App\Models\Subscription;
 use App\Support\Money\Money;
 use App\Support\Payments\PaymentGateway;
@@ -38,14 +38,14 @@ class SubscriptionController extends Controller
         $this->authorize('viewAny', Subscription::class);
 
         $subscriptions = Subscription::query()
-            ->with(['player', 'plan'])
+            ->with(['player', 'product'])
             ->orderByDesc('starts_on')
             ->get()
             ->map(fn (Subscription $abonnement) => [
                 'id' => $abonnement->id,
                 'player' => $abonnement->player?->full_name,
                 'player_id' => $abonnement->player_id,
-                'plan' => $abonnement->plan?->name,
+                'plan' => $abonnement->product?->name,
                 'amount' => Money::format($abonnement->amount_cents),
                 'interval' => $abonnement->interval->label(),
                 'status' => $abonnement->status->value,
@@ -63,14 +63,14 @@ class SubscriptionController extends Controller
                 ->orderBy('first_name')
                 ->get()
                 ->map(fn (Player $speler) => ['id' => $speler->id, 'name' => $speler->full_name]),
-            'plans' => Plan::where('is_active', true)
+            'products' => Product::where('is_active', true)
                 ->orderBy('name')
                 ->get()
-                ->map(fn (Plan $plan) => [
-                    'id' => $plan->id,
-                    'name' => $plan->name,
-                    'amount' => Money::format($plan->amount_cents),
-                    'interval' => $plan->interval->label(),
+                ->map(fn (Product $product) => [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'amount' => Money::format($product->amount_cents),
+                    'interval' => $product->interval->label(),
                 ]),
             'methods' => PaymentMethod::options(),
             'statuses' => SubscriptionStatus::options(),
@@ -86,7 +86,7 @@ class SubscriptionController extends Controller
         $validated = $request->validate([
             // exists kent de global scope niet, dus expliciet op school begrenzen.
             'player_id' => ['required', 'integer', Rule::exists('players', 'id')->where('school_id', $schoolId)],
-            'plan_id' => ['required', 'integer', Rule::exists('plans', 'id')->where('school_id', $schoolId)],
+            'product_id' => ['required', 'integer', Rule::exists('products', 'id')->where('school_id', $schoolId)],
             'payment_method' => ['required', Rule::enum(PaymentMethod::class)],
             'starts_on' => ['required', 'date'],
             // Een jaarbedrag in tien maandtermijnen is bij sportclubs normaal.
@@ -95,21 +95,21 @@ class SubscriptionController extends Controller
             'installments.between' => 'Kies één tot twaalf termijnen.',
         ], [
             'player_id' => 'De speler',
-            'plan_id' => 'De abonnementsvorm',
+            'product_id' => 'De abonnementsvorm',
             'payment_method' => 'De betaalmethode',
             'starts_on' => 'De ingangsdatum',
             'installments' => 'Het aantal termijnen',
         ]);
 
-        $plan = Plan::findOrFail($validated['plan_id']);
+        $product = Product::findOrFail($validated['product_id']);
 
         // Bedrag en frequentie worden overgenomen, niet gekoppeld: verandert de
         // school later haar tarief, dan verandert een lopend abonnement niet mee.
         $abonnement = Subscription::create([
             'player_id' => $validated['player_id'],
-            'plan_id' => $plan->id,
-            'amount_cents' => $plan->amount_cents,
-            'interval' => $plan->interval,
+            'product_id' => $product->id,
+            'amount_cents' => $product->amount_cents,
+            'interval' => $product->interval,
             'installments' => ($validated['installments'] ?? 1) > 1 ? $validated['installments'] : null,
             'status' => SubscriptionStatus::Active,
             'payment_method' => $validated['payment_method'],

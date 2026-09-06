@@ -10,8 +10,8 @@ use App\Enums\Role;
 use App\Enums\SubscriptionStatus;
 use App\Models\Group;
 use App\Models\Payment;
-use App\Models\Plan;
 use App\Models\Player;
+use App\Models\Product;
 use App\Models\Report;
 use App\Models\School;
 use App\Models\Subscription;
@@ -68,7 +68,7 @@ class DemoSchoolsSeeder extends Seeder
      */
     protected function maakAdministratie($spelers): void
     {
-        $plan = Plan::create([
+        $product = Product::create([
             'name' => 'Keeperstraining',
             'description' => 'Wekelijkse training, inclusief materiaal',
             'amount_cents' => 2750,
@@ -78,9 +78,9 @@ class DemoSchoolsSeeder extends Seeder
         foreach ($spelers as $index => $speler) {
             $abonnement = Subscription::create([
                 'player_id' => $speler->id,
-                'plan_id' => $plan->id,
-                'amount_cents' => $plan->amount_cents,
-                'interval' => $plan->interval,
+                'product_id' => $product->id,
+                'amount_cents' => $product->amount_cents,
+                'interval' => $product->interval,
                 'status' => SubscriptionStatus::Active,
                 'payment_method' => PaymentMethod::DirectDebit,
                 'starts_on' => now()->subMonths(4)->startOfMonth()->toDateString(),

@@ -71,12 +71,12 @@ class ApproveEnrollment
                 $ouder->id => ['relationship' => $enrollment->relationship],
             ]);
 
-            if ($enrollment->plan) {
+            if ($enrollment->product) {
                 $abonnement = Subscription::create([
                     'player_id' => $player->id,
-                    'plan_id' => $enrollment->plan->id,
-                    'amount_cents' => $enrollment->plan->amount_cents,
-                    'interval' => $enrollment->plan->interval,
+                    'product_id' => $enrollment->product->id,
+                    'amount_cents' => $enrollment->product->amount_cents,
+                    'interval' => $enrollment->product->interval,
                     'status' => SubscriptionStatus::Active,
                     'payment_method' => $enrollment->payment_method,
                     'starts_on' => now()->toDateString(),

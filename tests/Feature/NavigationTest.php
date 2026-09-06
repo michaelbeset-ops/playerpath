@@ -147,7 +147,7 @@ class NavigationTest extends TestCase
         // De administratie van de school is niet van een ouder; die heeft een
         // eigen scherm met alleen het eigen abonnement.
         $this->assertNotContains('/payments', $hrefs);
-        $this->assertNotContains('/plans', $hrefs);
+        $this->assertNotContains('/products', $hrefs);
         $this->assertNotContains('/subscriptions', $hrefs);
         $this->assertContains('/billing', $hrefs);
     }
@@ -163,7 +163,7 @@ class NavigationTest extends TestCase
             '/calendar', '/trainings',
             '/clients', '/clients/guardians', '/groups', '/enrollments',
             '/reports',
-            '/payments', '/subscriptions', '/plans', '/exports',
+            '/payments', '/subscriptions', '/products', '/exports',
             '/announcements',
             '/staff', '/branding', '/verantwoording', '/settings/profile',
         ], $hrefs);

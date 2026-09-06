@@ -53,7 +53,7 @@ class DirectDebitTest extends TestCase
 
         $this->abonnement = Subscription::factory()->for($this->school)->create([
             'player_id' => $this->speler->id,
-            'plan_id' => null,
+            'product_id' => null,
             'payment_method' => PaymentMethod::DirectDebit,
             'interval' => BillingInterval::Monthly,
             'status' => SubscriptionStatus::Active,

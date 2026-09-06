@@ -4,10 +4,11 @@ namespace Tests\Feature\Billing;
 
 use App\Enums\BillingInterval;
 use App\Enums\PaymentStatus;
+use App\Enums\ProductType;
 use App\Enums\Role;
 use App\Models\Payment;
-use App\Models\Plan;
 use App\Models\Player;
+use App\Models\Product;
 use App\Models\School;
 use App\Models\Subscription;
 use App\Models\User;
@@ -59,40 +60,60 @@ class BillingTest extends TestCase
     {
         // 12.50 * 100 geeft in floating point 1249.9999999999998. Precies
         // hierom mag geld geen float zijn. Zie CLAUDE.md 3.2.
-        $this->actingAs($this->eigenaar)->post('/plans', [
+        $this->actingAs($this->eigenaar)->post('/products', [
             'name' => 'Keeperstraining',
+            'type' => ProductType::Abonnement->value,
             'amount' => '12,50',
+            'vat_rate' => 21,
             'interval' => BillingInterval::Monthly->value,
             'is_active' => true,
         ])->assertRedirect();
 
-        $this->assertDatabaseHas('plans', ['name' => 'Keeperstraining', 'amount_cents' => 1250]);
+        $this->assertDatabaseHas('products', ['name' => 'Keeperstraining', 'amount_cents' => 1250]);
     }
 
-    public function test_een_bedrag_van_nul_wordt_geweigerd(): void
+    public function test_een_gratis_product_mag(): void
+    {
+        // Nul is een geldige prijs: een proefles kost niets. Er ontstaat dan
+        // ook geen rekening; zie Actions\\Products\\SellProduct.
+        $this->actingAs($this->eigenaar)
+            ->post('/products', [
+                'name' => 'Proefles',
+                'type' => ProductType::LosseTraining->value,
+                'amount' => '0',
+                'vat_rate' => 21,
+                'is_active' => true,
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('products', ['name' => 'Proefles', 'amount_cents' => 0]);
+    }
+
+    public function test_een_negatief_bedrag_wordt_geweigerd(): void
     {
         $this->actingAs($this->eigenaar)
-            ->post('/plans', [
-                'name' => 'Gratis',
-                'amount' => '0',
-                'interval' => BillingInterval::Monthly->value,
+            ->post('/products', [
+                'name' => 'Fout',
+                'type' => ProductType::LosseTraining->value,
+                'amount' => '-5',
+                'vat_rate' => 21,
                 'is_active' => true,
             ])
             ->assertSessionHasErrors('amount');
-
-        $this->assertDatabaseCount('plans', 0);
     }
 
     // --- Tarieven ---
 
     public function test_twee_tarieven_met_dezelfde_naam_mogen_niet_binnen_een_school(): void
     {
-        Plan::factory()->for($this->school)->create(['name' => 'Keeperstraining']);
+        Product::factory()->for($this->school)->create(['name' => 'Keeperstraining']);
 
         $this->actingAs($this->eigenaar)
-            ->post('/plans', [
+            ->post('/products', [
                 'name' => 'Keeperstraining',
+                'type' => ProductType::Abonnement->value,
                 'amount' => '30,00',
+                'vat_rate' => 21,
                 'interval' => BillingInterval::Monthly->value,
                 'is_active' => true,
             ])
@@ -101,51 +122,53 @@ class BillingTest extends TestCase
 
     public function test_een_tarief_verwijderen_laat_lopende_abonnementen_bestaan(): void
     {
-        $plan = Plan::factory()->for($this->school)->create();
+        $product = Product::factory()->for($this->school)->create();
         $speler = Player::factory()->for($this->school)->create();
 
         $abonnement = Subscription::factory()->for($this->school)->create([
             'player_id' => $speler->id,
-            'plan_id' => $plan->id,
+            'product_id' => $product->id,
             'amount_cents' => 2750,
         ]);
 
-        $this->actingAs($this->eigenaar)->delete('/plans/'.$plan->id)->assertRedirect('/plans');
+        $this->actingAs($this->eigenaar)->delete('/products/'.$product->id)->assertRedirect('/products');
 
         $abonnement->refresh();
 
-        $this->assertNull($abonnement->plan_id);
+        $this->assertNull($abonnement->product_id);
         $this->assertSame(2750, $abonnement->amount_cents, 'Het bedrag hoort bij het abonnement te blijven.');
     }
 
     public function test_een_tariefwijziging_raakt_lopende_abonnementen_niet(): void
     {
-        $plan = Plan::factory()->for($this->school)->create(['amount_cents' => 2750]);
+        $product = Product::factory()->for($this->school)->create(['amount_cents' => 2750]);
         $speler = Player::factory()->for($this->school)->create();
 
         $this->actingAs($this->eigenaar)->post('/subscriptions', [
             'player_id' => $speler->id,
-            'plan_id' => $plan->id,
+            'product_id' => $product->id,
             'payment_method' => 'directdebit',
             'starts_on' => now()->toDateString(),
         ]);
 
-        $this->actingAs($this->eigenaar)->put('/plans/'.$plan->id, [
-            'name' => $plan->name,
+        $this->actingAs($this->eigenaar)->put('/products/'.$product->id, [
+            'name' => $product->name,
+            'type' => ProductType::Abonnement->value,
             'amount' => '35,00',
+            'vat_rate' => 21,
             'interval' => BillingInterval::Monthly->value,
             'is_active' => true,
-        ]);
+        ])->assertSessionHasNoErrors();
 
         $this->assertSame(2750, Subscription::firstOrFail()->amount_cents);
-        $this->assertSame(3500, $plan->refresh()->amount_cents);
+        $this->assertSame(3500, $product->refresh()->amount_cents);
     }
 
     // --- Abonnementen ---
 
     public function test_een_abonnement_neemt_bedrag_en_frequentie_over_van_het_tarief(): void
     {
-        $plan = Plan::factory()->for($this->school)->create([
+        $product = Product::factory()->for($this->school)->create([
             'amount_cents' => 4500,
             'interval' => BillingInterval::Quarterly,
         ]);
@@ -154,7 +177,7 @@ class BillingTest extends TestCase
 
         $this->actingAs($this->eigenaar)->post('/subscriptions', [
             'player_id' => $speler->id,
-            'plan_id' => $plan->id,
+            'product_id' => $product->id,
             'payment_method' => 'ideal',
             'starts_on' => now()->toDateString(),
         ])->assertRedirect();
@@ -171,13 +194,13 @@ class BillingTest extends TestCase
     {
         $andereSchool = School::factory()->create();
         $vreemdeSpeler = Player::factory()->for($andereSchool)->create();
-        $vreemdPlan = Plan::factory()->for($andereSchool)->create();
-        $eigenPlan = Plan::factory()->for($this->school)->create();
+        $vreemdPlan = Product::factory()->for($andereSchool)->create();
+        $eigenPlan = Product::factory()->for($this->school)->create();
 
         $this->actingAs($this->eigenaar)
             ->post('/subscriptions', [
                 'player_id' => $vreemdeSpeler->id,
-                'plan_id' => $eigenPlan->id,
+                'product_id' => $eigenPlan->id,
                 'payment_method' => 'ideal',
                 'starts_on' => now()->toDateString(),
             ])
@@ -188,11 +211,11 @@ class BillingTest extends TestCase
         $this->actingAs($this->eigenaar)
             ->post('/subscriptions', [
                 'player_id' => $speler->id,
-                'plan_id' => $vreemdPlan->id,
+                'product_id' => $vreemdPlan->id,
                 'payment_method' => 'ideal',
                 'starts_on' => now()->toDateString(),
             ])
-            ->assertSessionHasErrors('plan_id');
+            ->assertSessionHasErrors('product_id');
 
         $this->assertDatabaseCount('subscriptions', 0);
     }
@@ -269,7 +292,7 @@ class BillingTest extends TestCase
         $trainer = User::factory()->for($this->school)->create();
         $trainer->assignRole(Role::Trainer->value);
 
-        $this->actingAs($trainer)->get('/plans')->assertForbidden();
+        $this->actingAs($trainer)->get('/products')->assertForbidden();
         $this->actingAs($trainer)->get('/payments')->assertForbidden();
         $this->actingAs($trainer)->get('/subscriptions')->assertForbidden();
     }
@@ -315,12 +338,12 @@ class BillingTest extends TestCase
 
     public function test_een_abonnement_levert_een_openstaande_rekening_op_maar_incasseert_niets(): void
     {
-        $plan = Plan::factory()->for($this->school)->create();
+        $product = Product::factory()->for($this->school)->create();
         $speler = Player::factory()->for($this->school)->create();
 
         $this->actingAs($this->eigenaar)->post('/subscriptions', [
             'player_id' => $speler->id,
-            'plan_id' => $plan->id,
+            'product_id' => $product->id,
             'payment_method' => 'directdebit',
             'starts_on' => now()->toDateString(),
         ]);

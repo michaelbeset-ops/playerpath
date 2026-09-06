@@ -114,6 +114,12 @@ class Player extends Model
             ->withTimestamps();
     }
 
+    /** Wat deze speler heeft afgenomen: rittenkaarten, kampen, losse trainingen. */
+    public function purchases(): HasMany
+    {
+        return $this->hasMany(Purchase::class);
+    }
+
     public function getFullNameAttribute(): string
     {
         return trim($this->first_name.' '.$this->last_name);

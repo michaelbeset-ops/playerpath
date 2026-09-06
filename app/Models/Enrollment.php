@@ -26,7 +26,7 @@ class Enrollment extends Model
         'guardian_email',
         'guardian_phone',
         'relationship',
-        'plan_id',
+        'product_id',
         'payment_method',
         'note',
     ];
@@ -42,9 +42,9 @@ class Enrollment extends Model
         ];
     }
 
-    public function plan(): BelongsTo
+    public function product(): BelongsTo
     {
-        return $this->belongsTo(Plan::class);
+        return $this->belongsTo(Product::class);
     }
 
     public function player(): BelongsTo

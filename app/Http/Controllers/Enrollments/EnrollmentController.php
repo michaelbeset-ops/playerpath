@@ -33,7 +33,7 @@ class EnrollmentController extends Controller
             'guardian_email' => $e->guardian_email,
             'guardian_phone' => $e->guardian_phone,
             'relationship' => $e->relationship,
-            'plan' => $e->plan ? $e->plan->name.' · '.Money::format($e->plan->amount_cents).' '.strtolower($e->plan->interval->label()) : null,
+            'plan' => $e->product ? $e->product->name.' · '.Money::format($e->product->amount_cents).' '.strtolower($e->product->interval->label()) : null,
             'payment_method' => $e->payment_method?->label(),
             'note' => $e->note,
             'status' => $e->status->value,
@@ -46,9 +46,9 @@ class EnrollmentController extends Controller
         $school = app(Tenancy::class)->schoolOrFail();
 
         return Inertia::render('enrollments/Index', [
-            'pending' => Enrollment::pending()->with('plan')->orderBy('created_at')->get()->map($vorm),
+            'pending' => Enrollment::pending()->with('product')->orderBy('created_at')->get()->map($vorm),
             'handled' => Enrollment::where('status', '!=', EnrollmentStatus::Pending->value)
-                ->with('plan')->latest('handled_at')->limit(20)->get()->map($vorm),
+                ->with('product')->latest('handled_at')->limit(20)->get()->map($vorm),
             'formUrl' => route('enroll.show', $school),
         ]);
     }

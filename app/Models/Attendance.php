@@ -23,6 +23,19 @@ class Attendance extends Model
         'status',
     ];
 
+    /**
+     * Van welke rittenkaart de beurt is afgeschreven.
+     *
+     * Staat niet in $fillable: dat zet alleen Actions\Products\ConsumeCredit,
+     * want daar wordt de beurt ook echt van de kaart gehaald. Zonder deze
+     * verwijzing kun je een vinkje niet terugdraaien zonder te gokken van welke
+     * kaart de beurt kwam.
+     */
+    public function purchase(): BelongsTo
+    {
+        return $this->belongsTo(Purchase::class);
+    }
+
     protected function casts(): array
     {
         return [
