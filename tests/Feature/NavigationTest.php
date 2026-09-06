@@ -160,7 +160,7 @@ class NavigationTest extends TestCase
 
         $this->assertSame([
             '/dashboard',
-            '/calendar', '/trainings',
+            '/calendar', '/trainings', '/trainings/mijn',
             '/clients', '/clients/guardians', '/groups', '/enrollments',
             '/reports',
             '/payments', '/subscriptions', '/products', '/exports',

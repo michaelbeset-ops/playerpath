@@ -627,6 +627,31 @@ Juist dat verschil is voor een school interessant, dus het blijft gescheiden.
 Wekelijks herhalen maakt **losse** trainingen, geen reeks. Er is dus geen
 "pas de hele serie aan" — dat is bewust weggelaten tot iemand erom vraagt.
 
+### Mijn trainingen en de rapport-herinnering
+
+`/trainings/mijn` is het scherm dat een trainer op zijn telefoon openslaat: alleen
+zijn eigen trainingen, per dag, eerstvolgende bovenaan. Het rooster van de school
+blijft op `/trainings`.
+
+**Een training zonder gekoppelde trainers telt als "van iedereen".** Koppelen
+is informatief en veel scholen doen het niet; zou dit scherm strikt filteren,
+dan is het bij die scholen altijd leeg. Dezelfde regel geldt voor de herinnering.
+
+`Support\Trainings\ReportPrompts` is de rapport-herinnering: van **tien minuten
+vóór** de eindtijd tot **vijf uur erna** staat er bovenaan het dashboard en bij
+Mijn trainingen een blok met de spelers van die training en per speler of het
+rapport gedaan is. Vier dingen die je niet moet omdraaien:
+
+- **Het venster wordt server-side berekend** op `ends_at`. Een telefoon met een
+  verkeerde klok zou het blok anders op het verkeerde moment tonen.
+- **Het verdwijnt vanzelf** zodra alles is ingevuld of het venster voorbij is.
+  Een herinnering die blijft staan nadat je hem hebt afgehandeld leer je negeren.
+- **Het is een blok, geen pop-up.** Iets dat over je scherm springt terwijl je
+  nog aan het afvinken bent klik je weg zonder te lezen.
+- **"Gedaan" = een rapport met `reported_on` op de dag van de training.**
+  Rapporten hangen bewust niet aan een training; een trainer schrijft over een
+  speler, niet over een sessie. De datum is het enige eerlijke verband.
+
 ### Rapport en spelerskaart (fase 2)
 
 De categorieen staan in `App\Enums\ReportCategory`, zes per positie:

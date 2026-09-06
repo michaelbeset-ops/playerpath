@@ -10,6 +10,9 @@ import type { Component } from 'vue';
  * opent, dus je kunt het niet verplaatsen. Wegklikken kan wel, maar dat
  * betekent "gezien": zodra er iets verandert staat het er weer.
  *
+ * **Is er niets, dan staat er niets.** Een vak dat elke dag "alles loopt" zegt
+ * leert je eroverheen kijken, en dan mis je de dag dat er wél iets staat.
+ *
  * Elk item heeft een knop. Een signaal zonder knop is een cijfer, en cijfers
  * horen in de kerncijfers thuis.
  */
@@ -55,21 +58,17 @@ const kleuren: Record<string, { rand: string; vlak: string; tekst: string }> = {
 </script>
 
 <template>
-    <section
-        class="rounded-2xl border p-4 sm:p-5"
-        :class="items.length ? 'border-warning/30 bg-warning/5' : 'border-primary/25 bg-primary/5'"
-        aria-label="Vraagt om aandacht"
-    >
+    <section v-if="items.length" class="rounded-2xl border border-warning/30 bg-warning/5 p-4 sm:p-5" aria-label="Vraagt om aandacht">
         <div class="flex items-start justify-between gap-3">
             <p class="flex items-center gap-2 font-medium">
-                <AlertTriangle v-if="items.length" class="size-4 shrink-0 text-warning" />
-                {{ items.length ? 'Vraagt om aandacht' : 'Alles loopt' }}
+                <AlertTriangle class="size-4 shrink-0 text-warning" />
+                Vraagt om aandacht
             </p>
 
             <!-- Wegklikken betekent "gezien", niet "waarschuw me nooit meer":
                  zodra er iets verandert staat het er weer. -->
             <button
-                v-if="items.length && signature"
+                v-if="signature"
                 type="button"
                 class="-m-1 shrink-0 rounded-lg p-1 text-muted-foreground transition hover:bg-card hover:text-foreground"
                 aria-label="Aandacht-blok wegklikken tot er iets verandert"
@@ -80,11 +79,7 @@ const kleuren: Record<string, { rand: string; vlak: string; tekst: string }> = {
             </button>
         </div>
 
-        <!-- Niets te doen is ook een uitkomst, en verdient één rustige regel
-             in plaats van een leeg vak met een kopje. -->
-        <p v-if="!items.length" class="mt-1 text-sm text-muted-foreground">Niks te doen.</p>
-
-        <div v-else class="mt-3 space-y-2">
+        <div class="mt-3 space-y-2">
             <div
                 v-for="item in items"
                 :key="item.key"

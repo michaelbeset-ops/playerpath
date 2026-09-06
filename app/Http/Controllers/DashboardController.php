@@ -20,6 +20,7 @@ use App\Support\Payments\PaymentGateway;
 use App\Support\PlayerCard\CalculatePlayerCard;
 use App\Support\PlayerCard\PlayerBadges;
 use App\Support\PlayerCard\PlayerProgress;
+use App\Support\Trainings\ReportPrompts;
 use App\Support\Trainings\VisibleTrainings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -60,6 +61,7 @@ class DashboardController extends Controller
         protected AttentionItems $attention,
         protected DashboardTrends $trends,
         protected DevelopmentOverview $development,
+        protected ReportPrompts $prompts,
     ) {}
 
     public function __invoke(Request $request): Response|RedirectResponse
@@ -102,6 +104,8 @@ class DashboardController extends Controller
             'checklist' => $this->checklist->for($user),
             // Het antwoord op "wat moet ik doen?". Staat vast bovenaan, en
             // blijft weg zolang er hetzelfde in staat als toen je het wegklikte.
+            // Tijdgebonden en dus het allereerste: over vijf uur is het weg.
+            'reportPrompts' => $this->prompts->for($user),
             'attention' => $aandacht,
             'attentionSignature' => $aandachtVingerafdruk,
             // Weggeklikt: dan verdwijnt het blok helemaal. "Alles loopt" tonen

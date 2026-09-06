@@ -70,6 +70,9 @@ class MainNavigation
                 'title' => 'Agenda', 'icon' => 'trainings', 'items' => [
                     ['title' => 'Kalender', 'href' => '/calendar', 'icon' => 'calendar', 'allowed' => $user->can('viewAny', Training::class), 'feature' => Feature::Kalender],
                     ['title' => 'Trainingen', 'href' => '/trainings', 'icon' => 'trainings', 'allowed' => $user->can('viewAny', Training::class)],
+                    // Alleen voor wie zelf voor de groep staat; een ouder heeft
+                    // geen "mijn" trainingen.
+                    ['title' => 'Mijn trainingen', 'href' => '/trainings/mijn', 'icon' => 'trainings', 'allowed' => $user->isTrainer() || $user->isEigenaar()],
                 ],
             ],
             [

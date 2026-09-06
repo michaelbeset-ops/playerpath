@@ -5,6 +5,7 @@ import DashboardGrid, { type Beschikbaar, type Plek } from '@/components/dashboa
 import DevelopmentWidget from '@/components/dashboard/DevelopmentWidget.vue';
 import FinanceWidget from '@/components/dashboard/FinanceWidget.vue';
 import KpiWidget from '@/components/dashboard/KpiWidget.vue';
+import ReportPrompt, { type Herinnering } from '@/components/dashboard/ReportPrompt.vue';
 import TrainingsWidget from '@/components/dashboard/TrainingsWidget.vue';
 import GoalList, { type Doel } from '@/components/GoalList.vue';
 import PlayerCardVisual from '@/components/PlayerCardVisual.vue';
@@ -35,6 +36,8 @@ interface SpelerKaart {
 const props = defineProps<{
     view: 'school' | 'gezin';
     /** Het antwoord op "wat moet ik doen?". Staat vast bovenaan. */
+    /** Rapporten die nu ingevuld kunnen worden; zie ReportPrompts. */
+    reportPrompts?: Herinnering[];
     attention?: AandachtItem[];
     /** Waarop "wegklikken" wordt onthouden; zie AttentionItems::signature(). */
     attentionSignature?: string | null;
@@ -157,9 +160,15 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
                     </Link>
                 </div>
 
+                <!-- Nog vóór het aandacht-blok: dit is tijdgebonden, over vijf
+                     uur is het weg, en de trainer staat nu nog op het veld. -->
+                <ReportPrompt v-if="reportPrompts?.length" class="mt-4" :prompts="reportPrompts" />
+
                 <!-- 2. Wat vraagt om actie. Vastgepind, niet weg te halen. -->
-                <div v-if="!attentionDismissed" class="mt-4">
-                    <AttentionPanel :items="attention ?? []" :signature="attentionSignature" />
+                <!-- Alleen als er iets is. Een vak dat elke dag "alles loopt"
+                     zegt leert je eroverheen kijken. -->
+                <div v-if="!attentionDismissed && attention?.length" class="mt-4">
+                    <AttentionPanel :items="attention" :signature="attentionSignature" />
                 </div>
 
                 <!-- 3 t/m 7. De widgets in het raster van twaalf kolommen; op
