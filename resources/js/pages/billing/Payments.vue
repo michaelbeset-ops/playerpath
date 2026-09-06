@@ -16,6 +16,7 @@ interface Betaling {
     status: string;
     status_label: string;
     method: string | null;
+    method_value: string | null;
     description: string;
     due_on: string;
     paid_at: string | null;
@@ -26,6 +27,7 @@ const props = defineProps<{
     payments: Betaling[];
     filters: { status: string; search: string };
     statuses: Record<string, string>;
+    methods: Record<string, string>;
     summary: {
         revenueThisMonth: string;
         outstanding: string;
@@ -74,6 +76,13 @@ const kleurVoor = (status: string) => {
 
 const zetStatus = (betaling: Betaling, status: string) =>
     router.patch('/payments/' + betaling.id, { status }, { preserveScroll: true, preserveState: false });
+
+/**
+ * Hoe het geld binnenkwam. Bij contant en overboeking is dit de enige plek
+ * waar dat wordt vastgelegd: dat geld loopt buiten het systeem om.
+ */
+const zetMethode = (betaling: Betaling, method: string) =>
+    router.patch('/payments/' + betaling.id, { status: betaling.status, method }, { preserveScroll: true, preserveState: false });
 </script>
 
 <template>
@@ -167,6 +176,19 @@ const zetStatus = (betaling: Betaling, status: string) =>
                         @change="zetStatus(betaling, ($event.target as HTMLSelectElement).value)"
                     >
                         <option v-for="(label, waarde) in statuses" :key="waarde" :value="waarde">{{ label }}</option>
+                    </select>
+
+                    <!-- Alleen als er daadwerkelijk geld binnen is: bij een
+                         openstaande rekening valt er nog niets vast te leggen. -->
+                    <select
+                        v-if="betaling.status === 'paid'"
+                        :value="betaling.method_value ?? ''"
+                        class="shrink-0 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                        :aria-label="'Hoe de betaling van ' + (betaling.player ?? 'onbekend') + ' binnenkwam'"
+                        @change="zetMethode(betaling, ($event.target as HTMLSelectElement).value)"
+                    >
+                        <option value="" disabled>Hoe betaald?</option>
+                        <option v-for="(label, waarde) in methods" :key="waarde" :value="waarde">{{ label }}</option>
                     </select>
                     </div>
                 </div>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Billing;
 
+use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
@@ -59,6 +60,7 @@ class PaymentController extends Controller
                 'status' => $payment->status->value,
                 'status_label' => $payment->status->label(),
                 'method' => $payment->method?->label(),
+                'method_value' => $payment->method?->value,
                 'description' => $payment->description,
                 'due_on' => $payment->due_on->format('d-m-Y'),
                 'paid_at' => $payment->paid_at?->format('d-m-Y'),
@@ -69,6 +71,7 @@ class PaymentController extends Controller
             'payments' => $payments,
             'filters' => $filters,
             'statuses' => PaymentStatus::options(),
+            'methods' => PaymentMethod::options(),
             'summary' => $this->overview->summary(),
             'gateway' => [
                 'connected' => $this->gateway->isConnected(),
@@ -90,15 +93,26 @@ class PaymentController extends Controller
 
         $validated = $request->validate([
             'status' => ['required', Rule::enum(PaymentStatus::class)],
-        ], [], ['status' => 'De status']);
+            // Hoe het binnenkwam. Bij contant en overboeking is dit de enige
+            // plek waar dat vastgelegd wordt: dat geld komt buiten het systeem
+            // om binnen, en zonder dit veld weet je later niet meer waar het
+            // vandaan kwam.
+            'method' => ['nullable', Rule::enum(PaymentMethod::class)],
+        ], [], ['status' => 'De status', 'method' => 'De betaalmethode']);
 
         $nieuw = PaymentStatus::from($validated['status']);
+        $methode = isset($validated['method']) ? PaymentMethod::from($validated['method']) : null;
 
         $payment->update([
             'status' => $nieuw,
             'paid_at' => $nieuw === PaymentStatus::Paid ? ($payment->paid_at ?? now()) : null,
+            'method' => $methode ?? $payment->method,
         ]);
 
-        return back()->with('status', "De betaling staat nu op '{$nieuw->label()}'.");
+        $melding = $methode !== null && $nieuw === PaymentStatus::Paid
+            ? "De betaling staat op betaald ({$methode->label()})."
+            : "De betaling staat nu op '{$nieuw->label()}'.";
+
+        return back()->with('status', $melding);
     }
 }

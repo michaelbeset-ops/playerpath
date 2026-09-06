@@ -65,7 +65,15 @@ class MyBillingController extends Controller
                 'is_overdue' => $betaling->isOverdue(),
                 // Alleen aanbieden wat echt kan: zonder provider is er niets
                 // te betalen, en een voldane betaling hoort geen knop te hebben.
-                'payable' => $this->gateway->isConnected() && $betaling->status !== PaymentStatus::Paid,
+                //
+                // Contant en overboeking krijgen bewust géén knop. Die worden
+                // bij de school zelf afgerekend; online ook nog kunnen betalen
+                // levert een gezin op dat twee keer betaalt, en dat terugdraaien
+                // kost meer dan het gemak waard is.
+                'payable' => $this->gateway->isConnected()
+                    && $betaling->status !== PaymentStatus::Paid
+                    && ! ($betaling->method?->isOffline() ?? false),
+                'offline' => $betaling->method?->isOffline() ?? false,
             ]);
 
         $openstaand = (int) Payment::whereIn('player_id', $spelerIds)->outstanding()->sum('amount_cents');

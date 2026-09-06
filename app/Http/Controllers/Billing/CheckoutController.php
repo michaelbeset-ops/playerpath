@@ -41,6 +41,12 @@ class CheckoutController extends Controller
             return back()->with('status', 'Deze betaling is al voldaan.');
         }
 
+        // Contant of overboeking wordt bij de school afgerekend. Hier ook online
+        // kunnen betalen levert dubbel betaalde gezinnen op.
+        if ($payment->method?->isOffline()) {
+            return back()->with('status', 'Deze betaling reken je af bij de school zelf.');
+        }
+
         // Een lopende betaling hervatten in plaats van een tweede aanmaken:
         // anders staat er straks twee keer hetzelfde bedrag open omdat iemand
         // halverwege iDEAL zijn browser sloot.

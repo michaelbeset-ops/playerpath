@@ -29,6 +29,7 @@ defineProps<{
         paid_at: string | null;
         is_overdue: boolean;
         payable: boolean;
+        offline: boolean;
     }[];
     outstanding: string;
     hasOutstanding: boolean;
@@ -129,6 +130,10 @@ const kleurVoor = (status: string) => {
                         <span class="shrink-0 rounded-lg px-2 py-1 text-xs font-medium" :class="kleurVoor(betaling.status)">
                             {{ betaling.status_label }}
                         </span>
+
+                        <p v-if="betaling.offline && betaling.status !== 'paid'" class="shrink-0 text-xs text-muted-foreground">
+                            {{ betaling.method === 'Contant' ? 'Contant bij de training' : 'Via overboeking' }}
+                        </p>
 
                         <button
                             v-if="betaling.payable"
