@@ -9,6 +9,7 @@ use App\Http\Controllers\Billing\PurchaseController;
 use App\Http\Controllers\Billing\ShopController;
 use App\Http\Controllers\Billing\SubscriptionController;
 use App\Http\Controllers\Billing\WebhookController;
+use App\Http\Controllers\Offerings\ParticipantController;
 use Illuminate\Support\Facades\Route;
 
 // De hele financiële kant hangt aan één feature: staat betalingen uit, dan
@@ -25,6 +26,11 @@ Route::middleware(['auth', 'verified', 'feature:betalingen'])->group(function ()
 
     // Dat adres stond in bladwijzers voordat dit Aanbod heette.
     Route::get('products', fn () => redirect()->route('products.index'));
+
+    // Wie er meedoet en wie er wacht. De school beslist zelf wie er doorschuift.
+    Route::get('aanbod/{product}/deelnemers', [ParticipantController::class, 'index'])->name('offerings.participants');
+    Route::post('aanbod/{product}/deelnemers/{participation}/plek', [ParticipantController::class, 'promote'])->name('offerings.promote');
+    Route::delete('aanbod/{product}/deelnemers/{participation}', [ParticipantController::class, 'cancel'])->name('offerings.cancel');
 
     // Een product toekennen aan een speler. Staat op de pagina van die speler,
     // want daar zit je als een ouder om een rittenkaart vraagt.

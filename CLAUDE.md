@@ -980,6 +980,26 @@ small group, rittenkaart, overig. Vier afspraken:
   wie echt meedoet komt in de groep: iemand op de wachtlijst hoort niet op de
   aanwezigheidslijst van de eerstvolgende training.
 
+#### Vol, en de wachtlijst
+
+- **Vol aanbod blijft op de aanmeldpagina staan**, met een wachtlijst. "Kom over
+  drie maanden nog eens kijken" is hoe je een gezin kwijtraakt. Gesloten en
+  onzichtbaar aanbod verdwijnt wel: daar valt niets te wachten.
+- **De server bepaalt of het vol is**, niet het formulier: iemand met de pagina
+  in een tabblad weet niet dat de laatste plek net weg is. `enrollments.waitlist`
+  legt vast dat het bij het insturen vol zat.
+- **Op de wachtlijst staat niets open.** Goedkeuren maakt wel de speler en het
+  ouderaccount aan — anders kan de school niemand bereiken — maar geen abonnement,
+  geen aankoop, geen rekening. Dat ontstaat pas bij het doorschuiven
+  (`Actions\Offerings\PromoteParticipation`). Betalen voor een plek die er niet
+  is, is het soort fout waar een school een half jaar over hoort.
+- **De school kiest wie er doorschuift.** De lijst staat op volgorde van
+  aanmelden, maar automatisch de bovenste pakken gaat voorbij aan wat een school
+  weet: dat er al gebeld is, dat een gezin het ergens anders heeft geregeld.
+- **Doorschuiven kan niet als het vol is.** Anders staat er een kind op het veld
+  waar geen plek voor is. Iemand van de lijst halen maakt de plek vrij en haalt
+  hem ook uit de groep, zodat hij niet op de aanwezigheidslijst blijft staan.
+
 **Een maandbedrag bij een blok stopt standaard op de einddatum**
 (`products.stops_at_end`). Een blok van zes weken dat na afloop blijft
 doorschrijven is precies waar een ouder boos over wordt; een school die

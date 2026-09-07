@@ -33,7 +33,11 @@ class EnrollmentController extends Controller
             'guardian_email' => $e->guardian_email,
             'guardian_phone' => $e->guardian_phone,
             'relationship' => $e->relationship,
-            'plan' => $e->product ? $e->product->name.' · '.Money::format($e->product->amount_cents).' '.strtolower($e->product->interval->label()) : null,
+            // Eenmalig aanbod heeft geen frequentie; die stond er blind achter.
+            'plan' => $e->product
+                ? $e->product->name.' · '.Money::format($e->product->amount_cents).' '.$e->product->billing_type->short()
+                : null,
+            'waitlist' => $e->waitlist,
             'payment_method' => $e->payment_method?->label(),
             'note' => $e->note,
             'status' => $e->status->value,

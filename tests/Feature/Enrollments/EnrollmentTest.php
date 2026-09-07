@@ -394,8 +394,7 @@ class EnrollmentTest extends TestCase
             'max_age' => 12,
         ]);
 
-        // Vol, gesloten en onzichtbaar horen er niet te staan: iets tonen waar
-        // je je niet op kunt aanmelden is een dode klik.
+        // Vol blijft staan, met een wachtlijst; gesloten en onzichtbaar niet.
         $vol = Product::factory()->for($this->school)->blok(capaciteit: 1)->create(['name' => 'Vol blok']);
         Participation::create([
             'product_id' => $vol->id,
@@ -410,15 +409,23 @@ class EnrollmentTest extends TestCase
 
         $this->get('/inschrijven/keepersschool-rob')
             ->assertOk()
-            ->assertInertia(fn ($page) => $page
-                ->component('enrollments/Public')
-                ->count('products', 1)
-                ->where('products.0.id', $blok->id)
-                ->where('products.0.name', 'Keepersblok')
-                ->where('products.0.location', 'Sportpark De Vliert')
-                ->where('products.0.min_age', 8)
-                ->where('products.0.spots_left', 2)
-            );
+            ->assertInertia(function ($page) use ($blok) {
+                $aanbod = collect($page->toArray()['props']['products'])->keyBy('name');
+
+                $page->component('enrollments/Public')->count('products', 2);
+
+                $this->assertSame($blok->id, $aanbod['Keepersblok']['id']);
+                $this->assertSame('Sportpark De Vliert', $aanbod['Keepersblok']['location']);
+                $this->assertSame(8, $aanbod['Keepersblok']['min_age']);
+                $this->assertSame(2, $aanbod['Keepersblok']['spots_left']);
+                $this->assertFalse($aanbod['Keepersblok']['is_full']);
+
+                // Vol staat er wel op, met een wachtlijst.
+                $this->assertTrue($aanbod['Vol blok']['is_full']);
+
+                $this->assertFalse($aanbod->has('Gesloten blok'));
+                $this->assertFalse($aanbod->has('Verborgen blok'));
+            });
     }
 
     public function test_een_link_vanaf_de_eigen_website_opent_meteen_dat_aanbod(): void
@@ -441,7 +448,7 @@ class EnrollmentTest extends TestCase
         $this->actingAs($this->eigenaar)->get('/dashboard')->assertHeader('X-Frame-Options', 'SAMEORIGIN');
     }
 
-    public function test_inschrijven_op_een_vol_blok_wordt_geweigerd(): void
+    public function test_inschrijven_op_een_vol_blok_wordt_een_wachtlijstplek(): void
     {
         app(Tenancy::class)->set($this->school);
 
@@ -457,9 +464,9 @@ class EnrollmentTest extends TestCase
         // Iemand met de pagina in een tabblad weet niet dat het inmiddels vol
         // is; dat hoort de server te zeggen.
         $this->post('/inschrijven/keepersschool-rob', $this->formulier(['product_id' => $vol->id]))
-            ->assertSessionHasErrors('product_id');
+            ->assertSessionHasNoErrors();
 
-        $this->assertDatabaseCount('enrollments', 0);
+        $this->assertDatabaseHas('enrollments', ['product_id' => $vol->id, 'waitlist' => true]);
     }
 
     public function test_een_kind_buiten_de_leeftijdsgrens_wordt_geweigerd(): void

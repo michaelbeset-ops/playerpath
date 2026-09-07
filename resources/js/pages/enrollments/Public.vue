@@ -25,6 +25,7 @@ interface Aanbod {
     max_age: number | null;
     credits: number | null;
     spots_left: number | null;
+    is_full: boolean;
 }
 
 const props = defineProps<{
@@ -34,6 +35,7 @@ const props = defineProps<{
     positions: Record<string, string>;
     paymentOptions: { value: string; label: string; hint: string; subscription_only: boolean }[];
     submitted: boolean;
+    onWaitlist: boolean;
 }>();
 
 const form = useForm({
@@ -57,9 +59,7 @@ const gekozen = computed(() => props.products.find((p) => p.id === form.product_
 
 // Incasso hoort bij iets dat doorloopt. Bij een kamp of een losse training is
 // "elke termijn afschrijven" een belofte over een termijn die niet bestaat.
-const betaalkeuzes = computed(() =>
-    props.paymentOptions.filter((optie) => !optie.subscription_only || gekozen.value?.is_subscription),
-);
+const betaalkeuzes = computed(() => props.paymentOptions.filter((optie) => !optie.subscription_only || gekozen.value?.is_subscription));
 
 watch(betaalkeuzes, (keuzes) => {
     if (!keuzes.some((optie) => optie.value === form.payment_method)) {
@@ -120,10 +120,18 @@ const verstuur = () => form.post('/inschrijven/' + props.school.slug);
             <!-- Verstuurd -->
             <div v-if="submitted" class="mt-8 rounded-2xl border border-primary/40 bg-primary/10 p-6 text-center">
                 <CheckCircle2 class="mx-auto size-8 text-primary" />
-                <p class="mt-3 font-semibold">Je inschrijving is binnen</p>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    {{ school.name }} kijkt ernaar en neemt contact met je op. Je hoort van ons hoe en wanneer je betaalt.
-                </p>
+                <template v-if="onWaitlist">
+                    <p class="mt-3 font-semibold">Je staat op de wachtlijst</p>
+                    <p class="mt-1 text-sm text-muted-foreground">
+                        Het zat vol. Zodra er een plek vrijkomt, hoor je het van {{ school.name }} — en pas dan betaal je.
+                    </p>
+                </template>
+                <template v-else>
+                    <p class="mt-3 font-semibold">Je inschrijving is binnen</p>
+                    <p class="mt-1 text-sm text-muted-foreground">
+                        {{ school.name }} kijkt ernaar en neemt contact met je op. Je hoort van ons hoe en wanneer je betaalt.
+                    </p>
+                </template>
             </div>
 
             <template v-else>
@@ -165,10 +173,14 @@ const verstuur = () => form.post('/inschrijven/' + props.school.slug);
                                 </p>
                             </div>
 
-                            <!-- Nog maar een paar plekken is iets wat je wilt weten
-                                 vóórdat je je gegevens invult. -->
+                            <!-- Hoeveel plek er nog is, wil je weten vóórdat je je
+                                 gegevens invult. Vol is geen afwijzing: dan is er
+                                 een wachtlijst. -->
+                            <p v-if="aanbod.is_full" class="mt-3 inline-flex rounded-lg bg-warning/10 px-2 py-1 text-xs font-medium text-warning">
+                                Vol — er is een wachtlijst
+                            </p>
                             <p
-                                v-if="aanbod.spots_left !== null"
+                                v-else-if="aanbod.spots_left !== null"
                                 class="mt-3 inline-flex rounded-lg px-2 py-1 text-xs font-medium"
                                 :class="aanbod.spots_left <= 3 ? 'bg-warning/10 text-warning' : 'bg-primary/10 text-primary'"
                             >
@@ -176,7 +188,9 @@ const verstuur = () => form.post('/inschrijven/' + props.school.slug);
                                 <span v-else>Nog {{ aanbod.spots_left }} plekken</span>
                             </p>
 
-                            <Button class="mt-4 h-11 w-full" @click="kies(aanbod)">Dit wil ik</Button>
+                            <Button class="mt-4 h-11 w-full" :variant="aanbod.is_full ? 'secondary' : 'default'" @click="kies(aanbod)">
+                                {{ aanbod.is_full ? 'Zet me op de wachtlijst' : 'Dit wil ik' }}
+                            </Button>
                         </article>
                     </div>
 
@@ -202,6 +216,10 @@ const verstuur = () => form.post('/inschrijven/' + props.school.slug);
                                 <span v-if="!gekozen.is_free" class="block text-xs text-muted-foreground">{{ gekozen.billing }}</span>
                             </p>
                         </div>
+                        <p v-if="gekozen.is_full" class="mt-3 rounded-lg bg-warning/10 p-3 text-sm text-warning">
+                            Dit zit vol. Je komt op de wachtlijst en betaalt pas als er een plek vrijkomt.
+                        </p>
+
                         <button
                             v-if="products.length > 1"
                             type="button"
@@ -336,7 +354,7 @@ const verstuur = () => form.post('/inschrijven/' + props.school.slug);
 
                     <Button type="submit" class="h-12 w-full text-base" :disabled="form.processing">
                         <LoaderCircle v-if="form.processing" class="mr-2 size-4 animate-spin" />
-                        Inschrijven
+                        {{ gekozen?.is_full ? 'Op de wachtlijst' : 'Inschrijven' }}
                     </Button>
 
                     <p class="text-center text-xs text-muted-foreground">

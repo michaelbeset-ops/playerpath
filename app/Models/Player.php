@@ -101,6 +101,12 @@ class Player extends Model
         return $this->hasMany(Attendance::class);
     }
 
+    /** Waar deze speler aan meedoet: blokken, kampen, doorlopende training. */
+    public function participations(): HasMany
+    {
+        return $this->hasMany(Participation::class);
+    }
+
     /** De ouders/verzorgers van deze speler. */
     public function guardians(): BelongsToMany
     {

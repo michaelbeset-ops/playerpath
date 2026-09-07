@@ -62,7 +62,10 @@ class PublicEnrollmentController extends Controller
             ->orderBy('starts_on')
             ->orderBy('amount_cents')
             ->get()
-            ->filter(fn (Product $product) => $product->acceptsSignups())
+            // Vol aanbod blijft staan, met een wachtlijst erbij: "kom over drie
+            // maanden nog eens kijken" is hoe je een gezin kwijtraakt. Gesloten
+            // en onzichtbaar aanbod verdwijnt wel — daar valt niets te wachten.
+            ->filter(fn (Product $product) => $product->is_active && $product->status->acceptsSignups())
             ->map(fn (Product $product) => $this->kaart($product))
             ->values());
 
@@ -74,6 +77,9 @@ class PublicEnrollmentController extends Controller
             'positions' => PlayerPosition::options(),
             'paymentOptions' => $this->betaalopties($school),
             'submitted' => (bool) session('enrollment_submitted'),
+            // Vol: dan is het een plek op de wachtlijst geworden, en dat hoort
+            // de bevestiging te zeggen in plaats van "tot snel".
+            'onWaitlist' => session('enrollment_submitted') === 'waitlist',
         ]);
     }
 
@@ -118,6 +124,7 @@ class PublicEnrollmentController extends Controller
             // Hoeveel plekken er nog zijn. Null betekent: geen grens, en dan
             // hoort er ook niets te staan.
             'spots_left' => $product->spotsLeft(),
+            'is_full' => $product->isFull(),
         ];
     }
 
@@ -176,7 +183,7 @@ class PublicEnrollmentController extends Controller
                 return null;
             }
 
-            if (! $aanbod->acceptsSignups()) {
+            if (! $aanbod->is_active || ! $aanbod->status->acceptsSignups()) {
                 return ['product_id' => 'Voor dit aanbod kun je je op dit moment niet meer aanmelden.'];
             }
 
@@ -191,6 +198,16 @@ class PublicEnrollmentController extends Controller
             return back()->withErrors($fout)->withInput();
         }
 
+        // Vol betekent niet "kom maar niet", maar wachten. Of dat zo is bepaalt
+        // de server: iemand met de pagina in een tabblad weet niet dat de
+        // laatste plek net weg is.
+        $wachtlijst = $gekozenId !== null && $this->tenancy->forSchool(
+            $school,
+            fn () => Product::find($gekozenId)?->isFull() ?? false,
+        );
+
+        $validated['waitlist'] = $wachtlijst;
+
         $enrollment = $this->tenancy->forSchool($school, fn () => Enrollment::create($validated));
 
         // De eigenaar hoort het meteen, in de app en per mail.
@@ -199,7 +216,7 @@ class PublicEnrollmentController extends Controller
 
         return redirect()
             ->route('enroll.show', $school)
-            ->with('enrollment_submitted', true);
+            ->with('enrollment_submitted', $wachtlijst ? 'waitlist' : true);
     }
 
     protected function leeftijdsfout(Product $aanbod): string

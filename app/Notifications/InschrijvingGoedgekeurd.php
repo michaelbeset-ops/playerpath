@@ -31,6 +31,7 @@ class InschrijvingGoedgekeurd extends Notification implements ShouldQueue
     public function __construct(
         public Player $player,
         public ?Payment $payment = null,
+        public bool $waitlist = false,
     ) {}
 
     /** @return list<string> */
@@ -43,6 +44,17 @@ class InschrijvingGoedgekeurd extends Notification implements ShouldQueue
 
     public function toMail(object $notifiable): MailMessage
     {
+        // Op de wachtlijst is niets "rond"; dat hoort het bericht te zeggen,
+        // anders wacht een gezin op een training die het nog niet heeft.
+        if ($this->waitlist) {
+            return $this->schoolMail($notifiable)
+                ->subject('Je aanmelding staat op de wachtlijst')
+                ->greeting('Hallo')
+                ->line("{$this->player->first_name} staat op de wachtlijst. Zodra er een plek vrijkomt, hoor je het van ons.")
+                ->line('Je betaalt pas als die plek er is.')
+                ->salutation($this->schoolSalutation($notifiable));
+        }
+
         $bericht = $this->schoolMail($notifiable)
             ->subject('De inschrijving van '.$this->player->first_name.' is rond')
             ->greeting('Hallo')
@@ -76,7 +88,9 @@ class InschrijvingGoedgekeurd extends Notification implements ShouldQueue
         return [
             'type' => 'inschrijving_goedgekeurd',
             'player_id' => $this->player->id,
-            'title' => "{$this->player->first_name} is ingeschreven",
+            'title' => $this->waitlist
+                ? "{$this->player->first_name} staat op de wachtlijst"
+                : "{$this->player->first_name} is ingeschreven",
             // In de app zelf hoef je geen ondertekende link: daar ben je al
             // ingelogd en staat de betaling gewoon op je eigen scherm.
             'url' => '/billing',

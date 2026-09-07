@@ -18,6 +18,7 @@ interface Inschrijving {
     guardian_phone: string | null;
     relationship: string | null;
     plan: string | null;
+    waitlist: boolean;
     payment_method: string | null;
     note: string | null;
     status: string;
@@ -76,7 +77,9 @@ const wijsAf = (i: Inschrijving) => {
             <!-- De link naar het formulier: dit is wat je op je website en in WhatsApp zet -->
             <div class="mt-5 rounded-xl border border-border bg-card p-4 shadow-sm">
                 <p class="text-sm font-medium">Jouw inschrijfformulier</p>
-                <p class="mt-0.5 text-xs text-muted-foreground">Zet deze link op je website of stuur hem in WhatsApp. Iedereen kan zich ermee aanmelden; jij beslist wie erin komt.</p>
+                <p class="mt-0.5 text-xs text-muted-foreground">
+                    Zet deze link op je website of stuur hem in WhatsApp. Iedereen kan zich ermee aanmelden; jij beslist wie erin komt.
+                </p>
                 <div class="mt-3 flex flex-wrap items-center gap-2">
                     <input
                         :value="formUrl"
@@ -115,25 +118,48 @@ const wijsAf = (i: Inschrijving) => {
                     <div class="mt-4 grid gap-3 text-sm sm:grid-cols-2">
                         <div class="rounded-lg bg-secondary/60 p-3">
                             <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Ouder</p>
-                            <p class="mt-1 font-medium">{{ i.guardian_name }} <span v-if="i.relationship" class="font-normal text-muted-foreground">({{ i.relationship }})</span></p>
-                            <a :href="'mailto:' + i.guardian_email" class="mt-1 flex items-center gap-1.5 text-xs text-primary underline underline-offset-2">
+                            <p class="mt-1 font-medium">
+                                {{ i.guardian_name }}
+                                <span v-if="i.relationship" class="font-normal text-muted-foreground">({{ i.relationship }})</span>
+                            </p>
+                            <a
+                                :href="'mailto:' + i.guardian_email"
+                                class="mt-1 flex items-center gap-1.5 text-xs text-primary underline underline-offset-2"
+                            >
                                 <Mail class="size-3" /> {{ i.guardian_email }}
                             </a>
-                            <a v-if="i.guardian_phone" :href="'tel:' + i.guardian_phone" class="mt-0.5 flex items-center gap-1.5 text-xs text-primary underline underline-offset-2">
+                            <a
+                                v-if="i.guardian_phone"
+                                :href="'tel:' + i.guardian_phone"
+                                class="mt-0.5 flex items-center gap-1.5 text-xs text-primary underline underline-offset-2"
+                            >
                                 <Phone class="size-3" /> {{ i.guardian_phone }}
                             </a>
                         </div>
                         <div class="rounded-lg bg-secondary/60 p-3">
                             <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Gewenst</p>
-                            <p class="mt-1 font-medium">{{ i.plan ?? 'Geen tarief gekozen' }}</p>
+                            <p class="mt-1 font-medium">{{ i.plan ?? 'Geen aanbod gekozen' }}</p>
                             <p v-if="i.payment_method" class="text-xs text-muted-foreground">{{ i.payment_method }}</p>
+                            <!-- Vol op het moment van aanmelden. Goedkeuren zet
+                                 deze aanvraag op de wachtlijst, zonder rekening. -->
+                            <p v-if="i.waitlist" class="mt-2 inline-flex rounded-lg bg-warning/10 px-2 py-1 text-xs font-medium text-warning">
+                                Wachtlijst — het aanbod zat vol
+                            </p>
                         </div>
                     </div>
 
                     <p v-if="i.note" class="mt-3 rounded-lg border border-border p-3 text-sm">{{ i.note }}</p>
 
                     <p class="mt-4 text-xs text-muted-foreground">
-                        Goedkeuren maakt de speler aan, koppelt de ouder (die krijgt een e-mail om in te loggen)<template v-if="i.plan"> en start het abonnement</template>.
+                        <template v-if="i.waitlist">
+                            Goedkeuren maakt de speler aan en zet hem op de wachtlijst. Er komt geen rekening; die ontstaat pas als je hem een plek
+                            geeft.
+                        </template>
+                        <template v-else>
+                            Goedkeuren maakt de speler aan, koppelt de ouder (die krijgt een e-mail om in te loggen)<template v-if="i.plan">
+                                en zet het aanbod klaar</template
+                            >.
+                        </template>
                     </p>
 
                     <div class="mt-3 grid grid-cols-2 gap-2">
@@ -153,12 +179,22 @@ const wijsAf = (i: Inschrijving) => {
             <template v-if="handled.length">
                 <h2 class="mt-8 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Afgehandeld</h2>
                 <div class="mt-3 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-                    <div v-for="(i, index) in handled" :key="i.id" class="flex items-center gap-3 p-4" :class="index > 0 ? 'border-t border-border' : ''">
+                    <div
+                        v-for="(i, index) in handled"
+                        :key="i.id"
+                        class="flex items-center gap-3 p-4"
+                        :class="index > 0 ? 'border-t border-border' : ''"
+                    >
                         <div class="min-w-0 flex-1">
                             <p class="truncate text-sm font-medium">{{ i.child_name }}</p>
                             <p class="truncate text-xs text-muted-foreground">{{ i.guardian_name }} &middot; {{ i.handled_at }}</p>
                         </div>
-                        <Link v-if="i.player_id" :href="'/players/' + i.player_id" class="text-xs font-medium text-primary underline underline-offset-4">Speler</Link>
+                        <Link
+                            v-if="i.player_id"
+                            :href="'/players/' + i.player_id"
+                            class="text-xs font-medium text-primary underline underline-offset-4"
+                            >Speler</Link
+                        >
                         <span
                             class="shrink-0 rounded-lg px-2 py-1 text-xs font-medium"
                             :class="i.status === 'approved' ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground'"

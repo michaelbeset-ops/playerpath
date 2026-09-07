@@ -129,7 +129,11 @@ const leeftijd = (product: ProductRij) => {
                     <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ groep.label }}</p>
 
                     <div class="mt-2 space-y-2">
-                        <article v-for="product in groep.items" :key="product.id" class="rounded-xl border border-border bg-card p-3 shadow-sm sm:p-4">
+                        <article
+                            v-for="product in groep.items"
+                            :key="product.id"
+                            class="rounded-xl border border-border bg-card p-3 shadow-sm sm:p-4"
+                        >
                             <div class="flex min-w-0 items-start gap-3 sm:gap-4">
                                 <span
                                     class="flex size-10 shrink-0 items-center justify-center rounded-lg"
@@ -141,7 +145,10 @@ const leeftijd = (product: ProductRij) => {
                                 <div class="min-w-0 flex-1">
                                     <div class="flex flex-wrap items-center gap-2">
                                         <p class="font-medium">{{ product.name }}</p>
-                                        <span class="rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide" :class="stand(product).klas">
+                                        <span
+                                            class="rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                                            :class="stand(product).klas"
+                                        >
                                             {{ stand(product).tekst }}
                                         </span>
                                     </div>
@@ -191,13 +198,22 @@ const leeftijd = (product: ProductRij) => {
                                     </p>
                                 </div>
 
-                                <Link
-                                    :href="'/aanbod/' + product.id + '/edit'"
-                                    class="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-foreground"
-                                    :aria-label="product.name + ' bewerken'"
-                                >
-                                    <Pencil class="size-4" />
-                                </Link>
+                                <div class="flex shrink-0 items-center gap-1">
+                                    <Link
+                                        :href="'/aanbod/' + product.id + '/deelnemers'"
+                                        class="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                                        :aria-label="'Deelnemers van ' + product.name"
+                                    >
+                                        <Users class="size-4" />
+                                    </Link>
+                                    <Link
+                                        :href="'/aanbod/' + product.id + '/edit'"
+                                        class="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                                        :aria-label="product.name + ' bewerken'"
+                                    >
+                                        <Pencil class="size-4" />
+                                    </Link>
+                                </div>
                             </div>
                         </article>
                     </div>
@@ -206,7 +222,9 @@ const leeftijd = (product: ProductRij) => {
 
             <div v-else class="mt-6 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
                 <p class="font-medium">Nog geen aanbod</p>
-                <p class="mt-1 text-sm text-muted-foreground">Begin met wat je het vaakst verkoopt: een blok van zes weken of doorlopende training.</p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    Begin met wat je het vaakst verkoopt: een blok van zes weken of doorlopende training.
+                </p>
                 <Link
                     href="/aanbod/create"
                     class="mt-4 inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"

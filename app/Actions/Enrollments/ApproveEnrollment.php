@@ -6,6 +6,7 @@ use App\Actions\Offerings\JoinOffering;
 use App\Actions\Payments\GeneratePayments;
 use App\Actions\Products\SellProduct;
 use App\Enums\EnrollmentStatus;
+use App\Enums\ParticipationStatus;
 use App\Enums\Role;
 use App\Enums\SubscriptionStatus;
 use App\Models\Enrollment;
@@ -89,7 +90,19 @@ class ApproveEnrollment
             // maandfrequentie op, en dat snapt later niemand meer.
             $aanbod = $enrollment->product;
 
-            if ($aanbod?->isRecurring()) {
+            // Een aanmelding voor een vol aanbod wordt een plek op de
+            // wachtlijst: de speler en het ouderaccount ontstaan wel (anders kan
+            // de school niemand bereiken), maar er komt geen rekening. Betalen
+            // voor een plek die er niet is, is precies het soort fout waar een
+            // school een half jaar over hoort. Zie PromoteParticipation.
+            if ($aanbod !== null && ($enrollment->waitlist || $aanbod->isFull())) {
+                $this->deelname->handle(
+                    $aanbod,
+                    $player,
+                    status: ParticipationStatus::Waitlist,
+                    enrollmentId: $enrollment->id,
+                );
+            } elseif ($aanbod?->isRecurring()) {
                 $abonnement = Subscription::create([
                     'player_id' => $player->id,
                     'product_id' => $aanbod->id,
@@ -140,7 +153,13 @@ class ApproveEnrollment
         // Ook na de transactie: een mislukte goedkeuring mag nooit alsnog een
         // betaalverzoek opleveren.
         if ($ouderAccount !== null) {
-            $ouderAccount->notify(new InschrijvingGoedgekeurd($player, $this->eersteRekening($player)));
+            $opWachtlijst = $player->participations()->where('status', ParticipationStatus::Waitlist->value)->exists();
+
+            $ouderAccount->notify(new InschrijvingGoedgekeurd(
+                $player,
+                $opWachtlijst ? null : $this->eersteRekening($player),
+                $opWachtlijst,
+            ));
         }
 
         return $player;

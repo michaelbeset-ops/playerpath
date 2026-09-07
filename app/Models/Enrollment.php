@@ -28,6 +28,7 @@ class Enrollment extends Model
         'relationship',
         'product_id',
         'payment_method',
+        'waitlist',
         'note',
     ];
 
@@ -38,6 +39,7 @@ class Enrollment extends Model
             'position' => PlayerPosition::class,
             'payment_method' => PaymentMethod::class,
             'status' => EnrollmentStatus::class,
+            'waitlist' => 'boolean',
             'handled_at' => 'datetime',
         ];
     }
