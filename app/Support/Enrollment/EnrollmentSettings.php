@@ -44,6 +44,8 @@ class EnrollmentSettings
         'auto_renew_block' => false,
         'notice_months' => 1,
         'chargeback_fee' => ['enabled' => false, 'amount_cents' => 0],
+        // Na een mislukte betaling: herinneringen na zoveel dagen, met een nieuwe link.
+        'dunning' => ['days' => [3, 7, 14]],
         // Handmatig goedkeuren is de standaard; een school die het vertrouwt
         // zet het op automatisch en dan bevestigt de betaling de inschrijving.
         'approval' => 'manual',

@@ -6,6 +6,7 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use App\Models\Player;
+use App\Models\User;
 use App\Support\Payments\PaymentGateway;
 use App\Support\Payments\RemotePayment;
 use Carbon\CarbonImmutable;
@@ -72,13 +73,15 @@ class FakeGateway implements PaymentGateway
     }
 
     /** Doen alsof de betaling bij de provider is voldaan. */
-    public function markPaid(string $reference, PaymentMethod $method = PaymentMethod::Ideal): void
+    public function markPaid(string $reference, PaymentMethod $method = PaymentMethod::Ideal, ?string $mandate = null, ?string $customer = null): void
     {
         $this->remote[$reference] = new RemotePayment(
             reference: $reference,
             status: PaymentStatus::Paid,
             paidAt: CarbonImmutable::now(),
             method: $method,
+            customerReference: $customer,
+            mandateReference: $mandate,
         );
     }
 
@@ -94,6 +97,11 @@ class FakeGateway implements PaymentGateway
         }
 
         return $player->payment_customer_reference;
+    }
+
+    public function ensureCustomerFor(User $user): string
+    {
+        return 'cst_user_'.$user->id;
     }
 
     public function hasValidMandate(string $customerReference): bool

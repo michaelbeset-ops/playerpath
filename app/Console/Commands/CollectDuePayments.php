@@ -9,6 +9,7 @@ use App\Models\Payment;
 use App\Models\School;
 use App\Support\Features\Features;
 use App\Support\Money\Money;
+use App\Support\Payments\Mandates;
 use App\Support\Payments\PaymentGateway;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Console\Command;
@@ -36,7 +37,7 @@ class CollectDuePayments extends Command
 
     protected $description = 'Schrijft vervallen betalingen af op een bestaand incassomandaat';
 
-    public function handle(Tenancy $tenancy, PaymentGateway $gateway, SyncPayment $sync): int
+    public function handle(Tenancy $tenancy, PaymentGateway $gateway, SyncPayment $sync, Mandates $mandates): int
     {
         if (! $gateway->isConnected()) {
             $this->warn('Er is geen betaalprovider aangesloten; er wordt niets geïncasseerd.');
@@ -55,25 +56,35 @@ class CollectDuePayments extends Command
                 continue;
             }
 
-            $tenancy->forSchool($school, function () use ($gateway, $sync, $droog, &$totaal) {
+            $tenancy->forSchool($school, function () use ($gateway, $sync, $mandates, $droog, &$totaal) {
                 $betalingen = Payment::query()
                     ->outstanding()
                     ->whereDate('due_on', '<=', now())
                     // Nog geen poging gedaan: anders zou een lopende incasso
                     // een tweede keer de deur uitgaan.
                     ->whereNull('external_reference')
-                    ->whereHas('subscription', fn ($q) => $q->where('payment_method', PaymentMethod::DirectDebit->value))
-                    ->with('player')
+                    // Nooit zonder vooraankondiging, en minstens veertien dagen erna.
+                    ->where('prenotified_at', '<=', now()->subDays(PrenotifyDirectDebits::DAGEN_VOORAF))
+                    // Bij een abonnement beslist het abonnement; bij een orderbetaling
+                    // de betaling zelf.
+                    ->where(fn ($q) => $q
+                        ->where(fn ($o) => $o->whereNull('subscription_id')->where('method', PaymentMethod::DirectDebit->value))
+                        ->orWhereHas('subscription', fn ($s) => $s->where('payment_method', PaymentMethod::DirectDebit->value)))
+                    ->with(['player', 'order.user'])
                     ->get();
 
                 foreach ($betalingen as $betaling) {
                     $speler = $betaling->player;
 
-                    if ($speler?->payment_customer_reference === null) {
+                    // Het mandaat van de ouder die betaalt gaat voor; het oude
+                    // klantkenmerk op de speler blijft werken voor wat er al liep.
+                    $klant = $betaling->order?->user !== null
+                        ? $mandates->validFor($betaling->order->user)?->customer_reference
+                        : $speler?->payment_customer_reference;
+
+                    if ($klant === null) {
                         continue;
                     }
-
-                    $klant = $speler->payment_customer_reference;
 
                     try {
                         if (! $gateway->hasValidMandate($klant)) {

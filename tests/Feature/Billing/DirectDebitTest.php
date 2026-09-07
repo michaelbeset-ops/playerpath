@@ -68,6 +68,8 @@ class DirectDebitTest extends TestCase
             'subscription_id' => $this->abonnement->id,
             'method' => PaymentMethod::DirectDebit,
             'due_on' => now()->subDay()->toDateString(),
+            // Aangekondigd, ruim veertien dagen geleden: anders incasseert de ronde niets.
+            'prenotified_at' => now()->subDays(15),
         ], $velden));
     }
 

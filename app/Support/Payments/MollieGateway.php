@@ -6,6 +6,7 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use App\Models\Player;
+use App\Models\User;
 use App\Support\Money\Money;
 use Carbon\CarbonImmutable;
 use Mollie\Api\MollieApiClient;
@@ -89,6 +90,19 @@ class MollieGateway implements PaymentGateway
         return $customer->id;
     }
 
+    public function ensureCustomerFor(User $user): string
+    {
+        // De ouder die betaalt, met zijn eigen naam en adres: dat is wat hij
+        // op zijn bankafschrift herkent, en het mandaat hangt aan hem.
+        $customer = $this->client->customers->create([
+            'name' => $user->name,
+            'email' => $user->email,
+            'metadata' => ['user_id' => $user->id, 'school_id' => $user->school_id],
+        ]);
+
+        return $customer->id;
+    }
+
     public function hasValidMandate(string $customerReference): bool
     {
         foreach ($this->client->mandates->pageForId($customerReference) as $mandate) {
@@ -134,6 +148,8 @@ class MollieGateway implements PaymentGateway
             paidAt: $mollie->paidAt ? CarbonImmutable::parse($mollie->paidAt) : null,
             method: self::toMethod($mollie->method),
             checkoutUrl: $mollie->getCheckoutUrl(),
+            customerReference: $mollie->customerId ?? null,
+            mandateReference: $mollie->mandateId ?? null,
         );
     }
 

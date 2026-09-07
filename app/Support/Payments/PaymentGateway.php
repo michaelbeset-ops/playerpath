@@ -4,6 +4,7 @@ namespace App\Support\Payments;
 
 use App\Models\Payment;
 use App\Models\Player;
+use App\Models\User;
 
 /**
  * De naad waar de betaalprovider inklikt.
@@ -56,6 +57,9 @@ interface PaymentGateway
      * @throws GatewayNotConnected
      */
     public function ensureCustomer(Player $player): string;
+
+    /** Een klant bij de provider voor de ouder die betaalt; het mandaat hangt daaraan. */
+    public function ensureCustomerFor(User $user): string;
 
     /**
      * Mag er van deze klant automatisch afgeschreven worden?

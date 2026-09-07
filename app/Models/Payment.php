@@ -6,6 +6,7 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Concerns\BelongsToSchool;
 use App\Models\Concerns\HasStatusMachine;
+use Carbon\CarbonInterface;
 use Database\Factories\PaymentFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -22,6 +23,7 @@ class Payment extends Model
         'subscription_id',
         'purchase_id',
         'order_id',
+        'parent_id',
         'amount_cents',
         'vat_rate',
         'status',
@@ -46,6 +48,8 @@ class Payment extends Model
             'period_start' => 'date',
             'paid_at' => 'datetime',
             'reminded_at' => 'datetime',
+            'prenotified_at' => 'datetime',
+            'reminder_count' => 'integer',
         ];
     }
 
@@ -92,6 +96,32 @@ class Payment extends Model
      * datumkolom staat op middernacht. Dat gaf twee waarheden: het tabblad
      * "Te laat" (PaymentQuery) telde de dag zelf niet mee, deze methode wel.
      */
+    /** De ouder die betaalt: via de order, anders de eerste ouder van het kind. */
+    public function payer(): ?User
+    {
+        return $this->order?->user ?? $this->player?->guardians()->first();
+    }
+
+    /**
+     * Tot wanneer een ouder deze incasso kan terugdraaien: acht weken na de
+     * afschrijving. Alleen bij incasso; iDEAL is definitief.
+     */
+    public function chargebackWindowClosesAt(): ?CarbonInterface
+    {
+        if ($this->method !== PaymentMethod::DirectDebit || $this->paid_at === null) {
+            return null;
+        }
+
+        return $this->paid_at->copy()->addWeeks(8);
+    }
+
+    public function isWithinChargebackWindow(): bool
+    {
+        $sluit = $this->chargebackWindowClosesAt();
+
+        return $sluit !== null && $sluit->isFuture();
+    }
+
     public function isOverdue(): bool
     {
         return $this->status === PaymentStatus::Open && $this->due_on->lt(today());

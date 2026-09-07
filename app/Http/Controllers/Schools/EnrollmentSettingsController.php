@@ -205,6 +205,7 @@ class EnrollmentSettingsController extends Controller
             'approval' => ['required', Rule::in(['manual', 'automatic'])],
             'chargeback_fee_enabled' => ['required', 'boolean'],
             'chargeback_fee_amount' => ['nullable', 'string', 'max:20'],
+            'dunning_days' => ['nullable', 'string', 'max:40'],
         ], [], [
             'installments' => 'het aantal termijnen',
             'notice_months' => 'de opzegtermijn',
@@ -223,7 +224,28 @@ class EnrollmentSettingsController extends Controller
                 'enabled' => (bool) $validated['chargeback_fee_enabled'],
                 'amount_cents' => $this->centen($validated['chargeback_fee_amount'] ?? null),
             ],
+            'dunning' => ['days' => $this->schema($validated['dunning_days'] ?? null)],
         ];
+    }
+
+    /**
+     * "3, 7, 14" → [3, 7, 14]: dagen na een mislukte betaling, oplopend, uniek,
+     * hooguit vijf. Leeg betekent de standaard.
+     *
+     * @return list<int>
+     */
+    protected function schema(?string $invoer): array
+    {
+        $dagen = collect(preg_split('/[\s,;]+/', (string) $invoer) ?: [])
+            ->map(fn ($d) => (int) $d)
+            ->filter(fn ($d) => $d >= 1 && $d <= 60)
+            ->unique()
+            ->sort()
+            ->values()
+            ->take(5)
+            ->all();
+
+        return $dagen === [] ? EnrollmentSettings::STANDAARD['dunning']['days'] : $dagen;
     }
 
     /** @return array<string, mixed> */
@@ -352,6 +374,7 @@ class EnrollmentSettingsController extends Controller
         $alles['registration_fee']['formatted'] = Money::format($alles['registration_fee']['amount_cents']);
         $alles['kit']['formatted'] = Money::format($alles['kit']['amount_cents']);
         $alles['chargeback_fee']['formatted'] = Money::format($alles['chargeback_fee']['amount_cents']);
+        $alles['dunning']['text'] = implode(', ', $alles['dunning']['days']);
 
         $alles['offering_labels'] = array_values(array_map(fn (ProductType $t) => $t->label(), array_filter(
             $instellingen->offeringTypes(),

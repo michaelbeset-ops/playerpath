@@ -849,6 +849,32 @@ tegenspreken. Een status met de hand zetten omzeilt de machine; doe dat niet.
 - Een wachtlijstplek zonder inschrijving (met de hand op de lijst gezet) gaat
   nog de oude weg (`PromoteParticipation`): meteen een plek en een rekening.
 
+### Betalingen: wat er klaarstaat voor de aansluiting
+
+Nog niet aangesloten (zonder `MOLLIE_KEY` hangt `NotConnectedGateway` eraan),
+maar zo gebouwd dat het erin past:
+
+- **Het mandaat hoort bij de ouder** (`Support\Payments\Mandates`,
+  `mandates`-tabel): de eerste iDEAL-betaling op een order gaat met een
+  klantkenmerk van de betaler (`sequenceType: first`), en de webhook geeft het
+  mandaatkenmerk terug dat `SyncPayment` vastlegt. Alleen kenmerken, nooit
+  een IBAN. Het oude klantkenmerk op de speler blijft werken voor abonnementen
+  die er al liepen.
+- **Geen incasso zonder vooraankondiging.** `payments:prenotify` stuurt
+  `IncassoAankondiging` en zet `prenotified_at`; `payments:collect` schrijft
+  pas af als dat minstens veertien dagen geleden is, en vraagt bij elke ronde
+  opnieuw aan de provider of het mandaat nog geldt.
+- **Na een mislukte, verlopen of gestorneerde betaling** stuurt
+  `payments:remind` `BetalingMislukt` met een nieuwe betaallink, volgens het
+  herhaalschema van de school (`dunning.days`, standaard 3, 7 en 14 dagen na
+  de mislukking), en telt mee in `reminder_count`. Een abonnement volgt zijn
+  betaling: mislukt → "betaling mislukt", betaald → weer actief.
+- **Storneringskosten** (instelling) worden één keer per gestorneerde betaling
+  als eigen rekening aangemaakt, met `parent_id` naar de oorspronkelijke.
+- **Een ouder kan een incasso acht weken terugdraaien**
+  (`Payment::isWithinChargebackWindow()`). Omzet uit incasso is in die periode
+  dus nog niet zeker; dat is geen fout van de app maar van het betaalmiddel.
+
 ### Inschrijvingen
 
 #### De openbare aanmeldpagina

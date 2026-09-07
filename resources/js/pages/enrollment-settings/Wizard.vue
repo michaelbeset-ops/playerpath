@@ -80,6 +80,7 @@ const form = useForm(
                   approval: s.approval as string,
                   chargeback_fee_enabled: s.chargeback_fee.enabled as boolean,
                   chargeback_fee_amount: s.chargeback_fee.amount as string,
+                  dunning_days: s.dunning.text as string,
               }
             : props.step === 4
               ? {
@@ -401,6 +402,13 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                                 <input v-model="f.chargeback_fee_amount" inputmode="decimal" placeholder="7,50" :class="getalKlasse" />
                             </div>
                             <InputError class="mb-3" :message="form.errors.chargeback_fee_amount" />
+                        </div>
+
+                        <div class="py-3">
+                            <label for="dunning_days" class="block text-sm font-medium">Herinneringen na een mislukte betaling</label>
+                            <p class="text-xs text-muted-foreground">Na hoeveel dagen, met telkens een nieuwe betaallink. Bijvoorbeeld 3, 7, 14.</p>
+                            <input id="dunning_days" v-model="f.dunning_days" placeholder="3, 7, 14" :class="'mt-2 ' + invoerKlasse" />
+                            <InputError :message="form.errors.dunning_days" />
                         </div>
                     </section>
                 </template>

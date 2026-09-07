@@ -18,6 +18,10 @@ Schedule::command('payments:remind')->dailyAt('09:00');
 // achterstallig wordt gezien.
 Schedule::command('payments:generate')->dailyAt('08:00');
 
+// De vooraankondiging: elke incasso wordt eerst aangekondigd, en pas
+// veertien dagen later afgeschreven. Vóór de incassoronde.
+Schedule::command('payments:prenotify')->dailyAt('08:15');
+
 // De incassoronde, na de facturenloop zodat verse rekeningen meteen meegaan.
 Schedule::command('payments:collect')->dailyAt('08:30');
 

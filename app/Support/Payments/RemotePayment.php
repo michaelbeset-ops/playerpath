@@ -23,5 +23,8 @@ final readonly class RemotePayment
         public ?PaymentMethod $method = null,
         /** Alleen gevuld direct na het starten van een betaling. */
         public ?string $checkoutUrl = null,
+        // Wat de provider over de betaler teruggeeft: nooit een IBAN, alleen kenmerken.
+        public ?string $customerReference = null,
+        public ?string $mandateReference = null,
     ) {}
 }

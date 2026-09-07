@@ -64,6 +64,7 @@ const samenvatting = computed<Record<string, string[]>>(() => {
             s.auto_renew_block ? 'Een blok verlengt automatisch' : 'Een blok verlengt niet vanzelf',
             `Opzegtermijn ${s.notice_months} ${s.notice_months === 1 ? 'maand' : 'maanden'}`,
             s.chargeback_fee.enabled ? `Storneringskosten ${s.chargeback_fee.formatted}` : 'Geen storneringskosten',
+            `Herinneringen na ${s.dunning.text} dagen`,
         ],
         annuleren: [
             `Kosteloos tot ${s.cancellation.free_until_days} dagen voor de start, daarna ${s.cancellation.retain_percent}% ingehouden`,

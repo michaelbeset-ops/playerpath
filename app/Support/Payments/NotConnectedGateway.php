@@ -4,6 +4,7 @@ namespace App\Support\Payments;
 
 use App\Models\Payment;
 use App\Models\Player;
+use App\Models\User;
 
 /**
  * De stand van zaken zolang er geen betaalprovider is aangesloten.
@@ -44,6 +45,11 @@ class NotConnectedGateway implements PaymentGateway
     }
 
     public function ensureCustomer(Player $player): string
+    {
+        throw GatewayNotConnected::make();
+    }
+
+    public function ensureCustomerFor(User $user): string
     {
         throw GatewayNotConnected::make();
     }

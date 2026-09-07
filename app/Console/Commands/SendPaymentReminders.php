@@ -3,9 +3,12 @@
 namespace App\Console\Commands;
 
 use App\Enums\Feature;
+use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use App\Models\School;
 use App\Notifications\BetalingHerinnering;
+use App\Notifications\BetalingMislukt;
+use App\Support\Enrollment\EnrollmentSettings;
 use App\Support\Features\Features;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Console\Command;
@@ -49,7 +52,46 @@ class SendPaymentReminders extends Command
                 continue;
             }
 
-            $tenancy->forSchool($school, function () use ($grens, $droog, &$verstuurd) {
+            $tenancy->forSchool($school, function () use ($school, $grens, $droog, &$verstuurd) {
+                // Mislukt, verlopen of gestorneerd: herinneringen met een nieuwe
+                // betaallink, volgens het herhaalschema van de school.
+                $schema = array_values((array) (EnrollmentSettings::for($school)->get('dunning')['days'] ?? []));
+
+                $mislukt = Payment::query()
+                    ->whereIn('status', [PaymentStatus::Failed->value, PaymentStatus::Expired->value, PaymentStatus::ChargedBack->value])
+                    ->where('reminder_count', '<', count($schema))
+                    ->with(['player.guardians', 'order.user'])
+                    ->get();
+
+                foreach ($mislukt as $betaling) {
+                    $poging = (int) $betaling->reminder_count;
+                    $na = (int) ($schema[$poging] ?? PHP_INT_MAX);
+                    $sinds = (int) $betaling->updated_at->startOfDay()->diffInDays(now()->startOfDay());
+
+                    if ($sinds < $na) {
+                        continue;
+                    }
+
+                    $ontvanger = $betaling->payer();
+
+                    if ($ontvanger === null) {
+                        continue;
+                    }
+
+                    $this->line("  mislukt: {$betaling->description} — herinnering ".($poging + 1).' van '.count($schema));
+
+                    if ($droog) {
+                        continue;
+                    }
+
+                    $ontvanger->notify(new BetalingMislukt($betaling, $poging + 1, count($schema)));
+                    // Zonder updated_at aan te raken: het schema telt vanaf het
+                    // moment van mislukken, niet vanaf de vorige herinnering.
+                    $betaling->timestamps = false;
+                    $betaling->forceFill(['reminder_count' => $poging + 1])->save();
+                    $betaling->timestamps = true;
+                    $verstuurd++;
+                }
                 $betalingen = Payment::query()
                     ->outstanding()
                     ->whereDate('due_on', '<=', $grens)

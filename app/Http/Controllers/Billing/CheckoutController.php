@@ -8,6 +8,7 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
+use App\Support\Payments\Mandates;
 use App\Support\Payments\PaymentGateway;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -98,6 +99,11 @@ class CheckoutController extends Controller
      */
     private function klantVoorIncasso(Payment $payment): ?string
     {
+        // Via een inschrijving: de ouder die betaalt, met zijn eigen mandaat.
+        if ($payment->method === PaymentMethod::DirectDebit && $payment->order?->user !== null) {
+            return app(Mandates::class)->customerReferenceFor($payment->order->user);
+        }
+
         $abonnement = $payment->subscription;
 
         if ($abonnement?->payment_method !== PaymentMethod::DirectDebit || $payment->player === null) {
