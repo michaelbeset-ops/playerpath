@@ -3,7 +3,7 @@ import FlashMessage from '@/components/FlashMessage.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Check, ChevronRight, MapPin, Plus, UserCog, X } from 'lucide-vue-next';
+import { ChevronRight, MapPin, Plus, UserCog, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 interface TrainingRij {
@@ -256,24 +256,9 @@ const toonKlasse = (toon: 'goed' | 'aandacht' | 'rustig') =>
                                     <!-- Stand en acties op één regel: dit is een lijst waar je
                                          doorheen scrolt, dus elke extra regel telt. -->
                                     <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-                                        <!-- Voor een ouder of speler: wat gaf ik door? -->
-                                        <span
-                                            v-if="isParticipant && training.my_registration"
-                                            class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium"
-                                            :class="
-                                                training.my_registration === 'attending'
-                                                    ? 'bg-primary/10 text-primary'
-                                                    : 'bg-secondary text-muted-foreground'
-                                            "
-                                        >
-                                            <Check v-if="training.my_registration === 'attending'" class="size-3" />
-                                            <X v-else class="size-3" />
-                                            {{ training.my_registration === 'attending' ? 'Aangemeld' : 'Afgemeld' }}
-                                        </span>
-
                                         <!-- Voor een trainer: hoe staat het met de aanwezigheid? -->
                                         <span
-                                            v-else-if="!isParticipant"
+                                            v-if="!isParticipant"
                                             class="inline-flex items-center rounded-lg px-2 py-1 text-xs font-medium"
                                             :class="toonKlasse(aanwezigheid(training).toon)"
                                         >

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CardGlow from '@/components/CardGlow.vue';
 import PlayerCardVisual from '@/components/PlayerCardVisual.vue';
 import type { SpelerDashboardData, SpelerTrend } from '@/types/player-dashboard';
 import { Link } from '@inertiajs/vue3';
@@ -83,7 +84,9 @@ const voortgangHref = computed(() => '/players/' + props.player.id + '/progress'
         <div class="mx-auto max-w-2xl space-y-6">
             <!-- 1. Mijn kaart. Dit is waar een kind voor komt. -->
             <section>
-                <PlayerCardVisual :card="card" audience="gezin" :shareable="false" />
+                <CardGlow :level="card.overall === null ? 'geen' : card.level.key">
+                    <PlayerCardVisual :card="card" audience="gezin" :shareable="false" />
+                </CardGlow>
 
                 <div class="mt-4 grid grid-cols-2 gap-2">
                     <Link

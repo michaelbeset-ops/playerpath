@@ -276,15 +276,29 @@ er staat. Elk cijfer krijgt een eigen lucide-icoon
 
 | Rol | Kleur | Hex |
 |---|---|---|
-| Basis / achtergrond | Bijna-zwart donkerblauw | `#0A0F1C` |
-| Surface (kaarten, panelen) | Donkerblauw | `#111A2E` |
-| Surface hoog / randen | Donkerblauw licht | `#1C2942` |
+| Basis / achtergrond **én de balk** | Neutraal bijna-zwart, vleugje blauw | `#0D0F12` |
+| Surface (kaarten, panelen) | Neutraal donkergrijs | `#171A1D` |
+| Surface hoog / randen | Iets lichter grijs | `#25282D` |
 | Primair / actie | Fel groen | `#22E06B` |
 | Accent (kaart, badges, mijlpalen) | Goud/metallic | `#D4AF37` |
 | Tekst primair | Bijna-wit | `#F1F5F9` |
-| Tekst secundair | Grijsblauw | `#94A3B8` |
+| Tekst secundair | Grijsblauw | `#99A3B3` |
 
 Op donker komt diepte van kleurverschil, niet van harde schaduwen.
+
+**Eén basis voor balk en pagina.** `--background` in `.theme-donker` is de
+enige donkere basiskleur; `AppTopbar` gebruikt hem ook (`bg-background`, met
+alleen een dunne lijn eronder). Eerder had de balk een eigen blauwtint en de
+kaart een derde: een zichtbaar naadje, en een kaart die los zweefde. De
+pagina is bewust **neutraal** en niet blauw, zodat de kaart het enige is dat
+kleur heeft. Wil je een donker scherm, dan is het `theme-donker` + tokens en
+verder niets; geen eigen donkere kleur erbij.
+
+**De gloed achter de kaart** komt van `components/CardGlow.vue`: een zachte
+radiale gloed in de levelkleur (koper, chroom, goud, holografisch; staalgrijs
+zonder rapport) als laag ónder de kaart. Zo straalt de kaart en hangt hij aan
+de pagina vast in plaats van erop te zweven. Hij staat op alle drie de plekken
+waar de kaart staat, en de kaart zelf verandert er niet door.
 
 ### Gedeelde schermen
 

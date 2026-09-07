@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import CardGlow from '@/components/CardGlow.vue';
 import FlashMessage from '@/components/FlashMessage.vue';
 import GoalList, { type Doel } from '@/components/GoalList.vue';
 import PlayerCardVisual, { type Kaart } from '@/components/PlayerCardVisual.vue';
@@ -99,16 +100,18 @@ const kopieer = async () => {
                 De kaart is het pronkstuk en bewust donker: dit is de
                 speler/ouder-kant van het merk. Zie CLAUDE.md hoofdstuk 4.
             -->
-            <div class="theme-donker rounded-3xl bg-background p-4 text-foreground sm:p-8">
-                <PlayerCardVisual
-                    :card="card"
-                    :photo-href="photoHref"
-                    :audience="canReport ? 'trainer' : 'gezin'"
-                    :shareable="share.can && player.overall_rating !== null"
-                    :display-level="vorigLevel"
-                    :flash="flits"
-                    @share="naarDelen"
-                />
+            <div class="theme-donker overflow-hidden rounded-3xl bg-background p-4 text-foreground sm:p-8">
+                <CardGlow :level="vorigLevel ?? (player.overall_rating === null ? 'geen' : card.level.key)">
+                    <PlayerCardVisual
+                        :card="card"
+                        :photo-href="photoHref"
+                        :audience="canReport ? 'trainer' : 'gezin'"
+                        :shareable="share.can && player.overall_rating !== null"
+                        :display-level="vorigLevel"
+                        :flash="flits"
+                        @share="naarDelen"
+                    />
+                </CardGlow>
 
                 <p v-if="player.rated_at" class="mt-4 text-center text-xs text-muted-foreground">
                     Bijgewerkt op {{ player.rated_at }} &middot; gemiddelde van de laatste 3 rapporten

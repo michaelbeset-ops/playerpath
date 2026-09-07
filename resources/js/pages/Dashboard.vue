@@ -76,10 +76,8 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
     <Head title="Dashboard" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <!-- De speler krijgt het hele scherm donker, begroeting en al. Een
-             lichte strook tussen de donkere balk en het donkere paneel las op
-             een telefoon als een fout. -->
-        <div :class="view === 'speler' ? 'theme-donker min-h-screen bg-background text-foreground' : ''">
+        <!-- Het donkere thema voor een speler staat op de layout. -->
+        <div>
             <div class="mx-auto w-full max-w-6xl p-4">
                 <!-- Een ouder krijgt een begroeting; hij komt niet naar een
                  "dashboard" maar kijken hoe het met zijn kind gaat. De rol

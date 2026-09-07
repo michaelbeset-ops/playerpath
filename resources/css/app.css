@@ -86,38 +86,46 @@
         --sidebar-ring: 143 75% 42%;
     }
 
-    /* De donkere, premium kant: speler/ouder + de spelerskaart. */
+    /*
+     * De donkere, premium kant: speler/ouder + de spelerskaart.
+     *
+     * Eén neutrale, bijna-zwarte basis (`--background`) voor de balk én de
+     * pagina. Eerder had de balk een andere blauwtint dan de pagina, en de
+     * kaart weer een derde: een zichtbaar naadje en een kaart die los zweefde.
+     * Nu is de kaart het enige met kleur; de pagina eromheen is stil. Niet
+     * puur zwart — dat is hard — maar met een klein beetje blauw voor diepte.
+     */
     .theme-donker {
-        --background: 223 47% 7%; /* #0A0F1C */
+        --background: 225 12% 6%; /* #0D0F12 — de ene basis voor balk en pagina */
         --foreground: 210 40% 96%; /* #F1F5F9 */
 
-        --card: 221 46% 12%; /* #111A2E */
+        --card: 225 9% 10%; /* #171A1D */
         --card-foreground: 210 40% 96%;
-        --popover: 221 46% 12%;
+        --popover: 225 9% 10%;
         --popover-foreground: 210 40% 96%;
 
         --primary: 143 75% 51%; /* #22E06B */
-        --primary-foreground: 223 47% 7%;
+        --primary-foreground: 225 12% 6%;
 
-        --secondary: 219 40% 18%; /* #1C2942 */
+        --secondary: 225 8% 16%; /* #25282D */
         --secondary-foreground: 210 40% 96%;
-        --muted: 221 46% 12%;
-        --muted-foreground: 215 20% 65%; /* #94A3B8 */
-        --accent: 219 40% 18%;
+        --muted: 225 9% 10%;
+        --muted-foreground: 215 16% 66%; /* #99A3B3 */
+        --accent: 225 8% 16%;
         --accent-foreground: 210 40% 96%;
 
         --gold: 46 65% 52%; /* #D4AF37 */
-        --gold-foreground: 223 47% 7%;
+        --gold-foreground: 225 12% 6%;
 
         --destructive: 0 84% 60%;
         --destructive-foreground: 210 40% 96%;
         --warning: 38 92% 50%;
-        --warning-foreground: 223 47% 7%;
+        --warning-foreground: 225 12% 6%;
         --success: 143 75% 51%;
-        --success-foreground: 223 47% 7%;
+        --success-foreground: 225 12% 6%;
 
-        --border: 219 40% 18%;
-        --input: 219 40% 18%;
+        --border: 225 8% 16%;
+        --input: 225 8% 16%;
         --ring: 143 75% 51%;
 
         --chart-1: 145 74% 38%; /* #19A855 */
@@ -126,13 +134,13 @@
         --chart-4: 280 65% 65%;
         --chart-5: 38 92% 50%;
 
-        --sidebar-background: 221 46% 10%;
+        --sidebar-background: 225 12% 6%;
         --sidebar-foreground: 210 40% 96%;
         --sidebar-primary: 143 75% 51%;
-        --sidebar-primary-foreground: 223 47% 7%;
-        --sidebar-accent: 219 40% 18%;
+        --sidebar-primary-foreground: 225 12% 6%;
+        --sidebar-accent: 225 8% 16%;
         --sidebar-accent-foreground: 210 40% 96%;
-        --sidebar-border: 219 40% 16%;
+        --sidebar-border: 225 8% 14%;
         --sidebar-ring: 143 75% 51%;
 
         color-scheme: dark;

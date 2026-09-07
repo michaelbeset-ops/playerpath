@@ -13,8 +13,7 @@ import { computed, type Component } from 'vue';
  * kaarten (`SettingsCard`), zodat een profiel, een wachtwoord en de meldingen
  * er hetzelfde uitzien.
  *
- * Een speler krijgt het donker, net als de rest van zijn kant van de app; een
- * lichte pagina tussen twee donkere is precies de witte strook die stoorde.
+ * Het donkere thema voor een speler staat op de layout, niet hier.
  */
 const items: (NavItem & { icon: Component; hint: string })[] = [
     { title: 'Profiel', href: '/settings/profile', icon: UserRound, hint: 'Foto, naam en e-mail' },
@@ -25,7 +24,6 @@ const items: (NavItem & { icon: Component; hint: string })[] = [
 const page = usePage<SharedData>();
 const user = computed(() => page.props.auth.user);
 const rollen = computed(() => page.props.auth.roles ?? []);
-const isSpeler = computed(() => rollen.value.includes('speler') && !rollen.value.includes('ouder'));
 
 const rolLabel: Record<string, string> = {
     eigenaar: 'Eigenaar',
@@ -39,15 +37,15 @@ const currentPath = window.location.pathname;
 </script>
 
 <template>
-    <div :class="isSpeler ? 'theme-donker min-h-screen bg-background text-foreground' : ''">
+    <div>
         <div class="mx-auto w-full max-w-4xl p-4">
             <!-- Wie je bent. Geen kop "Instellingen": je ziet je eigen naam en foto,
                  dat zegt genoeg. -->
             <div class="flex items-center gap-4">
                 <Avatar v-if="user" :name="user.name" :photo="user.photo_url ?? null" size="size-16" />
                 <div class="min-w-0">
-                    <h1 class="truncate text-2xl font-semibold tracking-tight">{{ user?.name }}</h1>
-                    <p class="truncate text-sm text-muted-foreground">
+                    <h1 class="break-words text-2xl font-semibold tracking-tight">{{ user?.name }}</h1>
+                    <p class="break-words text-sm text-muted-foreground">
                         {{ user?.email }}
                         <template v-if="rollen.length"> &middot; {{ rollen.map((r) => rolLabel[r] ?? r).join(', ') }}</template>
                     </p>
@@ -55,14 +53,14 @@ const currentPath = window.location.pathname;
             </div>
 
             <div class="mt-6 flex flex-col gap-6 lg:flex-row lg:gap-10">
-                <!-- Tabbladen. Op een telefoon een rij pillen die je kunt
-                     schuiven; op een groot scherm een zijbalk met uitleg. -->
-                <nav class="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:w-56 lg:shrink-0 lg:flex-col lg:overflow-visible lg:px-0">
+                <!-- Tabbladen. Op een telefoon drie naast elkaar met het icoon
+                     erboven; op een groot scherm een zijbalk met uitleg. -->
+                <nav class="grid grid-cols-3 gap-2 lg:flex lg:w-56 lg:shrink-0 lg:flex-col">
                     <Link
                         v-for="item in items"
                         :key="item.href"
                         :href="item.href"
-                        class="flex shrink-0 items-center gap-3 rounded-xl border px-3 py-2.5 text-sm transition lg:w-full"
+                        class="flex min-w-0 flex-col items-center gap-1.5 rounded-xl border px-2 py-2.5 text-center text-sm transition lg:w-full lg:flex-row lg:gap-3 lg:px-3 lg:text-left"
                         :class="
                             currentPath === item.href
                                 ? 'border-primary/40 bg-primary/10 font-semibold text-primary'
@@ -71,7 +69,7 @@ const currentPath = window.location.pathname;
                     >
                         <component :is="item.icon" class="size-4 shrink-0" />
                         <span class="min-w-0">
-                            <span class="block">{{ item.title }}</span>
+                            <span class="block text-xs lg:text-sm">{{ item.title }}</span>
                             <span class="hidden text-xs font-normal text-muted-foreground lg:block">{{ item.hint }}</span>
                         </span>
                     </Link>
