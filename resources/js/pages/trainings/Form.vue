@@ -23,6 +23,7 @@ const props = defineProps<{
     } | null;
     groups: { id: number; name: string; age_category: string | null }[];
     availableTrainers: { id: number; name: string }[];
+    locations: { id: number; name: string }[];
 }>();
 
 const bewerken = computed(() => props.training !== null);

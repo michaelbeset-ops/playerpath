@@ -255,7 +255,19 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                         aria-haspopup="true"
                         @click="wissel('gebruiker')"
                     >
-                        <span class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary">
+                        <!-- Je eigen foto als je er een hebt gezet; anders je
+                             initialen. Zonder dit zet je op je profiel wel een
+                             foto, maar zie je nergens dat het gelukt is. -->
+                        <img
+                            v-if="page.props.auth.user?.photo_url"
+                            :src="page.props.auth.user.photo_url"
+                            :alt="page.props.auth.user?.name ?? ''"
+                            class="size-8 shrink-0 rounded-full object-cover"
+                        />
+                        <span
+                            v-else
+                            class="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-bold text-primary"
+                        >
                             {{ initialen }}
                         </span>
                         <span class="hidden min-w-0 leading-tight sm:block">
