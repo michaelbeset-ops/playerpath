@@ -2,33 +2,45 @@
 
 namespace App\Http\Controllers\Clients;
 
+use App\Enums\Feature;
+use App\Enums\PaymentStatus;
 use App\Enums\PlayerPosition;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Group;
 use App\Models\Player;
 use App\Models\User;
+use App\Support\Features\Features;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Klanten: de spelers en hun ouders.
+ * Klanten: de spelers, met hun ouders eronder.
  *
  * "Klanten" en niet "Gebruikers", omdat een school in mensen denkt en niet in
  * accounts. Trainers horen hier niet bij; die staan onder Personeel — een
  * trainer is geen klant, en zoeken tussen de klanten naar je eigen collega's
  * is precies de verwarring die dat menu-item veroorzaakte.
  *
- * Let op het verschil dat hieronder overal doorwerkt: een **speler** is een
- * profiel (tabel `players`) met een optioneel eigen inlogaccount; een **ouder**
- * is altijd een account (tabel `users`). Die twee zijn bewust niet
- * samengevoegd: een kind van acht heeft geen e-mailadres, maar staat wel op
- * de kaart.
+ * ## Eén lijst, geen twee
+ *
+ * Spelers en ouders stonden op twee tabbladen. Maar een school denkt niet in
+ * "een ouder": ze denkt in een kind, en bij dat kind hoort iemand die je belt
+ * als de training uitvalt. Vandaar één lijst met de speler als regel en de
+ * ouders uitklapbaar eronder.
+ *
+ * Dat is **alleen een samenvoeging in de weergave**. Het onderscheid blijft
+ * onder water precies zoals het was: een **speler** is een profiel (tabel
+ * `players`) met een optioneel eigen inlogaccount; een **ouder** is altijd een
+ * account (tabel `users`). Een kind van acht heeft geen e-mailadres, maar
+ * staat wel op de kaart.
  */
 class ClientDirectoryController extends Controller
 {
-    public function players(Request $request): Response
+    public function __construct(protected Features $features) {}
+
+    public function index(Request $request): Response
     {
         $this->authorize('viewAny', Player::class);
 
@@ -39,14 +51,30 @@ class ClientDirectoryController extends Controller
             'status' => (string) $request->string('status', 'active'),
         ];
 
+        // Zonder de betaallaag is "betaling openstaand" een status die nergens
+        // vandaan komt; dan wordt hij ook niet berekend.
+        $betalingen = $this->features->enabled(Feature::Betalingen);
+
         $players = Player::query()
-            ->with(['groups', 'user'])
+            ->with(['groups', 'user', 'guardians'])
+            ->when($betalingen, fn ($q) => $q->withCount([
+                // Te laat, niet "openstaand": een rekening die volgende maand
+                // vervalt vraagt nergens om en zou de hele lijst oranje maken.
+                'payments as overdue_count' => fn ($p) => $p
+                    ->where('status', PaymentStatus::Open->value)
+                    ->whereDate('due_on', '<', now()->toDateString()),
+            ]))
             ->when($filters['search'] !== '', function ($query) use ($filters) {
                 $term = '%'.$filters['search'].'%';
 
+                // Ook op de naam van een ouder: wie een mailtje van "Marieke"
+                // krijgt, zoekt op Marieke en niet op de achternaam van haar zoon.
                 $query->where(fn ($q) => $q
                     ->where('first_name', 'like', $term)
-                    ->orWhere('last_name', 'like', $term));
+                    ->orWhere('last_name', 'like', $term)
+                    ->orWhereHas('guardians', fn ($g) => $g
+                        ->where('users.name', 'like', $term)
+                        ->orWhere('users.email', 'like', $term)));
             })
             ->when($filters['position'] !== '', fn ($q) => $q->where('position', $filters['position']))
             ->when($filters['group'], fn ($q, $groupId) => $q->whereHas('groups', fn ($g) => $g->whereKey($groupId)))
@@ -67,52 +95,21 @@ class ClientDirectoryController extends Controller
                 // Heeft deze speler zelf een inlog, of loopt alles via de ouder?
                 'has_login' => $player->user_id !== null,
                 'email' => $player->user?->email,
+                'has_overdue_payment' => $betalingen && $player->overdue_count > 0,
+                'guardians' => $player->guardians->map(fn (User $ouder) => [
+                    'id' => $ouder->id,
+                    'name' => $ouder->name,
+                    'photo' => $ouder->photo_url,
+                    'email' => $ouder->email,
+                    'relationship' => $ouder->pivot->relationship,
+                ])->values(),
             ]);
 
-        return Inertia::render('clients/Players', [
-            ...$this->gedeeld($request),
+        return Inertia::render('clients/Index', [
             'players' => $players,
             'filters' => $filters,
             'positions' => PlayerPosition::options(),
             'groups' => Group::orderBy('name')->get(['id', 'name']),
-        ]);
-    }
-
-    public function guardians(Request $request): Response
-    {
-        $this->authorize('viewAny', Player::class);
-
-        $guardians = User::ofCurrentSchool()
-            ->role(Role::Ouder->value)
-            ->with('children')
-            ->orderBy('name')
-            ->get()
-            ->map(fn (User $ouder) => [
-                'id' => $ouder->id,
-                'name' => $ouder->name,
-                'photo' => $ouder->photo_url,
-                'email' => $ouder->email,
-                'children' => $ouder->children->map(fn (Player $kind) => [
-                    'id' => $kind->id,
-                    'name' => $kind->full_name,
-                    'relationship' => $kind->pivot->relationship,
-                ]),
-            ]);
-
-        return Inertia::render('clients/Guardians', [
-            ...$this->gedeeld($request),
-            'guardians' => $guardians,
-        ]);
-    }
-
-    /**
-     * Wat op beide tabbladen staat: de tellingen en wat je mag.
-     *
-     * @return array<string, mixed>
-     */
-    protected function gedeeld(Request $request): array
-    {
-        return [
             'counts' => [
                 'players' => Player::active()->count(),
                 'guardians' => User::ofCurrentSchool()->role(Role::Ouder->value)->count(),
@@ -120,6 +117,6 @@ class ClientDirectoryController extends Controller
             'can' => [
                 'managePlayers' => $request->user()->can('create', Player::class),
             ],
-        ];
+        ]);
     }
 }

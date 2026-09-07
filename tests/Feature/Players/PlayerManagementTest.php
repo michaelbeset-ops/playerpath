@@ -137,7 +137,7 @@ class PlayerManagementTest extends TestCase
         $this->actingAs($trainer)
             ->get('/clients')
             ->assertOk()
-            ->assertInertia(fn ($page) => $page->component('clients/Players')->where('can.managePlayers', false));
+            ->assertInertia(fn ($page) => $page->component('clients/Index')->where('can.managePlayers', false));
     }
 
     public function test_het_overzicht_filtert_op_naam_positie_groep_en_status(): void

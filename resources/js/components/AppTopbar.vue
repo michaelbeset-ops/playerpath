@@ -103,8 +103,8 @@ const initialen = computed(() =>
 const huidig = computed(() => page.url.split('?')[0]);
 
 // Ook actief op onderliggende schermen: /players/1/reports/create hoort bij
-// Rapporten. /clients mag niet oplichten op /clients/guardians, dus de
-// langste treffer wint.
+// Rapporten. Alleen een heel pad-deel telt, zodat /trainings niet oplicht op
+// /trainingsmateriaal.
 const raakt = (href: string) => huidig.value === href || huidig.value.startsWith(href + '/');
 
 const isActief = (groep: NavGroup) => (groep.href ? raakt(groep.href) : groep.items.some((item) => raakt(item.href)));

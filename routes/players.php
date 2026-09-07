@@ -39,10 +39,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('players/{player}/share', [SharedCardController::class, 'store'])->name('players.share');
     Route::delete('players/{player}/share', [SharedCardController::class, 'destroy'])->name('players.unshare');
 
-    // Klanten: de spelers en hun ouders. Twee lijsten, want je zoekt zelden
-    // een speler en een ouder tegelijk.
-    Route::get('clients', [ClientDirectoryController::class, 'players'])->name('clients.players');
-    Route::get('clients/guardians', [ClientDirectoryController::class, 'guardians'])->name('clients.guardians');
+    // Klanten: de spelers, met hun ouders uitklapbaar eronder. Eén lijst, want
+    // een school denkt in een kind met iemand erbij die je belt.
+    Route::get('clients', [ClientDirectoryController::class, 'index'])->name('clients.players');
+    // Het oude ouder-tabblad; die lijst is opgegaan in het overzicht.
+    Route::get('clients/guardians', fn () => redirect()->route('clients.players'))->name('clients.guardians');
 
     // Personeel hoort bij het bedrijf, niet bij de klanten.
     Route::get('staff', [StaffController::class, 'index'])->name('staff.index');

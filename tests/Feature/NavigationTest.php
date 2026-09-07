@@ -161,7 +161,7 @@ class NavigationTest extends TestCase
         $this->assertSame([
             '/dashboard',
             '/calendar', '/trainings', '/trainings/mijn',
-            '/clients', '/clients/guardians', '/groups', '/enrollments',
+            '/clients', '/groups', '/enrollments',
             '/reports',
             '/payments', '/subscriptions', '/products', '/exports',
             '/announcements', '/announcements/verjaardagen',
@@ -175,7 +175,9 @@ class NavigationTest extends TestCase
 
         // Een ouder hoort niet te zien welke andere kinderen op de school zitten.
         $this->actingAs($ouder)->get('/clients')->assertForbidden();
-        $this->actingAs($ouder)->get('/clients/guardians')->assertForbidden();
         $this->actingAs($ouder)->get('/staff')->assertForbidden();
+
+        // Het oude ouder-tabblad stuurt door naar het overzicht, en dat weigert.
+        $this->actingAs($ouder)->get('/clients/guardians')->assertRedirect('/clients');
     }
 }

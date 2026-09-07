@@ -79,8 +79,9 @@ class MainNavigation
                 // "Klanten", niet "Gebruikers": een school denkt in de mensen
                 // die bij haar sporten, niet in accounts.
                 'title' => 'Klanten', 'icon' => 'players', 'items' => [
-                    ['title' => 'Spelers', 'href' => '/clients', 'icon' => 'players', 'allowed' => $user->can('viewAny', Player::class)],
-                    ['title' => 'Ouders', 'href' => '/clients/guardians', 'icon' => 'guardians', 'allowed' => $user->can('viewAny', Player::class)],
+                    // Eén item, geen Spelers en Ouders naast elkaar: de ouders
+                    // staan uitklapbaar bij hun kind.
+                    ['title' => 'Klanten', 'href' => '/clients', 'icon' => 'players', 'allowed' => $user->can('viewAny', Player::class)],
                     ['title' => 'Groepen', 'href' => '/groups', 'icon' => 'groups', 'allowed' => $user->can('viewAny', Group::class)],
                     ['title' => 'Inschrijvingen', 'href' => '/enrollments', 'icon' => 'enrollments', 'allowed' => $user->can('viewAny', Enrollment::class), 'feature' => Feature::Inschrijvingen],
                 ],

@@ -3,7 +3,9 @@
 namespace Tests\Feature\Clients;
 
 use App\Enums\Role;
+use App\Enums\PaymentStatus;
 use App\Models\Group;
+use App\Models\Payment;
 use App\Models\Player;
 use App\Models\Report;
 use App\Models\School;
@@ -59,7 +61,7 @@ class ClientDirectoryTest extends TestCase
             ->get('/clients')
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->component('clients/Players')
+                ->component('clients/Index')
                 ->where('counts.players', 2)
                 ->where('counts.guardians', 1)
             );
@@ -71,7 +73,6 @@ class ClientDirectoryTest extends TestCase
 
         // Personeel hoort bij het bedrijf, niet bij de klanten.
         $this->actingAs($this->eigenaar)->get('/clients')->assertDontSee('Piet Trainer');
-        $this->actingAs($this->eigenaar)->get('/clients/guardians')->assertDontSee('Piet Trainer');
         $this->actingAs($this->eigenaar)->get('/staff')->assertSee('Piet Trainer');
     }
 
@@ -79,6 +80,8 @@ class ClientDirectoryTest extends TestCase
     {
         $this->actingAs($this->eigenaar)->get('/players')->assertRedirect('/clients');
         $this->actingAs($this->eigenaar)->get('/users')->assertRedirect('/clients');
+        // De ouderlijst is opgegaan in het overzicht.
+        $this->actingAs($this->eigenaar)->get('/clients/guardians')->assertRedirect('/clients');
     }
 
     public function test_de_spelerslijst_laat_zien_wie_een_eigen_inlog_heeft(): void
@@ -115,20 +118,63 @@ class ClientDirectoryTest extends TestCase
             );
     }
 
-    public function test_het_ouderoverzicht_toont_de_gekoppelde_kinderen(): void
+    public function test_de_ouders_staan_bij_hun_kind(): void
     {
-        $ouder = User::factory()->for($this->school)->create(['name' => 'Marieke']);
+        $ouder = User::factory()->for($this->school)->create(['name' => 'Marieke', 'email' => 'marieke@voorbeeld.nl']);
         $ouder->assignRole(Role::Ouder->value);
 
         $kind = Player::factory()->for($this->school)->create(['first_name' => 'Sem', 'last_name' => 'de Vries']);
         $ouder->children()->attach($kind->id, ['relationship' => 'moeder']);
 
         $this->actingAs($this->eigenaar)
-            ->get('/clients/guardians')
+            ->get('/clients')
             ->assertInertia(fn ($page) => $page
-                ->count('guardians', 1)
-                ->where('guardians.0.children.0.name', 'Sem de Vries')
-                ->where('guardians.0.children.0.relationship', 'moeder')
+                ->count('players', 1)
+                ->where('players.0.guardians.0.name', 'Marieke')
+                ->where('players.0.guardians.0.email', 'marieke@voorbeeld.nl')
+                ->where('players.0.guardians.0.relationship', 'moeder')
+            );
+    }
+
+    public function test_zoeken_vindt_een_kind_op_de_naam_van_zijn_ouder(): void
+    {
+        $ouder = User::factory()->for($this->school)->create(['name' => 'Marieke Jansen']);
+        $ouder->assignRole(Role::Ouder->value);
+
+        $kind = Player::factory()->for($this->school)->create(['first_name' => 'Sem', 'last_name' => 'de Vries']);
+        $ouder->children()->attach($kind->id, ['relationship' => 'moeder']);
+
+        Player::factory()->for($this->school)->create(['first_name' => 'Daan', 'last_name' => 'Visser']);
+
+        $this->actingAs($this->eigenaar)
+            ->get('/clients?search=Marieke')
+            ->assertInertia(fn ($page) => $page
+                ->count('players', 1)
+                ->where('players.0.name', 'Sem de Vries')
+            );
+    }
+
+    public function test_een_te_late_betaling_staat_als_status_bij_de_speler(): void
+    {
+        $opTijd = Player::factory()->for($this->school)->create(['first_name' => 'Aap', 'last_name' => 'Aa']);
+        $teLaat = Player::factory()->for($this->school)->create(['first_name' => 'Beer', 'last_name' => 'Bb']);
+
+        // Een rekening die volgende maand vervalt vraagt nergens om.
+        Payment::factory()->for($this->school)->for($opTijd)->create([
+            'status' => PaymentStatus::Open,
+            'due_on' => now()->addMonth(),
+        ]);
+
+        Payment::factory()->for($this->school)->for($teLaat)->create([
+            'status' => PaymentStatus::Open,
+            'due_on' => now()->subWeek(),
+        ]);
+
+        $this->actingAs($this->eigenaar)
+            ->get('/clients')
+            ->assertInertia(fn ($page) => $page
+                ->where('players.0.has_overdue_payment', false)
+                ->where('players.1.has_overdue_payment', true)
             );
     }
 
