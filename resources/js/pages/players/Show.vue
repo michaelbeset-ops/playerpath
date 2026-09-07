@@ -3,7 +3,6 @@ import Avatar from '@/components/Avatar.vue';
 import FlashMessage from '@/components/FlashMessage.vue';
 import GoalList, { type Doel } from '@/components/GoalList.vue';
 import InputError from '@/components/InputError.vue';
-import PhotoUpload from '@/components/PhotoUpload.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -544,19 +543,6 @@ const verwijderen = () => {
                 </div>
 
                 <p v-else-if="!toonProductFormulier" class="mt-3 text-sm text-muted-foreground">Nog niets afgenomen.</p>
-            </div>
-
-            <!-- De foto komt ook op de spelerskaart terecht; daarom staat de
-                 uitleg erbij dat dit niet zomaar een lijstplaatje is. -->
-            <div v-if="can.manage" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
-                <p class="font-medium">Pasfoto</p>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    Deze foto staat op de spelerskaart van {{ player.first_name }}, ook op een gedeelde kaart.
-                </p>
-
-                <div class="mt-4">
-                    <PhotoUpload :name="player.name" :photo="player.photo" :action="'/players/' + player.id + '/photo'" />
-                </div>
             </div>
 
             <!-- Verwijderen staat apart en onderaan: het is onomkeerbaar -->

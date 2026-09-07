@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import InputError from '@/components/InputError.vue';
+import PhotoUpload from '@/components/PhotoUpload.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +14,8 @@ interface Speler {
     id: number;
     first_name: string;
     last_name: string;
+    name: string;
+    photo: string | null;
     date_of_birth: string;
     position: string;
     is_active: boolean;
@@ -78,6 +81,19 @@ const opslaan = () => {
             </h1>
 
             <div class="mt-6 space-y-5 rounded-xl border border-border bg-card p-5 shadow-sm">
+                <!-- De foto hoort bij het bewerken van een speler, niet bij het
+                     bekijken. Hij gaat wel meteen weg als je hem kiest: uploaden
+                     is één handeling en wacht niet op "Wijzigingen opslaan".
+                     Bij een nieuwe speler kan het nog niet — er is nog niets om
+                     de foto aan te hangen. -->
+                <div v-if="bewerken" class="grid gap-2">
+                    <Label>Pasfoto</Label>
+                    <p class="text-xs text-muted-foreground">
+                        Deze foto staat op de spelerskaart van {{ player!.first_name }}, ook op een gedeelde kaart.
+                    </p>
+                    <PhotoUpload class="mt-1" :name="player!.name" :photo="player!.photo" :action="'/players/' + player!.id + '/photo'" />
+                </div>
+
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div class="grid gap-2">
                         <Label for="first_name">Voornaam</Label>

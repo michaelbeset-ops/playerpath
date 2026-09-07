@@ -196,6 +196,8 @@ class PlayerController extends Controller
                 'id' => $player->id,
                 'first_name' => $player->first_name,
                 'last_name' => $player->last_name,
+                'name' => $player->full_name,
+                'photo' => $player->photo_url,
                 'date_of_birth' => $player->date_of_birth->format('Y-m-d'),
                 'position' => $player->position->value,
                 'is_active' => $player->is_active,
