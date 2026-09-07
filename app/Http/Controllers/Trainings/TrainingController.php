@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Trainings;
 
+use App\Enums\AttendanceStatus;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Trainings\TrainingRequest;
@@ -25,15 +26,33 @@ class TrainingController extends Controller
 
         $user = $request->user();
         $eigenSpelers = $user->visiblePlayerIds();
+        $magAfvinken = $user->isEigenaar() || $user->isTrainer();
+
+        // Filteren is werk van wie het hele rooster ziet. Een ouder heeft één
+        // groep en zou een keuzelijst met één optie krijgen.
+        $groep = $magAfvinken ? $request->integer('group') : 0;
+        $trainer = $magAfvinken ? $request->integer('trainer') : 0;
 
         $vorm = fn (Training $training) => [
             'id' => $training->id,
             'group' => $training->group->name,
+            'group_id' => $training->group_id,
+            'day' => $training->starts_at->format('Y-m-d'),
+            'day_label' => $training->starts_at->translatedFormat('l j F'),
+            'is_today' => $training->starts_at->isToday(),
             'date' => $training->starts_at->translatedFormat('l j F Y'),
+            'starts_at' => $training->starts_at->format('H:i'),
+            'ends_at' => $training->ends_at->format('H:i'),
             'time' => $training->starts_at->format('H:i').' - '.$training->ends_at->format('H:i'),
             'location' => $training->location,
             'trainers' => $training->trainers->pluck('name')->all(),
-            'attendance_count' => $training->attendances_count,
+            'is_mine' => $magAfvinken && $training->belongsToTrainer($user),
+            'has_passed' => $training->hasPassed(),
+            'cancelled' => $training->isCancelled(),
+            // Afgevinkt en aanwezig zijn twee verschillende dingen: "niet
+            // afgevinkt" is geen "afwezig". Daarom allebei een eigen getal.
+            'recorded_count' => $training->attendances_count,
+            'present_count' => $training->present_count,
             'expected_count' => $training->group->players_count,
             // Alleen relevant voor ouder en speler: wat gaf ik door?
             'my_registration' => $eigenSpelers === [] ? null : $training->attendances
@@ -43,8 +62,13 @@ class TrainingController extends Controller
 
         $basis = fn () => $this->visible->query($user)
             ->with('trainers')
-            ->withCount(['attendances' => fn ($q) => $q->whereNotNull('status')])
+            ->withCount([
+                'attendances' => fn ($q) => $q->whereNotNull('status'),
+                'attendances as present_count' => fn ($q) => $q->where('status', AttendanceStatus::Present->value),
+            ])
             ->with(['group' => fn ($q) => $q->withCount(['players' => fn ($p) => $p->where('is_active', true)])])
+            ->when($groep > 0, fn ($q) => $q->where('group_id', $groep))
+            ->when($trainer > 0, fn ($q) => $q->whereHas('trainers', fn ($t) => $t->whereKey($trainer)))
             ->when($eigenSpelers !== [], fn ($q) => $q->with([
                 'attendances' => fn ($a) => $a->whereIn('player_id', $eigenSpelers),
             ]));
@@ -53,7 +77,14 @@ class TrainingController extends Controller
             'upcoming' => $basis()->upcoming()->limit(50)->get()->map($vorm),
             'past' => $basis()->past()->limit(20)->get()->map($vorm),
             'canManage' => $user->can('create', Training::class),
+            'canRecord' => $magAfvinken,
             'isParticipant' => $eigenSpelers !== [],
+            'filters' => ['group' => $groep ?: null, 'trainer' => $trainer ?: null],
+            // Alleen tonen waar iets uit te kiezen valt.
+            'groups' => $magAfvinken
+                ? Group::orderBy('name')->get(['id', 'name'])->map(fn (Group $g) => ['id' => $g->id, 'name' => $g->name])
+                : [],
+            'trainers' => $magAfvinken ? $this->beschikbareTrainers() : [],
         ]);
     }
 

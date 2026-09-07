@@ -40,8 +40,7 @@ const parse = (iso: string) => {
     return new Date(j, m - 1, d);
 };
 
-const iso = (d: Date) =>
-    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
 const plusDagen = (d: Date, n: number) => {
     const kopie = new Date(d);
@@ -129,16 +128,12 @@ const agenda = computed(() => dagen.value.filter((d) => perDag.value[d.iso]?.len
 
 // In het raster tik je een dag aan en zie je die eronder. Standaard: vandaag als
 // die in beeld is, anders de eerste dag met een training, anders de eerste dag.
-const geselecteerd = ref<string>(
-    dagen.value.some((d) => d.iso === props.today) ? props.today : (props.trainings[0]?.date ?? props.range.from),
-);
+const geselecteerd = ref<string>(dagen.value.some((d) => d.iso === props.today) ? props.today : (props.trainings[0]?.date ?? props.range.from));
 
 watch(
     () => props.date,
     () => {
-        geselecteerd.value = dagen.value.some((d) => d.iso === props.today)
-            ? props.today
-            : (props.trainings[0]?.date ?? props.range.from);
+        geselecteerd.value = dagen.value.some((d) => d.iso === props.today) ? props.today : (props.trainings[0]?.date ?? props.range.from);
     },
 );
 
@@ -177,9 +172,7 @@ const kiesBereik = (scope: 'all' | 'mine') => ga(props.view, props.date, scope);
 
 const open = (id: number) => router.get('/trainings/' + id);
 
-const leegTekst = computed(() =>
-    props.scope === 'mine' ? 'Geen trainingen van jou in deze periode.' : 'Geen trainingen in deze periode.',
-);
+const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van jou in deze periode.' : 'Geen trainingen in deze periode.'));
 </script>
 
 <template>
@@ -417,19 +410,14 @@ const leegTekst = computed(() =>
                             class="block min-w-0 rounded-lg border p-2.5 transition hover:border-primary"
                             :class="t.has_passed || t.cancelled ? 'border-border bg-secondary/40' : 'border-primary/30 bg-primary/5'"
                         >
-                            <p
-                                class="tabular text-xs font-semibold"
-                                :class="t.has_passed || t.cancelled ? 'text-muted-foreground' : 'text-primary'"
-                            >
+                            <p class="tabular text-xs font-semibold" :class="t.has_passed || t.cancelled ? 'text-muted-foreground' : 'text-primary'">
                                 {{ t.starts_at }} – {{ t.ends_at }}
                             </p>
                             <p class="mt-0.5 text-sm font-medium leading-tight" :class="t.cancelled ? 'line-through' : ''">{{ t.group }}</p>
                             <p v-if="t.is_mine && scope === 'all'" class="mt-1 text-[10px] font-semibold uppercase tracking-wide text-primary">
                                 jouw training
                             </p>
-                            <p v-if="t.cancelled" class="mt-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                afgezegd
-                            </p>
+                            <p v-if="t.cancelled" class="mt-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">afgezegd</p>
                             <p class="mt-1 flex items-start gap-1 text-xs text-muted-foreground">
                                 <UserCog class="mt-0.5 size-3 shrink-0" />
                                 <span>{{ t.trainers.join(', ') || 'geen trainer' }}</span>

@@ -3,7 +3,10 @@
 namespace Tests\Feature\Trainings;
 
 use App\Enums\Role;
+use App\Enums\AttendanceStatus;
+use App\Models\Attendance;
 use App\Models\Group;
+use App\Models\Player;
 use App\Models\School;
 use App\Models\Training;
 use App\Models\User;
@@ -145,6 +148,86 @@ class TrainingPlanningTest extends TestCase
                 ->count('upcoming', 1)
                 ->count('past', 2)
                 ->where('isParticipant', false)
+            );
+    }
+
+    public function test_het_overzicht_filtert_op_groep_en_op_trainer(): void
+    {
+        $andereGroep = Group::factory()->for($this->school)->create(['name' => 'Veldspelers']);
+        $andereTrainer = User::factory()->for($this->school)->create();
+        $andereTrainer->assignRole(Role::Trainer->value);
+
+        $vanMij = Training::factory()->for($this->school)->for($this->groep)->upcoming()->create();
+        $vanMij->trainers()->attach($this->trainer->id);
+
+        $vanEenAnder = Training::factory()->for($this->school)->for($andereGroep)->upcoming()->create();
+        $vanEenAnder->trainers()->attach($andereTrainer->id);
+
+        $this->actingAs($this->trainer)
+            ->get('/trainings?group='.$this->groep->id)
+            ->assertInertia(fn ($page) => $page
+                ->count('upcoming', 1)
+                ->where('upcoming.0.id', $vanMij->id)
+                ->where('filters.group', $this->groep->id)
+            );
+
+        $this->actingAs($this->trainer)
+            ->get('/trainings?trainer='.$andereTrainer->id)
+            ->assertInertia(fn ($page) => $page
+                ->count('upcoming', 1)
+                ->where('upcoming.0.id', $vanEenAnder->id)
+            );
+    }
+
+    public function test_het_overzicht_telt_afgevinkt_en_aanwezig_apart(): void
+    {
+        $training = Training::factory()->for($this->school)->for($this->groep)->past()->create();
+
+        $aanwezig = Player::factory()->for($this->school)->create();
+        $afwezig = Player::factory()->for($this->school)->create();
+        $onbekend = Player::factory()->for($this->school)->create();
+
+        foreach ([$aanwezig, $afwezig, $onbekend] as $speler) {
+            $speler->groups()->attach($this->groep->id);
+        }
+
+        Attendance::factory()->for($this->school)->for($training)->for($aanwezig)
+            ->create(['status' => AttendanceStatus::Present]);
+        Attendance::factory()->for($this->school)->for($training)->for($afwezig)
+            ->create(['status' => AttendanceStatus::Absent]);
+
+        // Niet afgevinkt is geen afwezig: die speler telt in geen van beide.
+        $this->actingAs($this->trainer)
+            ->get('/trainings')
+            ->assertInertia(fn ($page) => $page
+                ->where('past.0.recorded_count', 2)
+                ->where('past.0.present_count', 1)
+                ->where('past.0.expected_count', 3)
+            );
+    }
+
+    public function test_een_ouder_krijgt_geen_filters_en_geen_afvinkknoppen(): void
+    {
+        $ouder = User::factory()->for($this->school)->create();
+        $ouder->assignRole(Role::Ouder->value);
+
+        $kind = Player::factory()->for($this->school)->create();
+        $kind->groups()->attach($this->groep->id);
+        $ouder->children()->attach($kind->id);
+
+        Training::factory()->for($this->school)->for($this->groep)->upcoming()->create();
+
+        // Ook met een groep in de URL: een ouder filtert niet, die krijgt zijn
+        // eigen groep en niets anders.
+        $this->actingAs($ouder)
+            ->get('/trainings?group=999')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('canRecord', false)
+                ->where('isParticipant', true)
+                ->count('groups', 0)
+                ->count('trainers', 0)
+                ->count('upcoming', 1)
             );
     }
 }

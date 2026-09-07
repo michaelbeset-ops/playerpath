@@ -5,6 +5,7 @@ namespace Tests\Feature\Reports;
 use App\Enums\PlayerPosition;
 use App\Enums\ReportCategory;
 use App\Enums\Role;
+use App\Models\Group;
 use App\Models\Player;
 use App\Models\School;
 use App\Models\User;
@@ -143,5 +144,34 @@ class ReportAccessTest extends TestCase
             ->get("/players/{$speler->id}/card")
             ->assertOk()
             ->assertInertia(fn ($page) => $page->where('canReport', false));
+    }
+
+    public function test_de_rapportenlijst_kan_op_groep_filteren(): void
+    {
+        $school = School::factory()->create();
+        $trainer = $this->gebruiker($school, Role::Trainer);
+
+        app(Tenancy::class)->set($school);
+
+        $groep = Group::factory()->for($school)->create(['name' => 'Keepers ochtend']);
+
+        $inDeGroep = Player::factory()->for($school)->create(['first_name' => 'Sem']);
+        $inDeGroep->groups()->attach($groep->id);
+
+        Player::factory()->for($school)->create(['first_name' => 'Daan']);
+
+        // Vanuit een training kom je hier met die groep in de URL.
+        $this->actingAs($trainer)
+            ->get('/reports?group='.$groep->id)
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->count('players', 1)
+                ->where('players.0.name', $inDeGroep->full_name)
+                ->where('group', 'Keepers ochtend')
+            );
+
+        $this->actingAs($trainer)
+            ->get('/reports')
+            ->assertInertia(fn ($page) => $page->count('players', 2)->where('group', null));
     }
 }

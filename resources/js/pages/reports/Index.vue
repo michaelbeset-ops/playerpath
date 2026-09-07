@@ -14,7 +14,7 @@ interface SpelerRij {
     last_report_on: string | null;
 }
 
-const props = defineProps<{ players: SpelerRij[] }>();
+const props = defineProps<{ players: SpelerRij[]; group: string | null }>();
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Rapporten', href: '/reports' }];
 
@@ -34,6 +34,17 @@ const gefilterd = computed(() => {
         <div class="mx-auto w-full max-w-3xl p-4">
             <h1 class="text-2xl font-semibold tracking-tight">Rapporten</h1>
             <p class="mt-1 text-sm text-muted-foreground">Kies een speler om te beoordelen.</p>
+
+            <!-- Kom je hier vanuit een training, dan gaat het om die groep. -->
+            <div
+                v-if="group"
+                class="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-secondary/50 px-3 py-2 text-sm"
+            >
+                <span
+                    >Alleen de spelers van <strong>{{ group }}</strong></span
+                >
+                <Link href="/reports" class="font-medium text-primary hover:underline">Toon alle spelers</Link>
+            </div>
 
             <input
                 v-model="zoek"

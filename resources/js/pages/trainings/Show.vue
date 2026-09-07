@@ -176,6 +176,9 @@ const verwijderen = () => {
             </div>
 
             <!-- Aanwezigheid afvinken (trainer) -->
+            <!-- Het anker is er zodat "Aanwezigheid" in het overzicht hier landt
+                 en niet bovenaan een pagina waar je nog voor moet scrollen. -->
+            <div id="aanwezigheid" class="scroll-mt-4"></div>
             <div v-if="can.record" class="mt-6 rounded-xl border border-border bg-card p-5 shadow-sm">
                 <div class="flex flex-wrap items-baseline justify-between gap-2">
                     <p class="font-medium">Aanwezigheid</p>

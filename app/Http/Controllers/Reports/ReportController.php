@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Reports;
 use App\Actions\Reports\StoreReport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Reports\StoreReportRequest;
+use App\Models\Group;
 use App\Models\Player;
 use App\Models\Report;
 use App\Support\Goals\GoalProgress;
@@ -28,8 +29,13 @@ class ReportController extends Controller
     {
         $this->authorize('viewAny', Report::class);
 
+        // Vanuit een training kom je hier met een groep in de URL: dan gaat het
+        // om de spelers die je zojuist voor je had staan.
+        $groep = $request->integer('group');
+
         $players = Player::query()
             ->active()
+            ->when($groep > 0, fn ($q) => $q->whereHas('groups', fn ($g) => $g->whereKey($groep)))
             ->orderBy('first_name')
             ->get()
             ->map(fn (Player $player) => [
@@ -43,6 +49,11 @@ class ReportController extends Controller
 
         return Inertia::render('reports/Index', [
             'players' => $players,
+            // De groep uit de scope: staat hij niet in deze school, dan is er
+            // niets om op te filteren en blijft de naam leeg.
+            'group' => $groep > 0
+                ? Group::whereKey($groep)->value('name')
+                : null,
         ]);
     }
 
