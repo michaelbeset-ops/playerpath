@@ -359,6 +359,8 @@ een donkere.
 | `ReportScore` | school | `report_id`, `category`, `score` (1-10) |
 | `Training` | school | `group_id`, `starts_at`, `ends_at`, `location` |
 | `Attendance` | school | `training_id`, `player_id`, `registration`, `status` |
+| `AvailabilityRule` | school | `user_id`, `weekday` (1-7), `daypart` — het gewone ritme van een trainer |
+| `AvailabilityException` | school | `user_id`, `starts_on`, `ends_on`, `daypart?`, `available`, `note` |
 
 `Player` heeft daarnaast `share_token` en `shared_at` voor de publieke kaart.
 
@@ -1031,6 +1033,94 @@ rapport gedaan is. Vier dingen die je niet moet omdraaien:
 - **"Gedaan" = een rapport met `reported_on` op de dag van de training.**
   Rapporten hangen bewust niet aan een training; een trainer schrijft over een
   speler, niet over een sessie. De datum is het enige eerlijke verband.
+
+### Het trainer-account
+
+Een trainer is **personeel, geen directie**. Hij komt met twee vragen — waar
+moet ik zijn, en wie moet ik nog beoordelen — en zijn schermen beantwoorden
+die. Een uitgeklede versie van het eigenaar-dashboard is geen trainerscherm:
+dan staat er van alles waar hij niets mee kan.
+
+- **Zijn dashboard bestaat uit twee eigen widgets**, `DashboardWidget::MyTrainings`
+  en `MyPlayers`, gevoed door `Support\Dashboard\TrainerDashboard`. Wie alleen
+  trainer is krijgt daarvoor een eigen standaardindeling
+  (`WidgetRegistry::trainerLayout()`); de eigenaar houdt de schoolbrede en kan
+  ze erbij zetten, want bij een kleine school geeft hij zelf training.
+- **"Mijn spelers" leidt de groepen af uit de trainingen waar hij aan gekoppeld
+  is.** Er is bewust geen koppeling trainer↔groep: een trainer valt in, ruilt
+  en draait mee. Is hij nérgens gekoppeld, dan is de hele school van hem —
+  dezelfde regel als `Training::scopeForTrainer`, want anders is het scherm bij
+  elke school die niet koppelt leeg.
+- **De lijst staat op wie het langst niets kreeg**, niet alfabetisch. Een
+  alfabetische lijst is een telefoonboek; deze beantwoordt de vraag waarvoor je
+  hem opent. Nooit beoordeeld telt als aandacht, en de grens is dezelfde dertig
+  dagen als in het aandacht-blok.
+- **Wat niet van hem is, zit server-side dicht.** Betalingen, abonnementen,
+  aanbod, overzichten, huisstijl, verantwoording, de inschrijfwizard, spelers
+  en groepen bewerken en het teamoverzicht van de beschikbaarheid geven alle
+  een 403; de beheeromgeving een 404. Dat lag al vast in de policies — het menu
+  is er de cosmetische kant van.
+
+**Wat een trainer wél schoolbreed ziet — het hele rooster, alle spelers, alle
+rapporten — is een bewuste keuze en geen omissie** (zie 3.4 en "Trainingen en
+aanwezigheid"): invallen en ruilen loopt anders vast, en "de trainer mag alles
+zien maar niets wijzigen" is de regel. "Mijn" is dus overal een filter op de
+weergave, nooit de grens van wat mag.
+
+### De snelle invulflow
+
+`/trainings/{training}/rapporten` (`Reports\TrainingReportController` +
+`reports/Quick.vue`) is het scherm dat een trainer na afloop op het veld
+opendoet: alle spelers van die training achter elkaar. Het losse invulscherm
+(`reports/Create.vue`) blijft voor "ik wil één speler beoordelen".
+
+- **Opslaan gaat direct door naar de volgende speler.** Geen tussenscherm, geen
+  bevestiging; wie op de kaartpagina uitkomt is zijn ritme kwijt.
+- **De volgorde ligt vast** (de spelers van de training, alfabetisch), zodat
+  "speler 3 van 8" ergens op slaat.
+- **Overslaan en stoppen mogen allebei.** Elk rapport is bij het opslaan al
+  binnen — er is geen concept dat je kunt kwijtraken — en wie je oversloeg komt
+  aan het eind vanzelf weer langs. Het herinneringsblok telt hem intussen mee.
+- **Het rapport krijgt de datum van de tráining, niet van vandaag.** Wie 's
+  avonds laat afsluit hoort geen rapport van morgen te krijgen, en het is de
+  datum waarop "gedaan" wordt geteld.
+- **Aan het eind één samenvatting** (`reports/QuickSummary.vue`) met wie steeg,
+  wie een level erbij kreeg en wie nog open staat. Per speler vieren zou acht
+  keer hetzelfde blok opleveren; na de tweede kijkt niemand er meer naar.
+- **De poort is `recordAttendance` op de training**: wie mag afvinken, mag ook
+  beoordelen. Daardoor is het één flow voor trainer én eigenaar, en niet twee
+  die uit elkaar lopen.
+
+### Beschikbaarheid van trainers
+
+`Support\Availability\TrainerAvailability` is de enige plek waar "kan die
+trainer dan?" beantwoord wordt — voor zijn eigen scherm, het overzicht van de
+eigenaar en de waarschuwing op het dashboard. Twee tabellen, want het zijn twee
+dingen: `availability_rules` is het gewone ritme (zeven dagen × drie dagdelen,
+een rij betekent *beschikbaar*), `availability_exceptions` is wat daarvan
+afwijkt, met een begin- en einddatum.
+
+- **Niets ingevuld is onbekend, niet onbeschikbaar** (`hasSet()` /
+  `isAvailableAt()` geeft `null`). Zonder dat verschil kleurt bij elke school
+  die dit nog niet gebruikt de hele planning rood, en dan kijkt niemand er meer
+  naar.
+- **Een uitzondering wint van het ritme, en de fijnste uitzondering wint.**
+  "Die zaterdag alleen 's ochtends niet" gaat vóór "die hele week kan ik wel".
+- **Het dagdeel gaat op de begintijd** van de training (`Daypart::forTime`):
+  16:30–18:00 is een middagtraining, want dat is het moment waarop hij er moet
+  zijn.
+- **Bewust niet fijner dan dagdelen.** Beschikbaarheid in kwartieren vragen is
+  een agenda bouwen die niemand invult.
+- **Je beschikbaarheid is van jou.** De eigenaar ziet hem
+  (`/personeel/beschikbaarheid`) maar vult hem voor niemand in; dat weigert
+  `AvailabilityExceptionPolicy`.
+- **De eigenaar wordt gewaarschuwd, niet geïnformeerd.** `conflicts()` levert
+  twee losse signalen voor het aandacht-blok — een trainer die is ingepland op
+  een moment dat hij niet kan, en een training waar helemaal geen trainer bij
+  staat. Twee gesprekken, dus twee regels: bij het ene bel je iemand, bij het
+  andere koppel je er een. Alleen veertien dagen vooruit, want een training van
+  vorige week verplaats je niet meer. Een privétraining telt niet mee: die
+  hoort bij één kind en heeft geen trainer in het rooster nodig.
 
 ### De rekenkern: rating, XP en level
 
