@@ -1,19 +1,12 @@
 <script setup lang="ts">
 import FlashMessage from '@/components/FlashMessage.vue';
 import GoalList, { type Doel } from '@/components/GoalList.vue';
-import PlayerCardVisual from '@/components/PlayerCardVisual.vue';
+import PlayerCardVisual, { type Kaart } from '@/components/PlayerCardVisual.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { Check, Copy, Link2, Lock, TrendingUp, Trophy } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
-
-interface Categorie {
-    category: string;
-    label: string;
-    hint: string;
-    rating: number | null;
-}
 
 const props = defineProps<{
     player: {
@@ -26,11 +19,11 @@ const props = defineProps<{
         overall_rating: number | null;
         rated_at: string | null;
     };
-    categories: Categorie[];
+    card: Kaart;
+    photoHref: string | null;
     reportCount: number;
     lastReport: { reported_on: string; trainer: string | null; note: string | null } | null;
     canReport: boolean;
-    level: { key: string; label: string; description: string };
     badges: { key: string; label: string; description: string; earned: boolean }[];
     share: { can: boolean; url: string | null };
     goals: Doel[];
@@ -44,6 +37,10 @@ const behaald = computed(() => props.badges.filter((b) => b.earned));
 const nogTeGaan = computed(() => props.badges.filter((b) => !b.earned));
 
 const gekopieerd = ref(false);
+
+// De deel-knop op de kaart brengt je naar het deel-vak hieronder.
+const deelVak = ref<HTMLElement | null>(null);
+const naarDelen = () => deelVak.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
 const deelAan = () => router.post('/players/' + props.player.id + '/share', {}, { preserveScroll: true });
 
@@ -77,20 +74,15 @@ const kopieer = async () => {
             -->
             <div class="theme-donker rounded-3xl bg-background p-4 text-foreground sm:p-8">
                 <PlayerCardVisual
-                    :name="player.name"
-                    :photo="player.photo"
-                    :position="player.position"
-                    :position-key="player.position_key"
-                    :age="player.age"
-                    :overall="player.overall_rating"
-                    :categories="categories"
-                    :level="level"
-                    :badges="behaald"
-                    :report-count="reportCount"
+                    :card="card"
+                    :photo-href="photoHref"
+                    :audience="canReport ? 'trainer' : 'gezin'"
+                    :shareable="share.can && player.overall_rating !== null"
+                    @share="naarDelen"
                 />
 
                 <p v-if="player.rated_at" class="mt-4 text-center text-xs text-muted-foreground">
-                    Bijgewerkt op {{ player.rated_at }} &middot; gemiddelde van de laatste 3 rapporten &middot; niveau {{ level.label.toLowerCase() }}
+                    Bijgewerkt op {{ player.rated_at }} &middot; gemiddelde van de laatste 3 rapporten
                 </p>
             </div>
 
@@ -153,11 +145,11 @@ const kopieer = async () => {
             </div>
 
             <!-- Delen: standaard uit, en met de gevolgen erbij -->
-            <div v-if="share.can && player.overall_rating" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+            <div v-if="share.can && player.overall_rating" ref="deelVak" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
                 <p class="font-medium">Kaart delen</p>
                 <p class="mt-1 text-sm text-muted-foreground">
-                    Maak een link waarmee iemand zonder account deze kaart kan bekijken. Op die pagina staan alleen de voornaam met
-                    initiaal, de positie en de cijfers — geen achternaam, leeftijd, school of trainersnotities.
+                    Maak een link waarmee iemand zonder account deze kaart kan bekijken. Op die pagina staan alleen de voornaam met initiaal, de
+                    positie en de cijfers — geen achternaam, leeftijd, school of trainersnotities.
                 </p>
 
                 <template v-if="share.url">

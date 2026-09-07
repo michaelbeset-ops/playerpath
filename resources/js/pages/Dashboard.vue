@@ -248,18 +248,7 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
                 <!-- De kaart zelf, meteen in beeld: dat is waar een kind voor komt -->
                 <div v-for="speler in players" :key="speler.id" class="mt-6">
                     <div class="theme-donker rounded-3xl bg-background p-4 text-foreground sm:p-6">
-                        <PlayerCardVisual
-                            :name="speler.name"
-                            :photo="speler.photo"
-                            :position="speler.position"
-                            :position-key="speler.position_key"
-                            :age="speler.age"
-                            :overall="speler.overall_rating"
-                            :categories="speler.categories"
-                            :level="speler.level"
-                            :badges="speler.badges"
-                            :report-count="speler.report_count"
-                        />
+                        <PlayerCardVisual :card="speler.card" :shareable="false" />
 
                         <!-- Iets om naartoe te werken -->
                         <div

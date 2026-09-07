@@ -302,10 +302,12 @@ class RatingEngineTest extends TestCase
             ->get("/players/{$this->speler->id}/card")
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->where('level.key', 'brons')
-                ->where('level.xp', 5)
-                ->where('level.next.key', 'zilver')
-                ->where('level.next.remaining', 145)
+                ->where('card.level.key', 'brons')
+                ->where('card.level.xp', 5)
+                ->where('card.level.next.key', 'zilver')
+                ->where('card.level.next.remaining', 145)
+                ->where('card.age_category.key', 'O12')
+                ->where('card.season', '2026/27')
             );
     }
 }

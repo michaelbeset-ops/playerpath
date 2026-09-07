@@ -251,8 +251,8 @@ class ProgressAndNotificationTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 // Een rapport is 5 XP: brons, met zilver in zicht.
-                ->where('level.key', 'brons')
-                ->where('level.next.key', 'zilver')
+                ->where('card.level.key', 'brons')
+                ->where('card.level.next.key', 'zilver')
                 ->has('badges', 9)
             );
     }

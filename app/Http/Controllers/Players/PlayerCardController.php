@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Players;
 use App\Http\Controllers\Controller;
 use App\Models\Player;
 use App\Support\Goals\GoalProgress;
-use App\Support\PlayerCard\CalculatePlayerCard;
 use App\Support\PlayerCard\PlayerBadges;
+use App\Support\PlayerCard\PlayerCardPresenter;
 use App\Support\PlayerCard\PlayerProgress;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -14,10 +14,10 @@ use Inertia\Response;
 class PlayerCardController extends Controller
 {
     public function __construct(
-        protected CalculatePlayerCard $calculator,
         protected PlayerBadges $badges,
         protected PlayerProgress $progress,
         protected GoalProgress $goals,
+        protected PlayerCardPresenter $presenter,
     ) {}
 
     public function show(Player $player): Response
@@ -37,7 +37,10 @@ class PlayerCardController extends Controller
                 'overall_rating' => $player->overall_rating,
                 'rated_at' => $player->rated_at?->format('d-m-Y'),
             ],
-            'categories' => $this->calculator->breakdown($player),
+            // De kaart zelf, uit dezelfde bron als het dashboard en de deel-link.
+            'card' => $this->presenter->for($player),
+            // Een foto toevoegen gebeurt op de spelerspagina; alleen voor wie dat mag.
+            'photoHref' => auth()->user()->can('update', $player) ? route('players.show', $player) : null,
             'reportCount' => $player->reports()->count(),
             'lastReport' => $laatste ? [
                 'reported_on' => $laatste->reported_on->format('d-m-Y'),
@@ -45,7 +48,6 @@ class PlayerCardController extends Controller
                 'note' => $laatste->note,
             ] : null,
             'canReport' => auth()->user()->can('createReport', $player),
-            'level' => $this->badges->level($player),
             'goals' => $this->goals->forPlayer($player),
             'share' => [
                 'can' => auth()->user()->can('share', $player),

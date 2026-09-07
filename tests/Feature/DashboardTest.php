@@ -104,8 +104,8 @@ class DashboardTest extends TestCase
                 ->count('players', 1)
                 ->where('players.0.name', 'Sem de Vries')
                 ->where('players.0.position_key', 'keeper')
-                ->has('players.0.categories', 6)
-                ->has('players.0.level')
+                ->has('players.0.card.categories', 6)
+                ->has('players.0.card.level')
                 ->where('players.0.next_badge.key', 'eerste_rapport')
                 // Schoolbrede cijfers horen hier niet: die zijn niet van een ouder.
                 ->missing('stats')

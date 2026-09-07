@@ -4,9 +4,7 @@ namespace App\Http\Controllers\Players;
 
 use App\Http\Controllers\Controller;
 use App\Models\Player;
-use App\Support\PlayerCard\CalculatePlayerCard;
-use App\Support\PlayerCard\PlayerBadges;
-use App\Support\PlayerCard\PlayerProgress;
+use App\Support\PlayerCard\PlayerCardPresenter;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -34,9 +32,7 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
 class SharedCardController extends Controller
 {
     public function __construct(
-        protected CalculatePlayerCard $calculator,
-        protected PlayerBadges $badges,
-        protected PlayerProgress $progress,
+        protected PlayerCardPresenter $presenter,
         protected Tenancy $tenancy,
     ) {}
 
@@ -57,27 +53,9 @@ class SharedCardController extends Controller
         $this->tenancy->forget();
 
         return Inertia::render('players/SharedCard', [
-            'player' => [
-                // De foto hoort bij de kaart; de achternaam niet. Zie de
-                // afspraken over de publieke deel-link in CLAUDE.md.
-                'name' => $player->public_name,
-                'photo' => $player->photo_url,
-                'position' => $player->position->label(),
-                'position_key' => $player->position->value,
-                'overall_rating' => $player->overall_rating,
-            ],
-            'categories' => array_map(
-                fn (array $categorie) => [
-                    'label' => $categorie['label'],
-                    'rating' => $categorie['rating'],
-                ],
-                $this->calculator->breakdown($player)
-            ),
-            'level' => $this->badges->level($player),
-            'badges' => array_values(array_filter(
-                $this->badges->for($player, $this->progress),
-                fn (array $badge) => $badge['earned'],
-            )),
+            // De publieke variant: voornaam + initiaal, geen school. De foto
+            // hoort bij de kaart; de achternaam niet. Zie CLAUDE.md.
+            'card' => $this->presenter->for($player, public: true),
         ]);
     }
 

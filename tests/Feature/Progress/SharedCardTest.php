@@ -118,10 +118,13 @@ class SharedCardTest extends TestCase
 
         $response->assertOk()->assertInertia(fn ($page) => $page
             ->component('players/SharedCard')
-            ->where('player.name', 'Sem d.')
-            ->where('player.overall_rating', 80)
-            ->missing('player.age')
-            ->missing('player.date_of_birth')
+            ->where('card.name', 'Sem d.')
+            ->where('card.last_name', 'd.')
+            ->where('card.overall', 80)
+            ->where('card.school', null)
+            ->missing('player')
+            ->missing('card.age')
+            ->missing('card.date_of_birth')
             ->missing('lastReport')
             // De pagina staat buiten de app: geen school, geen menu, geen
             // ingelogde gebruiker in de props.

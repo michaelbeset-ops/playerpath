@@ -201,8 +201,8 @@ class ProfilePhotoTest extends TestCase
         $this->get("/kaart/{$token}")
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->where('player.name', 'Sem d.')
-                ->where('player.photo', fn ($foto) => is_string($foto) && $foto !== '')
+                ->where('card.name', 'Sem d.')
+                ->where('card.photo', fn ($foto) => is_string($foto) && $foto !== '')
             );
     }
 }

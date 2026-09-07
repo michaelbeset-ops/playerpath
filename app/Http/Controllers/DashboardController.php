@@ -17,8 +17,8 @@ use App\Support\Goals\GoalProgress;
 use App\Support\Money\Money;
 use App\Support\Payments\BillingOverview;
 use App\Support\Payments\PaymentGateway;
-use App\Support\PlayerCard\CalculatePlayerCard;
 use App\Support\PlayerCard\PlayerBadges;
+use App\Support\PlayerCard\PlayerCardPresenter;
 use App\Support\PlayerCard\PlayerProgress;
 use App\Support\Trainings\ReportPrompts;
 use App\Support\Trainings\VisibleTrainings;
@@ -52,8 +52,8 @@ class DashboardController extends Controller
         protected SchoolDashboard $dashboard,
         protected BillingOverview $billing,
         protected PaymentGateway $gateway,
-        protected CalculatePlayerCard $calculator,
         protected PlayerBadges $badges,
+        protected PlayerCardPresenter $presenter,
         protected PlayerProgress $progress,
         protected GoalProgress $goals,
         protected SetupChecklist $checklist,
@@ -201,9 +201,7 @@ class DashboardController extends Controller
                     'last_report_on' => $laatste?->reported_on->format('d-m-Y'),
                     'report_count' => $speler->reports()->count(),
                     // De kaart zelf op het dashboard: dat is waar een kind voor komt.
-                    'categories' => $this->calculator->breakdown($speler),
-                    'level' => $this->badges->level($speler),
-                    'badges' => array_values(array_filter($badges, fn ($b) => $b['earned'])),
+                    'card' => $this->presenter->for($speler),
                     // De eerstvolgende mijlpaal: iets om naartoe te werken.
                     'next_badge' => collect($badges)->first(fn ($b) => ! $b['earned']),
                     'goals' => array_values(array_filter($this->goals->forPlayer($speler), fn ($d) => $d['status'] === 'active')),

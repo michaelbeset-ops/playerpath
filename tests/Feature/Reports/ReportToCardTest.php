@@ -169,7 +169,7 @@ class ReportToCardTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('players/Card')
                 ->where('player.overall_rating', 90)
-                ->where('categories.0.rating', 90)
+                ->where('card.categories.0.rating', 90)
                 ->where('reportCount', 1)
             );
     }

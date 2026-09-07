@@ -539,20 +539,36 @@ een kind. Wat die pagina veilig houdt, en dus niet weg mag:
 
 ### De spelerskaart als verzamelkaart
 
-`components/PlayerCardVisual.vue` is de kaart zelf, gebruikt op de kaartpagina
-en op de publieke deel-pagina. Eén component, zodat die twee nooit uit elkaar
-lopen.
+`components/PlayerCardVisual.vue` is de kaart zelf, gebruikt op de kaartpagina,
+het gezinsdashboard en de publieke deel-pagina. De gegevens komen op alle drie
+uit `Support\PlayerCard\PlayerCardPresenter` (`for($player, public: true)` voor
+de deel-link: voornaam + initiaal, geen school). Eén component en één presenter,
+zodat die drie nooit uit elkaar lopen.
 
-- **Eigen identiteit, geen FUT-kopie**: geen schild, geen vlag, geen clublogo.
-  Wel een groot overall-cijfer, zes stats met drieletterige afkortingen en een
-  medaillon met initialen.
-- **Het niveau bepaalt de look** via CSS-variabelen per tier (`pp-tier-*`):
-  brons, zilver, goud, elite. Elite heeft als enige een bewegende schittering,
-  uit bij `prefers-reduced-motion`. Een nieuw niveau is één CSS-blokje.
-- **Keeper en veldspeler zien er anders uit**: keepers krijgen diagonale
-  handschoen-strepen, veldspelers veldlijnen. Subtiel, in de achtergrond.
-- **Mobiel-first**: maximaal 360px breed, schaalt daaronder mee; onder 360px
-  wordt het cijfer en het medaillon kleiner.
+- **Het level zie je aan het frame**, niet aan een pilletje: koper (brons),
+  chroom (zilver), warme gloed (goud), holografisch en langzaam bewegend
+  (elite, uit bij `prefers-reduced-motion`). Per level is dat één CSS-blokje
+  met `--pp-metaal`, `--pp-tier` en `--pp-gloed`. Zonder rapport: staalgrijs.
+- **De facet-hoeken komen van een `clip-path`**, en die knipt ook de schaduw
+  weg. Daarom zit de gloed als `filter: drop-shadow` op de wrap, niet als
+  `box-shadow` op het frame.
+- **Vaste indeling, identiek voor elk level**: merk bovenaan, foto in de
+  bovenste helft met fade, overall linksboven met positie en leeftijdscategorie,
+  drie badges rechtsboven (de meest recente; "nieuwe categorie" gaat voor),
+  voornaam klein en achternaam groot, zes categorieën **voluit** in twee
+  kolommen, XP-balk met "nog X punten tot je volgende upgrade", en onderaan
+  seizoen, level en school. Geen afkortingen: een kind van acht hoeft "INZ"
+  niet te raden.
+- **Zonder foto een silhouet** met "Foto toevoegen" voor wie de speler mag
+  bewerken (`photoHref`); nooit een initialen-cirkel als er wél een foto is.
+- **"Hoe werkt mijn rating?"** (`RatingExplanation.vue`) hoort bij de kaart en
+  is verplicht: rating is relatief aan leeftijdsgenoten, omhoog door trainen en
+  groeien, wat de categorieën betekenen, levels en badges, en waarom een rating
+  kan dalen. `audience="trainer"` voegt het blok toe over hoe je scoort. Het
+  paneel is bewust donker, ook in de lichte admin-schil.
+- **Mobiel-first**: maximaal 22.5rem breed, onder 360px wordt het cijfer kleiner.
+  Meet `scrollWidth > clientWidth` op labels; badge-labels breken af, ze kappen
+  niet af.
 
 De kaart is bewust donker, ook binnen de lichte admin-schil: dat is de
 speler/ouder-kant van het merk (hoofdstuk 4).
