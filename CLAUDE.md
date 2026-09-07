@@ -773,6 +773,34 @@ houdt, en dus niet mag sneuvelen:
 - opslaan zit in een vaste balk onderaan, binnen duimbereik;
 - de toelichting is optioneel en breekt het ritme niet.
 
+### Na het opslaan: wat er veranderde
+
+`Support\Reports\ReportOutcome` legt vast wát een rapport aan de kaart deed;
+`components/ReportCelebration.vue` toont het. Dit is het moment waarop een
+trainer ziet dat zijn werk aankwam, en dus geen bijzaak.
+
+- **Twee losse stappen, geen toestand**: `snapshot()` vóór het opslaan,
+  `changes()` erna. De opslag-actie hoeft er niets van te weten.
+- **Dezelfde cijfers als de kaart.** De deltas komen uit `breakdown()` en dus
+  uit `CalculatePlayerCard::afronden()`. Apart rekenen zou "+3" opleveren waar
+  de kaart "+2" toont, en dan gelooft niemand het meer.
+- **Alleen wat veranderde**, hooguit drie categorieën, grootste eerst. Een
+  categorie die er nog niet was telt niet als groei: van niets naar 70 is geen
+  sprong van zeventig punten.
+- **Bij een level-up blijft het oude frame 900 ms staan**, waarna de kaart met
+  een flits omslaat (`displayLevel` en `flash` op `PlayerCardVisual`). Zo zie je
+  de upgrade gebeuren in plaats van dat hij er al was toen de pagina laadde.
+  Alleen omhoog wordt gevierd; zakken gebeurt hooguit door een correctie.
+- **Het is een balk onderaan, geen dekkend scherm, en hij sluit niet vanzelf.**
+  Een teller die de knop "Volgende speler" weghaalt terwijl je nog leest is
+  erger dan één tik extra.
+- **"Volgende speler"** is de eerste actieve speler zonder rapport vandaag,
+  alfabetisch, waar deze gebruiker een rapport voor mag maken. Zo loopt een
+  trainer na de training zijn groep af zonder terug naar de lijst.
+
+De wijziging reist als **flash** (`reportResult`) mee naar de kaartpagina. Na
+een verversing is hij weg: hij hoort bij die ene opslag, niet bij de pagina.
+
 ### Ontwikkelingsdoelen (Fase 7)
 
 - `goals`: één actief doel per speler per categorie; `start_rating` = kaartcijfer op het moment van stellen, `target_rating` = rapportcijfer × 10. Een nieuw doel in dezelfde categorie annuleert het oude.

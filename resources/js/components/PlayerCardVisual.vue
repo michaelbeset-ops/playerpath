@@ -69,8 +69,18 @@ const props = withDefaults(
         audience?: 'gezin' | 'trainer';
         /** De deel-knop; op de gedeelde pagina zelf is die zinloos. */
         shareable?: boolean;
+        /**
+         * Toon tijdelijk een ander level dan de speler heeft.
+         *
+         * Alleen voor de viering na een rapport: dan blijft het oude frame
+         * even staan zodat je de upgrade ziet gebeuren in plaats van dat hij
+         * er al was toen de pagina laadde.
+         */
+        displayLevel?: string | null;
+        /** Speel de upgrade-flits af. */
+        flash?: boolean;
     }>(),
-    { photoHref: null, audience: 'gezin', shareable: true },
+    { photoHref: null, audience: 'gezin', shareable: true, displayLevel: null, flash: false },
 );
 
 const emit = defineEmits<{ share: [] }>();
@@ -78,7 +88,13 @@ const emit = defineEmits<{ share: [] }>();
 const uitlegOpen = ref(false);
 
 // Zonder rapport is er nog geen level: dan een neutraal, stalen frame.
-const tier = computed(() => (props.card.overall === null ? 'geen' : props.card.level.key));
+const tier = computed(() => {
+    if (props.displayLevel) {
+        return props.displayLevel;
+    }
+
+    return props.card.overall === null ? 'geen' : props.card.level.key;
+});
 
 // Elke mijlpaal zijn eigen icoon, zodat drie badges naast elkaar van elkaar
 // te onderscheiden zijn zonder het label te lezen.
@@ -126,9 +142,10 @@ const upgradeTekst = computed(() => {
 </script>
 
 <template>
-    <div class="pp-wrap" :class="['pp-tier-' + tier, 'pp-' + card.position_key]">
+    <div class="pp-wrap" :class="['pp-tier-' + tier, 'pp-' + card.position_key, { 'pp-puls': flash }]">
         <div class="pp-frame">
             <div class="pp-frame-glans" aria-hidden="true"></div>
+            <div v-if="flash" class="pp-flits" aria-hidden="true"></div>
 
             <div class="pp-binnen">
                 <!-- Boven: de foto met daaroverheen het cijfer en de badges -->
@@ -646,6 +663,60 @@ const upgradeTekst = computed(() => {
 
 .pp-actie:hover {
     background: rgba(255, 255, 255, 0.12);
+}
+
+/*
+ * De upgrade-flits: een korte lichtstoot over het nieuwe frame.
+ *
+ * Een eigen laag en niet de filter van .pp-frame, want daar zit al de gloed op
+ * en bij elite ook de holografische animatie; die zouden elkaar overschrijven.
+ */
+.pp-flits {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    background: radial-gradient(60% 50% at 50% 45%, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.35) 45%, transparent 72%);
+    animation: pp-flits 1.1s ease-out forwards;
+}
+
+@keyframes pp-flits {
+    0% {
+        opacity: 0;
+    }
+    18% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
+.pp-puls {
+    animation: pp-puls 0.9s ease-out;
+}
+
+@keyframes pp-puls {
+    0% {
+        transform: scale(1);
+    }
+    30% {
+        transform: scale(1.035);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pp-flits,
+    .pp-puls {
+        animation: none;
+    }
+
+    .pp-flits {
+        opacity: 0;
+    }
 }
 
 /* ---------- Levels: het metaal van het frame ---------- */

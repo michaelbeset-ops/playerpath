@@ -2,11 +2,12 @@
 import FlashMessage from '@/components/FlashMessage.vue';
 import GoalList, { type Doel } from '@/components/GoalList.vue';
 import PlayerCardVisual, { type Kaart } from '@/components/PlayerCardVisual.vue';
+import ReportCelebration, { type RapportWijziging } from '@/components/ReportCelebration.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { Check, Copy, Link2, Lock, TrendingUp, Trophy } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 
 const props = defineProps<{
     player: {
@@ -35,6 +36,30 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: props.player.name, href: '/playe
 
 const behaald = computed(() => props.badges.filter((b) => b.earned));
 const nogTeGaan = computed(() => props.badges.filter((b) => !b.earned));
+
+// De viering na een zojuist opgeslagen rapport. Komt als flash mee, dus na een
+// verversing is hij weg: hij hoort bij die ene opslag, niet bij de pagina.
+const page = usePage();
+const viering = ref<RapportWijziging | null>((page.props.flash as { reportResult?: RapportWijziging } | undefined)?.reportResult ?? null);
+
+// Bij een level-up blijft het oude frame even staan, zodat je de kaart ziet
+// upgraden in plaats van dat hij al klaar was toen de pagina laadde.
+const vorigLevel = ref<string | null>(viering.value?.level.up ? viering.value.level.from.key : null);
+const flits = ref(false);
+const levelUpZichtbaar = ref(false);
+
+onMounted(() => {
+    if (!viering.value?.level.up) {
+        return;
+    }
+
+    setTimeout(() => {
+        vorigLevel.value = null;
+        flits.value = true;
+        levelUpZichtbaar.value = true;
+        setTimeout(() => (flits.value = false), 1200);
+    }, 900);
+});
 
 const gekopieerd = ref(false);
 
@@ -65,6 +90,8 @@ const kopieer = async () => {
     <Head :title="'Spelerskaart - ' + player.name" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
+        <ReportCelebration v-if="viering" :result="viering" :level-up-visible="levelUpZichtbaar" @close="viering = null" />
+
         <div class="mx-auto w-full max-w-3xl p-4">
             <FlashMessage />
 
@@ -78,6 +105,8 @@ const kopieer = async () => {
                     :photo-href="photoHref"
                     :audience="canReport ? 'trainer' : 'gezin'"
                     :shareable="share.can && player.overall_rating !== null"
+                    :display-level="vorigLevel"
+                    :flash="flits"
                     @share="naarDelen"
                 />
 

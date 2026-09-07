@@ -58,7 +58,7 @@ class HandleInertiaRequests extends Middleware
                 'nav' => [],
                 'quickAdd' => [],
                 'unreadNotifications' => 0,
-                'flash' => ['status' => null],
+                'flash' => ['status' => null, 'reportResult' => null],
             ]);
         }
 
@@ -85,6 +85,8 @@ class HandleInertiaRequests extends Middleware
             'unreadNotifications' => fn () => $request->user()?->unreadNotifications()->count() ?? 0,
             'flash' => [
                 'status' => fn () => $request->session()->get('status'),
+                // Wat een zojuist opgeslagen rapport veranderde; zie ReportOutcome.
+                'reportResult' => fn () => $request->session()->get('reportResult'),
             ],
         ]);
     }
