@@ -1605,6 +1605,10 @@ Daarna nog een tweede ronde op een echte telefoon:
   vak van 301 schaalde álles mee met 0,47 en werden de aslabels vier pixels
   hoog — op precies het scherm waarop een ouder kijkt.
 
+**Tikvlakken zijn minstens 44 pixels hoog**, ook tekstlinks als "Bekijk meer"
+of "Details": `inline-flex min-h-11 items-center` zonder dat de tekst groter
+wordt. Een link van twintig pixels hoog mis je met een duim.
+
 **Meet het zelf na een layoutwijziging** in plaats van te kijken:
 `document.documentElement.scrollWidth` hoort gelijk te zijn aan
 `clientWidth`. Is hij groter, dan scrollt de pagina zijwaarts. En kijk of een

@@ -42,9 +42,11 @@ const openDialoog = (training: FamilyTraining, child: FamilyTraining['children']
     <div class="space-y-6">
         <!-- 1. Binnenkort: wanneer moet je waar zijn. Het scherm opent hiermee. -->
         <section>
-            <div class="flex flex-wrap items-baseline justify-between gap-2">
+            <div class="flex flex-wrap items-center justify-between gap-2">
                 <h2 class="font-semibold">Binnenkort</h2>
-                <Link href="/trainings" class="text-sm font-medium text-primary underline underline-offset-4">Bekijk meer</Link>
+                <Link href="/trainings" class="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4"
+                    >Bekijk meer</Link
+                >
             </div>
 
             <div v-if="upcoming.length" class="mt-3 space-y-2">
@@ -186,9 +188,11 @@ const openDialoog = (training: FamilyTraining, child: FamilyTraining['children']
 
         <!-- 3. Inschrijven: direct naar dat aanbod. Leeg is weg. -->
         <section v-if="offerings.length">
-            <div class="flex flex-wrap items-baseline justify-between gap-2">
+            <div class="flex flex-wrap items-center justify-between gap-2">
                 <h2 class="font-semibold">Inschrijven</h2>
-                <Link href="/shop" class="text-sm font-medium text-primary underline underline-offset-4">Alles bekijken</Link>
+                <Link href="/shop" class="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4"
+                    >Alles bekijken</Link
+                >
             </div>
 
             <div class="mt-3 space-y-2">
@@ -243,9 +247,11 @@ const openDialoog = (training: FamilyTraining, child: FamilyTraining['children']
 
         <!-- 4. Nieuws van de school, ongelezen gemarkeerd. Leeg is weg. -->
         <section v-if="messages.length">
-            <div class="flex flex-wrap items-baseline justify-between gap-2">
+            <div class="flex flex-wrap items-center justify-between gap-2">
                 <h2 class="font-semibold">Berichten van de school</h2>
-                <Link href="/notifications" class="text-sm font-medium text-primary underline underline-offset-4">Alles</Link>
+                <Link href="/notifications" class="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4"
+                    >Alles</Link
+                >
             </div>
 
             <div class="mt-3 overflow-hidden rounded-xl border border-border bg-card shadow-sm">

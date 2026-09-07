@@ -131,7 +131,7 @@ const kleurVoor = (status: string) => {
                         <button
                             v-if="speler.subscription.can_cancel"
                             type="button"
-                            class="mt-3 text-sm text-muted-foreground underline underline-offset-4 hover:text-destructive"
+                            class="mt-2 inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4 hover:text-destructive"
                             @click="zegOp(speler.subscription.id, policy.notice_months)"
                         >
                             Abonnement opzeggen
@@ -166,7 +166,7 @@ const kleurVoor = (status: string) => {
                         <button
                             v-if="e.can_cancel"
                             type="button"
-                            class="shrink-0 self-start text-xs text-muted-foreground underline underline-offset-4 hover:text-destructive sm:self-auto"
+                            class="inline-flex min-h-11 shrink-0 items-center self-start text-xs text-muted-foreground underline underline-offset-4 hover:text-destructive sm:self-auto"
                             @click="annuleer(e)"
                         >
                             Annuleren{{ e.refund_cents > 0 ? (e.is_free ? ' (kosteloos)' : ' (' + e.refund + ' terug)') : '' }}

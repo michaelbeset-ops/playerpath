@@ -46,7 +46,7 @@ const allesGelezen = () => router.post('/notifications/read', {}, { preserveScro
                 <button
                     v-if="ongelezen > 0"
                     type="button"
-                    class="text-sm font-medium text-primary underline underline-offset-4"
+                    class="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4"
                     @click="allesGelezen"
                 >
                     Alles als gelezen markeren

@@ -305,7 +305,11 @@ const tijdlijnZichtbaar = computed(() => (tijdlijnUit.value ? props.timeline : p
                             <p class="text-xs text-muted-foreground">Elke grafiek staat op dezelfde schaal van 0 tot 100.</p>
                         </div>
 
-                        <button type="button" class="text-sm font-medium text-primary underline underline-offset-4" @click="toonTabel = !toonTabel">
+                        <button
+                            type="button"
+                            class="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4"
+                            @click="toonTabel = !toonTabel"
+                        >
                             {{ toonTabel ? 'Toon grafieken' : 'Toon als tabel' }}
                         </button>
                     </div>

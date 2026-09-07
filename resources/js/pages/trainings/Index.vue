@@ -152,7 +152,7 @@ const toonKlasse = (toon: 'goed' | 'aandacht' | 'rustig') =>
             <div class="mt-6 inline-flex rounded-lg border border-border bg-card p-1 shadow-sm">
                 <button
                     type="button"
-                    class="rounded-md px-4 py-1.5 text-sm font-medium transition"
+                    class="h-10 rounded-md px-4 text-sm font-medium transition"
                     :class="tab === 'upcoming' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
                     @click="tab = 'upcoming'"
                 >
@@ -160,7 +160,7 @@ const toonKlasse = (toon: 'goed' | 'aandacht' | 'rustig') =>
                 </button>
                 <button
                     type="button"
-                    class="rounded-md px-4 py-1.5 text-sm font-medium transition"
+                    class="h-10 rounded-md px-4 text-sm font-medium transition"
                     :class="tab === 'past' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
                     @click="tab = 'past'"
                 >
@@ -267,7 +267,7 @@ const toonKlasse = (toon: 'goed' | 'aandacht' | 'rustig') =>
 
                                         <Link
                                             :href="'/trainings/' + training.id"
-                                            class="ml-auto inline-flex items-center gap-0.5 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+                                            class="ml-auto inline-flex min-h-11 items-center gap-0.5 px-1 text-xs font-medium text-muted-foreground transition hover:text-foreground"
                                         >
                                             Details
                                             <ChevronRight class="size-3.5" />
