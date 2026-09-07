@@ -35,9 +35,7 @@ const betaal = () => form.post(props.payUrl);
     <div class="flex min-h-svh items-center justify-center bg-background px-4 py-10 text-foreground">
         <div class="w-full max-w-md">
             <div class="flex items-center gap-3">
-                <div class="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                    <AppLogoIcon class="size-6" />
-                </div>
+                <AppLogoIcon class="size-10 rounded-xl" />
                 <div class="min-w-0">
                     <p class="text-xs uppercase tracking-widest text-muted-foreground">Betalen aan</p>
                     <p class="truncate text-lg font-semibold">{{ school.name }}</p>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import AppLogoIcon from '@/components/AppLogoIcon.vue';
-import { Head, Link, usePage } from '@inertiajs/vue3';
+import AppWordmark from '@/components/AppWordmark.vue';
 import type { SharedData } from '@/types';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 
 const page = usePage<SharedData>();
 </script>
@@ -11,11 +11,11 @@ const page = usePage<SharedData>();
 
     <div class="theme-donker flex min-h-svh flex-col items-center justify-center bg-background p-6 text-foreground">
         <div class="w-full max-w-md text-center">
-            <div class="mx-auto mb-6 flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-                <AppLogoIcon class="size-8" />
-            </div>
+            <!-- Het hele logo: dit is de voordeur, daar hoort de naam bij het
+                 teken te staan. -->
+            <AppWordmark donker size="lg" class="mx-auto mb-6" />
 
-            <h1 class="text-3xl font-bold tracking-tight">PlayerPath</h1>
+            <h1 class="sr-only">PlayerPath</h1>
             <p class="mt-3 text-sm text-muted-foreground">
                 Het platform voor keeper- en voetbalscholen. Rapporten, spelerskaarten en voortgang op één plek.
             </p>

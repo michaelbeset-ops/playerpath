@@ -134,9 +134,7 @@ const verstuur = () => form.post('/inschrijven/' + props.school.slug);
     <div class="min-h-svh bg-background px-4 py-8 text-foreground sm:py-12">
         <div class="mx-auto w-full max-w-lg">
             <div class="flex items-center gap-3">
-                <div class="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                    <AppLogoIcon class="size-6" />
-                </div>
+                <AppLogoIcon class="size-10 rounded-xl" />
                 <div class="min-w-0">
                     <p class="text-xs uppercase tracking-widest text-muted-foreground">Inschrijven bij</p>
                     <p class="truncate text-lg font-semibold">{{ school.name }}</p>

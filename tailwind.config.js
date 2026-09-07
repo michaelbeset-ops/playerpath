@@ -53,6 +53,10 @@ export default {
                     DEFAULT: 'hsl(var(--destructive))',
                     foreground: 'hsl(var(--destructive-foreground))',
                 },
+                /* De merkkleur van PlayerPath zelf. Bewust los van --primary:
+                 * die mag een school overschrijven met haar eigen kleur, en
+                 * het logo van PlayerPath hoort daar niet in mee te kleuren. */
+                merk: '#16A34A',
                 gold: {
                     DEFAULT: 'hsl(var(--gold))',
                     foreground: 'hsl(var(--gold-foreground))',

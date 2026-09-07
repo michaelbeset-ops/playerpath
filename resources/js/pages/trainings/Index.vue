@@ -282,63 +282,6 @@ const toonKlasse = (toon: 'goed' | 'aandacht' | 'rustig') =>
 
                                         <Link
                                             :href="'/trainings/' + training.id"
-                                            class="font-medium hover:text-primary"
-                                            :class="training.cancelled ? 'line-through' : ''"
-                                        >
-                                            {{ training.group }}
-                                        </Link>
-                                        <span
-                                            v-if="training.is_mine"
-                                            class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary"
-                                        >
-                                            jij
-                                        </span>
-                                        <span
-                                            v-if="training.cancelled"
-                                            class="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
-                                        >
-                                            afgezegd
-                                        </span>
-                                    </div>
-
-                                    <p class="mt-1 flex items-start gap-1.5 text-xs text-muted-foreground">
-                                        <MapPin class="mt-0.5 size-3.5 shrink-0" />
-                                        <span>{{ training.location || 'Geen locatie ingevuld' }}</span>
-                                    </p>
-                                    <p class="mt-0.5 flex items-start gap-1.5 text-xs text-muted-foreground">
-                                        <UserCog class="mt-0.5 size-3.5 shrink-0" />
-                                        <span>{{ training.trainers.join(', ') || 'Geen trainer gekoppeld' }}</span>
-                                    </p>
-
-                                    <!-- Stand en acties op één regel: dit is een lijst waar je
-                                         doorheen scrolt, dus elke extra regel telt. -->
-                                    <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-                                        <!-- Voor een ouder of speler: wat gaf ik door? -->
-                                        <span
-                                            v-if="isParticipant && training.my_registration"
-                                            class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium"
-                                            :class="
-                                                training.my_registration === 'attending'
-                                                    ? 'bg-primary/10 text-primary'
-                                                    : 'bg-secondary text-muted-foreground'
-                                            "
-                                        >
-                                            <Check v-if="training.my_registration === 'attending'" class="size-3" />
-                                            <X v-else class="size-3" />
-                                            {{ training.my_registration === 'attending' ? 'Aangemeld' : 'Afgemeld' }}
-                                        </span>
-
-                                        <!-- Voor een trainer: hoe staat het met de aanwezigheid? -->
-                                        <span
-                                            v-else-if="!isParticipant"
-                                            class="inline-flex items-center rounded-lg px-2 py-1 text-xs font-medium"
-                                            :class="toonKlasse(aanwezigheid(training).toon)"
-                                        >
-                                            {{ aanwezigheid(training).tekst }}
-                                        </span>
-
-                                        <Link
-                                            :href="'/trainings/' + training.id"
                                             class="ml-auto inline-flex items-center gap-0.5 text-xs font-medium text-muted-foreground transition hover:text-foreground"
                                         >
                                             Details

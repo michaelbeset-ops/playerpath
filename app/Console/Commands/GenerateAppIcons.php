@@ -5,28 +5,41 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 
 /**
- * De app-iconen tekenen die een geïnstalleerde PWA op het beginscherm zet.
+ * De app-iconen tekenen die een geïnstalleerde PWA op het beginscherm zet, plus
+ * de favicon voor het tabblad.
  *
- * Als commando en niet met de hand: zo staat vast hoe ze gemaakt zijn en kun
- * je ze na een merkwijziging opnieuw uitdraaien in plaats van in een
+ * Als commando en niet met de hand: zo staat vast hoe ze gemaakt zijn en kun je
+ * ze na een merkwijziging opnieuw uitdraaien in plaats van in een
  * tekenprogramma te gaan zoeken.
  *
- * Het merkteken is hetzelfde als in AppLogoIcon.vue: een stijgende lijn met
- * een punt op de top.
+ * De bron is het merkteken zelf (`public/brand/mark-256.png`): de twee P's op
+ * een donkere tegel. Alles wat hier gebeurt is schalen — zo staat op elk
+ * beginscherm hetzelfde logo als in de app, en niet een benadering ervan.
  */
 class GenerateAppIcons extends Command
 {
     protected $signature = 'playerpath:icons';
 
-    protected $description = 'Tekent de app-iconen voor de PWA in public/icons';
+    protected $description = 'Schaalt het merkteken naar de app-iconen en de favicon in public/icons';
 
     /** @var list<int> */
     private array $maten = [192, 512];
 
+    /** De achtergrond van de tegel; zie public/brand. */
+    private const TEGEL = [10, 15, 28]; // #0A0F1C
+
     public function handle(): int
     {
         if (! extension_loaded('gd')) {
-            $this->error('De GD-extensie is nodig om de iconen te tekenen.');
+            $this->error('De GD-extensie is nodig om de iconen te maken.');
+
+            return self::FAILURE;
+        }
+
+        $bron = public_path('brand/mark-256.png');
+
+        if (! is_file($bron)) {
+            $this->error('Het merkteken ontbreekt: public/brand/mark-256.png.');
 
             return self::FAILURE;
         }
@@ -37,18 +50,21 @@ class GenerateAppIcons extends Command
             mkdir($map, 0755, recursive: true);
         }
 
-        foreach ($this->maten as $maat) {
-            $this->teken($maat, "{$map}/icon-{$maat}.png");
-            $this->line("  icon-{$maat}.png");
+        foreach ([...$this->maten, 180 => 180, 32 => 32] as $maat) {
+            // 180 is wat Apple zoekt; 32 is het tabblad.
+            $naam = match ($maat) {
+                180 => 'apple-touch-icon.png',
+                32 => 'favicon-32.png',
+                default => "icon-{$maat}.png",
+            };
+
+            $this->schaal($bron, "{$map}/{$naam}", $maat);
+            $this->line("  {$naam}");
         }
 
-        // Apple negeert het manifest en zoekt dit bestand.
-        $this->teken(180, "{$map}/apple-touch-icon.png");
-        $this->line('  apple-touch-icon.png');
-
-        // Maskable: hetzelfde teken, maar kleiner zodat Android er een cirkel
-        // uit mag knippen zonder de lijn af te snijden.
-        $this->teken(512, "{$map}/icon-maskable-512.png", marge: 0.28);
+        // Maskable: hetzelfde teken kleiner op de tegelkleur, zodat Android er
+        // een cirkel uit mag knippen zonder de letters af te snijden.
+        $this->schaal($bron, "{$map}/icon-maskable-512.png", 512, marge: 0.18);
         $this->line('  icon-maskable-512.png');
 
         $this->info('Klaar.');
@@ -56,72 +72,34 @@ class GenerateAppIcons extends Command
         return self::SUCCESS;
     }
 
-    private function teken(int $maat, string $pad, float $marge = 0.20): void
+    /**
+     * Het merkteken op maat, met zo nodig een rand eromheen.
+     *
+     * De rand krijgt de kleur van de tegel: een doorzichtige rand zou op een
+     * beginscherm een lichte hoek rond een donker icoon opleveren.
+     */
+    private function schaal(string $bron, string $doel, int $maat, float $marge = 0.0): void
     {
+        $origineel = imagecreatefrompng($bron);
+
         $beeld = imagecreatetruecolor($maat, $maat);
         imagesavealpha($beeld, true);
+        imagealphablending($beeld, false);
+        imagefilledrectangle($beeld, 0, 0, $maat, $maat, imagecolorallocate($beeld, ...self::TEGEL));
         imagealphablending($beeld, true);
 
-        // Achtergrond in het donkerblauw van de speler-kant: een app-icoon
-        // staat op een willekeurig beginscherm en moet daar tegen afsteken.
-        imagefilledrectangle($beeld, 0, 0, $maat, $maat, imagecolorallocate($beeld, 10, 15, 28));
+        $binnen = (int) round($maat * (1 - 2 * $marge));
+        $offset = (int) round($maat * $marge);
 
-        $groen = imagecolorallocate($beeld, 34, 224, 107);
-
-        $binnen = $maat * (1 - 2 * $marge);
-        $links = $maat * $marge;
-        $dikte = max(3, (int) round($binnen * 0.13));
-
-        // Dezelfde punten als het SVG-merkteken (viewBox 24), geschaald naar 0..1.
-        $punten = [[0.125, 0.729], [0.354, 0.5], [0.5, 0.646], [0.854, 0.292]];
-
-        for ($i = 0; $i < count($punten) - 1; $i++) {
-            $this->lijn(
-                $beeld,
-                $links + $punten[$i][0] * $binnen,
-                $links + $punten[$i][1] * $binnen,
-                $links + $punten[$i + 1][0] * $binnen,
-                $links + $punten[$i + 1][1] * $binnen,
-                $dikte,
-                $groen,
-            );
-        }
-
-        // De punt op de top, op hetzelfde eindpunt als de lijn.
-        $this->stip(
-            $beeld,
-            $links + 0.854 * $binnen,
-            $links + 0.292 * $binnen,
-            $binnen * 0.115,
-            $groen,
+        imagecopyresampled(
+            $beeld, $origineel,
+            $offset, $offset, 0, 0,
+            $binnen, $binnen,
+            imagesx($origineel), imagesy($origineel),
         );
 
-        imagepng($beeld, $pad);
+        imagepng($beeld, $doel);
         imagedestroy($beeld);
-    }
-
-    /**
-     * Een dikke lijn met ronde uiteinden.
-     *
-     * imagesetthickness() valt weg zodra je antialiasing aanzet, en levert
-     * bovendien hoekige uiteinden op. Een reeks gevulde cirkels langs het pad
-     * geeft precies de ronde stroke-linecap van het merkteken.
-     */
-    private function lijn(\GdImage $beeld, float $x1, float $y1, float $x2, float $y2, int $dikte, int $kleur): void
-    {
-        $afstand = max(1.0, sqrt(($x2 - $x1) ** 2 + ($y2 - $y1) ** 2));
-        $stappen = (int) ceil($afstand);
-
-        for ($i = 0; $i <= $stappen; $i++) {
-            $t = $i / $stappen;
-            $this->stip($beeld, $x1 + ($x2 - $x1) * $t, $y1 + ($y2 - $y1) * $t, $dikte / 2, $kleur);
-        }
-    }
-
-    private function stip(\GdImage $beeld, float $x, float $y, float $straal, int $kleur): void
-    {
-        $d = (int) round($straal * 2);
-
-        imagefilledellipse($beeld, (int) round($x), (int) round($y), $d, $d, $kleur);
+        imagedestroy($origineel);
     }
 }

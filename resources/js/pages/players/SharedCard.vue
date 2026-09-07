@@ -21,7 +21,7 @@ defineProps<{ card: Kaart }>();
             <PlayerCardVisual :card="card" :shareable="false" />
 
             <div class="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                <AppLogoIcon class="size-4 text-primary" />
+                <AppLogoIcon class="size-4 rounded-sm" />
                 Spelerskaart van PlayerPath
             </div>
         </div>

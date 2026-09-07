@@ -5,24 +5,20 @@ defineOptions({
     inheritAttrs: false,
 });
 
-interface Props {
+defineProps<{
     className?: HTMLAttributes['class'];
-}
-
-defineProps<Props>();
+}>();
 </script>
 
-<!-- PlayerPath-merkteken: een stijgende lijn met een punt op de top (groei). -->
+<!--
+    Het merkteken van PlayerPath: twee P's op een donkere tegel met een groen
+    streepje eronder.
+
+    Het bestand zelf, niet een natekening ervan: een logo hoort overal precies
+    hetzelfde te zijn. De tegel hoort erbij — het teken staat op een beginscherm,
+    in een tabblad en in een lichte balk, en zonder eigen achtergrond verdwijnt
+    het daar.
+-->
 <template>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" :class="className" v-bind="$attrs">
-        <path
-            d="M3 17.5 8.5 12l3.5 3.5L20.5 7"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.5"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-        />
-        <circle cx="20.5" cy="7" r="2.75" fill="currentColor" />
-    </svg>
+    <img src="/brand/mark-64.png" alt="PlayerPath" class="shrink-0 object-contain" :class="className" v-bind="$attrs" />
 </template>

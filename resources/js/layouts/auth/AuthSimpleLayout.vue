@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AppLogoIcon from '@/components/AppLogoIcon.vue';
+import AppWordmark from '@/components/AppWordmark.vue';
 import { type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
@@ -24,7 +24,7 @@ const naam = computed(() => page.props.branding?.name ?? null);
                     <Link :href="route('home')" class="flex flex-col items-center gap-2 font-medium">
                         <div class="mb-1 flex h-12 items-center justify-center rounded-md">
                             <img v-if="logo" :src="logo" :alt="naam ?? ''" class="max-h-12 max-w-[180px] object-contain" />
-                            <AppLogoIcon v-else class="size-9 text-primary" />
+                            <AppWordmark v-else donker size="md" />
                         </div>
                         <span v-if="naam" class="text-sm text-muted-foreground">{{ naam }}</span>
                         <span class="sr-only">{{ title }}</span>

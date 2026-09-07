@@ -10,7 +10,7 @@ const opnieuw = () => window.location.reload();
     <Head title="Geen verbinding" />
 
     <div class="theme-donker flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 text-foreground">
-        <AppLogoIcon class="size-10 text-primary" />
+        <AppLogoIcon class="size-10 rounded-xl" />
 
         <div class="max-w-sm text-center">
             <p class="flex items-center justify-center gap-2 text-lg font-semibold">

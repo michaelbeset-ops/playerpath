@@ -6,6 +6,11 @@
 
         <title inertia>{{ config('app.name', 'PlayerPath') }}</title>
 
+        {{-- Het tabblad. Het merkteken is een donkere tegel met de twee P's;
+             die staat er dus in beide thema's hetzelfde op. --}}
+        <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+        <link rel="icon" type="image/png" sizes="256x256" href="/brand/mark-256.png">
+
         {{-- PWA: installeerbaar op het beginscherm. Het manifest is per school. --}}
         <link rel="manifest" href="/manifest.webmanifest">
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">

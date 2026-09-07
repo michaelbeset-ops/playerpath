@@ -297,6 +297,26 @@ iframe op de eigen website van de school, en een donker vlak in een lichte
 website valt uit de toon. Ze gebruiken dezelfde tokens, dus het is één klasse
 verschil — geen aparte kleuren.
 
+### Het logo
+
+Het merk staat als bestand in `public/brand/`: het merkteken (`mark-64.png`,
+`mark-256.png`) en het volledige logo in twee varianten — `logo.png` met
+donkere letters voor een lichte achtergrond, `logo-donker.png` met witte voor
+een donkere.
+
+- **`AppLogoIcon`** is het merkteken, **`AppWordmark`** het hele logo met de
+  naam. De tegel hoort bij het teken: het staat op een beginscherm, in een
+  tabblad en in een lichte balk, en zonder eigen achtergrond verdwijnt het daar.
+  Zet er dus geen gekleurd vakje omheen.
+- **De app-iconen en de favicon worden geschaald uit `mark-256.png`**
+  (`php artisan playerpath:icons`), niet nagetekend. Zo staat op het beginscherm
+  van een ouder hetzelfde logo als in de app.
+- Het merkgroen van PlayerPath staat als `merk` in de Tailwind-config, los van
+  `--primary`: die mag een school met haar eigen kleur overschrijven, en het
+  logo van PlayerPath hoort daar niet in mee te kleuren.
+- Heeft een school een eigen logo, dan wint dat in de app en op de inlogpagina
+  (`branding.logo`). Het PlayerPath-logo is de terugval.
+
 ### Typografie
 
 - Font: **Inter** (fallback: system-ui, sans-serif).

@@ -25,9 +25,9 @@ const naam = computed(() => page.props.branding?.name ?? 'PlayerPath');
     <div v-if="logo" class="flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg bg-card">
         <img :src="logo" :alt="naam" class="size-full object-contain" />
     </div>
-    <div v-else class="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-        <AppLogoIcon class="size-5" />
-    </div>
+    <!-- Het merkteken heeft zijn eigen tegel; een gekleurd vakje eromheen zou
+         er een tweede achtergrond van maken. -->
+    <AppLogoIcon v-else class="size-8 rounded-lg" />
     <div v-if="withName" class="ml-1 grid flex-1 text-left text-sm">
         <span class="mb-0.5 truncate font-semibold leading-none">{{ naam }}</span>
     </div>

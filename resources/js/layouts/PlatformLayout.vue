@@ -22,7 +22,7 @@ const naam = computed(() => page.props.auth?.user?.name ?? '');
         <header class="theme-donker sticky top-0 z-30 bg-background text-foreground">
             <div class="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3">
                 <Link href="/beheer/scholen" class="flex min-w-0 items-center gap-2.5">
-                    <AppLogoIcon class="size-6 shrink-0 text-primary" />
+                    <AppLogoIcon class="size-6 shrink-0 rounded" />
                     <span class="truncate text-sm font-semibold">Platformbeheer</span>
                 </Link>
 
