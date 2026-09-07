@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Enrollments;
 
+use App\Enums\Feature;
 use App\Enums\PaymentMethod;
 use App\Enums\PlayerPosition;
 use App\Enums\Role;
@@ -11,7 +12,9 @@ use App\Models\Product;
 use App\Models\School;
 use App\Models\User;
 use App\Notifications\NieuweInschrijving;
+use App\Support\Features\Features;
 use App\Support\Money\Money;
+use App\Support\Payments\PaymentGateway;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,7 +33,11 @@ use Inertia\Response;
  */
 class PublicEnrollmentController extends Controller
 {
-    public function __construct(protected Tenancy $tenancy) {}
+    public function __construct(
+        protected Tenancy $tenancy,
+        protected Features $features,
+        protected PaymentGateway $gateway,
+    ) {}
 
     public function show(School $school): Response
     {
@@ -44,16 +51,68 @@ class PublicEnrollmentController extends Controller
                 'name' => $product->name,
                 'description' => $product->description,
                 'amount' => Money::format($product->amount_cents),
-                'interval' => $product->interval->label(),
+                'type' => $product->type->label(),
+                'is_subscription' => $product->type->isSubscription(),
+                // Een kamp heeft geen frequentie; daar hoort "eenmalig" te staan
+                // en niet de frequentie van een abonnement.
+                'interval' => $product->type->isSubscription() ? $product->interval->label() : 'eenmalig',
             ]));
 
         return Inertia::render('enrollments/Public', [
             'school' => ['name' => $school->name, 'slug' => $school->slug],
             'products' => $tarieven,
             'positions' => PlayerPosition::options(),
-            'methods' => PaymentMethod::options(),
+            'paymentOptions' => $this->betaalopties($school),
             'submitted' => (bool) session('enrollment_submitted'),
         ]);
+    }
+
+    /**
+     * Hoe wil je betalen?
+     *
+     * Twee gewone keuzes — contant bij de school of online — en voor een
+     * abonnement daarnaast automatische incasso. Wat er niet kan wordt hier
+     * weggelaten in plaats van uitgegrijsd: een knop die niets doet laat je
+     * zoeken naar wat je verkeerd deed.
+     *
+     * Online staat er alleen als er echt een provider hangt. Zonder Mollie is
+     * "online betalen" een belofte die niemand kan inlossen; dan blijft alleen
+     * contant over, en dat is precies hoe zo'n school het vandaag ook doet.
+     *
+     * @return list<array{value: string, label: string, hint: string, subscription_only: bool}>
+     */
+    protected function betaalopties(School $school): array
+    {
+        if (! $this->features->enabled(Feature::Betalingen, $school)) {
+            return [];
+        }
+
+        $opties = [[
+            'value' => PaymentMethod::Cash->value,
+            'label' => 'Contant bij de school',
+            'hint' => 'Je rekent af bij de school zelf.',
+            'subscription_only' => false,
+        ]];
+
+        if (! $this->gateway->isConnected()) {
+            return $opties;
+        }
+
+        $opties[] = [
+            'value' => PaymentMethod::Ideal->value,
+            'label' => 'Online met iDEAL',
+            'hint' => 'Zodra de school je inschrijving goedkeurt, krijg je een betaallink per e-mail.',
+            'subscription_only' => false,
+        ];
+
+        $opties[] = [
+            'value' => PaymentMethod::DirectDebit->value,
+            'label' => 'Automatische incasso',
+            'hint' => 'De eerste betaling doe je zelf; daarna wordt het bedrag elke termijn afgeschreven.',
+            'subscription_only' => true,
+        ];
+
+        return $opties;
     }
 
     public function store(Request $request, School $school): RedirectResponse
@@ -70,7 +129,10 @@ class PublicEnrollmentController extends Controller
             'guardian_phone' => ['nullable', 'string', 'max:40'],
             'relationship' => ['nullable', 'string', 'max:50'],
             'product_id' => ['nullable', 'integer', Rule::exists('products', 'id')->where('school_id', $school->id)->where('is_active', true)],
-            'payment_method' => ['nullable', Rule::enum(PaymentMethod::class)],
+            // Alleen wat deze school op dit moment echt kan. Een verzoek met
+            // 'ideal' terwijl er geen provider hangt hoort te stranden, niet
+            // stilzwijgend te worden opgeslagen als een wens die nooit uitkomt.
+            'payment_method' => ['nullable', Rule::in(array_column($this->betaalopties($school), 'value'))],
             'note' => ['nullable', 'string', 'max:2000'],
             'privacy' => ['accepted'],
         ], [

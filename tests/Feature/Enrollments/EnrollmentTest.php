@@ -16,6 +16,8 @@ use Database\Seeders\RoleSeeder;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use App\Support\Payments\PaymentGateway;
+use Tests\Support\FakeGateway;
 use Tests\TestCase;
 
 class EnrollmentTest extends TestCase
@@ -37,6 +39,15 @@ class EnrollmentTest extends TestCase
         $this->eigenaar->assignRole(Role::Eigenaar->value);
     }
 
+    /** Een aangesloten betaalprovider, zodat online betalen bestaat. */
+    protected function metBetaalprovider(): FakeGateway
+    {
+        $gateway = new FakeGateway;
+        $this->app->instance(PaymentGateway::class, $gateway);
+
+        return $gateway;
+    }
+
     /** @return array<string, mixed> */
     protected function formulier(array $overschrijf = []): array
     {
@@ -49,7 +60,7 @@ class EnrollmentTest extends TestCase
             'guardian_email' => 'marieke@voorbeeld.nl',
             'guardian_phone' => '0612345678',
             'relationship' => 'moeder',
-            'payment_method' => 'directdebit',
+            'payment_method' => 'cash',
             'privacy' => true,
         ], $overschrijf);
     }
@@ -229,5 +240,42 @@ class EnrollmentTest extends TestCase
                 ->where('pending.0.child_name', fn ($naam) => str_starts_with($naam, 'Eigen'))
                 ->where('formUrl', route('enroll.show', $this->school))
             );
+    }
+
+    public function test_zonder_betaalprovider_kun_je_alleen_contant_kiezen(): void
+    {
+        $this->get('/inschrijven/keepersschool-rob')
+            ->assertInertia(fn ($page) => $page
+                ->count('paymentOptions', 1)
+                ->where('paymentOptions.0.value', 'cash')
+            );
+
+        // En online is dan ook niet stiekem in te sturen: dat zou een wens
+        // opslaan die niemand kan inlossen.
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier(['payment_method' => 'ideal']))
+            ->assertSessionHasErrors('payment_method');
+
+        $this->assertDatabaseCount('enrollments', 0);
+    }
+
+    public function test_met_een_betaalprovider_kun_je_online_of_incasso_kiezen(): void
+    {
+        $this->metBetaalprovider();
+
+        $this->get('/inschrijven/keepersschool-rob')
+            ->assertInertia(fn ($page) => $page
+                ->count('paymentOptions', 3)
+                ->where('paymentOptions.0.value', 'cash')
+                ->where('paymentOptions.1.value', 'ideal')
+                // Incasso hoort bij iets dat doorloopt; het scherm verbergt hem
+                // bij een kamp of een losse training.
+                ->where('paymentOptions.2.value', 'directdebit')
+                ->where('paymentOptions.2.subscription_only', true)
+            );
+
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier(['payment_method' => 'ideal']))
+            ->assertSessionHasNoErrors();
+
+        $this->assertDatabaseHas('enrollments', ['payment_method' => 'ideal']);
     }
 }

@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Head, useForm } from '@inertiajs/vue3';
 import { CheckCircle2, LoaderCircle } from 'lucide-vue-next';
+import { computed, watch } from 'vue';
 
 /**
  * Het openbare inschrijfformulier. Geen inlog, geen app-schil: de ouder
@@ -15,9 +16,17 @@ import { CheckCircle2, LoaderCircle } from 'lucide-vue-next';
  */
 const props = defineProps<{
     school: { name: string; slug: string };
-    products: { id: number; name: string; description: string | null; amount: string; interval: string }[];
+    products: {
+        id: number;
+        name: string;
+        description: string | null;
+        amount: string;
+        type: string;
+        is_subscription: boolean;
+        interval: string;
+    }[];
     positions: Record<string, string>;
-    methods: Record<string, string>;
+    paymentOptions: { value: string; label: string; hint: string; subscription_only: boolean }[];
     submitted: boolean;
 }>();
 
@@ -31,9 +40,22 @@ const form = useForm({
     guardian_phone: '',
     relationship: '',
     product_id: props.products[0]?.id ?? null,
-    payment_method: 'directdebit',
+    payment_method: props.paymentOptions[0]?.value ?? null,
     note: '',
     privacy: false,
+});
+
+const gekozenProduct = computed(() => props.products.find((product) => product.id === form.product_id) ?? null);
+
+// Incasso hoort bij iets dat doorloopt. Bij een kamp of een losse training is
+// "elke termijn afschrijven" een belofte over een termijn die niet bestaat.
+const betaalkeuzes = computed(() => props.paymentOptions.filter((optie) => !optie.subscription_only || gekozenProduct.value?.is_subscription));
+
+// Verandert het product, dan kan de gekozen methode er niet meer bij horen.
+watch(betaalkeuzes, (keuzes) => {
+    if (!keuzes.some((optie) => optie.value === form.payment_method)) {
+        form.payment_method = keuzes[0]?.value ?? null;
+    }
 });
 
 const verstuur = () => form.post('/inschrijven/' + props.school.slug);
@@ -140,7 +162,7 @@ const verstuur = () => form.post('/inschrijven/' + props.school.slug);
 
                 <!-- Het tarief -->
                 <section v-if="products.length" class="rounded-2xl border border-border bg-card p-5">
-                    <p class="font-semibold">Abonnement</p>
+                    <p class="font-semibold">Wat wil je afnemen?</p>
                     <p class="mt-0.5 text-xs text-muted-foreground">De school bevestigt dit bij de goedkeuring. Er wordt nu nog niets betaald.</p>
 
                     <div class="mt-4 space-y-2">
@@ -164,24 +186,30 @@ const verstuur = () => form.post('/inschrijven/' + props.school.slug);
                     </div>
                     <InputError :message="form.errors.product_id" />
 
-                    <div class="mt-4 grid gap-2">
-                        <Label>Betaalmethode</Label>
-                        <div class="grid grid-cols-3 gap-2">
+                    <div v-if="betaalkeuzes.length" class="mt-5 grid gap-2">
+                        <Label>Hoe wil je betalen?</Label>
+                        <div class="grid gap-2">
                             <button
-                                v-for="(label, waarde) in methods"
-                                :key="waarde"
+                                v-for="optie in betaalkeuzes"
+                                :key="optie.value"
                                 type="button"
-                                class="h-11 rounded-lg border text-xs font-medium transition sm:text-sm"
-                                :class="
-                                    form.payment_method === waarde
-                                        ? 'border-primary bg-primary/15 text-primary'
-                                        : 'border-border text-muted-foreground'
-                                "
-                                @click="form.payment_method = waarde"
+                                class="flex min-h-11 w-full items-start gap-3 rounded-xl border p-3 text-left transition"
+                                :class="form.payment_method === optie.value ? 'border-primary bg-primary/10' : 'border-border'"
+                                @click="form.payment_method = optie.value"
                             >
-                                {{ label }}
+                                <span
+                                    class="mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border"
+                                    :class="form.payment_method === optie.value ? 'border-primary' : 'border-muted-foreground'"
+                                >
+                                    <span v-if="form.payment_method === optie.value" class="size-2 rounded-full bg-primary"></span>
+                                </span>
+                                <span class="min-w-0">
+                                    <span class="block text-sm font-medium">{{ optie.label }}</span>
+                                    <span class="block text-xs text-muted-foreground">{{ optie.hint }}</span>
+                                </span>
                             </button>
                         </div>
+                        <InputError :message="form.errors.payment_method" />
                     </div>
                 </section>
 
