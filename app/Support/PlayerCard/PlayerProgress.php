@@ -18,10 +18,33 @@ class PlayerProgress
     public const MINIMUM_REPORTS = 2;
 
     /**
+     * Het verloop in één woord.
+     *
+     * Een ouder leest "sterk gegroeid" sneller dan "+7", en een kind weet bij
+     * "aandacht" wat het te doen heeft. De grens ligt op twee punten: minder is
+     * ruis, want een enkel rapport verschuift het gemiddelde al een beetje.
+     *
+     * @return array{key: string, label: string}|null
+     */
+    public static function trend(?int $delta): ?array
+    {
+        if ($delta === null) {
+            return null;
+        }
+
+        return match (true) {
+            $delta >= 5 => ['key' => 'sterk', 'label' => 'Sterk gegroeid'],
+            $delta >= 2 => ['key' => 'groei', 'label' => 'Gegroeid'],
+            $delta > -2 => ['key' => 'stabiel', 'label' => 'Stabiel'],
+            default => ['key' => 'aandacht', 'label' => 'Aandacht'],
+        };
+    }
+
+    /**
      * @return array{
      *     points: list<array{date: string, label: string, overall: int, scores: array<string, int>}>,
-     *     categories: list<array{category: string, label: string, series: list<int|null>, first: int|null, last: int|null, delta: int|null}>,
-     *     overall: array{series: list<int>, first: int|null, last: int|null, delta: int|null},
+     *     categories: list<array{category: string, label: string, series: list<int|null>, first: int|null, last: int|null, delta: int|null, trend: array|null}>,
+     *     overall: array{series: list<int>, first: int|null, last: int|null, delta: int|null, trend: array|null},
      *     hasEnoughData: bool
      * }
      */
@@ -54,17 +77,21 @@ class PlayerProgress
 
             $gevuld = array_values(array_filter($series, fn ($waarde) => $waarde !== null));
 
+            $delta = count($gevuld) >= 2 ? end($gevuld) - $gevuld[0] : null;
+
             return [
                 'category' => $category->value,
                 'label' => $category->label(),
                 'series' => $series,
                 'first' => $gevuld[0] ?? null,
                 'last' => $gevuld === [] ? null : end($gevuld),
-                'delta' => count($gevuld) >= 2 ? end($gevuld) - $gevuld[0] : null,
+                'delta' => $delta,
+                'trend' => self::trend($delta),
             ];
         }, $player->position->categories());
 
         $overallSerie = array_map(fn (array $point) => $point['overall'], $points);
+        $overallDelta = count($overallSerie) >= 2 ? end($overallSerie) - $overallSerie[0] : null;
 
         return [
             'points' => $points,
@@ -73,7 +100,8 @@ class PlayerProgress
                 'series' => $overallSerie,
                 'first' => $overallSerie[0] ?? null,
                 'last' => $overallSerie === [] ? null : end($overallSerie),
-                'delta' => count($overallSerie) >= 2 ? end($overallSerie) - $overallSerie[0] : null,
+                'delta' => $overallDelta,
+                'trend' => self::trend($overallDelta),
             ],
             'hasEnoughData' => count($points) >= self::MINIMUM_REPORTS,
         ];

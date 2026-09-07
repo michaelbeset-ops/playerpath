@@ -508,7 +508,32 @@ rapporten is er een grafiek; daarvoor niet.
 
 **Tijdlijn en mijlpalen worden afgeleid**, niet opgeslagen. Er is geen
 gebeurtenissen-tabel die uit de pas kan lopen met de werkelijkheid, en een
-nieuwe badge kost één regel in `PlayerBadges`.
+nieuwe badge kost één regel in `PlayerBadges`. Ook de **level-momenten** komen
+er zo bij: `PlayerTimeline` telt de XP-boekingen op volgorde op en kijkt wanneer
+de som een drempel passeerde.
+
+#### Het voortgangsscherm
+
+Het scherm beantwoordt in deze volgorde: wat is er gebeurd, waar gaat het over,
+en wat nu?
+
+- **De kop is een zin, geen getal**: "+12 gegroeid in drie maanden". Groei wordt
+  gevierd, maar een mindere periode wordt niet weggepoetst — een pagina die
+  altijd juicht gelooft een ouder na twee keer niet meer. Wel warm: achteruitgang
+  hoort bij leren en dat mag er staan.
+- **`PlayerProgress::trend()` zet een verschil om in één woord** (sterk gegroeid
+  / gegroeid / stabiel / aandacht). De grens ligt op twee punten; minder is ruis.
+  Eén plek, zodat de categoriekaarten en de overall-lijn dezelfde taal spreken.
+- **`Support\Progress\NextStep` geeft één ding om aan te werken.** Een lopend
+  doel wint, anders de laagste categorie plus vijf punten. Bewust één: een
+  lijstje met zes verbeterpunten leest als kritiek en niemand begint eraan.
+  Zonder cijfers geen voorstel — "werk aan je communicatie" zonder dat er ooit
+  iemand naar gekeken heeft is een oordeel uit het niets.
+- **De leeftijdscontext staat er positief bij** ("goed voor Onder 14"), met
+  dezelfde uitleg als op de kaart: `RatingExplanation` wordt hier hergebruikt,
+  dus er is één tekst om te onderhouden.
+- **Begin en eind staan als getal bij de grafiek.** Een lijn zonder cijfers laat
+  je raden.
 
 **Meldingen** gaan via `NieuwRapport` naar de ouders en de speler zelf, in de
 app en per e-mail. De notificatie is `ShouldQueue`: het opslaan van een rapport

@@ -59,12 +59,12 @@ onMounted(() => {
 onBeforeUnmount(() => waarnemer?.disconnect());
 
 const breedte = computed(() => gemeten.value ?? props.width);
-const padding = { top: 14, right: 40, bottom: 18, left: 28 };
+// Rechts is ruimte voor het eindlabel. Staat dat uit, dan is veertig pixels
+// wit aan de rechterkant van een grafiekje van 300 breed zonde.
+const padding = computed(() => ({ top: 14, right: props.showEndLabel ? 40 : 12, bottom: 18, left: 28 }));
 
 const punten = computed(() =>
-    props.series
-        .map((waarde, index) => ({ waarde, index }))
-        .filter((p): p is { waarde: number; index: number } => p.waarde !== null),
+    props.series.map((waarde, index) => ({ waarde, index })).filter((p): p is { waarde: number; index: number } => p.waarde !== null),
 );
 
 // Vaste schaal 0-100: cijfers zijn altijd op die schaal, en een meebewegende
@@ -73,19 +73,19 @@ const minY = 0;
 const maxY = 100;
 
 const x = (index: number) => {
-    const bruikbaar = breedte.value - padding.left - padding.right;
+    const bruikbaar = breedte.value - padding.value.left - padding.value.right;
 
     if (props.series.length <= 1) {
-        return padding.left + bruikbaar / 2;
+        return padding.value.left + bruikbaar / 2;
     }
 
-    return padding.left + (index / (props.series.length - 1)) * bruikbaar;
+    return padding.value.left + (index / (props.series.length - 1)) * bruikbaar;
 };
 
 const y = (waarde: number) => {
-    const bruikbaar = props.height - padding.top - padding.bottom;
+    const bruikbaar = props.height - padding.value.top - padding.value.bottom;
 
-    return padding.top + (1 - (waarde - minY) / (maxY - minY)) * bruikbaar;
+    return padding.value.top + (1 - (waarde - minY) / (maxY - minY)) * bruikbaar;
 };
 
 const pad = computed(() => punten.value.map((p, i) => `${i === 0 ? 'M' : 'L'} ${x(p.index)} ${y(p.waarde)}`).join(' '));
@@ -97,7 +97,7 @@ const vlak = computed(() => {
 
     const eerste = punten.value[0];
     const laatste = punten.value[punten.value.length - 1];
-    const onder = props.height - padding.bottom;
+    const onder = props.height - padding.value.bottom;
 
     return `${pad.value} L ${x(laatste.index)} ${onder} L ${x(eerste.index)} ${onder} Z`;
 });
@@ -140,14 +140,7 @@ const actief = ref<number | null>(null);
 
             <!-- Punten met een ring in de vlakkleur, zodat ze leesbaar blijven -->
             <g v-for="p in punten" :key="'punt-' + p.index">
-                <circle
-                    :cx="x(p.index)"
-                    :cy="y(p.waarde)"
-                    r="4"
-                    fill="hsl(var(--chart-1))"
-                    stroke="hsl(var(--card))"
-                    stroke-width="2"
-                />
+                <circle :cx="x(p.index)" :cy="y(p.waarde)" r="4" fill="hsl(var(--chart-1))" stroke="hsl(var(--card))" stroke-width="2" />
                 <!-- Ruim treffervlak voor de tooltip -->
                 <circle
                     :cx="x(p.index)"

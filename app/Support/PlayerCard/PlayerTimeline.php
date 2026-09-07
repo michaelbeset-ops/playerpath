@@ -6,6 +6,8 @@ use App\Enums\AttendanceStatus;
 use App\Enums\GoalStatus;
 use App\Models\Player;
 use App\Models\Report;
+use App\Models\XpEvent;
+use App\Support\Rating\RatingSettings;
 
 /**
  * De tijdlijn van een speler: wat er de afgelopen tijd gebeurd is.
@@ -89,9 +91,61 @@ class PlayerTimeline
             ];
         }
 
+        $items = array_merge($items, $this->levelMomenten($player));
+
         usort($items, fn ($a, $b) => strcmp($b['sort'], $a['sort']));
 
         return array_slice($items, 0, $limit);
+    }
+
+    /**
+     * Wanneer deze speler een level omhoog ging.
+     *
+     * Afgeleid uit de XP-boekhouding: we tellen de boekingen op volgorde op en
+     * kijken wanneer de som een drempel passeerde. Zo is een level-up een
+     * moment met een datum, zonder dat er iets extra's opgeslagen hoeft te
+     * worden dat uit de pas kan lopen met de boekhouding.
+     *
+     * @return list<array<string, mixed>>
+     */
+    protected function levelMomenten(Player $player): array
+    {
+        $drempels = array_values(array_filter(
+            RatingSettings::for($player->school)->levels(),
+            fn (array $level) => $level['xp'] > 0,
+        ));
+
+        if ($drempels === []) {
+            return [];
+        }
+
+        $items = [];
+        $totaal = 0;
+        $volgende = 0;
+
+        foreach ($player->xpEvents()->orderBy('occurred_on')->orderBy('id')->get() as $event) {
+            /** @var XpEvent $event */
+            $totaal += $event->points;
+
+            // Een while-lus: één grote boeking kan twee drempels tegelijk passeren.
+            while ($volgende < count($drempels) && $totaal >= $drempels[$volgende]['xp']) {
+                $items[] = [
+                    'type' => 'level',
+                    'date' => $event->occurred_on->format('d-m-Y'),
+                    // De index erachter: gaat iemand op één dag twee levels
+                    // omhoog, dan hoort de hoogste bovenaan te staan.
+                    'sort' => $event->occurred_on->format('Y-m-d').'-4'.$volgende,
+                    'title' => 'Level omhoog: '.$drempels[$volgende]['label'],
+                    'body' => 'Bereikt met '.$drempels[$volgende]['xp'].' XP.',
+                    'value' => null,
+                    'delta' => null,
+                ];
+
+                $volgende++;
+            }
+        }
+
+        return $items;
     }
 
     /**
