@@ -162,7 +162,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                         v-if="groep.href"
                         :href="groep.href"
                         class="rounded-lg px-3 py-2 text-sm font-medium transition"
-                        :class="isActief(groep) ? 'bg-background text-foreground' : 'text-foreground/75 hover:bg-background/50 hover:text-foreground'"
+                        :class="
+                            isActief(groep) ? 'bg-foreground/10 text-foreground' : 'text-foreground/75 hover:bg-foreground/10 hover:text-foreground'
+                        "
                         @click="sluit"
                     >
                         {{ groep.title }}
@@ -174,8 +176,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                             class="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition"
                             :class="
                                 isActief(groep) || open === groep.title
-                                    ? 'bg-background text-foreground'
-                                    : 'text-foreground/75 hover:bg-background/50 hover:text-foreground'
+                                    ? 'bg-foreground/10 text-foreground'
+                                    : 'text-foreground/75 hover:bg-foreground/10 hover:text-foreground'
                             "
                             :aria-expanded="open === groep.title"
                             aria-haspopup="true"
@@ -195,7 +197,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                                 :key="item.href"
                                 :href="item.href"
                                 class="flex items-center gap-3 px-3 py-2.5 text-sm transition"
-                                :class="raakt(item.href) ? 'bg-primary/10 text-primary' : 'hover:bg-background/60'"
+                                :class="raakt(item.href) ? 'bg-primary/10 text-primary' : 'hover:bg-foreground/10'"
                                 @click="sluit"
                             >
                                 <component :is="item.icon" class="size-4 shrink-0 opacity-70" />
@@ -215,7 +217,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
             <div class="ml-auto flex h-full shrink-0 items-stretch">
                 <Link
                     href="/notifications"
-                    class="relative flex items-center px-3 text-foreground/75 transition hover:bg-background/50 hover:text-foreground"
+                    class="relative flex items-center px-3 text-foreground/75 transition hover:bg-foreground/10 hover:text-foreground"
                     :aria-label="ongelezen > 0 ? ongelezen + ' ongelezen meldingen' : 'Meldingen'"
                 >
                     <Bell class="size-5" />
@@ -249,7 +251,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                             v-for="actie in acties"
                             :key="actie.href + actie.title"
                             :href="actie.href"
-                            class="flex items-center gap-3 px-3 py-2.5 text-sm transition hover:bg-background/60"
+                            class="flex items-center gap-3 px-3 py-2.5 text-sm transition hover:bg-foreground/10"
                             @click="sluit"
                         >
                             <component :is="iconen[actie.icon] ?? Plus" class="size-4 shrink-0 opacity-70" />
@@ -261,7 +263,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                 <div class="relative flex">
                     <button
                         type="button"
-                        class="flex items-center gap-2 bg-background/60 px-3 text-left transition hover:bg-background"
+                        class="flex items-center gap-2 px-3 text-left transition hover:bg-foreground/10"
                         :aria-expanded="open === 'gebruiker'"
                         aria-haspopup="true"
                         @click="wissel('gebruiker')"
@@ -299,7 +301,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                             href="/logout"
                             method="post"
                             as="button"
-                            class="flex w-full items-center gap-3 px-3 py-2.5 text-sm transition hover:bg-background/60"
+                            class="flex w-full items-center gap-3 px-3 py-2.5 text-sm transition hover:bg-foreground/10"
                         >
                             <LogOut class="size-4 shrink-0 opacity-70" />
                             Uitloggen
@@ -309,7 +311,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
 
                 <button
                     type="button"
-                    class="flex items-center px-3 text-foreground/75 transition hover:bg-background/50 hover:text-foreground lg:hidden"
+                    class="flex items-center px-3 text-foreground/75 transition hover:bg-foreground/10 hover:text-foreground lg:hidden"
                     :aria-expanded="mobiel"
                     aria-label="Menu"
                     @click="mobiel = !mobiel"
@@ -326,7 +328,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                     v-if="groep.href"
                     :href="groep.href"
                     class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium"
-                    :class="isActief(groep) ? 'bg-background' : 'text-foreground/75'"
+                    :class="isActief(groep) ? 'bg-foreground/10' : 'text-foreground/75'"
                     @click="sluit"
                 >
                     <component :is="groep.icon" class="size-4 shrink-0 opacity-70" />

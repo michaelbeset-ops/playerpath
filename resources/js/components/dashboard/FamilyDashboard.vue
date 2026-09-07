@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import Avatar from '@/components/Avatar.vue';
-import RegistrationDialog from '@/components/RegistrationDialog.vue';
 import type { FamilyAanbod, FamilyBericht, FamilyKind, FamilyTraining } from '@/types/family';
 import { Link } from '@inertiajs/vue3';
 import { ArrowUpRight, CalendarDays, ChevronRight, IdCard, MapPin, ShoppingBag, TrendingUp, UserCog } from 'lucide-vue-next';
-import { ref } from 'vue';
 
 /**
  * Het dashboard van een ouder, in deze volgorde: binnenkort, mijn kinderen,
@@ -27,15 +25,6 @@ const levelRand: Record<string, string> = {
     goud: 'border-gold/50',
     elite: 'border-primary/50',
 };
-
-// Afmelden of weer aanmelden, in een pop-up.
-const dialoog = ref<{ training: FamilyTraining; child: FamilyTraining['children'][number]; mode: 'declined' | 'attending' } | null>(null);
-const dialoogOpen = ref(false);
-
-const openDialoog = (training: FamilyTraining, child: FamilyTraining['children'][number], mode: 'declined' | 'attending') => {
-    dialoog.value = { training, child, mode };
-    dialoogOpen.value = true;
-};
 </script>
 
 <template>
@@ -50,74 +39,56 @@ const openDialoog = (training: FamilyTraining, child: FamilyTraining['children']
             </div>
 
             <div v-if="upcoming.length" class="mt-3 space-y-2">
-                <div
+                <Link
                     v-for="training in upcoming"
                     :key="training.id"
-                    class="rounded-xl border bg-card p-4 shadow-sm"
+                    :href="'/trainings/' + training.id"
+                    class="flex min-w-0 items-start gap-3 rounded-xl border bg-card p-4 shadow-sm transition hover:border-primary"
                     :class="training.is_today ? 'border-primary/40' : 'border-border'"
                 >
-                    <Link :href="'/trainings/' + training.id" class="flex min-w-0 items-start gap-3">
-                        <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                            <CalendarDays class="size-5" />
+                    <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <CalendarDays class="size-5" />
+                    </span>
+
+                    <span class="min-w-0 flex-1">
+                        <span class="flex flex-wrap items-center gap-2">
+                            <span class="font-medium" :class="training.cancelled ? 'line-through' : ''">{{ training.label }}</span>
+                            <span
+                                v-if="training.for"
+                                class="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                            >
+                                {{ training.for }}
+                            </span>
+                            <span
+                                v-if="training.is_today"
+                                class="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground"
+                            >
+                                vandaag
+                            </span>
+                            <!-- Afgemeld zie je hier al; afmelden zelf doe je op de training. -->
+                            <span
+                                v-for="kind in training.children.filter((k) => k.registration === 'declined')"
+                                :key="kind.id"
+                                class="rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-semibold text-warning"
+                            >
+                                {{ kind.first_name }} afgemeld
+                            </span>
                         </span>
 
-                        <span class="min-w-0 flex-1">
-                            <span class="flex flex-wrap items-center gap-2">
-                                <span class="font-medium" :class="training.cancelled ? 'line-through' : ''">{{ training.label }}</span>
-                                <span
-                                    v-if="training.is_today"
-                                    class="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground"
-                                >
-                                    vandaag
-                                </span>
-                                <span v-if="training.cancelled" class="rounded-full bg-warning/20 px-2 py-0.5 text-[10px] font-semibold text-warning">
-                                    gaat niet door
-                                </span>
-                            </span>
+                        <span class="tabular mt-0.5 block text-sm first-letter:uppercase">{{ training.date }} · {{ training.time }}</span>
 
-                            <span class="tabular mt-0.5 block text-sm first-letter:uppercase">{{ training.date }} · {{ training.time }}</span>
-
-                            <span v-if="training.location" class="mt-1 flex items-start gap-1.5 text-xs text-muted-foreground">
-                                <MapPin class="mt-0.5 size-3.5 shrink-0" />
-                                <span>{{ training.location }}</span>
-                            </span>
-                            <span v-if="training.trainers.length" class="mt-0.5 flex items-start gap-1.5 text-xs text-muted-foreground">
-                                <UserCog class="mt-0.5 size-3.5 shrink-0" />
-                                <span>{{ training.trainers.join(', ') }}</span>
-                            </span>
+                        <span v-if="training.location" class="mt-1 flex items-start gap-1.5 text-xs text-muted-foreground">
+                            <MapPin class="mt-0.5 size-3.5 shrink-0" />
+                            <span>{{ training.location }}</span>
                         </span>
+                        <span v-if="training.trainers.length" class="mt-0.5 flex items-start gap-1.5 text-xs text-muted-foreground">
+                            <UserCog class="mt-0.5 size-3.5 shrink-0" />
+                            <span>{{ training.trainers.join(', ') }}</span>
+                        </span>
+                    </span>
 
-                        <ChevronRight class="mt-1 size-4 shrink-0 text-muted-foreground" />
-                    </Link>
-
-                    <!-- Per kind: wie gaat er, en afmelden of weer aanmelden. -->
-                    <div v-if="!training.cancelled && training.children.length" class="mt-3 flex flex-col gap-2 border-t border-border pt-3">
-                        <div v-for="kind in training.children" :key="kind.id" class="flex items-center justify-between gap-3">
-                            <span class="min-w-0 text-sm">
-                                <span class="font-medium">{{ kind.first_name }}</span>
-                                <span v-if="kind.registration === 'declined'" class="text-warning"> · afgemeld</span>
-                                <span v-else-if="kind.registration === 'attending'" class="text-primary"> · aangemeld</span>
-                            </span>
-
-                            <button
-                                v-if="kind.registration === 'declined'"
-                                type="button"
-                                class="inline-flex h-10 shrink-0 items-center rounded-lg border border-border px-3 text-sm font-medium transition hover:border-primary"
-                                @click="openDialoog(training, kind, 'attending')"
-                            >
-                                Weer aanmelden
-                            </button>
-                            <button
-                                v-else
-                                type="button"
-                                class="inline-flex h-10 shrink-0 items-center rounded-lg border border-border px-3 text-sm font-medium text-muted-foreground transition hover:border-warning hover:text-warning"
-                                @click="openDialoog(training, kind, 'declined')"
-                            >
-                                Afmelden
-                            </button>
-                        </div>
-                    </div>
-                </div>
+                    <ChevronRight class="mt-1 size-4 shrink-0 text-muted-foreground" />
+                </Link>
             </div>
 
             <p v-else class="mt-3 rounded-xl border border-dashed border-border bg-card/50 p-5 text-center text-sm text-muted-foreground">
@@ -273,15 +244,5 @@ const openDialoog = (training: FamilyTraining, child: FamilyTraining['children']
                 </Link>
             </div>
         </section>
-
-        <RegistrationDialog
-            v-if="dialoog"
-            v-model:open="dialoogOpen"
-            :training-id="dialoog.training.id"
-            :training-label="dialoog.training.label"
-            :date="dialoog.training.date + ' · ' + dialoog.training.time"
-            :child="dialoog.child"
-            :mode="dialoog.mode"
-        />
     </div>
 </template>

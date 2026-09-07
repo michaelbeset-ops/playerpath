@@ -32,6 +32,8 @@ class DeclineTrainingTest extends TestCase
 
     protected User $trainer;
 
+    protected User $eigenaar;
+
     protected Player $sem;
 
     protected Training $training;
@@ -49,6 +51,9 @@ class DeclineTrainingTest extends TestCase
 
         $this->trainer = User::factory()->for($this->school)->create();
         $this->trainer->assignRole(Role::Trainer->value);
+
+        $this->eigenaar = User::factory()->for($this->school)->create();
+        $this->eigenaar->assignRole(Role::Eigenaar->value);
 
         app(Tenancy::class)->set($this->school);
 
@@ -81,6 +86,8 @@ class DeclineTrainingTest extends TestCase
         ]);
 
         Notification::assertSentTo($this->trainer, AfmeldingOntvangen::class, fn (AfmeldingOntvangen $m) => $m->reason === 'Ziek');
+        // En de eigenaar altijd, ook als er een trainer gekoppeld is.
+        Notification::assertSentTo($this->eigenaar, AfmeldingOntvangen::class);
 
         // Het dashboard zegt het, per kind, met de knop om weer aan te melden.
         $this->actingAs($this->ouder)
@@ -112,14 +119,11 @@ class DeclineTrainingTest extends TestCase
         Notification::fake();
         $this->training->trainers()->detach();
 
-        $eigenaar = User::factory()->for($this->school)->create();
-        $eigenaar->assignRole(Role::Eigenaar->value);
-
         $this->actingAs($this->ouder)
             ->post("/trainings/{$this->training->id}/registration/{$this->sem->id}", ['registration' => 'declined']);
 
         Notification::assertSentTo($this->trainer, AfmeldingOntvangen::class);
-        Notification::assertSentTo($eigenaar, AfmeldingOntvangen::class);
+        Notification::assertSentTo($this->eigenaar, AfmeldingOntvangen::class);
     }
 
     public function test_een_openstaande_rekening_is_een_bolletje_in_het_menu(): void

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import FlashMessage from '@/components/FlashMessage.vue';
+import RegistrationDialog from '@/components/RegistrationDialog.vue';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
@@ -77,6 +78,15 @@ const vink = (spelerId: number, status: string, huidig: string | null) => {
     );
 };
 
+// Afmelden of weer aanmelden (ouder of speler), in de pop-up.
+const dialoog = ref<{ child: { id: number; first_name: string }; mode: 'declined' | 'attending' } | null>(null);
+const dialoogOpen = ref(false);
+
+const openDialoog = (speler: SpelerRij, mode: 'declined' | 'attending') => {
+    dialoog.value = { child: { id: speler.id, first_name: speler.name.split(' ')[0] }, mode };
+    dialoogOpen.value = true;
+};
+
 const verwijderen = () => {
     if (confirm('Deze training verwijderen? De afgevinkte aanwezigheid verdwijnt mee.')) {
         router.delete('/trainings/' + props.training.id);
@@ -150,6 +160,33 @@ const verwijderen = () => {
                     <div class="min-w-0">
                         <p class="text-xs text-muted-foreground">{{ players.length === 1 ? 'Voor' : 'Voor' }}</p>
                         <p class="break-words font-medium">{{ players.map((s) => s.name.split(' ')[0]).join(' en ') }}</p>
+                        <!-- Vooraf: afmelden of weer aanmelden, per kind. -->
+                        <div v-if="!training.has_passed && !training.cancelled_at" class="mt-2 flex flex-col gap-2">
+                            <div v-for="speler in players" :key="speler.id" class="flex items-center justify-between gap-3">
+                                <span class="text-sm">
+                                    {{ speler.name.split(' ')[0] }}
+                                    <span v-if="speler.registration === 'declined'" class="text-warning">· afgemeld</span>
+                                    <span v-else-if="speler.registration === 'attending'" class="text-primary">· aangemeld</span>
+                                </span>
+                                <button
+                                    v-if="speler.registration === 'declined'"
+                                    type="button"
+                                    class="inline-flex h-10 shrink-0 items-center rounded-lg border border-border px-3 text-sm font-medium transition hover:border-primary"
+                                    @click="openDialoog(speler, 'attending')"
+                                >
+                                    Weer aanmelden
+                                </button>
+                                <button
+                                    v-else
+                                    type="button"
+                                    class="inline-flex h-10 shrink-0 items-center rounded-lg border border-border px-3 text-sm font-medium text-muted-foreground transition hover:border-warning hover:text-warning"
+                                    @click="openDialoog(speler, 'declined')"
+                                >
+                                    Afmelden
+                                </button>
+                            </div>
+                        </div>
+
                         <!-- Na afloop: wat de trainer heeft afgevinkt, per kind. -->
                         <p v-if="training.has_passed" class="mt-0.5 text-sm text-muted-foreground">
                             <template v-for="(speler, index) in players" :key="speler.id">
@@ -300,6 +337,16 @@ const verwijderen = () => {
                     </Link>
                 </p>
             </div>
+
+            <RegistrationDialog
+                v-if="dialoog"
+                v-model:open="dialoogOpen"
+                :training-id="training.id"
+                :training-label="training.group"
+                :date="training.date + ' · ' + training.time"
+                :child="dialoog.child"
+                :mode="dialoog.mode"
+            />
 
             <div v-if="can.delete" class="mt-4 rounded-xl border border-destructive/25 bg-destructive/5 p-5">
                 <p class="font-medium text-destructive">Training verwijderen</p>

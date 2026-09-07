@@ -57,12 +57,18 @@ class RegistrationController extends Controller
 
         // De trainer hoort het meteen. Zonder gekoppelde trainers is een
         // training "van iedereen" (zie CLAUDE.md), dus dan de hele staf.
+        // De trainer(s) van de training én de eigenaar. Zonder gekoppelde
+        // trainers is een training "van iedereen" (zie CLAUDE.md): dan alle trainers.
         if ($afgemeld) {
             $ontvangers = $training->trainers()->get();
 
             if ($ontvangers->isEmpty()) {
-                $ontvangers = User::ofCurrentSchool()->role([Role::Trainer->value, Role::Eigenaar->value])->get();
+                $ontvangers = User::ofCurrentSchool()->role(Role::Trainer->value)->get();
             }
+
+            $ontvangers = $ontvangers
+                ->merge(User::ofCurrentSchool()->role(Role::Eigenaar->value)->get())
+                ->unique('id');
 
             Notification::send($ontvangers, new AfmeldingOntvangen($training, $player, $validated['reason'] ?? null));
         }
