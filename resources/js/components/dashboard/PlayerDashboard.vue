@@ -77,16 +77,18 @@ const voortgangHref = computed(() => '/players/' + props.player.id + '/progress'
 </script>
 
 <template>
-    <!-- De donkere kant van het merk; zie CLAUDE.md hoofdstuk 4. Het thema
-         staat op de pagina (Dashboard.vue), zodat ook de begroeting erboven
-         donker is en er geen lichte strook tussen balk en inhoud zit. -->
+    <!-- Lichte werkvloer, met de kaart in een donker paneel: precies zoals
+         op de kaartpagina. De kaart is de donkere kant van het merk; de rest
+         van het scherm niet. -->
     <div>
         <div class="mx-auto max-w-2xl space-y-6">
             <!-- 1. Mijn kaart. Dit is waar een kind voor komt. -->
             <section>
-                <CardGlow :level="card.overall === null ? 'geen' : card.level.key">
-                    <PlayerCardVisual :card="card" audience="gezin" :shareable="false" />
-                </CardGlow>
+                <div class="theme-donker overflow-hidden rounded-3xl bg-background p-4 text-foreground sm:p-8">
+                    <CardGlow :level="card.overall === null ? 'geen' : card.level.key">
+                        <PlayerCardVisual :card="card" audience="gezin" :shareable="false" />
+                    </CardGlow>
+                </div>
 
                 <div class="mt-4 grid grid-cols-2 gap-2">
                     <Link

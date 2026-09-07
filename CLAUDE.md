@@ -287,11 +287,16 @@ er staat. Elk cijfer krijgt een eigen lucide-icoon
 
 Op donker komt diepte van kleurverschil, niet van harde schaduwen.
 
-**Eén basis voor de donkere pagina's.** `--background` in `.theme-donker` is
+**Eén basis voor de donkere panelen.** `--background` in `.theme-donker` is
 de donkere basiskleur, bewust **neutraal** en niet blauw, zodat de kaart het
 enige is dat kleur heeft. De balk bovenin heeft als enige een eigen tint,
 `--topbar`, op verzoek van de eigenaar precies zoals hij altijd was. Wil je
-een donker scherm, dan is het `theme-donker` + tokens en verder niets.
+een donker vlak, dan is het `theme-donker` + tokens en verder niets.
+
+**Ook de speler werkt op de lichte werkvloer.** Een volledig donker
+speler-account was te zwart; alleen de spelerskaart staat in een donker
+paneel (kaartpagina én spelerdashboard, hetzelfde paneel met "Hoe werkt mijn
+rating?" eronder). De donkere balk bovenin is voor iedereen dezelfde.
 
 **De gloed achter de kaart** komt van `components/CardGlow.vue`: een zachte
 radiale gloed in de levelkleur (koper, chroom, goud, holografisch; staalgrijs

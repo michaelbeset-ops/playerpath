@@ -76,7 +76,6 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
     <Head title="Dashboard" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <!-- Het donkere thema voor een speler staat op de layout. -->
         <div>
             <div class="mx-auto w-full max-w-6xl p-4">
                 <!-- Een ouder krijgt een begroeting; hij komt niet naar een
