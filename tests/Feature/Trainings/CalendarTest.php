@@ -142,6 +142,90 @@ class CalendarTest extends TestCase
             ->assertInertia(fn ($page) => $page->count('trainings', 0));
     }
 
+    public function test_een_trainer_ziet_standaard_alleen_zijn_eigen_trainingen(): void
+    {
+        $andereTrainer = User::factory()->for($this->school)->create();
+        $andereTrainer->assignRole(Role::Trainer->value);
+
+        $vanMij = $this->training('2026-09-15');
+        $vanMij->trainers()->attach($this->trainer->id);
+
+        $vanEenAnder = $this->training('2026-09-16');
+        $vanEenAnder->trainers()->attach($andereTrainer->id);
+
+        // Zonder gekoppelde trainer is de training van iedereen, dus ook van mij.
+        $this->training('2026-09-17');
+
+        $this->actingAs($this->trainer)
+            ->get('/calendar?view=month&date=2026-09-01')
+            ->assertInertia(fn ($page) => $page
+                ->where('scope', 'mine')
+                ->where('canChooseScope', true)
+                ->count('trainings', 2)
+                ->where('trainings.0.date', '2026-09-15')
+                ->where('trainings.1.date', '2026-09-17')
+            );
+    }
+
+    public function test_een_eigenaar_ziet_standaard_alles_met_de_eigen_trainingen_gemarkeerd(): void
+    {
+        $eigenaar = User::factory()->for($this->school)->create();
+        $eigenaar->assignRole(Role::Eigenaar->value);
+
+        $vanDeTrainer = $this->training('2026-09-15');
+        $vanDeTrainer->trainers()->attach($this->trainer->id);
+
+        $vanNiemand = $this->training('2026-09-16');
+
+        $this->actingAs($eigenaar)
+            ->get('/calendar?view=month&date=2026-09-01')
+            ->assertInertia(fn ($page) => $page
+                ->where('scope', 'all')
+                ->count('trainings', 2)
+                ->where('trainings.0.is_mine', false)
+                ->where('trainings.1.is_mine', true)
+            );
+    }
+
+    public function test_de_keuze_alle_of_mijn_wordt_onthouden(): void
+    {
+        $andereTrainer = User::factory()->for($this->school)->create();
+        $andereTrainer->assignRole(Role::Trainer->value);
+
+        $vanEenAnder = $this->training('2026-09-16');
+        $vanEenAnder->trainers()->attach($andereTrainer->id);
+
+        $this->actingAs($this->trainer)
+            ->get('/calendar?view=month&date=2026-09-01&scope=all')
+            ->assertInertia(fn ($page) => $page->where('scope', 'all')->count('trainings', 1));
+
+        // Zonder de keuze opnieuw mee te sturen blijft hij staan.
+        $this->actingAs($this->trainer)
+            ->get('/calendar?view=month&date=2026-09-01')
+            ->assertInertia(fn ($page) => $page->where('scope', 'all')->count('trainings', 1));
+    }
+
+    public function test_een_ouder_kan_niet_kiezen_en_ziet_geen_markering(): void
+    {
+        $ouder = User::factory()->for($this->school)->create();
+        $ouder->assignRole(Role::Ouder->value);
+
+        $kind = Player::factory()->for($this->school)->create();
+        $kind->groups()->attach($this->groep->id);
+        $ouder->children()->attach($kind->id);
+
+        $this->training('2026-09-15');
+
+        $this->actingAs($ouder)
+            ->get('/calendar?view=month&date=2026-09-01&scope=mine')
+            ->assertInertia(fn ($page) => $page
+                ->where('canChooseScope', false)
+                ->where('scope', 'all')
+                ->count('trainings', 1)
+                ->where('trainings.0.is_mine', false)
+            );
+    }
+
     public function test_een_kapotte_datum_valt_terug_op_vandaag(): void
     {
         $this->actingAs($this->trainer)

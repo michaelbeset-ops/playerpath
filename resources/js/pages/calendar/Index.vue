@@ -2,8 +2,8 @@
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ChevronLeft, ChevronRight, MapPin, Plus, UserCog } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
+import { CalendarDays, ChevronLeft, ChevronRight, LayoutGrid, List, MapPin, Plus, UserCog } from 'lucide-vue-next';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 interface Training {
     id: number;
@@ -14,10 +14,14 @@ interface Training {
     location: string | null;
     trainers: string[];
     has_passed: boolean;
+    cancelled: boolean;
+    is_mine: boolean;
 }
 
 const props = defineProps<{
     view: 'month' | 'week';
+    scope: 'all' | 'mine';
+    canChooseScope: boolean;
     date: string;
     today: string;
     range: { from: string; to: string };
@@ -51,7 +55,43 @@ const dagNamen = ['ma', 'di', 'wo', 'do', 'vr', 'za', 'zo'];
 const langeDag = new Intl.DateTimeFormat('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' });
 const korteDag = new Intl.DateTimeFormat('nl-NL', { weekday: 'short', day: 'numeric' });
 
-// --- Het raster ---
+// --- Lijst of raster ---
+//
+// Dit gaat over hoe dezelfde periode getekend wordt, niet over welke gegevens
+// er zijn. Een raster van zeven kolommen op 375 pixels is geen raster, dus op
+// een telefoon is de lijst de standaard en het raster de optie. Die keuze hoort
+// bij het scherm waarop je kijkt en staat daarom in de browser, niet op de
+// server: op je laptop wil je iets anders dan op je telefoon.
+
+const smal = ref(typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches);
+
+let media: MediaQueryList | null = null;
+const opBreedte = (e: MediaQueryListEvent) => (smal.value = e.matches);
+
+onMounted(() => {
+    media = window.matchMedia('(max-width: 639px)');
+    media.addEventListener('change', opBreedte);
+});
+
+onBeforeUnmount(() => media?.removeEventListener('change', opBreedte));
+
+const bewaard = typeof localStorage !== 'undefined' ? localStorage.getItem('pp.calendar.layout') : null;
+const weergave = ref<'lijst' | 'raster'>(bewaard === 'raster' ? 'raster' : 'lijst');
+
+const kiesWeergave = (keuze: 'lijst' | 'raster') => {
+    weergave.value = keuze;
+
+    try {
+        localStorage.setItem('pp.calendar.layout', keuze);
+    } catch {
+        // Een browser die niets mag bewaren hoort het scherm niet te slopen.
+    }
+};
+
+// Op een breed scherm is het raster het beeld van de maand; smal wint de keuze.
+const toonRaster = computed(() => props.view === 'month' && (!smal.value || weergave.value === 'raster'));
+
+// --- De gegevens per dag ---
 
 // Trainingen per dag, zodat een cel niet steeds de hele lijst hoeft te filteren.
 const perDag = computed(() => {
@@ -83,12 +123,14 @@ const dagen = computed(() => {
     return lijst;
 });
 
-// Op mobiel tik je een dag aan en zie je die eronder. Standaard: vandaag als
+// De agenda toont alleen dagen waar iets staat: bladeren door lege dagen is
+// bladeren door niets.
+const agenda = computed(() => dagen.value.filter((d) => perDag.value[d.iso]?.length));
+
+// In het raster tik je een dag aan en zie je die eronder. Standaard: vandaag als
 // die in beeld is, anders de eerste dag met een training, anders de eerste dag.
 const geselecteerd = ref<string>(
-    dagen.value.some((d) => d.iso === props.today)
-        ? props.today
-        : (props.trainings[0]?.date ?? props.range.from),
+    dagen.value.some((d) => d.iso === props.today) ? props.today : (props.trainings[0]?.date ?? props.range.from),
 );
 
 watch(
@@ -104,7 +146,8 @@ const geselecteerdeTrainingen = computed(() => perDag.value[geselecteerd.value] 
 
 // --- Navigatie ---
 
-const ga = (view: 'month' | 'week', date: string) => router.get('/calendar', { view, date }, { preserveScroll: true });
+const ga = (view: 'month' | 'week', date: string, scope?: 'all' | 'mine') =>
+    router.get('/calendar', { view, date, scope: scope ?? props.scope }, { preserveScroll: true });
 
 const vorige = () => {
     const d = parse(props.date);
@@ -130,7 +173,13 @@ const naarVandaag = () => ga(props.view, props.today);
 
 const wisselWeergave = (view: 'month' | 'week') => ga(view, props.date);
 
+const kiesBereik = (scope: 'all' | 'mine') => ga(props.view, props.date, scope);
+
 const open = (id: number) => router.get('/trainings/' + id);
+
+const leegTekst = computed(() =>
+    props.scope === 'mine' ? 'Geen trainingen van jou in deze periode.' : 'Geen trainingen in deze periode.',
+);
 </script>
 
 <template>
@@ -140,7 +189,7 @@ const open = (id: number) => router.get('/trainings/' + id);
         <div class="mx-auto w-full max-w-6xl p-3 sm:p-4">
             <!-- Kop: navigeren en schakelen, alles binnen duimbereik -->
             <div class="flex flex-wrap items-center justify-between gap-3">
-                <div class="flex items-center gap-1">
+                <div class="flex min-w-0 items-center gap-1">
                     <button
                         type="button"
                         class="flex size-10 items-center justify-center rounded-lg border border-border bg-card shadow-sm transition hover:border-primary"
@@ -166,7 +215,9 @@ const open = (id: number) => router.get('/trainings/' + id);
                     </button>
                 </div>
 
-                <h1 class="order-first w-full text-xl font-semibold tracking-tight sm:order-none sm:w-auto sm:text-2xl">{{ title }}</h1>
+                <h1 class="order-first w-full min-w-0 text-xl font-semibold tracking-tight sm:order-none sm:w-auto sm:text-2xl">
+                    {{ title }}
+                </h1>
 
                 <div class="flex items-center gap-2">
                     <div class="inline-flex rounded-lg border border-border bg-card p-1 shadow-sm">
@@ -199,142 +250,267 @@ const open = (id: number) => router.get('/trainings/' + id);
                 </div>
             </div>
 
-            <!-- ================= MAAND ================= -->
-            <template v-if="view === 'month'">
-                <div class="mt-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-                    <div class="grid grid-cols-7 border-b border-border bg-secondary/50 text-center text-xs font-medium text-muted-foreground">
-                        <div v-for="naam in dagNamen" :key="naam" class="py-2">{{ naam }}</div>
-                    </div>
+            <!-- Wiens trainingen, en hoe getekend -->
+            <div v-if="canChooseScope || view === 'month'" class="mt-3 flex flex-wrap items-center justify-between gap-2">
+                <div v-if="canChooseScope" class="inline-flex rounded-lg border border-border bg-card p-1 shadow-sm">
+                    <button
+                        type="button"
+                        class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+                        :class="scope === 'all' ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground'"
+                        @click="kiesBereik('all')"
+                    >
+                        Alle trainingen
+                    </button>
+                    <button
+                        type="button"
+                        class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+                        :class="scope === 'mine' ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground'"
+                        @click="kiesBereik('mine')"
+                    >
+                        Mijn trainingen
+                    </button>
+                </div>
+                <span v-else></span>
 
-                    <div class="grid grid-cols-7">
-                        <button
-                            v-for="(dag, index) in dagen"
-                            :key="dag.iso"
-                            type="button"
-                            class="flex min-h-[3.25rem] flex-col items-stretch border-b border-r border-border p-1 text-left transition sm:min-h-[6.5rem] sm:p-1.5"
-                            :class="[
-                                index % 7 === 6 ? 'border-r-0' : '',
-                                dag.inMaand ? 'bg-card' : 'bg-secondary/30 text-muted-foreground/60',
-                                geselecteerd === dag.iso ? 'ring-2 ring-inset ring-primary sm:ring-0' : '',
-                            ]"
-                            @click="geselecteerd = dag.iso"
-                        >
+                <!-- Alleen smal: daar is de lijst de standaard en het raster de optie. -->
+                <div v-if="view === 'month'" class="inline-flex rounded-lg border border-border bg-card p-1 shadow-sm sm:hidden">
+                    <button
+                        type="button"
+                        class="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition"
+                        :class="weergave === 'lijst' ? 'bg-secondary text-foreground' : 'text-muted-foreground'"
+                        @click="kiesWeergave('lijst')"
+                    >
+                        <List class="size-4" />
+                        Lijst
+                    </button>
+                    <button
+                        type="button"
+                        class="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition"
+                        :class="weergave === 'raster' ? 'bg-secondary text-foreground' : 'text-muted-foreground'"
+                        @click="kiesWeergave('raster')"
+                    >
+                        <LayoutGrid class="size-4" />
+                        Maand
+                    </button>
+                </div>
+            </div>
+
+            <!-- ================= MAANDRASTER ================= -->
+            <div v-if="toonRaster" class="mt-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                <div class="grid grid-cols-7 border-b border-border text-center text-xs font-medium text-muted-foreground">
+                    <div v-for="naam in dagNamen" :key="naam" class="py-2">{{ naam }}</div>
+                </div>
+
+                <div class="grid grid-cols-7">
+                    <button
+                        v-for="(dag, index) in dagen"
+                        :key="dag.iso"
+                        type="button"
+                        class="flex min-h-[3.25rem] min-w-0 flex-col items-stretch border-b border-r border-border/60 p-1 text-left transition sm:min-h-[7rem] sm:p-1.5"
+                        :class="[
+                            index % 7 === 6 ? 'border-r-0' : '',
+                            dag.inMaand ? '' : 'text-muted-foreground/50',
+                            dag.isVandaag ? 'bg-primary/5 ring-1 ring-inset ring-primary/40' : '',
+                            geselecteerd === dag.iso && !dag.isVandaag ? 'ring-2 ring-inset ring-primary/60 sm:ring-0' : '',
+                        ]"
+                        @click="geselecteerd = dag.iso"
+                    >
+                        <span class="mb-1 flex items-center gap-1 self-start">
                             <span
-                                class="tabular mb-1 flex size-6 items-center justify-center self-start rounded-full text-xs font-medium"
+                                class="tabular flex size-6 items-center justify-center rounded-full text-xs font-semibold"
                                 :class="dag.isVandaag ? 'bg-primary text-primary-foreground' : ''"
                             >
                                 {{ dag.dag }}
                             </span>
-
-                            <!-- Mobiel: stippen. Desktop: chips die je direct kunt openen. -->
-                            <div v-if="perDag[dag.iso]?.length" class="flex flex-wrap gap-1 sm:hidden">
-                                <span
-                                    v-for="t in perDag[dag.iso].slice(0, 3)"
-                                    :key="t.id"
-                                    class="size-1.5 rounded-full"
-                                    :class="t.has_passed ? 'bg-muted-foreground/50' : 'bg-primary'"
-                                ></span>
-                            </div>
-
-                            <div class="hidden space-y-1 sm:block">
-                                <span
-                                    v-for="t in perDag[dag.iso]?.slice(0, 3) ?? []"
-                                    :key="t.id"
-                                    role="link"
-                                    class="block cursor-pointer truncate rounded-md px-1.5 py-0.5 text-[11px] leading-tight transition hover:opacity-80"
-                                    :class="t.has_passed ? 'bg-secondary text-muted-foreground' : 'bg-primary/10 text-primary'"
-                                    :title="t.group + ' · ' + (t.trainers.join(', ') || 'geen trainer') + (t.location ? ' · ' + t.location : '')"
-                                    @click.stop="open(t.id)"
-                                >
-                                    <span class="tabular font-semibold">{{ t.starts_at }}</span> {{ t.group }}
-                                </span>
-                                <span v-if="(perDag[dag.iso]?.length ?? 0) > 3" class="block px-1.5 text-[11px] text-muted-foreground">
-                                    +{{ perDag[dag.iso].length - 3 }} meer
-                                </span>
-                            </div>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Mobiel: de aangetikte dag uitgeschreven -->
-                <div class="mt-4 sm:hidden">
-                    <p class="text-sm font-medium first-letter:uppercase">{{ langeDag.format(parse(geselecteerd)) }}</p>
-
-                    <div v-if="geselecteerdeTrainingen.length" class="mt-2 space-y-2">
-                        <Link
-                            v-for="t in geselecteerdeTrainingen"
-                            :key="t.id"
-                            :href="'/trainings/' + t.id"
-                            class="block rounded-xl border border-border bg-card p-3 shadow-sm transition hover:border-primary"
-                        >
-                            <div class="flex items-baseline justify-between gap-2">
-                                <p class="font-medium">{{ t.group }}</p>
-                                <p class="tabular shrink-0 text-sm text-muted-foreground">{{ t.starts_at }} – {{ t.ends_at }}</p>
-                            </div>
-                            <p v-if="t.trainers.length" class="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                                <UserCog class="size-3.5 shrink-0" />
-                                {{ t.trainers.join(', ') }}
-                            </p>
-                            <p v-if="t.location" class="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                                <MapPin class="size-3.5 shrink-0" />
-                                {{ t.location }}
-                            </p>
-                        </Link>
-                    </div>
-
-                    <p v-else class="mt-2 rounded-xl border border-dashed border-border bg-card/50 p-4 text-center text-sm text-muted-foreground">
-                        Geen training op deze dag.
-                    </p>
-                </div>
-            </template>
-
-            <!-- ================= WEEK ================= -->
-            <template v-else>
-                <!-- Desktop: zeven kolommen. Mobiel: dagen onder elkaar als agenda. -->
-                <div class="mt-4 grid gap-2 sm:grid-cols-7">
-                    <div
-                        v-for="dag in dagen"
-                        :key="dag.iso"
-                        class="rounded-xl border border-border bg-card shadow-sm"
-                        :class="dag.isVandaag ? 'border-primary/50' : ''"
-                    >
-                        <div class="flex items-center justify-between border-b border-border px-3 py-2 sm:flex-col sm:items-start sm:gap-0.5">
-                            <p class="text-sm font-medium first-letter:uppercase">{{ korteDag.format(dag.datum) }}</p>
-                            <span
-                                v-if="dag.isVandaag"
-                                class="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground"
-                            >
+                            <span v-if="dag.isVandaag" class="hidden text-[10px] font-semibold uppercase tracking-wide text-primary sm:inline">
                                 vandaag
                             </span>
-                        </div>
+                        </span>
 
-                        <div class="space-y-2 p-2">
-                            <Link
-                                v-for="t in perDag[dag.iso] ?? []"
+                        <!-- Smal: stippen. Breed: de training uitgeschreven. -->
+                        <div v-if="perDag[dag.iso]?.length" class="flex flex-wrap gap-1 sm:hidden">
+                            <span
+                                v-for="t in perDag[dag.iso].slice(0, 3)"
                                 :key="t.id"
-                                :href="'/trainings/' + t.id"
-                                class="block rounded-lg border p-2.5 transition hover:border-primary"
-                                :class="t.has_passed ? 'border-border bg-secondary/40' : 'border-primary/30 bg-primary/5'"
-                            >
-                                <p class="tabular text-xs font-semibold" :class="t.has_passed ? 'text-muted-foreground' : 'text-primary'">
-                                    {{ t.starts_at }} – {{ t.ends_at }}
-                                </p>
-                                <p class="mt-0.5 text-sm font-medium leading-tight">{{ t.group }}</p>
-                                <p v-if="t.trainers.length" class="mt-1 flex items-start gap-1 text-xs text-muted-foreground">
-                                    <UserCog class="mt-0.5 size-3 shrink-0" />
-                                    <span>{{ t.trainers.join(', ') }}</span>
-                                </p>
-                                <p v-if="t.location" class="mt-0.5 flex items-start gap-1 text-xs text-muted-foreground">
-                                    <MapPin class="mt-0.5 size-3 shrink-0" />
-                                    <span>{{ t.location }}</span>
-                                </p>
-                            </Link>
-
-                            <p v-if="!perDag[dag.iso]?.length" class="px-1 py-2 text-center text-xs text-muted-foreground/70 sm:py-6">—</p>
+                                class="size-1.5 rounded-full"
+                                :class="t.has_passed ? 'bg-muted-foreground/40' : 'bg-primary'"
+                            ></span>
                         </div>
+
+                        <div class="hidden min-w-0 space-y-1 sm:block">
+                            <span
+                                v-for="t in perDag[dag.iso]?.slice(0, 2) ?? []"
+                                :key="t.id"
+                                role="link"
+                                class="block min-w-0 cursor-pointer border-l-2 pl-1.5 text-[11px] leading-tight transition hover:opacity-70"
+                                :class="t.has_passed || t.cancelled ? 'border-border text-muted-foreground' : 'border-primary'"
+                                @click.stop="open(t.id)"
+                            >
+                                <span class="block truncate">
+                                    <span class="tabular font-semibold">{{ t.starts_at }}</span>
+                                    <span :class="t.cancelled ? 'line-through' : ''">{{ ' ' + t.group }}</span>
+                                    <span v-if="t.is_mine && scope === 'all'" class="font-semibold text-primary"> · jij</span>
+                                </span>
+                                <span class="block truncate text-muted-foreground">
+                                    {{ [t.trainers.join(', '), t.location].filter(Boolean).join(' · ') || 'geen trainer' }}
+                                </span>
+                            </span>
+                            <span v-if="(perDag[dag.iso]?.length ?? 0) > 2" class="block pl-1.5 text-[11px] text-muted-foreground">
+                                +{{ perDag[dag.iso].length - 2 }} meer
+                            </span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Bij het raster op een telefoon: de aangetikte dag uitgeschreven -->
+            <div v-if="toonRaster" class="mt-4 sm:hidden">
+                <p class="text-sm font-medium first-letter:uppercase">{{ langeDag.format(parse(geselecteerd)) }}</p>
+
+                <div v-if="geselecteerdeTrainingen.length" class="mt-2 space-y-2">
+                    <Link
+                        v-for="t in geselecteerdeTrainingen"
+                        :key="t.id"
+                        :href="'/trainings/' + t.id"
+                        class="block rounded-xl border border-border bg-card p-3 shadow-sm transition hover:border-primary"
+                    >
+                        <div class="flex items-baseline justify-between gap-2">
+                            <p class="min-w-0 font-medium" :class="t.cancelled ? 'line-through' : ''">{{ t.group }}</p>
+                            <p class="tabular shrink-0 text-sm text-muted-foreground">{{ t.starts_at }} – {{ t.ends_at }}</p>
+                        </div>
+                        <p class="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <UserCog class="size-3.5 shrink-0" />
+                            {{ t.trainers.join(', ') || 'geen trainer' }}
+                        </p>
+                        <p v-if="t.location" class="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <MapPin class="size-3.5 shrink-0" />
+                            {{ t.location }}
+                        </p>
+                    </Link>
+                </div>
+
+                <p v-else class="mt-2 rounded-xl border border-dashed border-border bg-card/50 p-4 text-center text-sm text-muted-foreground">
+                    Geen training op deze dag.
+                </p>
+            </div>
+
+            <!-- ================= WEEK: kolommen op een breed scherm ================= -->
+            <div v-if="view === 'week'" class="mt-4 hidden gap-2 sm:grid sm:grid-cols-7">
+                <div
+                    v-for="dag in dagen"
+                    :key="dag.iso"
+                    class="min-w-0 rounded-xl border bg-card shadow-sm"
+                    :class="dag.isVandaag ? 'border-primary/50 bg-primary/5' : 'border-border'"
+                >
+                    <div class="flex flex-col items-start gap-0.5 border-b border-border px-3 py-2">
+                        <p class="text-sm font-medium first-letter:uppercase">{{ korteDag.format(dag.datum) }}</p>
+                        <span v-if="dag.isVandaag" class="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                            vandaag
+                        </span>
+                    </div>
+
+                    <div class="space-y-2 p-2">
+                        <Link
+                            v-for="t in perDag[dag.iso] ?? []"
+                            :key="t.id"
+                            :href="'/trainings/' + t.id"
+                            class="block min-w-0 rounded-lg border p-2.5 transition hover:border-primary"
+                            :class="t.has_passed || t.cancelled ? 'border-border bg-secondary/40' : 'border-primary/30 bg-primary/5'"
+                        >
+                            <p
+                                class="tabular text-xs font-semibold"
+                                :class="t.has_passed || t.cancelled ? 'text-muted-foreground' : 'text-primary'"
+                            >
+                                {{ t.starts_at }} – {{ t.ends_at }}
+                            </p>
+                            <p class="mt-0.5 text-sm font-medium leading-tight" :class="t.cancelled ? 'line-through' : ''">{{ t.group }}</p>
+                            <p v-if="t.is_mine && scope === 'all'" class="mt-1 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                                jouw training
+                            </p>
+                            <p v-if="t.cancelled" class="mt-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                afgezegd
+                            </p>
+                            <p class="mt-1 flex items-start gap-1 text-xs text-muted-foreground">
+                                <UserCog class="mt-0.5 size-3 shrink-0" />
+                                <span>{{ t.trainers.join(', ') || 'geen trainer' }}</span>
+                            </p>
+                            <p v-if="t.location" class="mt-0.5 flex items-start gap-1 text-xs text-muted-foreground">
+                                <MapPin class="mt-0.5 size-3 shrink-0" />
+                                <span>{{ t.location }}</span>
+                            </p>
+                        </Link>
+
+                        <p v-if="!perDag[dag.iso]?.length" class="px-1 py-6 text-center text-xs text-muted-foreground/70">—</p>
                     </div>
                 </div>
-            </template>
+            </div>
+
+            <!-- ================= LIJST ================= -->
+            <!-- De maand als agenda (standaard op een telefoon) en de week op elk smal scherm. -->
+            <div v-if="!toonRaster" class="mt-4 space-y-4" :class="view === 'week' ? 'sm:hidden' : ''">
+                <section v-for="dag in agenda" :key="dag.iso">
+                    <div class="flex items-center gap-2">
+                        <p class="text-sm font-semibold first-letter:uppercase" :class="dag.isVandaag ? 'text-primary' : ''">
+                            {{ langeDag.format(dag.datum) }}
+                        </p>
+                        <span v-if="dag.isVandaag" class="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                            vandaag
+                        </span>
+                    </div>
+
+                    <div class="mt-2 space-y-2">
+                        <Link
+                            v-for="t in perDag[dag.iso] ?? []"
+                            :key="t.id"
+                            :href="'/trainings/' + t.id"
+                            class="flex min-w-0 gap-3 rounded-xl border bg-card p-3 shadow-sm transition hover:border-primary"
+                            :class="t.is_mine && scope === 'all' ? 'border-primary/40' : 'border-border'"
+                        >
+                            <span
+                                class="tabular w-14 shrink-0 text-sm font-semibold"
+                                :class="t.has_passed || t.cancelled ? 'text-muted-foreground' : 'text-primary'"
+                            >
+                                {{ t.starts_at }}
+                                <span class="block text-xs font-normal text-muted-foreground">{{ t.ends_at }}</span>
+                            </span>
+
+                            <span class="min-w-0 flex-1">
+                                <span class="flex flex-wrap items-center gap-2">
+                                    <span class="font-medium" :class="t.cancelled ? 'line-through' : ''">{{ t.group }}</span>
+                                    <span
+                                        v-if="t.is_mine && scope === 'all'"
+                                        class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary"
+                                    >
+                                        jij
+                                    </span>
+                                    <span
+                                        v-if="t.cancelled"
+                                        class="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                                    >
+                                        afgezegd
+                                    </span>
+                                </span>
+                                <span class="mt-1 flex items-start gap-1.5 text-xs text-muted-foreground">
+                                    <UserCog class="mt-0.5 size-3.5 shrink-0" />
+                                    <span>{{ t.trainers.join(', ') || 'geen trainer' }}</span>
+                                </span>
+                                <span v-if="t.location" class="mt-0.5 flex items-start gap-1.5 text-xs text-muted-foreground">
+                                    <MapPin class="mt-0.5 size-3.5 shrink-0" />
+                                    <span>{{ t.location }}</span>
+                                </span>
+                            </span>
+                        </Link>
+                    </div>
+                </section>
+
+                <p
+                    v-if="!agenda.length"
+                    class="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border bg-card/50 p-8 text-center text-sm text-muted-foreground"
+                >
+                    <CalendarDays class="size-6 opacity-60" />
+                    {{ leegTekst }}
+                </p>
+            </div>
         </div>
     </AppLayout>
 </template>

@@ -34,11 +34,11 @@ class MyTrainingsController extends Controller
         $trainingen = Training::query()
             ->with(['group', 'trainers'])
             ->where('starts_at', '>=', now()->startOfDay())
+            // Dezelfde regel als in de kalender, uit één plek (Training::scopeForTrainer).
+            ->forTrainer($user)
             ->orderBy('starts_at')
             ->limit(50)
             ->get()
-            ->filter(fn (Training $training) => $training->trainers->isEmpty()
-                || $training->trainers->contains('id', $user->id))
             ->map(fn (Training $training) => [
                 'id' => $training->id,
                 'group' => $training->group->name,

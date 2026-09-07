@@ -73,6 +73,28 @@ class Training extends Model
         return $this->group->players()->active()->orderBy('first_name')->get();
     }
 
+    /**
+     * De trainingen die van deze trainer zijn.
+     *
+     * Een training zonder gekoppelde trainers telt als "van iedereen": koppelen
+     * is informatief en veel scholen doen het niet. Zou dit strikt filteren,
+     * dan is "Mijn trainingen" bij die scholen altijd leeg. Deze regel staat
+     * hier op één plek, zodat de kalender en Mijn trainingen niet uit elkaar
+     * kunnen lopen.
+     */
+    public function scopeForTrainer(Builder $query, User $user): Builder
+    {
+        return $query->where(fn (Builder $q) => $q
+            ->whereDoesntHave('trainers')
+            ->orWhereHas('trainers', fn (Builder $t) => $t->whereKey($user->id)));
+    }
+
+    /** Is deze training van die trainer? Zelfde regel als scopeForTrainer(). */
+    public function belongsToTrainer(User $user): bool
+    {
+        return $this->trainers->isEmpty() || $this->trainers->contains('id', $user->id);
+    }
+
     public function scopeUpcoming(Builder $query): Builder
     {
         return $query->where('starts_at', '>=', now()->startOfDay())->orderBy('starts_at');
