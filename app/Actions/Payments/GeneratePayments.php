@@ -80,7 +80,10 @@ class GeneratePayments
 
     private function omschrijving(Subscription $subscription, BillingPeriod $periode, ?int $nummer, int $totaal): string
     {
-        $basis = ($subscription->product?->name ?? 'Contributie').' '.$periode->label();
+        // De naam van het product, en anders "Training": een voetbalschool int
+        // geen contributie, die verkoopt training. Is het product verwijderd,
+        // dan is dat het enige dat je nog met zekerheid kunt zeggen.
+        $basis = ($subscription->product?->name ?? 'Training').' '.$periode->label();
 
         return $nummer === null ? $basis : "{$basis} (termijn {$nummer} van {$totaal})";
     }

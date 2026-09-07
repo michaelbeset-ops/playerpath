@@ -137,7 +137,7 @@ class GeneratePaymentsTest extends TestCase
 
         // Een jaartermijn die op 10 januari begint loopt tot 9 januari erna;
         // de omschrijving zegt dat eerlijk in plaats van alleen "2026".
-        $this->assertSame('Contributie jan. 2026 - jan. 2027 (termijn 1 van 3)', $nieuw[0]->description);
+        $this->assertSame('Training jan. 2026 - jan. 2027 (termijn 1 van 3)', $nieuw[0]->description);
     }
 
     public function test_een_ontbrekende_termijn_wordt_alsnog_aangevuld(): void

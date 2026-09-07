@@ -24,7 +24,7 @@ class PaymentFactory extends Factory
             'vat_rate' => 21,
             'status' => PaymentStatus::Open,
             'method' => PaymentMethod::DirectDebit,
-            'description' => 'Contributie',
+            'description' => 'Training',
             'due_on' => now()->toDateString(),
             'paid_at' => null,
         ];

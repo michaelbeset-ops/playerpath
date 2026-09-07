@@ -104,7 +104,7 @@ class DemoSchoolsSeeder extends Seeder
                     'amount_cents' => $abonnement->amount_cents,
                     'status' => $status,
                     'method' => PaymentMethod::DirectDebit,
-                    'description' => 'Contributie '.$moment->translatedFormat('F Y'),
+                    'description' => $product->name.' '.$moment->translatedFormat('F Y'),
                     'due_on' => $moment->copy()->addDays(7)->toDateString(),
                     'paid_at' => $status === PaymentStatus::Paid ? $moment->copy()->addDays(3) : null,
                 ]);

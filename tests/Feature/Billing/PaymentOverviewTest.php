@@ -119,7 +119,7 @@ class PaymentOverviewTest extends TestCase
         $ander = Player::factory()->for($this->school)->create(['first_name' => 'Noud', 'last_name' => 'Jansen']);
         Payment::factory()->for($this->school)->create([
             'player_id' => $ander->id,
-            'description' => 'Contributie',
+            'description' => 'Keeperstraining',
             'status' => PaymentStatus::Open,
             'due_on' => now(),
         ]);
