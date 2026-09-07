@@ -682,7 +682,21 @@ const upgradeTekst = computed(() => {
     --pp-gloed: rgba(190, 170, 255, 0.45);
     --pp-surface-1: #171432;
     --pp-surface-2: #07070f;
-    --pp-metaal: linear-gradient(120deg, #e9e6ff 0%, #8fd3ff 14%, #c8a2ff 28%, #ffb3e6 42%, #fff2a8 56%, #a8ffd8 70%, #8fd3ff 84%, #e9e6ff 100%);
+    /* Pasteltinten afgewisseld met donkere facetten; zonder die donkere stops
+       leest het als een sticker in plaats van als metaal. */
+    --pp-metaal: linear-gradient(
+        120deg,
+        #e9e6ff 0%,
+        #8fd3ff 11%,
+        #4f4a9c 21%,
+        #c8a2ff 32%,
+        #ffb3e6 43%,
+        #6b3f7c 53%,
+        #fff2a8 63%,
+        #a8ffd8 74%,
+        #3f6b96 85%,
+        #e9e6ff 100%
+    );
 }
 
 .pp-tier-elite .pp-frame {
