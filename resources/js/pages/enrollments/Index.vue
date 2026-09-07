@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import FlashMessage from '@/components/FlashMessage.vue';
-import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { Check, Copy, Inbox, Mail, Phone, X } from 'lucide-vue-next';
+import { Check, Copy, CreditCard, Inbox, Link2, Mail, Phone, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
+/**
+ * De inschrijvingen-inbox: gegroepeerd op wat er van de school gevraagd wordt.
+ * Goedkeuren, wachten op betaling, de wachtlijst, en wat afgehandeld is.
+ */
 interface Inschrijving {
     id: number;
     child_name: string;
@@ -18,18 +21,27 @@ interface Inschrijving {
     guardian_phone: string | null;
     relationship: string | null;
     plan: string | null;
+    payment_option: string | null;
+    order_total: string | null;
+    order_status: string | null;
     waitlist: boolean;
     payment_method: string | null;
     note: string | null;
+    details: Record<string, string | null> | null;
     status: string;
     status_label: string;
     received: string;
     handled_at: string | null;
     player_id: number | null;
+    can_approve: boolean;
+    can_decline: boolean;
+    first_payment_id: number | null;
 }
 
 const props = defineProps<{
     pending: Inschrijving[];
+    awaitingPayment: Inschrijving[];
+    waitlist: Inschrijving[];
     handled: Inschrijving[];
     formUrl: string;
 }>();
@@ -38,6 +50,19 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Inschrijvingen', href: '/enroll
 
 const page = usePage<SharedData>();
 const fout = computed(() => (page.props as any).errors?.enrollment as string | undefined);
+
+const tab = ref<'pending' | 'awaitingPayment' | 'waitlist' | 'handled'>(
+    props.pending.length ? 'pending' : props.awaitingPayment.length ? 'awaitingPayment' : props.waitlist.length ? 'waitlist' : 'handled',
+);
+
+const tabs = computed(() => [
+    { key: 'pending' as const, label: 'Goedkeuren', count: props.pending.length },
+    { key: 'awaitingPayment' as const, label: 'Wacht op betaling', count: props.awaitingPayment.length },
+    { key: 'waitlist' as const, label: 'Wachtlijst', count: props.waitlist.length },
+    { key: 'handled' as const, label: 'Afgehandeld', count: props.handled.length },
+]);
+
+const lijst = computed(() => props[tab.value]);
 
 const gekopieerd = ref(false);
 
@@ -48,9 +73,9 @@ const kopieer = async () => {
 };
 
 const keurGoed = (i: Inschrijving) => {
-    const wat = i.plan ? ' en een abonnement (' + i.plan + ')' : '';
+    const wat = i.order_total ? ` De ouder krijgt een betaalverzoek van ${i.order_total}.` : '';
 
-    if (confirm(`${i.child_name} toevoegen als speler, met een account voor ${i.guardian_name}${wat}?`)) {
+    if (confirm(`De inschrijving van ${i.child_name} goedkeuren?${wat}`)) {
         router.post('/enrollments/' + i.id + '/approve', {}, { preserveScroll: true });
     }
 };
@@ -60,6 +85,20 @@ const wijsAf = (i: Inschrijving) => {
         router.post('/enrollments/' + i.id + '/decline', {}, { preserveScroll: true });
     }
 };
+
+const statusKleur: Record<string, string> = {
+    awaiting_approval: 'bg-warning/15 text-warning',
+    awaiting_payment: 'bg-primary/10 text-primary',
+    payment_failed: 'bg-destructive/10 text-destructive',
+    waitlist: 'bg-secondary text-muted-foreground',
+    confirmed: 'bg-primary/10 text-primary',
+    active: 'bg-primary/10 text-primary',
+    declined: 'bg-secondary text-muted-foreground',
+    cancelled: 'bg-secondary text-muted-foreground',
+    expired: 'bg-secondary text-muted-foreground',
+};
+
+const detailLabels: Record<string, string> = { kledingmaat: 'Kledingmaat', niveau: 'Niveau', medisch: 'Medisch' };
 </script>
 
 <template>
@@ -69,141 +108,151 @@ const wijsAf = (i: Inschrijving) => {
         <div class="mx-auto w-full max-w-3xl p-4">
             <FlashMessage />
 
-            <p v-if="fout" class="mb-4 rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">{{ fout }}</p>
-
-            <h1 class="text-2xl font-semibold tracking-tight">Inschrijvingen</h1>
-            <p class="mt-1 text-sm text-muted-foreground">Ouders melden hun kind aan via jouw inschrijfformulier. Jij keurt goed.</p>
-
-            <!-- De link naar het formulier: dit is wat je op je website en in WhatsApp zet -->
-            <div class="mt-5 rounded-xl border border-border bg-card p-4 shadow-sm">
-                <p class="text-sm font-medium">Jouw inschrijfformulier</p>
-                <p class="mt-0.5 text-xs text-muted-foreground">
-                    Zet deze link op je website of stuur hem in WhatsApp. Iedereen kan zich ermee aanmelden; jij beslist wie erin komt.
-                </p>
-                <div class="mt-3 flex flex-wrap items-center gap-2">
-                    <input
-                        :value="formUrl"
-                        readonly
-                        class="min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-xs text-muted-foreground"
-                        @focus="($event.target as HTMLInputElement).select()"
-                    />
-                    <button
-                        type="button"
-                        class="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition hover:border-primary"
-                        @click="kopieer"
-                    >
-                        <Check v-if="gekopieerd" class="size-4 text-primary" />
-                        <Copy v-else class="size-4" />
-                        {{ gekopieerd ? 'Gekopieerd' : 'Kopieer' }}
-                    </button>
-                    <a :href="formUrl" target="_blank" rel="noopener" class="text-sm font-medium text-primary underline underline-offset-4">Bekijk</a>
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="min-w-0">
+                    <h1 class="text-2xl font-semibold tracking-tight">Inschrijvingen</h1>
+                    <p class="mt-1 text-sm text-muted-foreground">Wat er binnenkomt via je inschrijfpagina.</p>
                 </div>
+
+                <button
+                    type="button"
+                    class="inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-medium shadow-sm transition hover:border-primary"
+                    @click="kopieer"
+                >
+                    <Check v-if="gekopieerd" class="size-4 text-primary" />
+                    <Copy v-else class="size-4" />
+                    {{ gekopieerd ? 'Gekopieerd' : 'Link naar de inschrijfpagina' }}
+                </button>
             </div>
 
-            <!-- Nieuw -->
-            <h2 class="mt-8 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-                Nieuw <span class="tabular">({{ pending.length }})</span>
-            </h2>
+            <p v-if="fout" class="mt-4 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">{{ fout }}</p>
 
-            <div v-if="pending.length" class="mt-3 space-y-3">
-                <div v-for="i in pending" :key="i.id" class="rounded-xl border border-warning/40 bg-card p-5 shadow-sm">
-                    <div class="flex flex-wrap items-start justify-between gap-3">
+            <!-- Tabbladen; op een telefoon schuifbaar. -->
+            <div class="-mx-4 mt-5 flex gap-2 overflow-x-auto px-4 pb-1">
+                <button
+                    v-for="t in tabs"
+                    :key="t.key"
+                    type="button"
+                    class="flex h-10 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-medium transition"
+                    :class="
+                        tab === t.key
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-border bg-card text-muted-foreground hover:border-primary'
+                    "
+                    @click="tab = t.key"
+                >
+                    {{ t.label }}
+                    <span
+                        class="tabular rounded-full px-1.5 text-xs"
+                        :class="tab === t.key ? 'bg-primary text-primary-foreground' : 'bg-secondary'"
+                        >{{ t.count }}</span
+                    >
+                </button>
+            </div>
+
+            <div v-if="!lijst.length" class="mt-6 rounded-xl border border-dashed border-border p-8 text-center">
+                <Inbox class="mx-auto size-8 text-muted-foreground" />
+                <p class="mt-2 text-sm text-muted-foreground">Niets in dit vak.</p>
+            </div>
+
+            <div v-else class="mt-4 space-y-3">
+                <article v-for="i in lijst" :key="i.id" class="rounded-xl border border-border bg-card p-4 shadow-sm">
+                    <div class="flex flex-wrap items-start justify-between gap-2">
                         <div class="min-w-0">
-                            <p class="text-lg font-semibold">{{ i.child_name }}</p>
-                            <p class="text-sm text-muted-foreground">{{ i.position }} &middot; {{ i.age }} jaar ({{ i.date_of_birth }})</p>
-                        </div>
-                        <p class="shrink-0 text-xs text-muted-foreground">{{ i.received }}</p>
-                    </div>
-
-                    <div class="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-                        <div class="rounded-lg bg-secondary/60 p-3">
-                            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Ouder</p>
-                            <p class="mt-1 font-medium">
-                                {{ i.guardian_name }}
-                                <span v-if="i.relationship" class="font-normal text-muted-foreground">({{ i.relationship }})</span>
+                            <p class="font-semibold">
+                                {{ i.child_name }}
+                                <span v-if="i.age" class="font-normal text-muted-foreground">· {{ i.age }} jaar · {{ i.position }}</span>
                             </p>
-                            <a
-                                :href="'mailto:' + i.guardian_email"
-                                class="mt-1 flex items-center gap-1.5 text-xs text-primary underline underline-offset-2"
-                            >
-                                <Mail class="size-3" /> {{ i.guardian_email }}
-                            </a>
-                            <a
-                                v-if="i.guardian_phone"
-                                :href="'tel:' + i.guardian_phone"
-                                class="mt-0.5 flex items-center gap-1.5 text-xs text-primary underline underline-offset-2"
-                            >
-                                <Phone class="size-3" /> {{ i.guardian_phone }}
-                            </a>
-                        </div>
-                        <div class="rounded-lg bg-secondary/60 p-3">
-                            <p class="text-xs font-medium uppercase tracking-wide text-muted-foreground">Gewenst</p>
-                            <p class="mt-1 font-medium">{{ i.plan ?? 'Geen aanbod gekozen' }}</p>
-                            <p v-if="i.payment_method" class="text-xs text-muted-foreground">{{ i.payment_method }}</p>
-                            <!-- Vol op het moment van aanmelden. Goedkeuren zet
-                                 deze aanvraag op de wachtlijst, zonder rekening. -->
-                            <p v-if="i.waitlist" class="mt-2 inline-flex rounded-lg bg-warning/10 px-2 py-1 text-xs font-medium text-warning">
-                                Wachtlijst — het aanbod zat vol
+                            <p class="text-sm text-muted-foreground">
+                                {{ i.plan ?? 'Zonder aanbod' }}<template v-if="i.payment_option"> · {{ i.payment_option }}</template>
                             </p>
                         </div>
+                        <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-medium" :class="statusKleur[i.status] ?? 'bg-secondary'">{{
+                            i.status_label
+                        }}</span>
                     </div>
 
-                    <p v-if="i.note" class="mt-3 rounded-lg border border-border p-3 text-sm">{{ i.note }}</p>
+                    <div class="mt-3 grid gap-1 text-sm">
+                        <p>
+                            {{ i.guardian_name }}<span v-if="i.relationship" class="text-muted-foreground"> ({{ i.relationship }})</span>
+                        </p>
+                        <a :href="'mailto:' + i.guardian_email" class="flex items-center gap-1.5 text-muted-foreground hover:text-foreground">
+                            <Mail class="size-3.5" />{{ i.guardian_email }}
+                        </a>
+                        <a
+                            v-if="i.guardian_phone"
+                            :href="'tel:' + i.guardian_phone"
+                            class="flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+                        >
+                            <Phone class="size-3.5" />{{ i.guardian_phone }}
+                        </a>
+                        <p v-if="i.order_total" class="tabular flex items-center gap-1.5 text-muted-foreground">
+                            <CreditCard class="size-3.5" />{{ i.order_total }} · {{ i.order_status
+                            }}<template v-if="i.payment_method"> · {{ i.payment_method }}</template>
+                        </p>
+                    </div>
 
-                    <p class="mt-4 text-xs text-muted-foreground">
-                        <template v-if="i.waitlist">
-                            Goedkeuren maakt de speler aan en zet hem op de wachtlijst. Er komt geen rekening; die ontstaat pas als je hem een plek
-                            geeft.
+                    <dl v-if="i.details && Object.values(i.details).some(Boolean)" class="mt-2 grid gap-0.5 text-xs text-muted-foreground">
+                        <template v-for="(waarde, sleutel) in i.details" :key="sleutel">
+                            <div v-if="waarde" class="flex gap-2">
+                                <dt class="shrink-0 font-medium">{{ detailLabels[sleutel] ?? sleutel }}:</dt>
+                                <dd class="min-w-0 break-words">{{ waarde }}</dd>
+                            </div>
                         </template>
-                        <template v-else>
-                            Goedkeuren maakt de speler aan, koppelt de ouder (die krijgt een e-mail om in te loggen)<template v-if="i.plan">
-                                en zet het aanbod klaar</template
-                            >.
-                        </template>
+                    </dl>
+
+                    <p v-if="i.note" class="mt-2 rounded-lg bg-secondary px-3 py-2 text-sm">{{ i.note }}</p>
+
+                    <p class="mt-2 text-xs text-muted-foreground">
+                        Ontvangen {{ i.received }}<template v-if="i.handled_at"> · afgehandeld op {{ i.handled_at }}</template>
                     </p>
 
-                    <div class="mt-3 grid grid-cols-2 gap-2">
-                        <Button @click="keurGoed(i)"><Check class="mr-2 size-4" /> Goedkeuren</Button>
-                        <Button variant="secondary" @click="wijsAf(i)"><X class="mr-2 size-4" /> Afwijzen</Button>
-                    </div>
-                </div>
-            </div>
-
-            <div v-else class="mt-3 rounded-2xl border border-dashed border-border bg-card/50 p-8 text-center">
-                <Inbox class="mx-auto size-8 text-muted-foreground/60" />
-                <p class="mt-2 font-medium">Geen nieuwe inschrijvingen</p>
-                <p class="mt-1 text-sm text-muted-foreground">Deel de link hierboven en ze komen hier binnen.</p>
-            </div>
-
-            <!-- Afgehandeld -->
-            <template v-if="handled.length">
-                <h2 class="mt-8 text-sm font-semibold uppercase tracking-wide text-muted-foreground">Afgehandeld</h2>
-                <div class="mt-3 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-                    <div
-                        v-for="(i, index) in handled"
-                        :key="i.id"
-                        class="flex items-center gap-3 p-4"
-                        :class="index > 0 ? 'border-t border-border' : ''"
-                    >
-                        <div class="min-w-0 flex-1">
-                            <p class="truncate text-sm font-medium">{{ i.child_name }}</p>
-                            <p class="truncate text-xs text-muted-foreground">{{ i.guardian_name }} &middot; {{ i.handled_at }}</p>
-                        </div>
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        <button
+                            v-if="i.can_approve"
+                            type="button"
+                            class="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
+                            @click="keurGoed(i)"
+                        >
+                            <Check class="size-4" />
+                            {{ i.waitlist ? 'Plek geven' : 'Goedkeuren' }}
+                        </button>
+                        <Link
+                            v-if="i.first_payment_id"
+                            :href="'/payments?tab=open'"
+                            class="inline-flex h-10 items-center gap-2 rounded-lg border border-border px-4 text-sm font-medium hover:border-primary"
+                        >
+                            <CreditCard class="size-4" />
+                            Betaling markeren
+                        </Link>
+                        <a
+                            v-if="i.first_payment_id"
+                            :href="'/enrollments/' + i.id + '/betaallink'"
+                            target="_blank"
+                            class="inline-flex h-10 items-center gap-2 rounded-lg border border-border px-4 text-sm font-medium hover:border-primary"
+                        >
+                            <Link2 class="size-4" />
+                            Betaallink
+                        </a>
                         <Link
                             v-if="i.player_id"
                             :href="'/players/' + i.player_id"
-                            class="text-xs font-medium text-primary underline underline-offset-4"
-                            >Speler</Link
+                            class="inline-flex h-10 items-center rounded-lg border border-border px-4 text-sm font-medium hover:border-primary"
                         >
-                        <span
-                            class="shrink-0 rounded-lg px-2 py-1 text-xs font-medium"
-                            :class="i.status === 'approved' ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground'"
+                            Naar de speler
+                        </Link>
+                        <button
+                            v-if="i.can_decline"
+                            type="button"
+                            class="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm text-muted-foreground hover:text-destructive"
+                            @click="wijsAf(i)"
                         >
-                            {{ i.status_label }}
-                        </span>
+                            <X class="size-4" />
+                            Afwijzen
+                        </button>
                     </div>
-                </div>
-            </template>
+                </article>
+            </div>
         </div>
     </AppLayout>
 </template>

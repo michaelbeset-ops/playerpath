@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Schools;
 
+use App\Enums\BillingType;
 use App\Enums\Feature;
+use App\Enums\OfferingStatus;
 use App\Enums\ProductType;
 use App\Http\Controllers\Controller;
 use App\Models\ConsentDocument;
+use App\Models\Product;
 use App\Models\School;
 use App\Support\Enrollment\EnrollmentSettings;
 use App\Support\Features\Features;
@@ -123,13 +126,49 @@ class EnrollmentSettingsController extends Controller
             'offering_types.min' => 'Kies minstens één aanbodvorm.',
         ]);
 
-        return [
+        $antwoorden = [
             'offering_types' => array_values(array_unique($validated['offering_types'])),
             'trial' => [
                 'enabled' => (bool) $validated['trial_enabled'],
                 'amount_cents' => $this->centen($validated['trial_amount'] ?? null),
             ],
         ];
+
+        $this->proefles($antwoorden);
+
+        return $antwoorden;
+    }
+
+    /**
+     * De proefles is een aanbod dat de school niet zelf hoeft aan te maken:
+     * staat hij aan, dan bestaat hij, met de prijs uit de instellingen. Uit,
+     * dan wordt hij onzichtbaar; wat er al is afgenomen blijft staan.
+     *
+     * @param  array<string, mixed>  $antwoorden
+     */
+    protected function proefles(array $antwoorden): void
+    {
+        $aan = $antwoorden['trial']['enabled'] && in_array(ProductType::Proefles->value, $antwoorden['offering_types'], true);
+        $product = Product::query()->where('type', ProductType::Proefles->value)->first();
+
+        if (! $aan) {
+            $product?->update(['is_active' => false]);
+
+            return;
+        }
+
+        $product ??= Product::create([
+            'name' => 'Proefles',
+            'description' => 'Eén keer meetrainen om te kijken of het bevalt.',
+            'type' => ProductType::Proefles,
+            'billing_type' => BillingType::Eenmalig,
+            'amount_cents' => 0,
+            'vat_rate' => 9,
+            'status' => OfferingStatus::Open,
+        ]);
+
+        $product->update(['is_active' => true]);
+        $product->syncPaymentOptions([['type' => 'eenmalig', 'amount_cents' => $antwoorden['trial']['amount_cents']]]);
     }
 
     /** @return array<string, mixed> */

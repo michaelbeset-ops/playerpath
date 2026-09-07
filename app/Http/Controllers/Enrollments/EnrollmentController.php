@@ -7,6 +7,7 @@ use App\Enums\EnrollmentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Enrollment;
 use App\Support\Money\Money;
+use App\Support\Payments\PaymentLink;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,6 +17,10 @@ use RuntimeException;
 
 /**
  * De inschrijvingen-inbox van de eigenaar.
+ *
+ * Gegroepeerd op wat er van de school gevraagd wordt: goedkeuren, wachten op
+ * betaling (met de mogelijkheid de betaling te markeren), de wachtlijst, en
+ * wat afgehandeld is. De statusmachine bepaalt welke knoppen er staan.
  */
 class EnrollmentController extends Controller
 {
@@ -33,26 +38,32 @@ class EnrollmentController extends Controller
             'guardian_email' => $e->guardian_email,
             'guardian_phone' => $e->guardian_phone,
             'relationship' => $e->relationship,
-            // Eenmalig aanbod heeft geen frequentie; die stond er blind achter.
-            'plan' => $e->product
-                ? $e->product->name.' · '.Money::format($e->product->amount_cents).' '.$e->product->billing_type->short()
-                : null,
-            'waitlist' => $e->waitlist,
+            'plan' => $e->product?->name,
+            'payment_option' => $e->paymentOption?->describe(),
+            'order_total' => $e->order ? Money::format($e->order->total_cents) : null,
+            'order_status' => $e->order?->status->label(),
+            'waitlist' => $e->status === EnrollmentStatus::Waitlist,
             'payment_method' => $e->payment_method?->label(),
             'note' => $e->note,
+            'details' => $e->details,
             'status' => $e->status->value,
             'status_label' => $e->status->label(),
             'received' => $e->created_at->diffForHumans(),
             'handled_at' => $e->handled_at?->format('d-m-Y'),
             'player_id' => $e->player_id,
+            'can_approve' => in_array($e->status, [EnrollmentStatus::AwaitingApproval, EnrollmentStatus::Waitlist], strict: true),
+            'can_decline' => $e->status->isOpen(),
+            'first_payment_id' => $e->order?->payments()->outstanding()->orderBy('due_on')->value('id'),
         ];
 
         $school = app(Tenancy::class)->schoolOrFail();
+        $alle = Enrollment::with(['product', 'paymentOption', 'order'])->orderBy('created_at')->get();
 
         return Inertia::render('enrollments/Index', [
-            'pending' => Enrollment::pending()->with('product')->orderBy('created_at')->get()->map($vorm),
-            'handled' => Enrollment::where('status', '!=', EnrollmentStatus::Pending->value)
-                ->with('product')->latest('handled_at')->limit(20)->get()->map($vorm),
+            'pending' => $alle->where('status', EnrollmentStatus::AwaitingApproval)->map($vorm)->values(),
+            'awaitingPayment' => $alle->whereIn('status', [EnrollmentStatus::AwaitingPayment, EnrollmentStatus::PaymentFailed])->map($vorm)->values(),
+            'waitlist' => $alle->where('status', EnrollmentStatus::Waitlist)->map($vorm)->values(),
+            'handled' => $alle->filter(fn (Enrollment $e) => ! $e->status->isOpen())->sortByDesc('updated_at')->take(30)->map($vorm)->values(),
             'formUrl' => route('enroll.show', $school),
         ]);
     }
@@ -67,23 +78,40 @@ class EnrollmentController extends Controller
             return back()->withErrors(['enrollment' => $e->getMessage()]);
         }
 
-        return redirect()
-            ->route('players.show', $player)
-            ->with('status', "{$player->full_name} is toegevoegd. De ouder heeft een e-mail gekregen om in te loggen.");
+        $melding = $enrollment->refresh()->status === EnrollmentStatus::AwaitingPayment
+            ? "De inschrijving van {$player->full_name} is goedgekeurd. De ouder heeft een betaalverzoek gekregen."
+            : "{$player->full_name} is ingeschreven. De ouder heeft bericht gekregen.";
+
+        return back()->with('status', $melding);
     }
 
     public function decline(Request $request, Enrollment $enrollment): RedirectResponse
     {
         $this->authorize('update', $enrollment);
 
-        abort_unless($enrollment->status === EnrollmentStatus::Pending, 422, 'Deze inschrijving is al afgehandeld.');
+        abort_unless($enrollment->status->isOpen(), 422, 'Deze inschrijving is al afgehandeld.');
 
-        $enrollment->forceFill([
-            'status' => EnrollmentStatus::Declined,
+        $enrollment->transitionTo(EnrollmentStatus::Declined, [
             'handled_by_id' => $request->user()->id,
             'handled_at' => now(),
-        ])->save();
+        ]);
+
+        // De order gaat mee dicht: er valt niets meer te betalen.
+        $enrollment->order?->forceFill(['status' => 'cancelled'])->save();
+        $enrollment->order?->payments()->outstanding()->update(['status' => 'cancelled']);
 
         return back()->with('status', 'De inschrijving is afgewezen.');
+    }
+
+    /** De betaallink nog eens, bijvoorbeeld om zelf naar de ouder te sturen. */
+    public function paymentLink(Enrollment $enrollment, PaymentLink $link): RedirectResponse
+    {
+        $this->authorize('update', $enrollment);
+
+        $rekening = $enrollment->order?->payments()->outstanding()->orderBy('due_on')->first();
+
+        abort_if($rekening === null, 404);
+
+        return redirect()->to($link->for($rekening));
     }
 }

@@ -10,6 +10,7 @@ use App\Models\Enrollment;
 use App\Models\Group;
 use App\Models\Location;
 use App\Models\Participation;
+use App\Models\PaymentOption;
 use App\Models\Player;
 use App\Models\Product;
 use App\Models\School;
@@ -55,6 +56,19 @@ class OfferingTest extends TestCase
     }
 
     /** @return array<string, mixed> */
+    /** Een aanmelding van een nieuwe ouder voor dit aanbod, met de standaard betaalvorm. */
+    protected function aanmelding(Product $aanbod): array
+    {
+        return [
+            'children' => [[
+                'first_name' => 'Sem', 'last_name' => 'de Vries', 'date_of_birth' => '2016-04-12', 'position' => 'keeper',
+                'product_id' => $aanbod->id, 'payment_option_id' => PaymentOption::withoutSchoolScope()->where('product_id', $aanbod->id)->where('is_default', true)->value('id'),
+            ]],
+            'guardian_name' => 'Marieke de Vries', 'guardian_email' => 'marieke@voorbeeld.nl', 'password' => 'wachtwoord123',
+            'consents' => ['avg'], 'payment_method' => 'cash',
+        ];
+    }
+
     protected function blokGegevens(array $overschrijf = []): array
     {
         return array_merge([
@@ -226,12 +240,15 @@ class OfferingTest extends TestCase
         $this->actingAs($this->eigenaar)->post('/aanbod', $this->blokGegevens());
         $blok = Product::firstWhere('name', 'Keepersblok najaar');
 
-        $inschrijving = Enrollment::factory()->for($this->school)->create([
-            'product_id' => $blok->id,
-            'payment_method' => 'cash',
-        ]);
+        app(Tenancy::class)->forget();
+        $this->post('/inschrijven/'.$this->school->slug, $this->aanmelding($blok))->assertSessionHasNoErrors();
+        app(Tenancy::class)->set($this->school);
 
+        $inschrijving = Enrollment::firstOrFail();
         $this->actingAs($this->eigenaar)->post('/enrollments/'.$inschrijving->id.'/approve');
+
+        // Handmatig goedkeuren: eerst betalen, dan doet het kind mee.
+        $this->actingAs($this->eigenaar)->patch('/payments/'.$inschrijving->refresh()->order->payments()->firstOrFail()->id, ['status' => 'paid', 'method' => 'cash']);
 
         $speler = Player::firstOrFail();
 
@@ -259,8 +276,12 @@ class OfferingTest extends TestCase
 
         $blok = Product::firstWhere('name', 'Keepersblok najaar');
 
-        $inschrijving = Enrollment::factory()->for($this->school)->create(['product_id' => $blok->id]);
-        $this->actingAs($this->eigenaar)->post('/enrollments/'.$inschrijving->id.'/approve');
+        app(Tenancy::class)->forget();
+        $this->post('/inschrijven/'.$this->school->slug, $this->aanmelding($blok))->assertSessionHasNoErrors();
+        app(Tenancy::class)->set($this->school);
+
+        // Een abonnement betaal je niet vooraf: goedkeuren bevestigt meteen.
+        $this->actingAs($this->eigenaar)->post('/enrollments/'.Enrollment::firstOrFail()->id.'/approve');
 
         // Een blok van zes weken dat na afloop blijft doorschrijven is precies
         // waar een ouder boos over wordt.

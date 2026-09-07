@@ -6,6 +6,7 @@ use App\Enums\EnrollmentStatus;
 use App\Enums\PaymentMethod;
 use App\Enums\PlayerPosition;
 use App\Models\Concerns\BelongsToSchool;
+use App\Models\Concerns\HasStatusMachine;
 use Database\Factories\EnrollmentFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Enrollment extends Model
 {
     /** @use HasFactory<EnrollmentFactory> */
-    use BelongsToSchool, HasFactory;
+    use BelongsToSchool, HasFactory, HasStatusMachine;
 
     protected $fillable = [
         'first_name',
@@ -33,6 +34,7 @@ class Enrollment extends Model
         'payment_method',
         'waitlist',
         'note',
+        'details',
     ];
 
     protected function casts(): array
@@ -44,6 +46,10 @@ class Enrollment extends Model
             'status' => EnrollmentStatus::class,
             'waitlist' => 'boolean',
             'handled_at' => 'datetime',
+            'details' => 'array',
+            'confirmed_at' => 'datetime',
+            'cancelled_at' => 'datetime',
+            'refund_cents' => 'integer',
         ];
     }
 
@@ -79,9 +85,19 @@ class Enrollment extends Model
         return $this->belongsTo(User::class, 'handled_by_id');
     }
 
+    /** Wat nog bij de school ligt om goed te keuren. */
     public function scopePending(Builder $query): Builder
     {
-        return $query->where('status', EnrollmentStatus::Pending->value);
+        return $query->where('status', EnrollmentStatus::AwaitingApproval->value);
+    }
+
+    /** Alles wat nog niet rond of afgesloten is. */
+    public function scopeOpen(Builder $query): Builder
+    {
+        return $query->whereIn('status', array_map(
+            fn (EnrollmentStatus $s) => $s->value,
+            array_filter(EnrollmentStatus::cases(), fn (EnrollmentStatus $s) => $s->isOpen()),
+        ));
     }
 
     public function getChildNameAttribute(): string

@@ -759,6 +759,48 @@ Vier dingen die je niet moet omdraaien:
   en tekent één ouder. `players.payment_customer_reference` blijft staan tot
   de incasso (onderdeel 7) op het mandaat is overgezet.
 
+### De inschrijfflow en de statusmachines
+
+**De openbare flow** (`/inschrijven/{slug}`, `PublicEnrollmentController` +
+`enrollments/Public.vue`) loopt in stappen: aanbod → kind(eren) → jij
+(account) → toestemmingen → betalen → overzicht → bevestigen. Zonder account
+vooraf; het account ontstaat onderweg met het wachtwoord dat de ouder kiest.
+Een ingelogde ouder krijgt naam, e-mail en kinderen voorgevuld en kan een
+tweede kind erbij zetten. Meerdere kinderen gaan in één order.
+
+- **Het formulier bevat geen regels.** Welke velden er staan, welke
+  toestemmingen verplicht zijn, welke betaalvormen er zijn: alles komt van
+  `Support\Enrollment\EnrollmentForm`, gevoed door de inschrijfinstellingen.
+- **Het overzicht komt van de server** (`POST …/overzicht` →
+  `OrderBuilder`), met dezelfde berekening als bij het indienen. Wat de ouder
+  zag is wat er wordt vastgelegd. Kortingen zijn regels met een negatief
+  bedrag; inschrijfgeld en kledingpakket zijn één keer per gezin; een
+  abonnement betaal je niet vooraf (dat brengt zelf zijn termijnen voort).
+- **Bij het indienen ontstaat alles** (`Actions\Enrollments\SubmitEnrollment`,
+  één transactie): ouderaccount, speler, inschrijving, order met regels,
+  toestemmingen met documentversie. In de groep komt het kind pas bij de
+  bevestiging (`ConfirmEnrollment`). Vol aanbod → wachtlijst, zonder order.
+- **Leeftijd, positie en "nog open" worden server-side gecontroleerd**, binnen
+  de school. Een e-mailadres dat al een account heeft moet eerst inloggen:
+  anders schrijft iemand een kind in op andermans naam.
+- **Goedkeuren is een instelling.** Handmatig (standaard): de school keurt
+  goed, dán gaat de order open en krijgt de ouder een betaalverzoek. Automatisch:
+  de betaling bevestigt, of het is meteen rond als er niets te betalen valt.
+- **`Actions\Payments\SettleOrder` is de enige plek** waar een betaalstand de
+  order en de inschrijving raakt; de webhook (`SyncPayment`) en het handmatig
+  markeren roepen hem allebei aan. De eerste betaalde termijn bevestigt; de
+  order is pas betaald als alles binnen is. Een aankoop via een inschrijving
+  krijgt geen eigen rekening (`SellProduct` met `withPayment: false`): die zit
+  al op de order.
+- **De proefles ontstaat uit de instellingen** (stap 1 van de wizard): staat
+  hij aan, dan bestaat er een aanbod van het soort proefles met die prijs.
+
+**Statusmachines** (`Support\Status\HasTransitions` op de enum,
+`Models\Concerns\HasStatusMachine` op het model): `EnrollmentStatus`,
+`PaymentStatus` en `SubscriptionStatus` kennen elk hun toegestane overgangen,
+en `transitionTo()` weigert de rest. Geen losse vlaggetjes die elkaar kunnen
+tegenspreken. Een status met de hand zetten omzeilt de machine; doe dat niet.
+
 ### Inschrijvingen
 
 #### De openbare aanmeldpagina

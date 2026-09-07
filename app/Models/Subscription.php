@@ -6,6 +6,7 @@ use App\Enums\BillingInterval;
 use App\Enums\PaymentMethod;
 use App\Enums\SubscriptionStatus;
 use App\Models\Concerns\BelongsToSchool;
+use App\Models\Concerns\HasStatusMachine;
 use Database\Factories\SubscriptionFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Subscription extends Model
 {
     /** @use HasFactory<SubscriptionFactory> */
-    use BelongsToSchool, HasFactory;
+    use BelongsToSchool, HasFactory, HasStatusMachine;
 
     protected $fillable = [
         'player_id',

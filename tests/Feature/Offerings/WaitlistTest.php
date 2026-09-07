@@ -3,16 +3,19 @@
 namespace Tests\Feature\Offerings;
 
 use App\Actions\Offerings\ScheduleOffering;
+use App\Enums\EnrollmentStatus;
 use App\Enums\ParticipationStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\Role;
 use App\Models\Enrollment;
 use App\Models\Participation;
 use App\Models\Payment;
+use App\Models\PaymentOption;
 use App\Models\Player;
 use App\Models\Product;
 use App\Models\School;
 use App\Models\User;
-use App\Notifications\InschrijvingGoedgekeurd;
+use App\Notifications\InschrijvingOntvangen;
 use App\Notifications\PlekVrijgekomen;
 use App\Support\Tenancy\Tenancy;
 use Database\Seeders\RoleSeeder;
@@ -144,15 +147,21 @@ class WaitlistTest extends TestCase
 
         $this->deelnemer(ParticipationStatus::Confirmed);
 
-        $inschrijving = Enrollment::factory()->for($this->school)->create([
-            'product_id' => $this->blok->id,
-            'guardian_email' => 'marieke@voorbeeld.nl',
-            'waitlist' => true,
-        ]);
+        app(Tenancy::class)->forget();
+        $this->post('/inschrijven/keepersschool-rob', [
+            'children' => [[
+                'first_name' => 'Noud', 'last_name' => 'Jansen', 'date_of_birth' => '2016-09-30', 'position' => 'keeper',
+                'product_id' => $this->blok->id, 'payment_option_id' => PaymentOption::withoutSchoolScope()->where('product_id', $this->blok->id)->value('id'),
+            ]],
+            'guardian_name' => 'Marieke de Vries', 'guardian_email' => 'marieke@voorbeeld.nl', 'password' => 'wachtwoord123',
+            'consents' => ['avg'], 'payment_method' => 'cash',
+        ])->assertSessionHasNoErrors();
+        app(Tenancy::class)->set($this->school);
 
-        $this->actingAs($this->eigenaar)->post('/enrollments/'.$inschrijving->id.'/approve');
+        $inschrijving = Enrollment::firstOrFail();
+        $this->assertSame(EnrollmentStatus::Waitlist, $inschrijving->status);
 
-        $nieuw = Player::where('first_name', $inschrijving->first_name)->firstOrFail();
+        $nieuw = Player::where('first_name', 'Noud')->firstOrFail();
 
         // De speler en de ouder ontstaan wel — anders kan de school niemand
         // bereiken — maar betalen voor een plek die er niet is gebeurt nooit.
@@ -168,9 +177,8 @@ class WaitlistTest extends TestCase
         $ouder = User::where('email', 'marieke@voorbeeld.nl')->firstOrFail();
 
         // En het bericht zegt dat ook, in plaats van "welkom".
-        Notification::assertSentTo($ouder, InschrijvingGoedgekeurd::class, function (InschrijvingGoedgekeurd $melding) use ($ouder) {
-            $this->assertTrue($melding->waitlist);
-            $this->assertStringContainsString('wachtlijst', $melding->toMail($ouder)->subject);
+        Notification::assertSentTo($ouder, InschrijvingOntvangen::class, function (InschrijvingOntvangen $melding) use ($ouder) {
+            $this->assertStringContainsString('wachtlijst', implode(' ', $melding->toMail($ouder)->introLines));
 
             return true;
         });
@@ -232,7 +240,7 @@ class WaitlistTest extends TestCase
             );
 
         // En zodra hij betaald is, ook.
-        Payment::first()->update(['status' => \App\Enums\PaymentStatus::Paid, 'paid_at' => now()]);
+        Payment::first()->update(['status' => PaymentStatus::Paid, 'paid_at' => now()]);
 
         $this->actingAs($this->eigenaar)
             ->get('/aanbod/'.$this->blok->id.'/deelnemers')
@@ -253,7 +261,7 @@ class WaitlistTest extends TestCase
         Payment::create([
             'player_id' => $wachtend->player_id,
             'amount_cents' => 999,
-            'status' => \App\Enums\PaymentStatus::Open,
+            'status' => PaymentStatus::Open,
             'description' => 'Iets anders',
             'due_on' => now()->toDateString(),
         ]);

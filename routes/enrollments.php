@@ -9,6 +9,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('enrollments', [EnrollmentController::class, 'index'])->middleware('feature:inschrijvingen')->name('enrollments.index');
     Route::post('enrollments/{enrollment}/approve', [EnrollmentController::class, 'approve'])->name('enrollments.approve');
     Route::post('enrollments/{enrollment}/decline', [EnrollmentController::class, 'decline'])->name('enrollments.decline');
+    Route::get('enrollments/{enrollment}/betaallink', [EnrollmentController::class, 'paymentLink'])->name('enrollments.payment-link');
 });
 
 /*
@@ -29,3 +30,9 @@ Route::get('inschrijven', [PublicEnrollmentController::class, 'onSubdomain'])->n
 Route::post('inschrijven/{school:slug}', [PublicEnrollmentController::class, 'store'])
     ->middleware('throttle:10,1')
     ->name('enroll.store');
+
+// Het overzicht vóór het bevestigen: wat betaal je en waarvoor. Dezelfde
+// berekening als bij het indienen, zodat die twee nooit verschillen.
+Route::post('inschrijven/{school:slug}/overzicht', [PublicEnrollmentController::class, 'preview'])
+    ->middleware('throttle:60,1')
+    ->name('enroll.preview');

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Billing;
 
+use App\Actions\Payments\SettleOrder;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
@@ -134,6 +135,10 @@ class PaymentController extends Controller
             'paid_at' => $nieuw === PaymentStatus::Paid ? ($payment->paid_at ?? now()) : null,
             'method' => $methode ?? $payment->method,
         ]);
+
+        // Hoort de betaling bij een inschrijving, dan volgt die de stand:
+        // betaald bevestigt, mislukt zet hem op "betaling mislukt".
+        app(SettleOrder::class)->handle($payment->refresh());
 
         $melding = $methode !== null && $nieuw === PaymentStatus::Paid
             ? "De betaling staat op betaald ({$methode->label()})."

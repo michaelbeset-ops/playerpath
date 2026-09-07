@@ -27,7 +27,7 @@ use Illuminate\Support\Facades\DB;
  */
 class SellProduct
 {
-    public function handle(Player $player, Product $product, ?Carbon $startOp = null, ?string $notitie = null): Purchase
+    public function handle(Player $player, Product $product, ?Carbon $startOp = null, ?string $notitie = null, bool $withPayment = true): Purchase
     {
         if ($product->isRecurring()) {
             throw new \InvalidArgumentException('Aanbod dat per maand loopt gaat via Subscription, niet via een aankoop.');
@@ -35,7 +35,7 @@ class SellProduct
 
         $start = $startOp ?? now()->startOfDay();
 
-        return DB::transaction(function () use ($player, $product, $start, $notitie) {
+        return DB::transaction(function () use ($player, $product, $start, $notitie, $withPayment) {
             $aankoop = Purchase::create([
                 'player_id' => $player->id,
                 'product_id' => $product->id,
@@ -57,7 +57,8 @@ class SellProduct
 
             // Gratis is geen rekening. Een proefles van nul euro hoort niet in
             // het openstaande-overzicht te belanden.
-            if ($aankoop->amount_cents > 0) {
+            // Via een inschrijving zit de rekening al op de order; dan geen tweede.
+            if ($withPayment && $aankoop->amount_cents > 0) {
                 Payment::create([
                     'player_id' => $player->id,
                     'purchase_id' => $aankoop->id,

@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\Notification;
  */
 class SyncPayment
 {
+    public function __construct(protected SettleOrder $order) {}
+
     public function handle(Payment $payment, RemotePayment $remote): Payment
     {
         $wasBetaald = $payment->status === PaymentStatus::Paid;
@@ -40,6 +42,10 @@ class SyncPayment
         if (! $wasBetaald && $payment->status === PaymentStatus::Paid) {
             $this->bevestig($payment);
         }
+
+        // Een betaling die bij een inschrijving hoort: de order en de
+        // inschrijving volgen de stand.
+        $this->order->handle($payment);
 
         return $payment;
     }

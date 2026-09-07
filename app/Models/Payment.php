@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Models\Concerns\BelongsToSchool;
+use App\Models\Concerns\HasStatusMachine;
 use Database\Factories\PaymentFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,12 +15,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Payment extends Model
 {
     /** @use HasFactory<PaymentFactory> */
-    use BelongsToSchool, HasFactory;
+    use BelongsToSchool, HasFactory, HasStatusMachine;
 
     protected $fillable = [
         'player_id',
         'subscription_id',
         'purchase_id',
+        'order_id',
         'amount_cents',
         'vat_rate',
         'status',

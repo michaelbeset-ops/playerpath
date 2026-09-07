@@ -7,24 +7,32 @@ use App\Enums\OfferingStatus;
 use App\Enums\ParticipationStatus;
 use App\Enums\ProductType;
 use App\Enums\Role;
+use App\Models\ConsentDocument;
 use App\Models\Enrollment;
+use App\Models\Order;
 use App\Models\Participation;
+use App\Models\PaymentOption;
 use App\Models\Player;
 use App\Models\Product;
 use App\Models\School;
-use App\Models\Subscription;
 use App\Models\User;
 use App\Notifications\InschrijvingGoedgekeurd;
+use App\Notifications\InschrijvingOntvangen;
 use App\Notifications\NieuweInschrijving;
+use App\Support\Enrollment\EnrollmentSettings;
 use App\Support\Payments\PaymentGateway;
 use App\Support\Tenancy\Tenancy;
 use Database\Seeders\RoleSeeder;
-use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Tests\Support\FakeGateway;
 use Tests\TestCase;
 
+/**
+ * De openbare inschrijfflow: aanbod → kind → account → toestemmingen →
+ * betalen → overzicht → bevestigen, en wat er daarna bij de school gebeurt.
+ */
 class EnrollmentTest extends TestCase
 {
     use RefreshDatabase;
@@ -32,6 +40,8 @@ class EnrollmentTest extends TestCase
     protected School $school;
 
     protected User $eigenaar;
+
+    protected Product $blok;
 
     protected function setUp(): void
     {
@@ -42,9 +52,19 @@ class EnrollmentTest extends TestCase
         $this->school = School::factory()->create(['slug' => 'keepersschool-rob']);
         $this->eigenaar = User::factory()->for($this->school)->create();
         $this->eigenaar->assignRole(Role::Eigenaar->value);
+
+        app(Tenancy::class)->set($this->school);
+
+        $this->blok = Product::factory()->for($this->school)->blok(capaciteit: 10)->create([
+            'name' => 'Keepersblok',
+            'amount_cents' => 12000,
+            'min_age' => 8,
+            'max_age' => 12,
+        ]);
+
+        app(Tenancy::class)->forget();
     }
 
-    /** Een aangesloten betaalprovider, zodat online betalen bestaat. */
     protected function metBetaalprovider(): FakeGateway
     {
         $gateway = new FakeGateway;
@@ -54,26 +74,42 @@ class EnrollmentTest extends TestCase
     }
 
     /** @return array<string, mixed> */
-    protected function formulier(array $overschrijf = []): array
+    protected function formulier(array $overschrijf = [], array $kind = []): array
     {
         return array_merge([
-            'first_name' => 'Sem',
-            'last_name' => 'de Vries',
-            'date_of_birth' => '2013-04-12',
-            'position' => 'keeper',
+            'children' => [array_merge([
+                'first_name' => 'Sem',
+                'last_name' => 'de Vries',
+                'date_of_birth' => now()->subYears(10)->toDateString(),
+                'position' => 'keeper',
+                'product_id' => $this->blok->id,
+                // Buiten de scope: het formulier is openbaar, zonder actieve school.
+                'payment_option_id' => PaymentOption::withoutSchoolScope()->where('product_id', $this->blok->id)->where('is_default', true)->value('id'),
+            ], $kind)],
             'guardian_name' => 'Marieke de Vries',
             'guardian_email' => 'marieke@voorbeeld.nl',
             'guardian_phone' => '0612345678',
             'relationship' => 'moeder',
+            'password' => 'wachtwoord123',
+            'consents' => ['avg'],
             'payment_method' => 'cash',
-            'privacy' => true,
         ], $overschrijf);
     }
 
-    public function test_het_formulier_is_openbaar_en_toont_de_tarieven(): void
+    protected function instellen(array $antwoorden): void
+    {
+        EnrollmentSettings::save($this->school, $antwoorden);
+    }
+
+    // --- De pagina ---
+
+    public function test_het_formulier_is_openbaar_en_toont_aanbod_met_betaalvormen(): void
     {
         app(Tenancy::class)->set($this->school);
-        Product::factory()->for($this->school)->create(['name' => 'Keeperstraining', 'amount_cents' => 2750]);
+        $this->blok->syncPaymentOptions([
+            ['type' => 'eenmalig', 'amount_cents' => 12000],
+            ['type' => 'termijnen', 'amount_cents' => 4000, 'installments' => 3],
+        ]);
         app(Tenancy::class)->forget();
 
         $this->get('/inschrijven/keepersschool-rob')
@@ -82,10 +118,15 @@ class EnrollmentTest extends TestCase
                 ->component('enrollments/Public')
                 ->where('school.name', $this->school->name)
                 ->count('products', 1)
-                ->where('products.0.amount', '€ 27,50')
-                // Geen app-props op een openbare pagina.
-                ->where('auth.user', null)
-                ->where('nav', [])
+                ->where('products.0.name', 'Keepersblok')
+                ->count('products.0.payment_options', 2)
+                ->where('products.0.payment_options.1.description', '3 × € 40,00 per maand')
+                ->where('config.guardian', null)
+                ->where('config.policy.approval', 'manual')
+                ->where('config.consents.0.key', 'avg')
+                ->where('config.consents.0.required', true)
+                ->count('config.paymentMethods', 1)
+                ->where('config.paymentMethods.0.value', 'cash')
             );
     }
 
@@ -97,251 +138,168 @@ class EnrollmentTest extends TestCase
         $this->get('/inschrijven/bestaat-niet')->assertNotFound();
     }
 
-    public function test_een_ouder_kan_zijn_kind_inschrijven_en_de_eigenaar_krijgt_bericht(): void
+    // --- Indienen ---
+
+    public function test_een_nieuwe_ouder_schrijft_zijn_kind_in_en_alles_ontstaat_in_een_keer(): void
     {
         Notification::fake();
 
         $this->post('/inschrijven/keepersschool-rob', $this->formulier())
             ->assertRedirect('/inschrijven/keepersschool-rob')
-            ->assertSessionHas('enrollment_submitted', true);
+            ->assertSessionHas('enrollment_submitted.status', 'awaiting_approval');
 
-        $this->assertDatabaseHas('enrollments', [
-            'school_id' => $this->school->id,
-            'first_name' => 'Sem',
-            'guardian_email' => 'marieke@voorbeeld.nl',
-            'status' => 'pending',
-        ]);
+        app(Tenancy::class)->set($this->school);
 
-        // Er is nog geen speler: de eigenaar keurt eerst goed.
-        $this->assertDatabaseCount('players', 0);
+        // Het ouderaccount, met het wachtwoord dat de ouder koos.
+        $ouder = User::where('email', 'marieke@voorbeeld.nl')->firstOrFail();
+        $this->assertTrue($ouder->isOuder());
+        $this->assertSame($this->school->id, $ouder->school_id);
+        $this->assertTrue(Hash::check('wachtwoord123', $ouder->password));
+
+        // Het kind, gekoppeld aan de ouder, nog niet in een groep.
+        $speler = Player::firstOrFail();
+        $this->assertSame('Sem', $speler->first_name);
+        $this->assertTrue($speler->guardians->contains($ouder));
+        $this->assertSame(0, $speler->groups()->count());
+
+        // De inschrijving wacht op de school (handmatig goedkeuren is de standaard).
+        $inschrijving = Enrollment::firstOrFail();
+        $this->assertSame(EnrollmentStatus::AwaitingApproval, $inschrijving->status);
+        $this->assertSame($speler->id, $inschrijving->player_id);
+        $this->assertSame($ouder->id, $inschrijving->guardian_user_id);
+
+        // De order met één regel, nog niet open.
+        $order = Order::firstOrFail();
+        $this->assertSame(12000, $order->total_cents);
+        $this->assertSame('concept', $order->status->value);
+        $this->assertSame('Keepersblok voor Sem', $order->lines()->first()->description);
+        $this->assertDatabaseCount('payments', 0);
+
+        // De toestemming, met de versie van nu.
+        $this->assertDatabaseHas('consents', ['user_id' => $ouder->id, 'player_id' => $speler->id, 'version' => 1]);
 
         Notification::assertSentTo($this->eigenaar, NieuweInschrijving::class);
+        Notification::assertSentTo($ouder, InschrijvingOntvangen::class, fn (InschrijvingOntvangen $m) => $m->newAccount === true);
     }
 
-    public function test_zonder_akkoord_wordt_het_formulier_geweigerd(): void
+    public function test_verplichte_toestemming_en_het_wachtwoord_zijn_verplicht(): void
     {
-        $this->post('/inschrijven/keepersschool-rob', $this->formulier(['privacy' => false]))
-            ->assertSessionHasErrors('privacy');
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier(['consents' => []]))
+            ->assertSessionHasErrors('consents');
+
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier(['password' => 'kort']))
+            ->assertSessionHasErrors('password');
+
+        $this->assertDatabaseCount('enrollments', 0);
+        $this->assertDatabaseCount('users', 1);
+    }
+
+    public function test_een_bestaand_e_mailadres_moet_eerst_inloggen(): void
+    {
+        User::factory()->for($this->school)->create(['email' => 'marieke@voorbeeld.nl']);
+
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier())
+            ->assertSessionHasErrors('guardian_email');
 
         $this->assertDatabaseCount('enrollments', 0);
     }
 
-    public function test_een_tarief_van_een_andere_school_wordt_geweigerd(): void
+    public function test_aanbod_van_een_andere_school_leeftijd_en_positie_worden_geweigerd(): void
     {
         $andere = School::factory()->create();
-        $vreemdPlan = Product::factory()->for($andere)->create();
+        $vreemd = Product::factory()->for($andere)->blok()->create();
 
-        $this->post('/inschrijven/keepersschool-rob', $this->formulier(['product_id' => $vreemdPlan->id]))
-            ->assertSessionHasErrors('product_id');
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier(kind: ['product_id' => $vreemd->id]))
+            ->assertSessionHasErrors('children.0.product_id');
+
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier(kind: ['date_of_birth' => now()->subYears(15)->toDateString()]))
+            ->assertSessionHasErrors('children.0.date_of_birth');
+
+        app(Tenancy::class)->set($this->school);
+        $this->blok->update(['audience' => 'keeper']);
+        app(Tenancy::class)->forget();
+
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier(kind: ['position' => 'field']))
+            ->assertSessionHasErrors('children.0.position');
+
+        $this->assertDatabaseCount('enrollments', 0);
     }
 
-    public function test_goedkeuren_maakt_speler_ouder_en_abonnement_aan(): void
+    public function test_het_overzicht_zegt_vooraf_wat_je_betaalt(): void
+    {
+        $this->instellen(['registration_fee' => ['enabled' => true, 'amount_cents' => 2500]]);
+
+        $this->postJson('/inschrijven/keepersschool-rob/overzicht', ['children' => $this->formulier()['children']])
+            ->assertOk()
+            ->assertJsonPath('total_cents', 14500)
+            ->assertJsonPath('lines.0.description', 'Keepersblok voor Sem')
+            ->assertJsonPath('lines.1.description', 'Eenmalig inschrijfgeld')
+            ->assertJsonPath('total', '€ 145,00');
+    }
+
+    // --- Goedkeuren en betalen ---
+
+    public function test_goedkeuren_maakt_de_rekening_en_betalen_bevestigt(): void
     {
         Notification::fake();
 
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier());
+
         app(Tenancy::class)->set($this->school);
-        $product = Product::factory()->for($this->school)->create(['amount_cents' => 2750]);
-        $inschrijving = Enrollment::factory()->for($this->school)->create([
-            'first_name' => 'Sem', 'last_name' => 'de Vries',
-            'guardian_name' => 'Marieke', 'guardian_email' => 'marieke@voorbeeld.nl',
-            'relationship' => 'moeder', 'product_id' => $product->id,
-        ]);
+        $inschrijving = Enrollment::firstOrFail();
 
         $this->actingAs($this->eigenaar)
             ->post('/enrollments/'.$inschrijving->id.'/approve')
             ->assertRedirect();
 
-        $speler = Player::where('first_name', 'Sem')->firstOrFail();
+        $this->assertSame(EnrollmentStatus::AwaitingPayment, $inschrijving->refresh()->status);
+        $this->assertSame('open', $inschrijving->order->status->value);
+
+        $rekening = $inschrijving->order->payments()->firstOrFail();
+        $this->assertSame(12000, $rekening->amount_cents);
+        $this->assertSame('cash', $rekening->method->value);
+
         $ouder = User::where('email', 'marieke@voorbeeld.nl')->firstOrFail();
+        Notification::assertSentTo($ouder, InschrijvingGoedgekeurd::class, function (InschrijvingGoedgekeurd $m) use ($ouder) {
+            $mail = $m->toMail($ouder);
+            $this->assertNull($mail->actionUrl);
+            $this->assertStringContainsString('bij de school zelf', implode(' ', $mail->introLines));
 
-        $this->assertSame($this->school->id, $speler->school_id);
-        $this->assertSame($this->school->id, $ouder->school_id);
-        $this->assertTrue($ouder->isOuder());
-        $this->assertTrue($speler->guardians->contains($ouder));
+            return true;
+        });
 
-        $abonnement = Subscription::firstOrFail();
-        $this->assertSame($speler->id, $abonnement->player_id);
-        $this->assertSame(2750, $abonnement->amount_cents);
+        // Nog niets in de groep: er is nog niet betaald.
+        $this->assertSame(0, Player::firstOrFail()->groups()->count());
 
-        $inschrijving->refresh();
-        $this->assertSame(EnrollmentStatus::Approved, $inschrijving->status);
-        $this->assertSame($speler->id, $inschrijving->player_id);
+        // De school zet de betaling op ontvangen: nu doet het kind mee.
+        $this->actingAs($this->eigenaar)->patch('/payments/'.$rekening->id, ['status' => 'paid', 'method' => 'cash']);
 
-        // De ouder kiest zelf een wachtwoord.
-        Notification::assertSentTo($ouder, ResetPassword::class);
+        $this->assertSame(EnrollmentStatus::Confirmed, $inschrijving->refresh()->status);
+        $this->assertNotNull($inschrijving->confirmed_at);
+        $this->assertSame('paid', $inschrijving->order->refresh()->status->value);
+
+        $deelname = Participation::firstOrFail();
+        $this->assertSame(ParticipationStatus::Confirmed, $deelname->status);
+        $this->assertNotNull($deelname->purchase_id);
+        // De aankoop heeft geen eigen rekening: die zat al op de order.
+        $this->assertDatabaseCount('payments', 1);
     }
 
-    public function test_goedkeuren_koppelt_een_bestaande_ouder_van_dezelfde_school(): void
+    public function test_online_betalen_geeft_een_ondertekende_betaallink(): void
     {
         Notification::fake();
-
-        $bestaand = User::factory()->for($this->school)->create(['email' => 'marieke@voorbeeld.nl']);
-        $bestaand->assignRole(Role::Ouder->value);
-
-        app(Tenancy::class)->set($this->school);
-        $inschrijving = Enrollment::factory()->for($this->school)->create(['guardian_email' => 'marieke@voorbeeld.nl']);
-
-        $this->actingAs($this->eigenaar)->post('/enrollments/'.$inschrijving->id.'/approve');
-
-        $this->assertSame(1, User::where('email', 'marieke@voorbeeld.nl')->count());
-        $this->assertTrue($bestaand->children()->exists());
-
-        // Geen wachtwoordmail: dit account bestond al en heeft er een.
-        Notification::assertNotSentTo($bestaand, ResetPassword::class);
-        // Wel het bericht dat de inschrijving rond is.
-        Notification::assertSentTo($bestaand, InschrijvingGoedgekeurd::class);
-    }
-
-    public function test_een_ouder_van_een_andere_school_blokkeert_de_goedkeuring(): void
-    {
-        $andere = School::factory()->create();
-        User::factory()->for($andere)->create(['email' => 'marieke@voorbeeld.nl']);
-
-        app(Tenancy::class)->set($this->school);
-        $inschrijving = Enrollment::factory()->for($this->school)->create(['guardian_email' => 'marieke@voorbeeld.nl']);
-
-        $this->actingAs($this->eigenaar)
-            ->post('/enrollments/'.$inschrijving->id.'/approve')
-            ->assertSessionHasErrors('enrollment');
-
-        $this->assertDatabaseCount('players', 0);
-        $this->assertSame(EnrollmentStatus::Pending, $inschrijving->refresh()->status);
-    }
-
-    public function test_afwijzen_maakt_niets_aan(): void
-    {
-        app(Tenancy::class)->set($this->school);
-        $inschrijving = Enrollment::factory()->for($this->school)->create();
-
-        $this->actingAs($this->eigenaar)->post('/enrollments/'.$inschrijving->id.'/decline')->assertRedirect();
-
-        $this->assertSame(EnrollmentStatus::Declined, $inschrijving->refresh()->status);
-        $this->assertDatabaseCount('players', 0);
-    }
-
-    public function test_alleen_de_eigenaar_ziet_en_beoordeelt_inschrijvingen(): void
-    {
-        $trainer = User::factory()->for($this->school)->create();
-        $trainer->assignRole(Role::Trainer->value);
-
-        app(Tenancy::class)->set($this->school);
-        $inschrijving = Enrollment::factory()->for($this->school)->create();
-
-        $this->actingAs($trainer)->get('/enrollments')->assertForbidden();
-        $this->actingAs($trainer)->post('/enrollments/'.$inschrijving->id.'/approve')->assertForbidden();
-    }
-
-    public function test_de_inbox_toont_alleen_de_eigen_school(): void
-    {
-        $andere = School::factory()->create();
-        app(Tenancy::class)->set($andere);
-        Enrollment::factory()->for($andere)->create(['first_name' => 'Vreemd']);
-
-        app(Tenancy::class)->set($this->school);
-        Enrollment::factory()->for($this->school)->create(['first_name' => 'Eigen']);
-
-        $this->actingAs($this->eigenaar)
-            ->get('/enrollments')
-            ->assertOk()
-            ->assertInertia(fn ($page) => $page
-                ->component('enrollments/Index')
-                ->count('pending', 1)
-                ->where('pending.0.child_name', fn ($naam) => str_starts_with($naam, 'Eigen'))
-                ->where('formUrl', route('enroll.show', $this->school))
-            );
-    }
-
-    public function test_zonder_betaalprovider_kun_je_alleen_contant_kiezen(): void
-    {
-        $this->get('/inschrijven/keepersschool-rob')
-            ->assertInertia(fn ($page) => $page
-                ->count('paymentOptions', 1)
-                ->where('paymentOptions.0.value', 'cash')
-            );
-
-        // En online is dan ook niet stiekem in te sturen: dat zou een wens
-        // opslaan die niemand kan inlossen.
-        $this->post('/inschrijven/keepersschool-rob', $this->formulier(['payment_method' => 'ideal']))
-            ->assertSessionHasErrors('payment_method');
-
-        $this->assertDatabaseCount('enrollments', 0);
-    }
-
-    public function test_met_een_betaalprovider_kun_je_online_of_incasso_kiezen(): void
-    {
         $this->metBetaalprovider();
-
-        $this->get('/inschrijven/keepersschool-rob')
-            ->assertInertia(fn ($page) => $page
-                ->count('paymentOptions', 3)
-                ->where('paymentOptions.0.value', 'cash')
-                ->where('paymentOptions.1.value', 'ideal')
-                // Incasso hoort bij iets dat doorloopt; het scherm verbergt hem
-                // bij een kamp of een losse training.
-                ->where('paymentOptions.2.value', 'directdebit')
-                ->where('paymentOptions.2.subscription_only', true)
-            );
 
         $this->post('/inschrijven/keepersschool-rob', $this->formulier(['payment_method' => 'ideal']))
             ->assertSessionHasNoErrors();
 
-        $this->assertDatabaseHas('enrollments', ['payment_method' => 'ideal']);
-    }
-
-    public function test_een_los_product_wordt_een_aankoop_en_geen_abonnement(): void
-    {
-        Notification::fake();
-
         app(Tenancy::class)->set($this->school);
-
-        $kamp = Product::factory()->for($this->school)->create([
-            'name' => 'Zomerkamp',
-            'type' => ProductType::Kamp,
-            'amount_cents' => 9500,
-        ]);
-
-        $inschrijving = Enrollment::factory()->for($this->school)->create([
-            'product_id' => $kamp->id,
-            'payment_method' => 'cash',
-        ]);
-
-        $this->actingAs($this->eigenaar)->post('/enrollments/'.$inschrijving->id.'/approve');
-
-        // Een kamp is één keer afnemen; als abonnement zou het elke maand een
-        // nieuwe rekening opleveren.
-        $this->assertDatabaseCount('subscriptions', 0);
-        $this->assertDatabaseHas('purchases', ['name' => 'Zomerkamp', 'amount_cents' => 9500]);
-        $this->assertDatabaseHas('payments', ['amount_cents' => 9500, 'status' => 'open', 'method' => 'cash']);
-    }
-
-    public function test_bij_online_betalen_zit_er_een_betaallink_in_de_mail(): void
-    {
-        Notification::fake();
-        $this->metBetaalprovider();
-
-        app(Tenancy::class)->set($this->school);
-
-        $product = Product::factory()->for($this->school)->create([
-            'name' => 'Losse training',
-            'type' => ProductType::LosseTraining,
-            'amount_cents' => 1500,
-        ]);
-
-        $inschrijving = Enrollment::factory()->for($this->school)->create([
-            'guardian_email' => 'marieke@voorbeeld.nl',
-            'product_id' => $product->id,
-            'payment_method' => 'ideal',
-        ]);
-
-        $this->actingAs($this->eigenaar)->post('/enrollments/'.$inschrijving->id.'/approve');
+        $this->actingAs($this->eigenaar)->post('/enrollments/'.Enrollment::firstOrFail()->id.'/approve');
 
         $ouder = User::where('email', 'marieke@voorbeeld.nl')->firstOrFail();
 
-        Notification::assertSentTo($ouder, InschrijvingGoedgekeurd::class, function (InschrijvingGoedgekeurd $melding) use ($ouder) {
-            $mail = $melding->toMail($ouder);
-
-            // De knop wijst naar de ondertekende betaalpagina: een net
-            // ingeschreven ouder heeft nog geen wachtwoord.
+        Notification::assertSentTo($ouder, InschrijvingGoedgekeurd::class, function (InschrijvingGoedgekeurd $m) use ($ouder) {
+            $mail = $m->toMail($ouder);
             $this->assertStringContainsString('/betalen/', (string) $mail->actionUrl);
             $this->assertStringContainsString('signature=', (string) $mail->actionUrl);
 
@@ -349,145 +307,234 @@ class EnrollmentTest extends TestCase
         });
     }
 
-    public function test_bij_contant_staat_er_geen_betaalknop_in_de_mail(): void
+    public function test_zonder_betaalprovider_is_online_niet_te_kiezen(): void
+    {
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier(['payment_method' => 'ideal']))
+            ->assertSessionHasErrors('payment_method');
+    }
+
+    public function test_termijnen_geven_een_rekening_per_termijn(): void
     {
         Notification::fake();
 
         app(Tenancy::class)->set($this->school);
-
-        $product = Product::factory()->for($this->school)->create([
-            'type' => ProductType::LosseTraining,
-            'amount_cents' => 1500,
+        $this->blok->syncPaymentOptions([
+            ['type' => 'eenmalig', 'amount_cents' => 12000],
+            ['type' => 'termijnen', 'amount_cents' => 4000, 'installments' => 3],
         ]);
+        $termijnen = $this->blok->paymentOptions()->where('type', 'termijnen')->firstOrFail();
+        app(Tenancy::class)->forget();
 
-        $inschrijving = Enrollment::factory()->for($this->school)->create([
-            'guardian_email' => 'marieke@voorbeeld.nl',
-            'product_id' => $product->id,
-            'payment_method' => 'cash',
-        ]);
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier(kind: ['payment_option_id' => $termijnen->id]))
+            ->assertSessionHasNoErrors();
+
+        app(Tenancy::class)->set($this->school);
+        $inschrijving = Enrollment::firstOrFail();
+        $this->actingAs($this->eigenaar)->post('/enrollments/'.$inschrijving->id.'/approve');
+
+        $rekeningen = $inschrijving->refresh()->order->payments()->orderBy('due_on')->get();
+
+        $this->assertCount(3, $rekeningen);
+        $this->assertSame([4000, 4000, 4000], $rekeningen->pluck('amount_cents')->all());
+        $this->assertSame('Keepersblok voor Sem (3 termijnen) (termijn 1 van 3)', $rekeningen[0]->description);
+
+        // De eerste termijn betaald: het kind doet mee; de order is pas
+        // betaald als alles binnen is.
+        $this->actingAs($this->eigenaar)->patch('/payments/'.$rekeningen[0]->id, ['status' => 'paid', 'method' => 'transfer']);
+
+        $this->assertSame(EnrollmentStatus::Confirmed, $inschrijving->refresh()->status);
+        $this->assertSame('open', $inschrijving->order->refresh()->status->value);
+    }
+
+    public function test_een_abonnement_betaal_je_niet_vooraf_en_ontstaat_bij_de_bevestiging(): void
+    {
+        Notification::fake();
+
+        app(Tenancy::class)->set($this->school);
+        $this->blok->syncPaymentOptions([['type' => 'abonnement', 'amount_cents' => 3000, 'interval' => 'monthly']]);
+        $optie = $this->blok->paymentOptions()->firstOrFail();
+        app(Tenancy::class)->forget();
+
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier(kind: ['payment_option_id' => $optie->id]))
+            ->assertSessionHasNoErrors();
+
+        app(Tenancy::class)->set($this->school);
+        $inschrijving = Enrollment::firstOrFail();
+
+        // Niets vooraf: de order is nul.
+        $this->assertSame(0, $inschrijving->order->total_cents);
 
         $this->actingAs($this->eigenaar)->post('/enrollments/'.$inschrijving->id.'/approve');
 
-        $ouder = User::where('email', 'marieke@voorbeeld.nl')->firstOrFail();
-
-        Notification::assertSentTo($ouder, InschrijvingGoedgekeurd::class, function (InschrijvingGoedgekeurd $melding) use ($ouder) {
-            $mail = $melding->toMail($ouder);
-
-            // Een betaalknop zou een gezin twee keer laten betalen.
-            $this->assertNull($mail->actionUrl);
-            $this->assertStringContainsString('bij de school zelf', implode(' ', $mail->introLines));
-
-            return true;
-        });
+        $this->assertSame(EnrollmentStatus::Confirmed, $inschrijving->refresh()->status);
+        $this->assertDatabaseHas('subscriptions', [
+            'player_id' => $inschrijving->player_id,
+            'payment_option_id' => $optie->id,
+            'amount_cents' => 3000,
+            'status' => 'active',
+        ]);
+        // En het abonnement brengt zelf zijn eerste rekening voort.
+        $this->assertDatabaseHas('payments', ['amount_cents' => 3000, 'order_id' => null]);
     }
 
-    // --- De aanmeldpagina zelf ---
+    public function test_automatisch_goedkeuren_en_een_gratis_proefles_zijn_meteen_rond(): void
+    {
+        Notification::fake();
+        $this->instellen(['approval' => 'automatic', 'trial' => ['enabled' => true, 'amount_cents' => 0]]);
 
-    public function test_de_aanmeldpagina_toont_alleen_aanbod_waar_je_op_kunt(): void
+        // De proefles ontstaat uit de instellingen.
+        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/1', [
+            'offering_types' => ['blok', 'proefles'], 'trial_enabled' => true, 'trial_amount' => '',
+        ]);
+
+        app(Tenancy::class)->set($this->school);
+        $proefles = Product::where('type', ProductType::Proefles->value)->firstOrFail();
+        $this->assertSame(0, $proefles->amount_cents);
+        app(Tenancy::class)->forget();
+
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier(kind: [
+            'product_id' => $proefles->id,
+            'payment_option_id' => PaymentOption::withoutSchoolScope()->where('product_id', $proefles->id)->value('id'),
+        ]))->assertSessionHas('enrollment_submitted.status', 'confirmed');
+
+        app(Tenancy::class)->set($this->school);
+        $this->assertSame(EnrollmentStatus::Confirmed, Enrollment::firstOrFail()->status);
+        $this->assertDatabaseCount('payments', 0);
+        $this->assertDatabaseHas('participations', ['product_id' => $proefles->id, 'status' => 'confirmed']);
+    }
+
+    public function test_automatisch_goedkeuren_met_een_bedrag_wacht_op_betaling(): void
+    {
+        Notification::fake();
+        $this->instellen(['approval' => 'automatic']);
+
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier())
+            ->assertSessionHas('enrollment_submitted.status', 'awaiting_payment');
+
+        app(Tenancy::class)->set($this->school);
+        $this->assertSame(EnrollmentStatus::AwaitingPayment, Enrollment::firstOrFail()->status);
+        $this->assertDatabaseHas('payments', ['amount_cents' => 12000, 'status' => 'open']);
+    }
+
+    // --- Gezin ---
+
+    public function test_een_ingelogde_ouder_schrijft_een_tweede_kind_in_met_gezinskorting_en_zonder_inschrijfgeld(): void
+    {
+        Notification::fake();
+        $this->instellen([
+            'registration_fee' => ['enabled' => true, 'amount_cents' => 2500],
+            'discounts' => ['family' => ['enabled' => true, 'percent' => 10]],
+        ]);
+
+        // Eerste kind, als nieuwe ouder: inschrijfgeld erbij, geen korting.
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier());
+
+        app(Tenancy::class)->set($this->school);
+        $ouder = User::where('email', 'marieke@voorbeeld.nl')->firstOrFail();
+        $this->assertSame(14500, Order::firstOrFail()->total_cents);
+
+        // Het formulier kent de ouder en zijn kind.
+        $this->actingAs($ouder)
+            ->get('/inschrijven/keepersschool-rob')
+            ->assertInertia(fn ($page) => $page
+                ->where('config.guardian.email', 'marieke@voorbeeld.nl')
+                ->count('config.guardian.children', 1)
+            );
+
+        // Tweede kind: gezinskorting, en het inschrijfgeld niet nog eens.
+        $this->actingAs($ouder)->post('/inschrijven/keepersschool-rob', [
+            'children' => [[
+                'first_name' => 'Liam', 'last_name' => 'de Vries', 'date_of_birth' => now()->subYears(9)->toDateString(), 'position' => 'field',
+                'product_id' => $this->blok->id, 'payment_option_id' => $this->blok->paymentOptions()->value('id'),
+            ]],
+            'consents' => ['avg'],
+            'payment_method' => 'cash',
+        ])->assertSessionHasNoErrors();
+
+        $order = Order::orderByDesc('id')->firstOrFail();
+        $regels = $order->lines()->pluck('amount_cents', 'description');
+
+        $this->assertSame(12000, $regels['Keepersblok voor Liam']);
+        $this->assertSame(-1200, $regels['Gezinskorting 10%']);
+        $this->assertArrayNotHasKey('Eenmalig inschrijfgeld', $regels->all());
+        $this->assertSame(10800, $order->total_cents);
+        $this->assertSame(2, $ouder->children()->count());
+    }
+
+    // --- Wachtlijst ---
+
+    public function test_vol_aanbod_wordt_een_wachtlijstplek_zonder_order(): void
+    {
+        Notification::fake();
+
+        app(Tenancy::class)->set($this->school);
+        $this->blok->update(['capacity' => 1]);
+        Participation::create(['product_id' => $this->blok->id, 'player_id' => Player::factory()->for($this->school)->create()->id, 'status' => ParticipationStatus::Confirmed]);
+        app(Tenancy::class)->forget();
+
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier())
+            ->assertSessionHas('enrollment_submitted.status', 'waitlist');
+
+        app(Tenancy::class)->set($this->school);
+        $inschrijving = Enrollment::firstOrFail();
+
+        $this->assertSame(EnrollmentStatus::Waitlist, $inschrijving->status);
+        $this->assertNull($inschrijving->order_id);
+        $this->assertDatabaseCount('orders', 0);
+        $this->assertDatabaseHas('participations', ['player_id' => $inschrijving->player_id, 'status' => 'waitlist']);
+    }
+
+    // --- De inbox ---
+
+    public function test_afwijzen_sluit_de_order_en_alleen_de_eigenaar_komt_in_de_inbox(): void
+    {
+        Notification::fake();
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier());
+
+        app(Tenancy::class)->set($this->school);
+        $inschrijving = Enrollment::firstOrFail();
+
+        $trainer = User::factory()->for($this->school)->create();
+        $trainer->assignRole(Role::Trainer->value);
+
+        $this->actingAs($trainer)->get('/enrollments')->assertForbidden();
+        $this->actingAs($trainer)->post('/enrollments/'.$inschrijving->id.'/approve')->assertForbidden();
+
+        $this->actingAs($this->eigenaar)
+            ->get('/enrollments')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->count('pending', 1)->where('pending.0.order_total', '€ 120,00'));
+
+        $this->actingAs($this->eigenaar)->post('/enrollments/'.$inschrijving->id.'/decline')->assertRedirect();
+
+        $this->assertSame(EnrollmentStatus::Declined, $inschrijving->refresh()->status);
+        $this->assertSame('cancelled', $inschrijving->order->status->value);
+        // Afwijzen is definitief: de statusmachine laat geen goedkeuren meer toe.
+        $this->actingAs($this->eigenaar)->post('/enrollments/'.$inschrijving->id.'/approve')->assertSessionHasErrors('enrollment');
+    }
+
+    public function test_gesloten_en_verborgen_aanbod_staat_niet_op_de_pagina(): void
     {
         app(Tenancy::class)->set($this->school);
-
-        $blok = Product::factory()->for($this->school)->blok(capaciteit: 2)->create([
-            'name' => 'Keepersblok',
-            'location' => 'Sportpark De Vliert',
-            'min_age' => 8,
-            'max_age' => 12,
-        ]);
-
-        // Vol blijft staan, met een wachtlijst; gesloten en onzichtbaar niet.
-        $vol = Product::factory()->for($this->school)->blok(capaciteit: 1)->create(['name' => 'Vol blok']);
-        Participation::create([
-            'product_id' => $vol->id,
-            'player_id' => Player::factory()->for($this->school)->create()->id,
-            'status' => ParticipationStatus::Confirmed,
-        ]);
-
-        Product::factory()->for($this->school)->blok()->create(['name' => 'Gesloten blok', 'status' => OfferingStatus::Gesloten]);
-        Product::factory()->for($this->school)->blok()->create(['name' => 'Verborgen blok', 'is_active' => false]);
-
+        Product::factory()->for($this->school)->blok()->create(['name' => 'Gesloten', 'status' => OfferingStatus::Gesloten]);
+        Product::factory()->for($this->school)->blok()->create(['name' => 'Verborgen', 'is_active' => false]);
         app(Tenancy::class)->forget();
 
         $this->get('/inschrijven/keepersschool-rob')
-            ->assertOk()
-            ->assertInertia(function ($page) use ($blok) {
-                $aanbod = collect($page->toArray()['props']['products'])->keyBy('name');
-
-                $page->component('enrollments/Public')->count('products', 2);
-
-                $this->assertSame($blok->id, $aanbod['Keepersblok']['id']);
-                $this->assertSame('Sportpark De Vliert', $aanbod['Keepersblok']['location']);
-                $this->assertSame(8, $aanbod['Keepersblok']['min_age']);
-                $this->assertSame(2, $aanbod['Keepersblok']['spots_left']);
-                $this->assertFalse($aanbod['Keepersblok']['is_full']);
-
-                // Vol staat er wel op, met een wachtlijst.
-                $this->assertTrue($aanbod['Vol blok']['is_full']);
-
-                $this->assertFalse($aanbod->has('Gesloten blok'));
-                $this->assertFalse($aanbod->has('Verborgen blok'));
-            });
+            ->assertInertia(fn ($page) => $page->count('products', 1)->where('products.0.name', 'Keepersblok'));
     }
 
-    public function test_een_link_vanaf_de_eigen_website_opent_meteen_dat_aanbod(): void
+    public function test_toestemmingsteksten_van_de_school_staan_op_het_formulier(): void
     {
         app(Tenancy::class)->set($this->school);
-        $blok = Product::factory()->for($this->school)->blok()->create();
+        ConsentDocument::put('beeldrecht', 'Foto en video', 'Wij maken foto’s.', true);
         app(Tenancy::class)->forget();
 
-        $this->get('/inschrijven/keepersschool-rob?aanbod='.$blok->id)
-            ->assertInertia(fn ($page) => $page->where('selected', $blok->id));
-    }
+        $this->get('/inschrijven/keepersschool-rob')
+            ->assertInertia(fn ($page) => $page->where('config.consents.1.title', 'Foto en video')->where('config.consents.1.required', true));
 
-    public function test_de_aanmeldpagina_mag_in_een_iframe_van_de_school(): void
-    {
-        // Bedoeld om op de eigen website te zetten. Er staat niets achter een
-        // sessie, dus clickjacking valt hier niets mee te winnen.
-        $this->get('/inschrijven/keepersschool-rob')->assertHeaderMissing('X-Frame-Options');
-
-        // De rest van de app blijft dicht.
-        $this->actingAs($this->eigenaar)->get('/dashboard')->assertHeader('X-Frame-Options', 'SAMEORIGIN');
-    }
-
-    public function test_inschrijven_op_een_vol_blok_wordt_een_wachtlijstplek(): void
-    {
-        app(Tenancy::class)->set($this->school);
-
-        $vol = Product::factory()->for($this->school)->blok(capaciteit: 1)->create();
-        Participation::create([
-            'product_id' => $vol->id,
-            'player_id' => Player::factory()->for($this->school)->create()->id,
-            'status' => ParticipationStatus::Confirmed,
-        ]);
-
-        app(Tenancy::class)->forget();
-
-        // Iemand met de pagina in een tabblad weet niet dat het inmiddels vol
-        // is; dat hoort de server te zeggen.
-        $this->post('/inschrijven/keepersschool-rob', $this->formulier(['product_id' => $vol->id]))
-            ->assertSessionHasNoErrors();
-
-        $this->assertDatabaseHas('enrollments', ['product_id' => $vol->id, 'waitlist' => true]);
-    }
-
-    public function test_een_kind_buiten_de_leeftijdsgrens_wordt_geweigerd(): void
-    {
-        app(Tenancy::class)->set($this->school);
-        $blok = Product::factory()->for($this->school)->blok()->create(['min_age' => 10, 'max_age' => 14]);
-        app(Tenancy::class)->forget();
-
-        $this->post('/inschrijven/keepersschool-rob', $this->formulier([
-            'product_id' => $blok->id,
-            'date_of_birth' => now()->subYears(7)->toDateString(),
-        ]))->assertSessionHasErrors('date_of_birth');
-
-        $this->assertDatabaseCount('enrollments', 0);
-
-        // Een kind dat er wél bij past komt er gewoon door.
-        $this->post('/inschrijven/keepersschool-rob', $this->formulier([
-            'product_id' => $blok->id,
-            'date_of_birth' => now()->subYears(11)->toDateString(),
-        ]))->assertSessionHasNoErrors();
-
-        $this->assertDatabaseCount('enrollments', 1);
+        // Verplicht is verplicht.
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier(['consents' => ['avg']]))
+            ->assertSessionHasErrors('consents');
     }
 }

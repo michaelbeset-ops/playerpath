@@ -29,7 +29,7 @@ class EnrollmentFactory extends Factory
             'product_id' => null,
             'payment_method' => PaymentMethod::DirectDebit,
             'note' => null,
-            'status' => EnrollmentStatus::Pending,
+            'status' => EnrollmentStatus::AwaitingApproval,
         ];
     }
 }
