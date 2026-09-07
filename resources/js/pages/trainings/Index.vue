@@ -3,7 +3,7 @@ import FlashMessage from '@/components/FlashMessage.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Check, ChevronRight, ClipboardList, ListChecks, MapPin, Plus, UserCog, X } from 'lucide-vue-next';
+import { Check, ChevronRight, ClipboardList, MapPin, Plus, UserCog, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 interface TrainingRij {
@@ -121,9 +121,6 @@ const aanwezigheid = (t: TrainingRij): { tekst: string; toon: 'goed' | 'aandacht
 
 const toonKlasse = (toon: 'goed' | 'aandacht' | 'rustig') =>
     toon === 'goed' ? 'bg-success/10 text-success' : toon === 'aandacht' ? 'bg-warning/10 text-warning' : 'bg-secondary text-muted-foreground';
-
-const actieKlassen =
-    'inline-flex h-9 items-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-medium shadow-sm transition hover:border-primary';
 </script>
 
 <template>
@@ -212,7 +209,7 @@ const actieKlassen =
                         <article
                             v-for="training in dag.items"
                             :key="training.id"
-                            class="rounded-xl border bg-card p-3 shadow-sm sm:p-4"
+                            class="rounded-xl border bg-card p-3 shadow-sm"
                             :class="training.is_mine && !training.cancelled ? 'border-primary/40' : 'border-border'"
                         >
                             <div class="flex min-w-0 gap-3">
@@ -256,56 +253,53 @@ const actieKlassen =
                                         <span>{{ training.trainers.join(', ') || 'Geen trainer gekoppeld' }}</span>
                                     </p>
 
-                                    <!-- Voor een ouder of speler: wat gaf ik door? -->
-                                    <span
-                                        v-if="isParticipant && training.my_registration"
-                                        class="mt-2 inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium"
-                                        :class="
-                                            training.my_registration === 'attending'
-                                                ? 'bg-primary/10 text-primary'
-                                                : 'bg-secondary text-muted-foreground'
-                                        "
-                                    >
-                                        <Check v-if="training.my_registration === 'attending'" class="size-3" />
-                                        <X v-else class="size-3" />
-                                        {{ training.my_registration === 'attending' ? 'Aangemeld' : 'Afgemeld' }}
-                                    </span>
+                                    <!-- Stand en acties op één regel: dit is een lijst waar je
+                                         doorheen scrolt, dus elke extra regel telt. -->
+                                    <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                                        <!-- Voor een ouder of speler: wat gaf ik door? -->
+                                        <span
+                                            v-if="isParticipant && training.my_registration"
+                                            class="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium"
+                                            :class="
+                                                training.my_registration === 'attending'
+                                                    ? 'bg-primary/10 text-primary'
+                                                    : 'bg-secondary text-muted-foreground'
+                                            "
+                                        >
+                                            <Check v-if="training.my_registration === 'attending'" class="size-3" />
+                                            <X v-else class="size-3" />
+                                            {{ training.my_registration === 'attending' ? 'Aangemeld' : 'Afgemeld' }}
+                                        </span>
 
-                                    <!-- Voor een trainer: hoe staat het met de aanwezigheid? -->
-                                    <span
-                                        v-else-if="!isParticipant"
-                                        class="mt-2 inline-flex items-center rounded-lg px-2 py-1 text-xs font-medium"
-                                        :class="toonKlasse(aanwezigheid(training).toon)"
-                                    >
-                                        {{ aanwezigheid(training).tekst }}
-                                    </span>
+                                        <!-- Voor een trainer: hoe staat het met de aanwezigheid? -->
+                                        <span
+                                            v-else-if="!isParticipant"
+                                            class="inline-flex items-center rounded-lg px-2 py-1 text-xs font-medium"
+                                            :class="toonKlasse(aanwezigheid(training).toon)"
+                                        >
+                                            {{ aanwezigheid(training).tekst }}
+                                        </span>
+
+                                        <!-- Rapporten pas ná afloop: ervoor valt er niets op te schrijven.
+                                             Afvinken zit op de detailpagina; die staat hiernaast. -->
+                                        <Link
+                                            v-if="canRecord && training.has_passed && !training.cancelled"
+                                            :href="'/reports?group=' + training.group_id"
+                                            class="inline-flex items-center gap-1 text-xs font-medium text-primary transition hover:underline"
+                                        >
+                                            <ClipboardList class="size-3.5" />
+                                            Rapporten
+                                        </Link>
+
+                                        <Link
+                                            :href="'/trainings/' + training.id"
+                                            class="ml-auto inline-flex items-center gap-0.5 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+                                        >
+                                            Details
+                                            <ChevronRight class="size-3.5" />
+                                        </Link>
+                                    </div>
                                 </div>
-                            </div>
-
-                            <!-- Snelle acties -->
-                            <div class="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
-                                <Link v-if="canRecord" :href="'/trainings/' + training.id + '#aanwezigheid'" :class="actieKlassen">
-                                    <ListChecks class="size-3.5" />
-                                    Aanwezigheid
-                                </Link>
-
-                                <!-- Rapporten pas ná afloop: ervoor valt er niets op te schrijven. -->
-                                <Link
-                                    v-if="canRecord && training.has_passed && !training.cancelled"
-                                    :href="'/reports?group=' + training.group_id"
-                                    :class="actieKlassen"
-                                >
-                                    <ClipboardList class="size-3.5" />
-                                    Rapporten
-                                </Link>
-
-                                <Link
-                                    :href="'/trainings/' + training.id"
-                                    class="ml-auto inline-flex h-9 items-center gap-1 rounded-lg px-2 text-xs font-medium text-muted-foreground transition hover:text-foreground"
-                                >
-                                    Details
-                                    <ChevronRight class="size-3.5" />
-                                </Link>
                             </div>
                         </article>
                     </div>
