@@ -81,14 +81,18 @@ class ShopTest extends TestCase
         $this->actingAs($this->ouder)
             ->get('/shop')
             ->assertOk()
-            ->assertInertia(fn ($page) => $page
-                ->component('billing/Shop')
-                ->count('products', 2)
-                ->where('products.0.name', 'Zomerkamp')
-                ->where('products.1.name', 'Rittenkaart 10')
-                ->where('products.1.credits', 10)
-                ->count('players', 1)
-            );
+            ->assertInertia(function ($page) {
+                $page->component('billing/Shop')->count('players', 1);
+
+                // Per soort gegroepeerd; doorlopende training staat er nu ook,
+                // want de inschrijfstap regelt de betaalvorm. Inactief niet.
+                $groepen = collect($page->toArray()['props']['groups'])->keyBy('key');
+                $this->assertSame(['Zomerkamp'], collect($groepen['kamp']['products'])->pluck('name')->all());
+                $this->assertSame(['Rittenkaart 10'], collect($groepen['rittenkaart']['products'])->pluck('name')->all());
+                $this->assertSame(10, $groepen['rittenkaart']['products'][0]['credits']);
+                $this->assertSame([], $groepen['overig']['products']);
+                $this->assertFalse(collect($groepen)->flatMap(fn ($g) => collect($g['products'])->pluck('name'))->contains('Oude clinic'));
+            });
     }
 
     public function test_kopen_maakt_een_aankoop_en_een_rekening(): void

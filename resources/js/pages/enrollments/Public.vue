@@ -31,6 +31,7 @@ interface Aanbod {
     type: string;
     type_key: string;
     is_trial: boolean;
+    image: string | null;
     amount: string;
     is_free: boolean;
     billing: string;
@@ -395,49 +396,54 @@ const invoer = 'h-11 w-full rounded-lg border border-input bg-background px-3 te
                         v-for="aanbod in products"
                         :key="aanbod.id"
                         type="button"
-                        class="w-full rounded-2xl border bg-card p-4 text-left shadow-sm transition hover:border-primary"
+                        class="w-full overflow-hidden rounded-2xl border bg-card text-left shadow-sm transition hover:border-primary"
                         :class="gekozen?.id === aanbod.id ? 'border-primary ring-2 ring-primary/20' : 'border-border'"
                         @click="kies(aanbod)"
                     >
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="min-w-0">
-                                <p class="text-xs uppercase tracking-wide text-muted-foreground">
-                                    {{ aanbod.type }}<template v-if="aanbod.audience !== 'all'"> · {{ aanbod.audience_label }}</template>
+                        <img v-if="aanbod.image" :src="aanbod.image" alt="" class="h-32 w-full object-cover" />
+                        <div class="p-4">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="text-xs uppercase tracking-wide text-muted-foreground">
+                                        {{ aanbod.type }}<template v-if="aanbod.audience !== 'all'"> · {{ aanbod.audience_label }}</template>
+                                    </p>
+                                    <p class="font-semibold">{{ aanbod.name }}</p>
+                                </div>
+                                <p class="tabular shrink-0 text-right">
+                                    <span class="font-bold">{{ aanbod.is_free ? 'gratis' : aanbod.amount }}</span>
+                                    <span v-if="!aanbod.is_free" class="block text-xs text-muted-foreground">{{ aanbod.billing }}</span>
                                 </p>
-                                <p class="font-semibold">{{ aanbod.name }}</p>
                             </div>
-                            <p class="tabular shrink-0 text-right">
-                                <span class="font-bold">{{ aanbod.is_free ? 'gratis' : aanbod.amount }}</span>
-                                <span v-if="!aanbod.is_free" class="block text-xs text-muted-foreground">{{ aanbod.billing }}</span>
+
+                            <p v-if="aanbod.description" class="mt-2 text-sm text-muted-foreground">{{ aanbod.description }}</p>
+
+                            <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                                <span v-if="periode(aanbod)" class="flex items-center gap-1"
+                                    ><CalendarRange class="size-3.5" />{{ periode(aanbod) }}</span
+                                >
+                                <span v-if="aanbod.sessions_count" class="tabular">{{ aanbod.sessions_count }} trainingen</span>
+                                <span v-if="aanbod.location" class="flex items-center gap-1"><MapPin class="size-3.5" />{{ aanbod.location }}</span>
+                                <span v-if="leeftijd(aanbod)" class="flex items-center gap-1"><Users class="size-3.5" />{{ leeftijd(aanbod) }}</span>
+                                <span v-if="aanbod.credits" class="flex items-center gap-1"
+                                    ><Ticket class="size-3.5" />{{ aanbod.credits }} beurten</span
+                                >
+                            </div>
+
+                            <p v-if="aanbod.payment_options.length > 1" class="mt-2 text-xs text-muted-foreground">
+                                Ook:
+                                {{
+                                    aanbod.payment_options
+                                        .filter((o) => !o.is_default)
+                                        .map((o) => o.description)
+                                        .join(' · ')
+                                }}
+                            </p>
+
+                            <p v-if="aanbod.is_full" class="mt-2 text-xs font-medium text-warning">Vol · je kunt op de wachtlijst</p>
+                            <p v-else-if="aanbod.spots_left !== null && aanbod.spots_left <= 3" class="mt-2 text-xs font-medium text-warning">
+                                Nog {{ aanbod.spots_left }} {{ aanbod.spots_left === 1 ? 'plek' : 'plekken' }}
                             </p>
                         </div>
-
-                        <p v-if="aanbod.description" class="mt-2 text-sm text-muted-foreground">{{ aanbod.description }}</p>
-
-                        <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                            <span v-if="periode(aanbod)" class="flex items-center gap-1"
-                                ><CalendarRange class="size-3.5" />{{ periode(aanbod) }}</span
-                            >
-                            <span v-if="aanbod.sessions_count" class="tabular">{{ aanbod.sessions_count }} trainingen</span>
-                            <span v-if="aanbod.location" class="flex items-center gap-1"><MapPin class="size-3.5" />{{ aanbod.location }}</span>
-                            <span v-if="leeftijd(aanbod)" class="flex items-center gap-1"><Users class="size-3.5" />{{ leeftijd(aanbod) }}</span>
-                            <span v-if="aanbod.credits" class="flex items-center gap-1"><Ticket class="size-3.5" />{{ aanbod.credits }} beurten</span>
-                        </div>
-
-                        <p v-if="aanbod.payment_options.length > 1" class="mt-2 text-xs text-muted-foreground">
-                            Ook:
-                            {{
-                                aanbod.payment_options
-                                    .filter((o) => !o.is_default)
-                                    .map((o) => o.description)
-                                    .join(' · ')
-                            }}
-                        </p>
-
-                        <p v-if="aanbod.is_full" class="mt-2 text-xs font-medium text-warning">Vol · je kunt op de wachtlijst</p>
-                        <p v-else-if="aanbod.spots_left !== null && aanbod.spots_left <= 3" class="mt-2 text-xs font-medium text-warning">
-                            Nog {{ aanbod.spots_left }} {{ aanbod.spots_left === 1 ? 'plek' : 'plekken' }}
-                        </p>
                     </button>
                 </div>
 

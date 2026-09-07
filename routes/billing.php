@@ -9,6 +9,7 @@ use App\Http\Controllers\Billing\PurchaseController;
 use App\Http\Controllers\Billing\ShopController;
 use App\Http\Controllers\Billing\SubscriptionController;
 use App\Http\Controllers\Billing\WebhookController;
+use App\Http\Controllers\Media\ProductImageController;
 use App\Http\Controllers\Offerings\ParticipantController;
 use App\Http\Controllers\Offerings\SlotController;
 use Illuminate\Support\Facades\Route;
@@ -29,6 +30,10 @@ Route::middleware(['auth', 'verified', 'feature:betalingen'])->group(function ()
     Route::get('products', fn () => redirect()->route('products.index'));
 
     // Wie er meedoet en wie er wacht. De school beslist zelf wie er doorschuift.
+    // De afbeelding bij een aanbod, voor in de shop. Optioneel.
+    Route::post('aanbod/{product}/foto', [ProductImageController::class, 'store'])->name('products.image.store');
+    Route::delete('aanbod/{product}/foto', [ProductImageController::class, 'destroy'])->name('products.image.destroy');
+
     Route::get('aanbod/{product}/deelnemers', [ParticipantController::class, 'index'])->name('offerings.participants');
     Route::post('aanbod/{product}/deelnemers/{participation}/plek', [ParticipantController::class, 'promote'])->name('offerings.promote');
     Route::delete('aanbod/{product}/deelnemers/{participation}', [ParticipantController::class, 'cancel'])->name('offerings.cancel');

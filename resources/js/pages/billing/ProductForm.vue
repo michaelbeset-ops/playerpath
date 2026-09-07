@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { LoaderCircle, Plus, Trash2, X } from 'lucide-vue-next';
+import { Image as ImageIcon, LoaderCircle, Plus, Trash2, X } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 interface Soort {
@@ -39,6 +39,7 @@ const props = defineProps<{
         min_age: number | null;
         max_age: number | null;
         audience: string;
+        image: string | null;
         sessions_count: number | null;
         payment_options: Betaalvorm[];
         location: string | null;
@@ -69,6 +70,21 @@ interface Betaalvorm {
 }
 
 const bewerken = computed(() => props.product !== null);
+
+// De afbeelding gaat apart: kiezen is opslaan, zoals bij een profielfoto.
+const uploadAfbeelding = (event: Event) => {
+    const bestand = (event.target as HTMLInputElement).files?.[0];
+
+    if (bestand && props.product) {
+        router.post('/aanbod/' + props.product.id + '/foto', { photo: bestand }, { forceFormData: true, preserveScroll: true });
+    }
+};
+
+const verwijderAfbeelding = () => {
+    if (props.product && confirm('De afbeelding weghalen?')) {
+        router.delete('/aanbod/' + props.product.id + '/foto', { preserveScroll: true });
+    }
+};
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     { title: 'Aanbod', href: '/aanbod' },
@@ -221,6 +237,36 @@ const veldKlassen = 'h-11 w-full rounded-lg border border-input bg-background px
                             placeholder="Zes weken keeperstraining, met wedstrijdvormen en video."
                         ></textarea>
                         <p class="text-xs text-muted-foreground">Dit leest een ouder op de aanmeldpagina.</p>
+                    </div>
+
+                    <!-- Een afbeelding, optioneel. Pas na het opslaan: dan is er iets om hem aan te hangen. -->
+                    <div class="grid gap-2">
+                        <Label>Afbeelding <span class="text-muted-foreground">(optioneel)</span></Label>
+                        <template v-if="bewerken">
+                            <img v-if="product!.image" :src="product!.image" alt="" class="h-32 w-full rounded-lg object-cover" />
+                            <div class="flex flex-wrap items-center gap-3">
+                                <label
+                                    class="inline-flex h-11 cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-medium hover:border-primary sm:h-10"
+                                >
+                                    <ImageIcon class="size-4" />
+                                    {{ product!.image ? 'Andere afbeelding' : 'Afbeelding kiezen' }}
+                                    <input type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="uploadAfbeelding" />
+                                </label>
+                                <button
+                                    v-if="product!.image"
+                                    type="button"
+                                    class="text-sm text-muted-foreground underline underline-offset-4 hover:text-destructive"
+                                    @click="verwijderAfbeelding"
+                                >
+                                    Weghalen
+                                </button>
+                            </div>
+                            <p class="text-xs text-muted-foreground">
+                                Liggend werkt het best; hij staat in de shop en op de inschrijfpagina. png, jpg of webp, tot 5 MB.
+                            </p>
+                            <InputError :message="(form.errors as any).photo" />
+                        </template>
+                        <p v-else class="text-xs text-muted-foreground">Sla het aanbod eerst op; daarna kun je hier een afbeelding kiezen.</p>
                         <InputError :message="form.errors.description" />
                     </div>
 

@@ -93,6 +93,7 @@ class EnrollmentForm
             'type' => $product->type->label(),
             'type_key' => $product->type->value,
             'is_trial' => $product->type === ProductType::Proefles,
+            'image' => $product->image_url,
             'amount' => Money::format($product->amount_cents),
             'is_free' => $product->amount_cents === 0,
             'billing' => $product->billing_type->short(),

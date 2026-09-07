@@ -430,6 +430,7 @@ class ProductController extends Controller
                 'min_age' => $product->min_age,
                 'max_age' => $product->max_age,
                 'audience' => $product->audience->value,
+                'image' => $product->image_url,
                 'sessions_count' => $product->sessions_count,
                 // Alleen de extra's; de standaard staat in het prijsblok.
                 'payment_options' => $product->paymentOptions()->where('is_default', false)->get()

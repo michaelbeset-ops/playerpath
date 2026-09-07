@@ -115,12 +115,14 @@ class PrivateTrainingTest extends TestCase
 
         $this->actingAs($this->ouder)
             ->get('/shop')
-            ->assertInertia(fn ($page) => $page
-                ->where('products.0.name', 'Privétraining 30 minuten')
-                ->count('products.0.slots', 1)
-                ->where('products.0.slots.0.id', $vrij->id)
-                ->where('products.0.slots.0.trainer', 'Piet Trainer')
-            );
+            ->assertInertia(function ($page) use ($vrij) {
+                $groep = collect($page->toArray()['props']['groups'])->firstWhere('key', 'privetraining');
+
+                $this->assertSame('Privétraining 30 minuten', $groep['products'][0]['name']);
+                $this->assertCount(1, $groep['products'][0]['slots']);
+                $this->assertSame($vrij->id, $groep['products'][0]['slots'][0]['id']);
+                $this->assertSame('Piet Trainer', $groep['products'][0]['slots'][0]['trainer']);
+            });
     }
 
     public function test_boeken_maakt_een_training_met_de_trainer_erbij(): void

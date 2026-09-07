@@ -51,18 +51,34 @@ class ShopController extends Controller
     {
         $spelerIds = $this->eigenSpelers($request);
 
+        $school = $request->user()->school;
+
         $producten = Product::query()
             ->where('is_active', true)
-            ->purchasable()
+            ->withCount(['participations' => fn ($q) => $q->confirmed()])
+            ->orderByRaw('starts_on is null')
+            ->orderBy('starts_on')
             ->orderBy('amount_cents')
             ->get()
+            // Alles waar je je op kunt aanmelden, ook doorlopende training: de
+            // inschrijfstap regelt de betaalvorm. Gesloten aanbod niet.
+            ->filter(fn (Product $product) => $product->status->acceptsSignups())
             ->map(fn (Product $product) => [
                 'id' => $product->id,
                 'name' => $product->name,
                 'description' => $product->description,
                 'type' => $product->type->label(),
+                'type_key' => $product->type->value,
                 'amount' => Money::format($product->amount_cents),
                 'is_free' => $product->amount_cents === 0,
+                'billing' => $product->billing_type->short(),
+                'period' => $this->periode($product),
+                'location' => $product->location,
+                'spots_left' => $product->spotsLeft(),
+                'is_full' => $product->isFull(),
+                'image' => $product->image_url,
+                // Direct de inschrijving van dít aanbod in; voor wie kies je daar.
+                'enroll_url' => route('enroll.show', $school).'?aanbod='.$product->id,
                 // Wat je krijgt: beurten en hoe lang het geldig blijft.
                 'credits' => $product->type->needsCredits() ? $product->credits : null,
                 'validity_months' => $product->validity_months,
@@ -79,8 +95,21 @@ class ShopController extends Controller
                     : [],
             ]);
 
+        // Per soort gegroepeerd, in een vaste volgorde. Lege groepen laat het
+        // scherm weg.
+        $volgorde = [
+            ProductType::Doorlopend, ProductType::Blok, ProductType::Kamp, ProductType::Privetraining,
+            ProductType::SmallGroup, ProductType::LosseTraining, ProductType::Rittenkaart, ProductType::Proefles, ProductType::Overig,
+        ];
+
+        $groepen = collect($volgorde)->map(fn (ProductType $type) => [
+            'key' => $type->value,
+            'title' => $type->label(),
+            'products' => $producten->where('type_key', $type->value)->values()->all(),
+        ])->values();
+
         return Inertia::render('billing/Shop', [
-            'products' => $producten,
+            'groups' => $groepen,
             'players' => Player::whereIn('id', $spelerIds)
                 ->orderBy('first_name')
                 ->get()
@@ -155,6 +184,19 @@ class ShopController extends Controller
         }
 
         return Inertia::location($checkout);
+    }
+
+    protected function periode(Product $product): ?string
+    {
+        if ($product->starts_on === null) {
+            return null;
+        }
+
+        $start = $product->starts_on->translatedFormat('j F');
+
+        return $product->ends_on === null || $product->ends_on->isSameDay($product->starts_on)
+            ? $start
+            : $start.' t/m '.$product->ends_on->translatedFormat('j F');
     }
 
     /**
