@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toneText, type Tone } from '@/lib/tone';
 import { Link } from '@inertiajs/vue3';
 import { ArrowDownRight, ArrowRight, ArrowUpRight } from 'lucide-vue-next';
 import { computed, type Component } from 'vue';
@@ -22,10 +23,10 @@ const props = defineProps<{
     icon: Component;
     href?: string;
     /**
-     * Is stijgen goed? Bij openstaande rekeningen niet, en dan zou groen
-     * het tegendeel zeggen van wat er staat.
+     * Goed, slecht of niets bijzonders. Komt van de server, want daar staat de
+     * drempel; zie Support\Dashboard\Signal.
      */
-    higherIsBetter?: boolean;
+    tone?: Tone;
 }>();
 
 const heeftWaarde = computed(() => props.value !== null && props.value !== undefined);
@@ -38,21 +39,7 @@ const richting = computed(() => {
     return props.change > 0 ? 'omhoog' : 'omlaag';
 });
 
-const goed = computed(() => {
-    if (richting.value === 'gelijk') {
-        return null;
-    }
-
-    return (richting.value === 'omhoog') === (props.higherIsBetter ?? true);
-});
-
-const trendKleur = computed(() => {
-    if (goed.value === null) {
-        return 'text-muted-foreground';
-    }
-
-    return goed.value ? 'text-primary' : 'text-warning';
-});
+const trendKleur = computed(() => toneText[props.tone ?? 'neutral']);
 
 const pijl = computed(() => (richting.value === 'omhoog' ? ArrowUpRight : richting.value === 'omlaag' ? ArrowDownRight : ArrowRight));
 

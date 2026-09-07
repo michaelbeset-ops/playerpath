@@ -1,22 +1,33 @@
 <script setup lang="ts">
+import { toneText, type Tone } from '@/lib/tone';
 import { Link } from '@inertiajs/vue3';
-import { Plug } from 'lucide-vue-next';
+import { ArrowDownRight, ArrowUpRight, Plug } from 'lucide-vue-next';
+import { computed } from 'vue';
 
 /**
- * Het financiële vak, compact.
+ * Het financiële vak: wat er binnenkwam, wat er openstaat en wat er doorloopt.
  *
- * "Omzet deze maand" staat er bewust niet in: dat is een kerncijfer bovenaan,
- * en elk cijfer hoort op precies één plek te staan.
+ * "Verwacht op jaarbasis" stond hier ooit. Dat is een som van lopende
+ * abonnementen maal twaalf, en daar kan een eigenaar niets mee: het is geen
+ * omzet, geen prognose en het verandert alleen als er iemand opzegt.
+ *
+ * Omzet deze maand staat hier **alleen als hij niet al als kerncijfer bovenaan
+ * staat**. Elk cijfer op precies één plek; welke van de twee dat is bepaalt de
+ * server, want die weet welke widgets er staan.
  */
-defineProps<{
+const props = defineProps<{
     data: {
+        revenue: { thisMonth: string; lastMonth: string; change: number | null; tone: Tone } | null;
         outstanding: string;
         outstandingCount: number;
+        outstandingTone: Tone;
         activeSubscriptions: number;
-        yearlyValue: string;
         gateway: { connected: boolean; name: string };
     };
 }>();
+
+const omzetKleur = computed(() => toneText[props.data.revenue?.tone ?? 'neutral']);
+const openstaandKleur = computed(() => toneText[props.data.outstandingTone]);
 </script>
 
 <template>
@@ -27,8 +38,21 @@ defineProps<{
         </div>
 
         <div class="mt-4 space-y-3">
-            <div>
-                <p class="tabular text-xl font-bold leading-none" :class="data.outstandingCount ? 'text-warning' : 'text-muted-foreground/60'">
+            <!-- Alleen als de omzet niet al als kerncijfer bovenaan staat. -->
+            <div v-if="data.revenue">
+                <p class="tabular text-xl font-bold leading-none">{{ data.revenue.thisMonth }}</p>
+                <p class="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+                    <span>omzet deze maand</span>
+                    <span v-if="data.revenue.change !== null" class="tabular inline-flex items-center gap-0.5 font-medium" :class="omzetKleur">
+                        <component :is="data.revenue.change >= 0 ? ArrowUpRight : ArrowDownRight" class="size-3" />
+                        {{ data.revenue.change > 0 ? '+' : '' }}{{ data.revenue.change }}%
+                    </span>
+                </p>
+                <p class="tabular mt-0.5 text-xs text-muted-foreground">vorige maand {{ data.revenue.lastMonth }}</p>
+            </div>
+
+            <div :class="data.revenue ? 'border-t border-border pt-3' : ''">
+                <p class="tabular text-xl font-bold leading-none" :class="data.outstandingCount ? openstaandKleur : 'text-muted-foreground/60'">
                     {{ data.outstandingCount ? data.outstanding : '—' }}
                 </p>
                 <p class="mt-1 text-xs text-muted-foreground">
@@ -41,12 +65,6 @@ defineProps<{
             <div class="border-t border-border pt-3">
                 <p class="tabular text-xl font-bold leading-none">{{ data.activeSubscriptions }}</p>
                 <p class="mt-1 text-xs text-muted-foreground">lopende abonnementen</p>
-            </div>
-
-            <div class="border-t border-border pt-3">
-                <p class="tabular text-xl font-bold leading-none">{{ data.yearlyValue }}</p>
-                <!-- Een vooruitblik, geen omzet: hier is nog niets van betaald. -->
-                <p class="mt-1 text-xs text-muted-foreground">verwacht op jaarbasis</p>
             </div>
         </div>
 

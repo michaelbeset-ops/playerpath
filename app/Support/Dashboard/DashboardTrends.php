@@ -56,6 +56,7 @@ class DashboardTrends
             'value' => $nuActief,
             'change' => $nieuw,
             'unit' => 'aantal',
+            'tone' => Signal::trend($nieuw),
             'hint' => $nieuw === 0 ? 'geen nieuwe deze maand' : ($nieuw === 1 ? '1 erbij deze maand' : "{$nieuw} erbij deze maand"),
         ];
     }
@@ -73,13 +74,19 @@ class DashboardTrends
         $dezeMaand = $this->gemiddeldeInPeriode($nu->copy()->startOfMonth(), $nu);
         $vorigeMaand = $this->gemiddeldeInPeriode($vorige->copy()->startOfMonth(), $vorige);
 
+        $verschil = $dezeMaand !== null && $vorigeMaand !== null ? $dezeMaand - $vorigeMaand : null;
+
         return [
             'value' => $dezeMaand,
-            'change' => $dezeMaand !== null && $vorigeMaand !== null ? $dezeMaand - $vorigeMaand : null,
+            'change' => $verschil,
             'unit' => 'punten',
+            'tone' => Signal::trend($verschil),
+            // Zonder vergelijking staat er niets. "Geen vergelijking met vorige
+            // maand" is een zin die uitlegt dat er niets te zien is, en die
+            // maakt het vak juist leger dan het is.
             'hint' => $dezeMaand === null
                 ? 'nog geen rapporten deze maand'
-                : ($vorigeMaand === null ? 'geen vergelijking met vorige maand' : "vorige maand {$vorigeMaand}"),
+                : ($vorigeMaand === null ? null : "vorige maand {$vorigeMaand}"),
         ];
     }
 
@@ -122,6 +129,7 @@ class DashboardTrends
             'value' => $dezeWeek,
             'change' => $dezeWeek - $vorigeWeek,
             'unit' => 'aantal',
+            'tone' => Signal::trend($dezeWeek - $vorigeWeek),
             'hint' => "vorige week {$vorigeWeek}",
         ];
     }
@@ -144,10 +152,9 @@ class DashboardTrends
             'cents' => $dezeMaand,
             'change' => $verschil,
             'unit' => 'procent',
+            'tone' => Signal::trend($verschil),
             'previousCents' => $vorigeMaand,
-            'hint' => $vorigeMaand === 0
-                ? 'geen vergelijking met vorige maand'
-                : 'tot dezelfde dag vorige maand',
+            'hint' => $vorigeMaand === 0 ? null : 'tot dezelfde dag vorige maand',
         ];
     }
 

@@ -164,11 +164,12 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
                      uur is het weg, en de trainer staat nu nog op het veld. -->
                 <ReportPrompt v-if="reportPrompts?.length" class="mt-4" :prompts="reportPrompts" />
 
-                <!-- 2. Wat vraagt om actie. Vastgepind, niet weg te halen. -->
-                <!-- Alleen als er iets is. Een vak dat elke dag "alles loopt"
-                     zegt leert je eroverheen kijken. -->
-                <div v-if="!attentionDismissed && attention?.length" class="mt-4">
-                    <AttentionPanel :items="attention" :signature="attentionSignature" />
+                <!-- 2. Wat vraagt om actie. Vastgepind, niet weg te halen.
+                     Is er niets, dan staat er één rustige regel: een dashboard
+                     dat zwijgt laat je twijfelen of je iets mist. Weggeklikt
+                     verdwijnt het wel helemaal. -->
+                <div v-if="!attentionDismissed" class="mt-4">
+                    <AttentionPanel :items="attention ?? []" :signature="attentionSignature" />
                 </div>
 
                 <!-- 3 t/m 7. De widgets in het raster van twaalf kolommen; op
@@ -182,6 +183,7 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
                             :change="widgets.kpi_players.change"
                             :unit="widgets.kpi_players.unit"
                             :hint="widgets.kpi_players.hint"
+                            :tone="widgets.kpi_players.tone"
                             :icon="Users"
                             href="/clients"
                         />
@@ -195,6 +197,7 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
                             :change="widgets.kpi_rating.change"
                             :unit="widgets.kpi_rating.unit"
                             :hint="widgets.kpi_rating.hint"
+                            :tone="widgets.kpi_rating.tone"
                             :icon="Star"
                         />
                     </template>
@@ -207,6 +210,7 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
                             :change="widgets.kpi_reports.change"
                             :unit="widgets.kpi_reports.unit"
                             :hint="widgets.kpi_reports.hint"
+                            :tone="widgets.kpi_reports.tone"
                             :icon="ClipboardList"
                             href="/reports"
                         />
@@ -220,6 +224,7 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
                             :change="widgets.kpi_revenue.change"
                             :unit="widgets.kpi_revenue.unit"
                             :hint="widgets.kpi_revenue.hint"
+                            :tone="widgets.kpi_revenue.tone"
                             :icon="Euro"
                             href="/payments?tab=paid&period=this_month"
                         />

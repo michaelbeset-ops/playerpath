@@ -485,7 +485,16 @@ slepen met een vinger een eigen project wordt.
 
 **Het aandacht-blok is geen widget.** Het staat vast bovenaan en is niet te
 verplaatsen: het is het antwoord op "wat moet ik doen?". Zit er niets in, dan
-staat er één rustige regel — een leeg vak met een kopje leest als een fout.
+staat er één rustige regel — "Alles loopt — niks te doen" — en geen leeg vak met
+een kopje: dat leest als een fout, en zwijgen laat je twijfelen of je iets mist.
+
+**Kleur is een signaal, geen versiering** (`Support\Dashboard\Signal`). Daar
+staan de drempels, op één plek: groen vanaf 75%, oranje vanaf 50%, rood
+daaronder, en grijs als er nog niets te zeggen valt. Een trend kleurt op de
+richting die goed ís — bij openstaande rekeningen is omhoog juist slecht. De
+server stuurt per cijfer een `tone` mee; de Vue-kant vertaalt die naar een
+klasse (`lib/tone.ts`) en verzint geen eigen grenzen. Toen elk vak zijn eigen
+drempel had was bijna alles oranje, en dan zegt kleur niets meer.
 
 **Wegklikken kan wel, maar betekent "gezien".** Er wordt een vingerafdruk van de
 inhoud opgeslagen (`users.attention_dismissed`), niet "verborgen". Verandert er
@@ -496,7 +505,11 @@ een weggeklikt blok verdwijnt hélemaal: "Alles loopt" tonen terwijl er signalen
 zijn zou een leugen zijn.
 
 **Elk cijfer staat op precies één plek.** Omzet is een kerncijfer bovenaan en
-staat dus níét ook in het financiële vak; "spelers zonder rapport" staat in het
+staat dus níét ook in het financiële vak — maar haalt een eigenaar die tegel
+weg, dan verschijnt hij daar juist wél, want anders ziet hij zijn omzet nergens.
+Dat besluit valt op de server, want die weet welke widgets er staan.
+"Verwacht op jaarbasis" is geschrapt: dat is lopende abonnementen maal twaalf,
+en daar kan niemand iets mee. Verder geldt: "spelers zonder rapport" staat in het
 aandacht-blok en niet meer als los blok; "groepen" is als kerncijfer geschrapt
 omdat het nooit verandert.
 

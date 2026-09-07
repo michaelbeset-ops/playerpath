@@ -12,6 +12,7 @@ use App\Support\Dashboard\DashboardTrends;
 use App\Support\Dashboard\DevelopmentOverview;
 use App\Support\Dashboard\SchoolDashboard;
 use App\Support\Dashboard\SetupChecklist;
+use App\Support\Dashboard\Signal;
 use App\Support\Dashboard\WidgetRegistry;
 use App\Support\Goals\GoalProgress;
 use App\Support\Money\Money;
@@ -93,7 +94,9 @@ class DashboardController extends Controller
         $aandachtVingerafdruk = $this->attention->signature($aandacht);
 
         // Eén keer ophalen voor alle vier de kerncijfers; ze delen hun bron.
-        $trends = array_intersect($zichtbaar, ['kpi_players', 'kpi_rating', 'kpi_reports', 'kpi_revenue']) !== []
+        // Ook het financiële vak leunt op deze cijfers, dus die telt mee in de
+        // vraag of ze opgehaald moeten worden.
+        $trends = array_intersect($zichtbaar, ['kpi_players', 'kpi_rating', 'kpi_reports', 'kpi_revenue', 'finance']) !== []
             ? $this->trends->all()
             : [];
 
@@ -121,7 +124,9 @@ class DashboardController extends Controller
                 'kpi_reports' => $toont(DashboardWidget::KpiReports) ? $trends['reports'] : null,
                 'kpi_revenue' => $toont(DashboardWidget::KpiRevenue) ? $this->omzet($trends['revenue'] ?? []) : null,
                 'development' => $toont(DashboardWidget::Development) ? $this->development->for() : null,
-                'finance' => $toont(DashboardWidget::Finance) ? $this->financieel() : null,
+                'finance' => $toont(DashboardWidget::Finance)
+                    ? $this->financieel($trends['revenue'] ?? [], $toont(DashboardWidget::KpiRevenue))
+                    : null,
                 'trainings' => $toont(DashboardWidget::Trainings) ? $this->dashboard->upcomingTrainings(3) : null,
                 'birthdays' => $toont(DashboardWidget::Birthdays) ? $this->dashboard->birthdays(limit: 4) : null,
             ],
@@ -147,6 +152,7 @@ class DashboardController extends Controller
             'value' => Money::format($ruw['cents'] ?? 0),
             'change' => $ruw['change'] ?? null,
             'unit' => 'procent',
+            'tone' => $ruw['tone'] ?? Signal::NEUTRAL,
             'hint' => $ruw['hint'] ?? null,
         ];
     }
@@ -159,15 +165,26 @@ class DashboardController extends Controller
      *
      * @return array<string, mixed>
      */
-    protected function financieel(): array
+    protected function financieel(array $omzet, bool $omzetStaatBovenaan): array
     {
         $samenvatting = $this->billing->summary();
 
         return [
+            // Omzet staat hier alleen als hij niet al als kerncijfer bovenaan
+            // staat: elk cijfer hoort op precies één plek. Zonder die tegel is
+            // dit vak de enige plek waar een eigenaar zijn omzet ziet.
+            'revenue' => $omzetStaatBovenaan ? null : [
+                'thisMonth' => Money::format($omzet['cents'] ?? 0),
+                'lastMonth' => Money::format($omzet['previousCents'] ?? 0),
+                'change' => $omzet['change'] ?? null,
+                'tone' => $omzet['tone'] ?? Signal::NEUTRAL,
+            ],
             'outstanding' => $samenvatting['outstanding'],
             'outstandingCount' => $samenvatting['outstandingCount'],
+            // Openstaand is geen ramp, maar wel iets om te zien. Nul is goed
+            // nieuws en hoort dus niet oranje te zijn.
+            'outstandingTone' => Signal::count($samenvatting['outstandingCount']),
             'activeSubscriptions' => $samenvatting['activeSubscriptions'],
-            'yearlyValue' => $samenvatting['yearlyValue'],
             'gateway' => [
                 'connected' => $this->gateway->isConnected(),
                 'name' => $this->gateway->name(),

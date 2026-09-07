@@ -25,6 +25,9 @@ use Illuminate\Support\Collection;
  */
 class DevelopmentOverview
 {
+    /** Vanaf hoeveel dagen zonder rapport iemand "stil" heet. */
+    public const STIL_VANAF_DAGEN = 7;
+
     /** Vanaf hoeveel punten een verandering het vermelden waard is. */
     public const DREMPEL = 3;
 
@@ -53,6 +56,10 @@ class DevelopmentOverview
                 ->values()
                 ->all(),
             'coverage' => $this->dekking(),
+            // Wie het langst niets gehad heeft. Staat er niemand achteruit te
+            // gaan, dan is dit wél iets om vandaag te doen — beter dan een leeg
+            // vak met "netjes" erin.
+            'stalest' => $this->langstStil(),
             'averageChange' => $veranderingen->isEmpty()
                 ? null
                 : (int) round($veranderingen->avg('change')),
@@ -99,6 +106,36 @@ class DevelopmentOverview
             ->values();
     }
 
+    /**
+     * De spelers die het langst geen rapport hebben gehad.
+     *
+     * Nooit beoordeeld telt als het langst: dat is precies het geval waar een
+     * ouder op afhaakt, en het staat dus bovenaan.
+     *
+     * @return list<array{id: int, name: string, days: int|null}>
+     */
+    protected function langstStil(int $limiet = 3): array
+    {
+        return Player::active()
+            ->withMax('reports', 'reported_on')
+            ->get()
+            ->map(fn (Player $speler) => [
+                'id' => $speler->id,
+                'name' => $speler->full_name,
+                'days' => $speler->reports_max_reported_on === null
+                    ? null
+                    : (int) Carbon::parse($speler->reports_max_reported_on)->startOfDay()->diffInDays(now()->startOfDay()),
+            ])
+            // Wie deze week nog beoordeeld is hoort hier niet: "0 dagen" in een
+            // lijst met de kop "langst geen rapport" is ruis, geen signaal.
+            ->filter(fn (array $rij) => $rij['days'] === null || $rij['days'] >= self::STIL_VANAF_DAGEN)
+            // Nooit beoordeeld eerst, daarna van lang naar kort geleden.
+            ->sortByDesc(fn (array $rij) => $rij['days'] ?? PHP_INT_MAX)
+            ->take($limiet)
+            ->values()
+            ->all();
+    }
+
     /** Het gemiddelde van de categorieën van één rapport, op de schaal van de kaart. */
     protected function cijfer(Report $rapport): int
     {
@@ -114,14 +151,14 @@ class DevelopmentOverview
      * Het getal waar het om draait: een school die dit boven de tachtig houdt
      * levert wat ze belooft.
      *
-     * @return array{percentage: int|null, current: int, total: int}
+     * @return array{percentage: int|null, tone: string, current: int, total: int}
      */
     protected function dekking(): array
     {
         $totaal = Player::active()->count();
 
         if ($totaal === 0) {
-            return ['percentage' => null, 'current' => 0, 'total' => 0];
+            return ['percentage' => null, 'tone' => Signal::NEUTRAL, 'current' => 0, 'total' => 0];
         }
 
         $grens = now()->subDays(self::ACTUEEL_BINNEN_DAGEN)->toDateString();
@@ -130,8 +167,12 @@ class DevelopmentOverview
             ->whereHas('reports', fn ($q) => $q->whereDate('reported_on', '>=', $grens))
             ->count();
 
+        $percentage = (int) round($actueel / $totaal * 100);
+
         return [
-            'percentage' => (int) round($actueel / $totaal * 100),
+            'percentage' => $percentage,
+            // De kleur van de balk komt van één plek; zie Signal.
+            'tone' => Signal::ratio($percentage),
             'current' => $actueel,
             'total' => $totaal,
         ];

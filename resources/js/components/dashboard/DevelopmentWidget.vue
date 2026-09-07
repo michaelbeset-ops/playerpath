@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { toneFill, type Tone } from '@/lib/tone';
 import { Link } from '@inertiajs/vue3';
-import { TrendingDown, TrendingUp } from 'lucide-vue-next';
+import { Check, Clock, TrendingDown, TrendingUp } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 /**
@@ -23,22 +24,15 @@ const props = defineProps<{
         days: number;
         risers: Verandering[];
         fallers: Verandering[];
-        coverage: { percentage: number | null; current: number; total: number };
+        coverage: { percentage: number | null; tone: Tone; current: number; total: number };
+        stalest: { id: number; name: string; days: number | null }[];
         averageChange: number | null;
     };
 }>();
 
-// Onder de helft is het product aan het stilvallen; boven de tachtig levert de
-// school wat ze belooft. Daartussen is het "kan beter".
-const dekkingKleur = computed(() => {
-    const pct = props.data.coverage.percentage;
-
-    if (pct === null) {
-        return 'bg-border';
-    }
-
-    return pct >= 80 ? 'bg-primary' : pct >= 50 ? 'bg-warning' : 'bg-destructive';
-});
+// De drempel staat op de server (Support\Dashboard\Signal); hier alleen de
+// vertaling naar een kleur.
+const dekkingKleur = computed(() => toneFill[props.data.coverage.tone ?? 'neutral']);
 </script>
 
 <template>
@@ -107,7 +101,40 @@ const dekkingKleur = computed(() => {
                     </Link>
                 </div>
 
-                <p v-else class="mt-2 text-xs text-muted-foreground">Niemand die achteruitgaat. Netjes.</p>
+                <!-- Niemand die achteruitgaat is goed nieuws, maar dan blijft
+                     deze kolom leeg. Wie het langst niets gehad heeft is dan
+                     het nuttigste dat er kan staan: daar kun je vandaag iets
+                     aan doen. -->
+                <template v-else>
+                    <p class="mt-2 text-xs text-muted-foreground">Niemand die achteruitgaat.</p>
+
+                    <p
+                        v-if="data.stalest.length"
+                        class="mt-3 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-foreground"
+                    >
+                        <Clock class="size-3.5" />
+                        Langst geen rapport
+                    </p>
+
+                    <p v-else class="mt-3 flex items-center gap-1.5 text-xs text-success">
+                        <Check class="size-3.5 shrink-0" />
+                        Iedereen heeft een recent rapport.
+                    </p>
+
+                    <div v-if="data.stalest.length" class="mt-2 space-y-1.5">
+                        <Link
+                            v-for="speler in data.stalest"
+                            :key="speler.id"
+                            :href="'/players/' + speler.id + '/reports/create'"
+                            class="flex items-center justify-between gap-2 rounded-lg border border-border px-3 py-2 text-sm transition hover:border-primary"
+                        >
+                            <span class="min-w-0 truncate">{{ speler.name }}</span>
+                            <span class="tabular shrink-0 text-xs text-muted-foreground">
+                                {{ speler.days === null ? 'nog nooit' : speler.days + ' dgn' }}
+                            </span>
+                        </Link>
+                    </div>
+                </template>
             </div>
         </div>
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
-import { AlertTriangle, ClipboardList, CreditCard, UserCog, X } from 'lucide-vue-next';
+import { AlertTriangle, CheckCircle2, ClipboardList, CreditCard, UserCog, X } from 'lucide-vue-next';
 import type { Component } from 'vue';
 
 /**
@@ -10,8 +10,10 @@ import type { Component } from 'vue';
  * opent, dus je kunt het niet verplaatsen. Wegklikken kan wel, maar dat
  * betekent "gezien": zodra er iets verandert staat het er weer.
  *
- * **Is er niets, dan staat er niets.** Een vak dat elke dag "alles loopt" zegt
- * leert je eroverheen kijken, en dan mis je de dag dat er wél iets staat.
+ * **Is er niets, dan staat er één regel.** "Alles loopt — niks te doen" is het
+ * antwoord op de vraag waarvoor je het dashboard opende; zwijgen laat je
+ * twijfelen of je iets mist. Het blijft één rustige regel, geen vak met een
+ * kopje: dat leest als een fout.
  *
  * Elk item heeft een knop. Een signaal zonder knop is een cijfer, en cijfers
  * horen in de kerncijfers thuis.
@@ -58,7 +60,18 @@ const kleuren: Record<string, { rand: string; vlak: string; tekst: string }> = {
 </script>
 
 <template>
-    <section v-if="items.length" class="rounded-2xl border border-warning/30 bg-warning/5 p-4 sm:p-5" aria-label="Vraagt om aandacht">
+    <!-- Niets te doen: één regel, groen, zonder kop. Dat is het antwoord op de
+         vraag waarvoor je het dashboard opendeed. -->
+    <p
+        v-if="!items.length"
+        class="flex items-center gap-2 rounded-2xl border border-success/30 bg-success/5 px-4 py-3 text-sm text-success"
+        aria-label="Vraagt om aandacht"
+    >
+        <CheckCircle2 class="size-4 shrink-0" />
+        Alles loopt — niks te doen.
+    </p>
+
+    <section v-else class="rounded-2xl border border-warning/30 bg-warning/5 p-4 sm:p-5" aria-label="Vraagt om aandacht">
         <div class="flex items-start justify-between gap-3">
             <p class="flex items-center gap-2 font-medium">
                 <AlertTriangle class="size-4 shrink-0 text-warning" />
