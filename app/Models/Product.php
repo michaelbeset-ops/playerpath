@@ -12,6 +12,7 @@ use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -50,10 +51,28 @@ class Product extends Model
         'min_age',
         'max_age',
         'location',
+        'location_id',
         'status',
         'stops_at_end',
         'is_active',
     ];
+
+    /**
+     * De locatie, als er een gekozen is.
+     *
+     * Heet bewust `venue()` en niet `location()`: `location` is de tekstkolom
+     * met de naam zoals die op dat moment was. Zou de relatie zo heten, dan
+     * levert `$training->location` de ene keer een string en de andere keer een
+     * model op, afhankelijk van wat er toevallig geladen is.
+     *
+     * Dat de naam ernaast blijft staan is dezelfde regel als bij een aankoop,
+     * die naam en bedrag overneemt: een locatie hernoemen mag de agenda van
+     * vorig seizoen niet herschrijven.
+     */
+    public function venue(): BelongsTo
+    {
+        return $this->belongsTo(Location::class, 'location_id');
+    }
 
     protected function casts(): array
     {

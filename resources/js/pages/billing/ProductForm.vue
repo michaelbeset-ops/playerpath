@@ -39,6 +39,7 @@ const props = defineProps<{
         min_age: number | null;
         max_age: number | null;
         location: string | null;
+        location_id: number | null;
         status: string;
         stops_at_end: boolean;
         is_active: boolean;
@@ -50,6 +51,7 @@ const props = defineProps<{
     intervals: Record<string, string>;
     billingTypes: Record<string, string>;
     statuses: Record<string, string>;
+    locations: { id: number; name: string }[];
     availableTrainers: { id: number; name: string }[];
 }>();
 
@@ -78,7 +80,7 @@ const form = useForm({
     min_participants: props.product?.min_participants ?? null,
     min_age: props.product?.min_age ?? null,
     max_age: props.product?.max_age ?? null,
-    location: props.product?.location ?? '',
+    location_id: props.product?.location_id ?? null,
     status: props.product?.status ?? 'open',
     stops_at_end: props.product?.stops_at_end ?? true,
     is_active: props.product?.is_active ?? true,
@@ -203,9 +205,15 @@ const veldKlassen = 'h-11 w-full rounded-lg border border-input bg-background px
                     </div>
 
                     <div class="grid gap-2">
-                        <Label for="location">Locatie <span class="text-muted-foreground">(optioneel)</span></Label>
-                        <Input id="location" v-model="form.location" placeholder="Sportpark De Vliert, veld 3" class="h-11 sm:h-10" />
-                        <InputError :message="form.errors.location" />
+                        <Label for="location_id">Locatie <span class="text-muted-foreground">(optioneel)</span></Label>
+                        <select id="location_id" v-model="form.location_id" :class="veldKlassen">
+                            <option :value="null">Nog niet bekend</option>
+                            <option v-for="locatie in locations" :key="locatie.id" :value="locatie.id">{{ locatie.name }}</option>
+                        </select>
+                        <p v-if="!locations.length" class="text-xs text-muted-foreground">
+                            Je hebt nog geen locaties. Zet ze neer bij Mijn bedrijf → Locaties.
+                        </p>
+                        <InputError :message="form.errors.location_id" />
                     </div>
                 </div>
 

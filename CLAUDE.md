@@ -980,6 +980,26 @@ small group, rittenkaart, overig. Vier afspraken:
   wie echt meedoet komt in de groep: iemand op de wachtlijst hoort niet op de
   aanwezigheidslijst van de eerstvolgende training.
 
+#### Locaties
+
+`locations` is een echt ding geworden; het was een los tekstveld bij elke
+training, elk aanbod en elk moment. Dat betekende elke keer opnieuw intikken, en
+drie schrijfwijzen van hetzelfde sportpark. Beheren doet de eigenaar op
+`/locaties` (Mijn bedrijf); een trainer kiest er een bij het inplannen.
+
+- **De naam blijft naast de verwijzing staan.** `location_id` zegt welke locatie
+  het is, de kolom `location` houdt de naam vast zoals die op dat moment was —
+  dezelfde regel als bij een aankoop, die naam en bedrag overneemt. Een locatie
+  hernoemen mag de agenda van vorig seizoen niet herschrijven.
+- **De relatie heet `venue()`, niet `location()`.** Anders levert
+  `$training->location` de ene keer een string op en de andere keer een model,
+  afhankelijk van wat er toevallig geladen is.
+- **Verwijderen bestaat niet**, op niet-actief zetten wel. Wat er in de agenda
+  van vorig seizoen staat hoort te blijven kloppen.
+- De migratie heeft bestaande teksten omgezet naar locaties, per school en per
+  unieke naam. Anders begint elke school met een lege lijst terwijl haar
+  trainingen wél een adres hadden.
+
 #### Betalen per soort aanbod
 
 - **Eenmalig of per maand staat los van het soort** (`billing_type`), en de

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Offerings;
 use App\Actions\Offerings\BookSlot;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
+use App\Models\Location;
 use App\Models\Product;
 use App\Models\Slot;
 use App\Models\User;
@@ -57,6 +58,8 @@ class SlotController extends Controller
                 'location' => $product->location,
             ],
             'slots' => $momenten,
+            'locations' => Location::active()->orderBy('name')->get(['id', 'name'])
+                ->map(fn (Location $locatie) => ['id' => $locatie->id, 'name' => $locatie->name]),
             'trainers' => User::ofCurrentSchool()
                 ->role([Role::Trainer->value, Role::Eigenaar->value])
                 ->orderBy('name')
@@ -82,7 +85,10 @@ class SlotController extends Controller
             'starts_at' => ['required', 'date_format:H:i'],
             'ends_at' => ['required', 'date_format:H:i', 'after:starts_at'],
             'user_id' => ['nullable', 'integer', Rule::exists('users', 'id')->where('school_id', $schoolId)],
-            'location' => ['nullable', 'string', 'max:255'],
+            'location_id' => [
+                'nullable', 'integer',
+                Rule::exists('locations', 'id')->where('school_id', $schoolId),
+            ],
             'repeat_weeks' => ['nullable', 'integer', 'between:1,26'],
         ], [
             'ends_at.after' => 'De eindtijd moet na de begintijd liggen.',
@@ -91,7 +97,7 @@ class SlotController extends Controller
             'starts_at' => 'De begintijd',
             'ends_at' => 'De eindtijd',
             'user_id' => 'De trainer',
-            'location' => 'De locatie',
+            'location_id' => 'De locatie',
             'repeat_weeks' => 'Het aantal weken',
         ]);
 
@@ -114,11 +120,17 @@ class SlotController extends Controller
                 continue;
             }
 
+            $locatieId = $validated['location_id'] ?? $product->location_id;
+
             $product->slots()->create([
                 'user_id' => $validated['user_id'] ?? null,
                 'starts_at' => $start,
                 'ends_at' => $eind,
-                'location' => $validated['location'] ?? $product->location,
+                'location_id' => $locatieId,
+                // De naam zoals hij nu heet; zie Location.
+                'location' => $locatieId === null
+                    ? $product->location
+                    : Location::whereKey($locatieId)->value('name'),
             ]);
 
             $aantal++;

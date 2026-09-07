@@ -17,6 +17,7 @@ import {
     Inbox,
     LayoutGrid,
     LogOut,
+    MapPin,
     Megaphone,
     Menu,
     Palette,
@@ -66,6 +67,7 @@ const iconen: Record<string, Component> = {
     birthdays: Cake,
     business: Building2,
     staff: UserCog,
+    locations: MapPin,
     settings: Settings,
 };
 

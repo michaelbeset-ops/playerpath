@@ -9,6 +9,7 @@ use App\Enums\OfferingStatus;
 use App\Enums\ProductType;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
+use App\Models\Location;
 use App\Models\Product;
 use App\Models\User;
 use App\Support\Money\Money;
@@ -259,7 +260,10 @@ class ProductController extends Controller
             'min_participants' => ['nullable', 'integer', 'between:1,500', 'lte:capacity'],
             'min_age' => ['nullable', 'integer', 'between:3,99'],
             'max_age' => ['nullable', 'integer', 'between:3,99', 'gte:min_age'],
-            'location' => ['nullable', 'string', 'max:255'],
+            'location_id' => [
+                'nullable', 'integer',
+                Rule::exists('locations', 'id')->where('school_id', $schoolId),
+            ],
             'status' => ['required', Rule::enum(OfferingStatus::class)],
             'stops_at_end' => ['required', 'boolean'],
             'is_active' => ['required', 'boolean'],
@@ -302,7 +306,7 @@ class ProductController extends Controller
             'min_participants' => 'Het minimum aantal deelnemers',
             'min_age' => 'De minimumleeftijd',
             'max_age' => 'De maximumleeftijd',
-            'location' => 'De locatie',
+            'location_id' => 'De locatie',
             'status' => 'De status',
             'is_active' => 'De zichtbaarheid',
         ]);
@@ -337,7 +341,12 @@ class ProductController extends Controller
             'min_participants' => $capaciteit ? ($validated['min_participants'] ?? null) : null,
             'min_age' => $validated['min_age'] ?? null,
             'max_age' => $validated['max_age'] ?? null,
-            'location' => $validated['location'] ?? null,
+            // De gekozen locatie vult de tekst; die blijft staan zoals hij op
+            // dat moment heette. Zie Location.
+            'location_id' => $validated['location_id'] ?? null,
+            'location' => isset($validated['location_id'])
+                ? Location::whereKey($validated['location_id'])->value('name')
+                : null,
             'status' => $validated['status'],
             'stops_at_end' => $validated['stops_at_end'],
             'is_active' => $validated['is_active'],
@@ -376,6 +385,7 @@ class ProductController extends Controller
                 'min_age' => $product->min_age,
                 'max_age' => $product->max_age,
                 'location' => $product->location,
+                'location_id' => $product->location_id,
                 'status' => $product->status->value,
                 'stops_at_end' => $product->stops_at_end,
                 'is_active' => $product->is_active,
@@ -387,6 +397,8 @@ class ProductController extends Controller
             'intervals' => BillingInterval::options(),
             'billingTypes' => BillingType::options(),
             'statuses' => OfferingStatus::options(),
+            'locations' => Location::active()->orderBy('name')->get(['id', 'name'])
+                ->map(fn (Location $locatie) => ['id' => $locatie->id, 'name' => $locatie->name]),
             // Trainers en de eigenaar: bij kleine scholen geeft die zelf ook les.
             'availableTrainers' => User::ofCurrentSchool()
                 ->role([Role::Trainer->value, Role::Eigenaar->value])

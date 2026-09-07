@@ -7,6 +7,7 @@ use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Trainings\TrainingRequest;
 use App\Models\Group;
+use App\Models\Location;
 use App\Models\Player;
 use App\Models\Training;
 use App\Models\User;
@@ -106,6 +107,7 @@ class TrainingController extends Controller
                     'group_id' => $gegevens['group_id'],
                     'starts_at' => $moment['starts_at'],
                     'ends_at' => $moment['ends_at'],
+                    'location_id' => $gegevens['location_id'],
                     'location' => $gegevens['location'],
                     'note' => $gegevens['note'],
                 ]);
@@ -146,6 +148,7 @@ class TrainingController extends Controller
                 'date' => $training->starts_at->translatedFormat('l j F Y'),
                 'time' => $training->starts_at->format('H:i').' - '.$training->ends_at->format('H:i'),
                 'location' => $training->location,
+                'location_id' => $training->location_id,
                 'note' => $training->note,
                 'trainers' => $training->trainers->map(fn (User $trainer) => [
                     'id' => $trainer->id,
@@ -228,6 +231,8 @@ class TrainingController extends Controller
                 'trainers' => $training->trainers->pluck('id')->all(),
             ] : null,
             'availableTrainers' => $this->beschikbareTrainers(),
+            'locations' => Location::active()->orderBy('name')->get(['id', 'name'])
+                ->map(fn (Location $locatie) => ['id' => $locatie->id, 'name' => $locatie->name]),
             'groups' => Group::where('is_active', true)
                 ->orderBy('name')
                 ->get(['id', 'name', 'age_category']),

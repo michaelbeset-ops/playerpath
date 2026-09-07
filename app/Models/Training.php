@@ -23,8 +23,26 @@ class Training extends Model
         'starts_at',
         'ends_at',
         'location',
+        'location_id',
         'note',
     ];
+
+    /**
+     * De locatie, als er een gekozen is.
+     *
+     * Heet bewust `venue()` en niet `location()`: `location` is de tekstkolom
+     * met de naam zoals die op dat moment was. Zou de relatie zo heten, dan
+     * levert `$training->location` de ene keer een string en de andere keer een
+     * model op, afhankelijk van wat er toevallig geladen is.
+     *
+     * Dat de naam ernaast blijft staan is dezelfde regel als bij een aankoop,
+     * die naam en bedrag overneemt: een locatie hernoemen mag de agenda van
+     * vorig seizoen niet herschrijven.
+     */
+    public function venue(): BelongsTo
+    {
+        return $this->belongsTo(Location::class, 'location_id');
+    }
 
     protected function casts(): array
     {

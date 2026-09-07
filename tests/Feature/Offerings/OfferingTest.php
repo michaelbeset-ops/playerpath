@@ -8,6 +8,7 @@ use App\Enums\ProductType;
 use App\Enums\Role;
 use App\Models\Enrollment;
 use App\Models\Group;
+use App\Models\Location;
 use App\Models\Participation;
 use App\Models\Player;
 use App\Models\Product;
@@ -36,6 +37,8 @@ class OfferingTest extends TestCase
 
     protected User $eigenaar;
 
+    protected Location $locatie;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -47,6 +50,8 @@ class OfferingTest extends TestCase
         $this->eigenaar->assignRole(Role::Eigenaar->value);
 
         app(Tenancy::class)->set($this->school);
+
+        $this->locatie = Location::create(['name' => 'Sportpark De Vliert', 'is_active' => true]);
     }
 
     /** @return array<string, mixed> */
@@ -65,7 +70,7 @@ class OfferingTest extends TestCase
             'min_participants' => 6,
             'min_age' => 8,
             'max_age' => 12,
-            'location' => 'Sportpark De Vliert',
+            'location_id' => $this->locatie->id,
             'status' => 'open',
             'stops_at_end' => true,
             'is_active' => true,

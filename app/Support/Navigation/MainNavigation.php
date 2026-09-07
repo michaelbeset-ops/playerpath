@@ -6,6 +6,7 @@ use App\Enums\Feature;
 use App\Models\Announcement;
 use App\Models\Enrollment;
 use App\Models\Group;
+use App\Models\Location;
 use App\Models\Payment;
 use App\Models\Player;
 use App\Models\Product;
@@ -113,6 +114,7 @@ class MainNavigation
                 // Alles wat over de school zelf gaat en niet over een klant.
                 'title' => 'Mijn bedrijf', 'icon' => 'business', 'items' => [
                     ['title' => 'Personeel', 'href' => '/staff', 'icon' => 'staff', 'allowed' => $user->can('viewAny', Player::class)],
+                    ['title' => 'Locaties', 'href' => '/locaties', 'icon' => 'locations', 'allowed' => $user->can('viewAny', Location::class)],
                     ['title' => 'Huisstijl', 'href' => '/branding', 'icon' => 'branding', 'allowed' => $user->isEigenaar()],
                     ['title' => 'Verantwoording', 'href' => '/verantwoording', 'icon' => 'accountability', 'allowed' => $user->isEigenaar()],
                     ['title' => 'Instellingen', 'href' => '/settings/profile', 'icon' => 'settings', 'allowed' => true],

@@ -27,6 +27,7 @@ const props = defineProps<{
     product: { id: number; name: string; type: string; location: string | null };
     slots: Moment[];
     trainers: { id: number; name: string }[];
+    locations: { id: number; name: string }[];
 }>();
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
@@ -39,7 +40,7 @@ const form = useForm({
     starts_at: '16:00',
     ends_at: '17:00',
     user_id: props.trainers[0]?.id ?? null,
-    location: props.product.location ?? '',
+    location_id: null as number | null,
     repeat_weeks: 1,
 });
 
@@ -175,9 +176,16 @@ const geboekt = computed(() => props.slots.filter((s) => s.player_id).length);
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="location">Locatie <span class="text-muted-foreground">(optioneel)</span></Label>
-                    <Input id="location" v-model="form.location" placeholder="Sportpark De Vliert" class="h-11 sm:h-10" />
-                    <InputError :message="form.errors.location" />
+                    <Label for="location_id">Locatie <span class="text-muted-foreground">(optioneel)</span></Label>
+                    <select
+                        id="location_id"
+                        v-model="form.location_id"
+                        class="h-11 w-full rounded-lg border border-input bg-background px-3 text-base outline-none focus:border-primary sm:h-10 sm:text-sm"
+                    >
+                        <option :value="null">Zoals bij het aanbod</option>
+                        <option v-for="locatie in locations" :key="locatie.id" :value="locatie.id">{{ locatie.name }}</option>
+                    </select>
+                    <InputError :message="form.errors.location_id" />
                 </div>
 
                 <Button type="submit" class="h-11 w-full sm:h-10 sm:w-auto" :disabled="form.processing">

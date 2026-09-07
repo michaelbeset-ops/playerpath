@@ -17,6 +17,7 @@ const props = defineProps<{
         starts_at: string;
         ends_at: string;
         location: string | null;
+        location_id: number | null;
         note: string | null;
         trainers: number[];
     } | null;
@@ -38,7 +39,7 @@ const form = useForm({
     date: props.training?.date ?? '',
     starts_at: props.training?.starts_at ?? '18:00',
     ends_at: props.training?.ends_at ?? '19:30',
-    location: props.training?.location ?? '',
+    location_id: props.training?.location_id ?? null,
     note: props.training?.note ?? '',
     trainers: props.training?.trainers ?? ([] as number[]),
     repeat_until: '',
@@ -143,9 +144,19 @@ const opslaan = () => {
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="location">Locatie <span class="text-muted-foreground">(optioneel)</span></Label>
-                    <Input id="location" v-model="form.location" placeholder="Sportpark De Vliert, veld 3" />
-                    <InputError :message="form.errors.location" />
+                    <Label for="location_id">Locatie <span class="text-muted-foreground">(optioneel)</span></Label>
+                    <select
+                        id="location_id"
+                        v-model="form.location_id"
+                        class="h-11 w-full rounded-lg border border-input bg-background px-3 text-base outline-none focus:border-primary sm:h-10 sm:text-sm"
+                    >
+                        <option :value="null">Nog niet bekend</option>
+                        <option v-for="locatie in locations" :key="locatie.id" :value="locatie.id">{{ locatie.name }}</option>
+                    </select>
+                    <p v-if="!locations.length" class="text-xs text-muted-foreground">
+                        Je hebt nog geen locaties. Zet ze neer bij Mijn bedrijf → Locaties.
+                    </p>
+                    <InputError :message="form.errors.location_id" />
                 </div>
 
                 <div class="grid gap-2">

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Trainings;
 
+use App\Models\Location;
 use App\Models\Training;
 use App\Support\Tenancy\Tenancy;
 use Carbon\CarbonImmutable;
@@ -33,6 +34,10 @@ class TrainingRequest extends FormRequest
             'starts_at' => ['required', 'date_format:H:i'],
             'ends_at' => ['required', 'date_format:H:i', 'after:starts_at'],
             'location' => ['nullable', 'string', 'max:255'],
+            'location_id' => [
+                'nullable', 'integer',
+                Rule::exists('locations', 'id')->where('school_id', app(Tenancy::class)->id()),
+            ],
             'note' => ['nullable', 'string', 'max:2000'],
 
             // De trainers die erbij staan. Alleen gebruikers van deze school;
@@ -82,7 +87,10 @@ class TrainingRequest extends FormRequest
             'group_id' => $this->validated('group_id'),
             'starts_at' => CarbonImmutable::parse($datum.' '.$this->validated('starts_at')),
             'ends_at' => CarbonImmutable::parse($datum.' '.$this->validated('ends_at')),
-            'location' => $this->validated('location'),
+            // De gekozen locatie vult de tekst; die blijft staan zoals hij op
+            // dat moment heette. Zie Location.
+            'location_id' => $this->validated('location_id'),
+            'location' => $this->locatienaam() ?? $this->validated('location'),
             'note' => $this->validated('note'),
         ];
     }
@@ -116,5 +124,13 @@ class TrainingRequest extends FormRequest
         }
 
         return $momenten;
+    }
+
+    /** De naam van de gekozen locatie, als er een gekozen is. */
+    protected function locatienaam(): ?string
+    {
+        $id = $this->validated('location_id');
+
+        return $id === null ? null : Location::whereKey($id)->value('name');
     }
 }

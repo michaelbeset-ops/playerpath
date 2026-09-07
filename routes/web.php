@@ -10,6 +10,7 @@ use App\Http\Controllers\ExportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Players\PlayerDataController;
 use App\Http\Controllers\Pwa\ManifestController;
+use App\Http\Controllers\Schools\LocationController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -65,6 +66,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('announcements/verjaardagen', [BirthdayGreetingController::class, 'edit'])->name('birthdays.edit');
         Route::patch('announcements/verjaardagen', [BirthdayGreetingController::class, 'update'])->name('birthdays.update');
     });
+
+    // De locaties van de school. Klein scherm: een school heeft er twee of drie,
+    // maar dan wel als één ding in plaats van een tekst die elke keer net
+    // anders wordt ingetikt.
+    Route::get('locaties', [LocationController::class, 'index'])->name('locations.index');
+    Route::post('locaties', [LocationController::class, 'store'])->name('locations.store');
+    Route::patch('locaties/{location}', [LocationController::class, 'update'])->name('locations.update');
 
     // Inzageverzoek: alles wat de school over één speler bewaart, in één
     // werkmap. Staat op de pagina van die speler, want daar stelt een ouder de
