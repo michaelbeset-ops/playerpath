@@ -111,8 +111,19 @@ melding in plaats van een foutpagina.
 #### Klanten, Personeel en Mijn bedrijf
 
 Het menu-item **Gebruikers** heette naar de tabel, niet naar de werkelijkheid.
-Het is nu **Klanten** (`/clients` en `/clients/guardians`): spelers en ouders,
-in twee lijsten. Je zoekt zelden een speler en een ouder tegelijk.
+Het is nu **Klanten** (`/clients`): **één lijst** met de speler als regel en
+zijn ouder(s) uitklapbaar eronder. Twee tabbladen naast elkaar gingen ervan uit
+dat je een ouder los zoekt; een school denkt in een kind met iemand erbij die
+je belt. Zoeken kijkt daarom ook naar de naam en het e-mailadres van de ouder.
+
+Dat is **alleen een samenvoeging in de weergave**: een speler blijft een
+profiel in `players` en een ouder een account in `users`. `/clients/guardians`
+stuurt door naar het overzicht.
+
+Naast "niet actief" staat er één betaalstatus bij een speler: **betaling
+openstaand**, en dat is alleen een rekening die de vervaldatum voorbij is. Zou
+elke openstaande termijn meetellen, dan kleurt de hele lijst oranje en zegt de
+melding niets meer. Staat de betaallaag uit, dan wordt hij niet berekend.
 
 **Trainers staan niet bij de klanten**, maar onder Mijn bedrijf → Personeel
 (`/staff`). Een trainer is geen klant, en hem tussen de spelers zetten maakt
@@ -344,9 +355,10 @@ Dit zijn **twee verschillende dingen** en die moet je niet samenvoegen:
   e-mailadres, maar staat wel op de kaart — de ouder heeft het account.
 - Een **trainer** of **ouder** is altijd een account in `users`.
 
-Het menu-item **Gebruikers** (`/users`) toont ze samen in drie tabbladen:
-spelers, trainers en ouders. Trainers nodig je daar uit; ouders koppel je op de
-pagina van een speler, omdat een ouder zonder kind niets betekent.
+Ze staan niet in één lijst: **Klanten** (`/clients`) toont de spelers met hun
+ouders eronder, en trainers staan onder Mijn bedrijf → Personeel (`/staff`).
+Ouders koppel je op de pagina van een speler, omdat een ouder zonder kind niets
+betekent.
 
 Een **training** heeft nul of meer **trainers** (`training_user`). Dat is
 **informatief**: het bepaalt niet wie er bij mag. Elke trainer ziet het hele
