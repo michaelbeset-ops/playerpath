@@ -101,12 +101,13 @@ class DashboardTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->where('view', 'gezin')
-                ->count('players', 1)
-                ->where('players.0.name', 'Sem de Vries')
-                ->where('players.0.position_key', 'keeper')
-                ->has('players.0.card.categories', 6)
-                ->has('players.0.card.level')
-                ->where('players.0.next_badge.key', 'eerste_rapport')
+                // Alleen het eigen kind, ook al staan er vijf op de school.
+                ->count('children', 1)
+                ->where('children.0.name', 'Sem de Vries')
+                ->has('children.0.level')
+                // De kaart zelf zit één tik verderop, niet op het dashboard:
+                // een ouder komt hier voor de praktische dingen.
+                ->missing('children.0.card')
                 // Schoolbrede cijfers horen hier niet: die zijn niet van een ouder.
                 ->missing('stats')
             );

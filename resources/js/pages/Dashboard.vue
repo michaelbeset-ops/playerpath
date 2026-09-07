@@ -3,35 +3,17 @@ import AttentionPanel, { type AandachtItem } from '@/components/dashboard/Attent
 import BirthdaysWidget from '@/components/dashboard/BirthdaysWidget.vue';
 import DashboardGrid, { type Beschikbaar, type Plek } from '@/components/dashboard/DashboardGrid.vue';
 import DevelopmentWidget from '@/components/dashboard/DevelopmentWidget.vue';
+import FamilyDashboard from '@/components/dashboard/FamilyDashboard.vue';
 import FinanceWidget from '@/components/dashboard/FinanceWidget.vue';
 import KpiWidget from '@/components/dashboard/KpiWidget.vue';
 import ReportPrompt, { type Herinnering } from '@/components/dashboard/ReportPrompt.vue';
 import TrainingsWidget from '@/components/dashboard/TrainingsWidget.vue';
-import GoalList, { type Doel } from '@/components/GoalList.vue';
-import PlayerCardVisual from '@/components/PlayerCardVisual.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem, type SharedData } from '@/types';
+import type { FamilyAanbod, FamilyBericht, FamilyKind, FamilyTaak, FamilyTraining } from '@/types/family';
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import { CalendarPlus, Check, ClipboardList, Euro, IdCard, MapPin, Star, Trophy, UserPlus, Users } from 'lucide-vue-next';
+import { CalendarPlus, Check, ClipboardList, Euro, Star, UserPlus, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
-
-interface SpelerKaart {
-    id: number;
-    name: string;
-    photo: string | null;
-    first_name: string;
-    position: string;
-    position_key: 'keeper' | 'field';
-    age: number | null;
-    overall_rating: number | null;
-    last_report_on: string | null;
-    report_count: number;
-    categories: { category: string; label: string; rating: number | null }[];
-    level: { key: string; label: string; description: string };
-    badges: { key: string; label: string; description: string }[];
-    next_badge: { key: string; label: string; description: string } | null;
-    goals: Doel[];
-}
 
 const props = defineProps<{
     view: 'school' | 'gezin';
@@ -56,13 +38,23 @@ const props = defineProps<{
         hasTrainer: boolean;
     } | null;
     can?: { managePlayers: boolean; manageGroups: boolean; planTrainings: boolean };
-    players?: SpelerKaart[];
-    nextTraining?: { id: number; group: string; date: string; time: string; location: string | null } | null;
+
+    // --- Ouder en speler ---
+    /** De kinderen van deze ouder, compact; de kaart zit één tik verderop. */
+    children?: FamilyKind[];
+    /** Wat er nú van een ouder gevraagd wordt; leeg betekent: geen blok. */
+    todo?: FamilyTaak[];
+    upcoming?: FamilyTraining[];
+    offerings?: FamilyAanbod[];
+    messages?: FamilyBericht[];
 }>();
 
 const page = usePage<SharedData>();
 const school = computed(() => page.props.school);
 const rollen = computed(() => page.props.auth.roles ?? []);
+
+// Alleen de voornaam: "Hallo Marieke de Vries" leest als een brief van de bank.
+const voornaam = computed(() => (page.props.auth.user?.name ?? '').split(' ')[0]);
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' }];
 </script>
@@ -72,11 +64,18 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-6xl p-4">
+            <!-- Een ouder krijgt een begroeting; hij komt niet naar een
+                 "dashboard" maar kijken hoe het met zijn kind gaat. De rol
+                 erachter zegt hem niets, dus die staat er alleen bij wie voor
+                 de school werkt. -->
             <div class="flex flex-wrap items-baseline gap-x-3">
-                <h1 class="text-2xl font-semibold tracking-tight">Dashboard</h1>
+                <h1 class="text-2xl font-semibold tracking-tight">
+                    <template v-if="view === 'gezin'">Hallo {{ voornaam }}</template>
+                    <template v-else>Dashboard</template>
+                </h1>
                 <p class="text-sm text-muted-foreground">
                     <template v-if="school">{{ school.name }}</template>
-                    <span v-if="rollen.length" class="text-muted-foreground/70"> &middot; {{ rollen.join(', ') }}</span>
+                    <span v-if="view === 'school' && rollen.length" class="text-muted-foreground/70"> &middot; {{ rollen.join(', ') }}</span>
                 </p>
             </div>
 
@@ -248,71 +247,16 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
                 </DashboardGrid>
             </template>
 
-            <!-- Ouder en speler: het eigen kind -->
-            <template v-else>
-                <!-- De kaart zelf, meteen in beeld: dat is waar een kind voor komt -->
-                <div v-for="speler in players" :key="speler.id" class="mt-6">
-                    <div class="theme-donker rounded-3xl bg-background p-4 text-foreground sm:p-6">
-                        <PlayerCardVisual :card="speler.card" :shareable="false" />
-
-                        <!-- Iets om naartoe te werken -->
-                        <div
-                            v-if="speler.next_badge"
-                            class="mx-auto mt-4 flex max-w-[22.5rem] items-start gap-3 rounded-xl border border-border bg-card/60 p-3"
-                        >
-                            <Trophy class="mt-0.5 size-4 shrink-0 text-gold" />
-                            <p class="text-sm">
-                                <span class="font-medium">Volgende mijlpaal: {{ speler.next_badge.label }}.</span>
-                                <span class="text-muted-foreground"> {{ speler.next_badge.description }}.</span>
-                            </p>
-                        </div>
-                    </div>
-
-                    <div v-if="speler.goals.length" class="mt-3 rounded-xl border border-border bg-card p-4 shadow-sm">
-                        <p class="text-sm font-medium">Waar {{ speler.first_name }} aan werkt</p>
-                        <GoalList class="mt-2" :goals="speler.goals" />
-                    </div>
-
-                    <div class="mt-3 grid grid-cols-2 gap-2">
-                        <Link
-                            :href="'/players/' + speler.id + '/card'"
-                            class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium shadow-sm transition hover:border-primary"
-                        >
-                            <IdCard class="size-4" />
-                            Kaart en delen
-                        </Link>
-                        <Link
-                            :href="'/players/' + speler.id + '/progress'"
-                            class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium shadow-sm transition hover:border-primary"
-                        >
-                            <TrendingUp class="size-4" />
-                            Voortgang
-                        </Link>
-                    </div>
-                </div>
-
-                <div class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
-                    <p class="font-medium">Eerstvolgende training</p>
-
-                    <template v-if="nextTraining">
-                        <p class="mt-2 text-sm first-letter:uppercase">{{ nextTraining.date }} &middot; {{ nextTraining.time }}</p>
-                        <p class="mt-1 text-xs text-muted-foreground">{{ nextTraining.group }}</p>
-                        <p v-if="nextTraining.location" class="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
-                            <MapPin class="size-3.5" />
-                            {{ nextTraining.location }}
-                        </p>
-
-                        <Link
-                            :href="'/trainings/' + nextTraining.id"
-                            class="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
-                        >
-                            Aan- of afmelden
-                        </Link>
-                    </template>
-
-                    <p v-else class="mt-2 text-sm text-muted-foreground">Er staat nog geen training gepland.</p>
-                </div>
-            </template>
+            <!-- Ouder en speler: praktisch bovenaan, de kaart één tik verderop -->
+            <FamilyDashboard
+                v-else
+                class="mt-6"
+                :children="children ?? []"
+                :todo="todo ?? []"
+                :upcoming="upcoming ?? []"
+                :offerings="offerings ?? []"
+                :messages="messages ?? []"
+            />
         </div>
     </AppLayout>
 </template>

@@ -595,6 +595,26 @@ nooit alsnog een e-mail oplevert. Lokaal draai je `php artisan queue:work`.
 en speler hun eigen kind. Eén gedeeld dashboard toonde een ouder schoolbrede
 cijfers en knoppen die hij niet mocht gebruiken.
 
+#### Het ouder-dashboard
+
+`Support\Dashboard\FamilyDashboard`. Een ouder komt voor praktische dingen:
+wanneer is de training, moet ik betalen of inschrijven, is er nieuws? De volgorde
+is dus: begroeting, wat er nú van je gevraagd wordt, de eerstvolgende
+trainingen, waar je kunt inschrijven, je kinderen, berichten.
+
+- **De spelerskaart vulde het hele scherm** en beantwoordde geen van die vragen;
+  je moest er elke keer omheen scrollen. Hij staat nu als **klein kaartje** per
+  kind — foto, voornaam, cijfer, groei deze maand, XP-balk en de levelkleur als
+  rand — en opent met één tik helemaal (`/players/{id}/card`). De kaart zelf is
+  niet veranderd; alleen zijn plek.
+- **Meerdere kinderen is het gewone geval.** Alles noemt bij welk kind het
+  hoort: "Sem en Liam" bij een training, "Voor Liam" bij een rekening. Een rij
+  tijdstippen zonder naam is bij twee kinderen onbruikbaar.
+- **Leeg is weg.** Geen openstaande rekening, geen aanbod, geen berichten: dan
+  staat dat blok er niet. Anders sla je elke dag dezelfde lege kaders over.
+- **Eén bron voor "wie zijn mijn kinderen"**: `visiblePlayerIds()`, dezelfde als
+  de trainingen, de kaart en de betalingen.
+
 #### De publieke deel-link
 
 `/kaart/{token}` is de **enige route zonder inlog**, en het gaat om gegevens van

@@ -225,8 +225,10 @@ class GoalTest extends TestCase
 
         Goal::factory()->for($this->school)->create(['player_id' => $this->keeper->id]);
 
+        // Doelen staan bij de kaart, niet op het dashboard: daar komt een ouder
+        // voor de training en de rekening.
         $this->actingAs($ouder)->get("/players/{$this->keeper->id}/card")->assertInertia(fn ($page) => $page->count('goals', 1));
-        $this->actingAs($ouder)->get('/dashboard')->assertInertia(fn ($page) => $page->count('players.0.goals', 1));
+        $this->actingAs($ouder)->get('/dashboard')->assertInertia(fn ($page) => $page->count('children', 1));
 
         $this->actingAs($ouder)
             ->post("/players/{$this->keeper->id}/goals", ['category' => 'reflexen', 'target' => 9, 'due_on' => now()->addMonth()->toDateString()])

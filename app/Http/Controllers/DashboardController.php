@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Support\Dashboard\AttentionItems;
 use App\Support\Dashboard\DashboardTrends;
 use App\Support\Dashboard\DevelopmentOverview;
+use App\Support\Dashboard\FamilyDashboard;
 use App\Support\Dashboard\SchoolDashboard;
 use App\Support\Dashboard\SetupChecklist;
 use App\Support\Dashboard\Signal;
@@ -63,6 +64,7 @@ class DashboardController extends Controller
         protected DashboardTrends $trends,
         protected DevelopmentOverview $development,
         protected ReportPrompts $prompts,
+        protected FamilyDashboard $family,
     ) {}
 
     public function __invoke(Request $request): Response|RedirectResponse
@@ -193,50 +195,27 @@ class DashboardController extends Controller
     }
 
     /**
-     * Ouder en speler: het eigen kind.
+     * Het dashboard van een ouder of speler.
+     *
+     * Praktisch bovenaan, de spelerskaart klein. Een ouder komt hier om te
+     * weten wanneer de training is, of hij nog moet betalen en of er nieuws is;
+     * de kaart is het mooiste wat dit product maakt, maar hij beantwoordt geen
+     * van die vragen. Eén tik op een kindkaartje opent hem alsnog helemaal.
      *
      * @param  list<int>  $spelerIds
      */
     protected function voorGezin(User $user, array $spelerIds): Response
     {
-        $spelers = Player::whereIn('id', $spelerIds)
-            ->orderBy('first_name')
-            ->get()
-            ->map(function (Player $speler) {
-                $laatste = $speler->reports()->newestFirst()->first();
-                $badges = $this->badges->for($speler, $this->progress);
-
-                return [
-                    'id' => $speler->id,
-                    'name' => $speler->full_name,
-                    'photo' => $speler->photo_url,
-                    'first_name' => $speler->first_name,
-                    'position' => $speler->position->label(),
-                    'position_key' => $speler->position->value,
-                    'age' => $speler->age,
-                    'overall_rating' => $speler->overall_rating,
-                    'last_report_on' => $laatste?->reported_on->format('d-m-Y'),
-                    'report_count' => $speler->reports()->count(),
-                    // De kaart zelf op het dashboard: dat is waar een kind voor komt.
-                    'card' => $this->presenter->for($speler),
-                    // De eerstvolgende mijlpaal: iets om naartoe te werken.
-                    'next_badge' => collect($badges)->first(fn ($b) => ! $b['earned']),
-                    'goals' => array_values(array_filter($this->goals->forPlayer($speler), fn ($d) => $d['status'] === 'active')),
-                ];
-            });
-
-        $volgende = $this->visible->query($user)->upcoming()->first();
-
         return Inertia::render('Dashboard', [
             'view' => 'gezin',
-            'players' => $spelers,
-            'nextTraining' => $volgende ? [
-                'id' => $volgende->id,
-                'group' => $volgende->label(),
-                'date' => $volgende->starts_at->translatedFormat('l j F'),
-                'time' => $volgende->starts_at->format('H:i').' - '.$volgende->ends_at->format('H:i'),
-                'location' => $volgende->location,
-            ] : null,
+            'children' => $this->family->children($spelerIds),
+            // Eigen sleutel: het school-dashboard heeft een aandacht-blok met
+            // een andere vorm, en die twee door elkaar halen levert een blok op
+            // dat de helft van zijn eigen velden mist.
+            'todo' => $this->family->attention($user, $spelerIds),
+            'upcoming' => $this->family->upcomingTrainings($user, $spelerIds),
+            'offerings' => $this->family->openOfferings($user),
+            'messages' => $this->family->messages($user),
         ]);
     }
 }
