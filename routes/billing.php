@@ -4,6 +4,7 @@ use App\Http\Controllers\Billing\CheckoutController;
 use App\Http\Controllers\Billing\MyBillingController;
 use App\Http\Controllers\Billing\PaymentController;
 use App\Http\Controllers\Billing\ProductController;
+use App\Http\Controllers\Billing\PublicCheckoutController;
 use App\Http\Controllers\Billing\PurchaseController;
 use App\Http\Controllers\Billing\SubscriptionController;
 use App\Http\Controllers\Billing\WebhookController;
@@ -34,6 +35,17 @@ Route::middleware(['auth', 'verified', 'feature:betalingen'])->group(function ()
     // Fase 9: zelf betalen. De uitkomst komt via de webhook binnen, niet hier.
     Route::post('billing/payments/{payment}/betalen', [CheckoutController::class, 'pay'])->name('billing.pay');
     Route::get('billing/payments/{payment}/terug', [CheckoutController::class, 'return'])->name('billing.return');
+});
+
+/*
+ * Afrekenen zonder inlog, via een ondertekende link uit een e-mail. Bedoeld
+ * voor het gezin dat net is ingeschreven en nog geen wachtwoord heeft gekozen.
+ * De handtekening is hier het slot; zie Support\Payments\PaymentLink.
+ */
+Route::middleware('signed')->group(function () {
+    Route::get('betalen/{payment}', [PublicCheckoutController::class, 'show'])->name('public-pay.show');
+    Route::post('betalen/{payment}', [PublicCheckoutController::class, 'pay'])->name('public-pay.pay');
+    Route::get('betalen/{payment}/terug', [PublicCheckoutController::class, 'return'])->name('public-pay.return');
 });
 
 /*

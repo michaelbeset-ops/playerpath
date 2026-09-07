@@ -620,7 +620,34 @@ zet de app-props voor `enroll.*` leeg, net als voor de kaart.
 Een inschrijving is een **aparte tabel** (`enrollments`), geen speler. Pas als
 de eigenaar goedkeurt (`Actions/Enrollments/ApproveEnrollment`) ontstaan in één
 transactie de speler, het ouderaccount (of de koppeling aan een bestaand account
-van dezelfde school) en het abonnement. Zo komt er nooit ongevraagd iemand in
+van dezelfde school) en de afspraak.
+
+**Het soort product bepaalt de administratie**: een abonnement wordt een
+`Subscription` met een eerste rekening, al het andere (kamp, rittenkaart, losse
+training) een `Purchase` via `SellProduct`. Alles als abonnement wegschrijven
+leverde een kamp met een maandfrequentie op.
+
+#### Contant of online, en de betaallink
+
+Op het formulier kies je **hoe je betaalt**: contant bij de school of online.
+Automatische incasso staat er alleen bij als het gekozen product een abonnement
+is — bij een kamp is "elke termijn afschrijven" een belofte over een termijn die
+niet bestaat. **Wat niet kan, staat er niet**: zonder aangesloten provider
+bestaat alleen contant, ook in de validatie.
+
+**Betalen gebeurt pas ná goedkeuring.** Anders kan er geld binnenkomen van
+iemand die de school afwijst, en terugbetalen zit niet in de app. Bij de
+goedkeuring gaat `InschrijvingGoedgekeurd` naar de ouder: bij contant een zin
+("dat reken je af bij de school"), bij online een knop.
+
+Die knop is een **ondertekende, veertien dagen geldige link**
+(`Support\Payments\PaymentLink` + `PublicCheckoutController`), buiten de inlog
+om. Een net ingeschreven ouder heeft nog geen wachtwoord; hem eerst dat rondje
+laten doen is precies waar iemand afhaakt. Wat dat veilig houdt: de handtekening
+zit op het adres (sleutelen aan het id werkt niet), de pagina toont alleen
+bedrag, omschrijving, voornaam en school, en de uitkomst komt net als anders van
+de **webhook** — niet van de browser. `HandleInertiaRequests` zet de app-props
+voor `public-pay.*` leeg, net als voor de kaart en het inschrijfformulier. Zo komt er nooit ongevraagd iemand in
 het ledenbestand. Hoort het e-mailadres van de ouder bij een andere school, dan
 stopt de goedkeuring: een account hoort bij precies één school.
 

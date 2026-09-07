@@ -3,6 +3,7 @@
 namespace Tests\Feature\Enrollments;
 
 use App\Enums\EnrollmentStatus;
+use App\Enums\ProductType;
 use App\Enums\Role;
 use App\Models\Enrollment;
 use App\Models\Player;
@@ -10,13 +11,14 @@ use App\Models\Product;
 use App\Models\School;
 use App\Models\Subscription;
 use App\Models\User;
+use App\Notifications\InschrijvingGoedgekeurd;
 use App\Notifications\NieuweInschrijving;
+use App\Support\Payments\PaymentGateway;
 use App\Support\Tenancy\Tenancy;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
-use App\Support\Payments\PaymentGateway;
 use Tests\Support\FakeGateway;
 use Tests\TestCase;
 
@@ -180,7 +182,11 @@ class EnrollmentTest extends TestCase
 
         $this->assertSame(1, User::where('email', 'marieke@voorbeeld.nl')->count());
         $this->assertTrue($bestaand->children()->exists());
-        Notification::assertNothingSent();
+
+        // Geen wachtwoordmail: dit account bestond al en heeft er een.
+        Notification::assertNotSentTo($bestaand, ResetPassword::class);
+        // Wel het bericht dat de inschrijving rond is.
+        Notification::assertSentTo($bestaand, InschrijvingGoedgekeurd::class);
     }
 
     public function test_een_ouder_van_een_andere_school_blokkeert_de_goedkeuring(): void
@@ -277,5 +283,98 @@ class EnrollmentTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $this->assertDatabaseHas('enrollments', ['payment_method' => 'ideal']);
+    }
+
+    public function test_een_los_product_wordt_een_aankoop_en_geen_abonnement(): void
+    {
+        Notification::fake();
+
+        app(Tenancy::class)->set($this->school);
+
+        $kamp = Product::factory()->for($this->school)->create([
+            'name' => 'Zomerkamp',
+            'type' => ProductType::Kamp,
+            'amount_cents' => 9500,
+        ]);
+
+        $inschrijving = Enrollment::factory()->for($this->school)->create([
+            'product_id' => $kamp->id,
+            'payment_method' => 'cash',
+        ]);
+
+        $this->actingAs($this->eigenaar)->post('/enrollments/'.$inschrijving->id.'/approve');
+
+        // Een kamp is één keer afnemen; als abonnement zou het elke maand een
+        // nieuwe rekening opleveren.
+        $this->assertDatabaseCount('subscriptions', 0);
+        $this->assertDatabaseHas('purchases', ['name' => 'Zomerkamp', 'amount_cents' => 9500]);
+        $this->assertDatabaseHas('payments', ['amount_cents' => 9500, 'status' => 'open', 'method' => 'cash']);
+    }
+
+    public function test_bij_online_betalen_zit_er_een_betaallink_in_de_mail(): void
+    {
+        Notification::fake();
+        $this->metBetaalprovider();
+
+        app(Tenancy::class)->set($this->school);
+
+        $product = Product::factory()->for($this->school)->create([
+            'name' => 'Losse training',
+            'type' => ProductType::LosseTraining,
+            'amount_cents' => 1500,
+        ]);
+
+        $inschrijving = Enrollment::factory()->for($this->school)->create([
+            'guardian_email' => 'marieke@voorbeeld.nl',
+            'product_id' => $product->id,
+            'payment_method' => 'ideal',
+        ]);
+
+        $this->actingAs($this->eigenaar)->post('/enrollments/'.$inschrijving->id.'/approve');
+
+        $ouder = User::where('email', 'marieke@voorbeeld.nl')->firstOrFail();
+
+        Notification::assertSentTo($ouder, InschrijvingGoedgekeurd::class, function (InschrijvingGoedgekeurd $melding) use ($ouder) {
+            $mail = $melding->toMail($ouder);
+
+            // De knop wijst naar de ondertekende betaalpagina: een net
+            // ingeschreven ouder heeft nog geen wachtwoord.
+            $this->assertStringContainsString('/betalen/', (string) $mail->actionUrl);
+            $this->assertStringContainsString('signature=', (string) $mail->actionUrl);
+
+            return true;
+        });
+    }
+
+    public function test_bij_contant_staat_er_geen_betaalknop_in_de_mail(): void
+    {
+        Notification::fake();
+
+        app(Tenancy::class)->set($this->school);
+
+        $product = Product::factory()->for($this->school)->create([
+            'type' => ProductType::LosseTraining,
+            'amount_cents' => 1500,
+        ]);
+
+        $inschrijving = Enrollment::factory()->for($this->school)->create([
+            'guardian_email' => 'marieke@voorbeeld.nl',
+            'product_id' => $product->id,
+            'payment_method' => 'cash',
+        ]);
+
+        $this->actingAs($this->eigenaar)->post('/enrollments/'.$inschrijving->id.'/approve');
+
+        $ouder = User::where('email', 'marieke@voorbeeld.nl')->firstOrFail();
+
+        Notification::assertSentTo($ouder, InschrijvingGoedgekeurd::class, function (InschrijvingGoedgekeurd $melding) use ($ouder) {
+            $mail = $melding->toMail($ouder);
+
+            // Een betaalknop zou een gezin twee keer laten betalen.
+            $this->assertNull($mail->actionUrl);
+            $this->assertStringContainsString('bij de school zelf', implode(' ', $mail->introLines));
+
+            return true;
+        });
     }
 }

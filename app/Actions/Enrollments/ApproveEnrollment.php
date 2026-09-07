@@ -3,13 +3,16 @@
 namespace App\Actions\Enrollments;
 
 use App\Actions\Payments\GeneratePayments;
+use App\Actions\Products\SellProduct;
 use App\Enums\EnrollmentStatus;
 use App\Enums\Role;
 use App\Enums\SubscriptionStatus;
 use App\Models\Enrollment;
+use App\Models\Payment;
 use App\Models\Player;
 use App\Models\Subscription;
 use App\Models\User;
+use App\Notifications\InschrijvingGoedgekeurd;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -25,7 +28,10 @@ use RuntimeException;
  */
 class ApproveEnrollment
 {
-    public function __construct(protected GeneratePayments $facturen) {}
+    public function __construct(
+        protected GeneratePayments $facturen,
+        protected SellProduct $verkoop,
+    ) {}
 
     public function handle(Enrollment $enrollment, User $eigenaar): Player
     {
@@ -42,8 +48,9 @@ class ApproveEnrollment
         }
 
         $nieuwAccount = null;
+        $ouderAccount = null;
 
-        $player = DB::transaction(function () use ($enrollment, $eigenaar, $bestaand, &$nieuwAccount) {
+        $player = DB::transaction(function () use ($enrollment, $eigenaar, $bestaand, &$nieuwAccount, &$ouderAccount) {
             $player = Player::create([
                 'first_name' => $enrollment->first_name,
                 'last_name' => $enrollment->last_name,
@@ -71,7 +78,14 @@ class ApproveEnrollment
                 $ouder->id => ['relationship' => $enrollment->relationship],
             ]);
 
-            if ($enrollment->product) {
+            $ouderAccount = $ouder;
+
+            // Het soort product bepaalt de administratie. Een abonnement loopt
+            // door en brengt telkens een rekening voort; een kamp, een losse
+            // training of een rittenkaart is één keer afnemen en één rekening.
+            // Alles als abonnement wegschrijven leverde een kamp met een
+            // maandfrequentie op, en dat snapt later niemand meer.
+            if ($enrollment->product?->type->isSubscription()) {
                 $abonnement = Subscription::create([
                     'player_id' => $player->id,
                     'product_id' => $enrollment->product->id,
@@ -87,6 +101,12 @@ class ApproveEnrollment
                 // de ouder inlogt. Wachten op de nachtelijke facturenloop zou
                 // betekenen dat een net goedgekeurd gezin een leeg scherm ziet.
                 $this->facturen->handle($abonnement);
+            } elseif ($enrollment->product) {
+                $aankoop = $this->verkoop->handle($player, $enrollment->product);
+
+                // De gekozen betaalwijze reist mee naar de rekening: die bepaalt
+                // of de ouder online kan afrekenen of bij de school betaalt.
+                $aankoop->payments()->update(['method' => $enrollment->payment_method]);
             }
 
             $enrollment->forceFill([
@@ -104,6 +124,24 @@ class ApproveEnrollment
             Password::sendResetLink(['email' => $nieuwAccount->email]);
         }
 
+        // En dan het bericht waar de ouder op wacht, met daarin hoe hij betaalt.
+        // Ook na de transactie: een mislukte goedkeuring mag nooit alsnog een
+        // betaalverzoek opleveren.
+        if ($ouderAccount !== null) {
+            $ouderAccount->notify(new InschrijvingGoedgekeurd($player, $this->eersteRekening($player)));
+        }
+
         return $player;
+    }
+
+    /**
+     * De rekening die uit deze inschrijving voortkwam, als die er is.
+     *
+     * Bij een gratis proefles of een inschrijving zonder tarief valt er niets
+     * te betalen; dan hoort er ook geen bedrag in de mail te staan.
+     */
+    protected function eersteRekening(Player $player): ?Payment
+    {
+        return $player->payments()->orderBy('due_on')->orderBy('id')->first();
     }
 }

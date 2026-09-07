@@ -47,7 +47,7 @@ class HandleInertiaRequests extends Middleware
         // Expliciet leegzetten in plaats van weglaten: Inertia's gedeelde props
         // zijn statisch, dus een eerdere request kan er nog iets in hebben laten
         // staan. Overschrijven is het enige wat gegarandeerd werkt.
-        if ($request->routeIs('players.shared', 'enroll.*')) {
+        if ($request->routeIs('players.shared', 'enroll.*', 'public-pay.*')) {
             return array_merge(parent::share($request), [
                 'name' => config('app.name'),
                 // Het inschrijfformulier hoort de school te tonen; de gedeelde
