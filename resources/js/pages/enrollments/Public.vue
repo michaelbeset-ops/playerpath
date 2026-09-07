@@ -194,7 +194,20 @@ const kanVerder = computed(() => {
 
 /* ---------- Kinderen ---------- */
 
-const voegKindToe = () => form.children.push(nieuwKind(gekozen.value?.id ?? null));
+// Ingelogd: het eerste (nog niet gekozen) kind staat al klaar. Een ouder komt
+// voor zijn eigen kind, niet voor "nieuw kind".
+const bestaandKind = (kind: Kind) => {
+    const gekozenIds = form.children.map((k) => k.player_id);
+    const volgende = (props.config.guardian?.children ?? []).find((b) => !gekozenIds.includes(b.id));
+
+    if (volgende) {
+        kiesBestaand(kind, volgende);
+    }
+
+    return kind;
+};
+
+const voegKindToe = () => form.children.push(bestaandKind(nieuwKind(gekozen.value?.id ?? null)));
 const verwijderKind = (i: number) => form.children.splice(i, 1);
 
 const kiesBestaand = (kind: Kind, bestaand: BestaandKind | null) => {
@@ -206,6 +219,10 @@ const kiesBestaand = (kind: Kind, bestaand: BestaandKind | null) => {
         kind.position = bestaand.position;
     }
 };
+
+if (props.config.guardian?.children.length) {
+    kiesBestaand(form.children[0], props.config.guardian.children[0]);
+}
 
 const vraagt = (veld: string) => props.config.fields[veld] !== 'off';
 const verplichtVeld = (veld: string) => props.config.fields[veld] === 'required';
