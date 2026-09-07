@@ -202,7 +202,7 @@ class DashboardController extends Controller
                     'report_count' => $speler->reports()->count(),
                     // De kaart zelf op het dashboard: dat is waar een kind voor komt.
                     'categories' => $this->calculator->breakdown($speler),
-                    'level' => $this->badges->level($speler->overall_rating),
+                    'level' => $this->badges->level($speler),
                     'badges' => array_values(array_filter($badges, fn ($b) => $b['earned'])),
                     // De eerstvolgende mijlpaal: iets om naartoe te werken.
                     'next_badge' => collect($badges)->first(fn ($b) => ! $b['earned']),

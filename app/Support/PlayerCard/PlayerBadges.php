@@ -5,6 +5,7 @@ namespace App\Support\PlayerCard;
 use App\Enums\AttendanceStatus;
 use App\Enums\GoalStatus;
 use App\Models\Player;
+use App\Support\Rating\RatingEngine;
 
 /**
  * Mijlpalen en niveau voor de spelerskaart.
@@ -19,15 +20,30 @@ use App\Models\Player;
 class PlayerBadges
 {
     /** @return array{key: string, label: string, description: string} */
-    public function level(?int $overall): array
+    /**
+     * Het level van een speler.
+     *
+     * Sinds de rekenkern op XP, niet meer op rating: het level beloont inzet,
+     * de rating zegt hoe goed. Zie Support\Rating\RatingEngine. Deze methode
+     * blijft bestaan als ingang voor de kaart, zodat het niveau overal uit
+     * dezelfde bron komt.
+     *
+     * @return array{key: string, label: string, description: string, xp: int, next: array|null, progress: int}
+     */
+    public function level(Player $player): array
     {
-        return match (true) {
-            $overall === null => ['key' => 'geen', 'label' => 'Nog geen niveau', 'description' => 'Vanaf je eerste rapport'],
-            $overall >= 85 => ['key' => 'elite', 'label' => 'Elite', 'description' => '85 of hoger'],
-            $overall >= 75 => ['key' => 'goud', 'label' => 'Goud', 'description' => '75 tot 85'],
-            $overall >= 60 => ['key' => 'zilver', 'label' => 'Zilver', 'description' => '60 tot 75'],
-            default => ['key' => 'brons', 'label' => 'Brons', 'description' => 'Tot 60'],
-        };
+        $state = app(RatingEngine::class)->levelState($player);
+
+        return [
+            'key' => $state['key'],
+            'label' => $state['label'],
+            'description' => $state['next'] === null
+                ? 'Het hoogste level'
+                : "Nog {$state['next']['remaining']} XP tot {$state['next']['label']}",
+            'xp' => $state['xp'],
+            'next' => $state['next'],
+            'progress' => $state['progress'],
+        ];
     }
 
     /**

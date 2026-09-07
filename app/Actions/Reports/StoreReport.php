@@ -8,6 +8,7 @@ use App\Models\Report;
 use App\Models\User;
 use App\Notifications\NieuwRapport;
 use App\Support\PlayerCard\CalculatePlayerCard;
+use App\Support\Rating\RatingEngine;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 
@@ -23,7 +24,11 @@ use Illuminate\Support\Facades\Notification;
  */
 class StoreReport
 {
-    public function __construct(protected CalculatePlayerCard $calculator, protected EvaluateGoals $goals) {}
+    public function __construct(
+        protected CalculatePlayerCard $calculator,
+        protected EvaluateGoals $goals,
+        protected RatingEngine $engine,
+    ) {}
 
     /**
      * @param  array<string, float>  $scores  categorie => cijfer (1-10, met een decimaal)
@@ -32,7 +37,7 @@ class StoreReport
     {
         $vorigeRating = $player->overall_rating;
 
-        $report = DB::transaction(function () use ($player, $trainer, $scores, $note, $reportedOn) {
+        $report = DB::transaction(function () use ($player, $trainer, $scores, $note, $reportedOn, $vorigeRating) {
             $report = Report::create([
                 'player_id' => $player->id,
                 'trainer_id' => $trainer->id,
@@ -49,6 +54,10 @@ class StoreReport
 
             $this->calculator->refresh($player->refresh());
 
+            // XP voor het rapport zelf, plus groei ten opzichte van het vorige.
+            // Binnen de transactie: een rapport zonder XP is een halve boeking.
+            $this->boekXp($player->refresh(), $report, $vorigeRating);
+
             return $report->load('scores');
         });
 
@@ -58,6 +67,25 @@ class StoreReport
         $this->goals->handle($player);
 
         return $report;
+    }
+
+    /**
+     * XP voor dit rapport.
+     *
+     * De groei is het verschil in overall rating vóór en ná dit rapport. Dat is
+     * de gedempte kaartwaarde en niet het losse rapportcijfer: zo levert een
+     * uitschieter geen berg XP op die de volgende week niet meer klopt.
+     */
+    protected function boekXp(Player $player, Report $report, ?int $vorigeRating): void
+    {
+        $settings = $this->engine->settingsFor($player);
+        $xp = $this->engine->xpForReport($vorigeRating, $player->overall_rating, $settings);
+
+        $this->engine->award($player, 'report', $xp['base'], 'Rapport ingevuld', $report, $report->reported_on);
+
+        if ($xp['growth'] > 0) {
+            $this->engine->award($player, 'growth', $xp['growth'], "Gegroeid van {$vorigeRating} naar {$player->overall_rating}", $report, $report->reported_on);
+        }
     }
 
     /** De ouders én de speler zelf, als die een eigen account heeft. */

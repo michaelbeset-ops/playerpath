@@ -7,6 +7,7 @@ use App\Enums\AttendanceStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Player;
 use App\Models\Training;
+use App\Support\Rating\RatingEngine;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -16,7 +17,7 @@ use Illuminate\Validation\Rule;
  */
 class AttendanceController extends Controller
 {
-    public function __construct(protected ConsumeCredit $credits) {}
+    public function __construct(protected ConsumeCredit $credits, protected RatingEngine $engine) {}
 
     public function update(Request $request, Training $training, Player $player): RedirectResponse
     {
@@ -42,6 +43,21 @@ class AttendanceController extends Controller
         // dan gebeurt hier niets: afvinken mag nooit stuklopen op de
         // administratie.
         $this->credits->sync($aanwezigheid, $status === null ? null : AttendanceStatus::from($status));
+
+        // Aanwezig zijn is XP: trouw komen wordt beloond, niet alleen talent.
+        // Een vergissing van de trainer draait de punten weer terug.
+        if ($status === AttendanceStatus::Present->value) {
+            $this->engine->award(
+                $player,
+                'attendance',
+                $this->engine->settingsFor($player)->xpForAttendance(),
+                'Aanwezig bij '.$training->group->name,
+                $aanwezigheid,
+                $training->starts_at,
+            );
+        } else {
+            $this->engine->revoke($player, 'attendance', $aanwezigheid);
+        }
 
         return back();
     }

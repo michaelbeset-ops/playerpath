@@ -128,10 +128,12 @@ class DashboardTest extends TestCase
             'reported_on' => now()->subDays(60),
         ]);
 
+        // Vandaag en niet "drie dagen geleden": op een maandag valt dat in de
+        // vorige week, en dan meldt het blok ook de trainer zonder rapport.
         Report::factory()->for($school)->create([
             'player_id' => $recent->id,
             'trainer_id' => $eigenaar->id,
-            'reported_on' => now()->subDays(3),
+            'reported_on' => now(),
         ]);
 
         $this->actingAs($eigenaar)

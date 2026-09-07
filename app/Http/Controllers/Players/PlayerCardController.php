@@ -45,7 +45,7 @@ class PlayerCardController extends Controller
                 'note' => $laatste->note,
             ] : null,
             'canReport' => auth()->user()->can('createReport', $player),
-            'level' => $this->badges->level($player->overall_rating),
+            'level' => $this->badges->level($player),
             'goals' => $this->goals->forPlayer($player),
             'share' => [
                 'can' => auth()->user()->can('share', $player),

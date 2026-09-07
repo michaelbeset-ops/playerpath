@@ -73,7 +73,7 @@ class SharedCardController extends Controller
                 ],
                 $this->calculator->breakdown($player)
             ),
-            'level' => $this->badges->level($player->overall_rating),
+            'level' => $this->badges->level($player),
             'badges' => array_values(array_filter(
                 $this->badges->for($player, $this->progress),
                 fn (array $badge) => $badge['earned'],

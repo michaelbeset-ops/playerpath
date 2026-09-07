@@ -210,15 +210,22 @@ class ProgressAndNotificationTest extends TestCase
 
     // --- Kaart: niveau en mijlpalen ---
 
-    public function test_het_niveau_hoort_bij_de_rating(): void
+    public function test_het_niveau_hoort_bij_de_xp(): void
     {
+        // Sinds de rekenkern: het level beloont inzet (XP), de rating zegt hoe
+        // goed. Zie Support\Rating\RatingEngine.
         $badges = app(PlayerBadges::class);
 
-        $this->assertSame('geen', $badges->level(null)['key']);
-        $this->assertSame('brons', $badges->level(55)['key']);
-        $this->assertSame('zilver', $badges->level(60)['key']);
-        $this->assertSame('goud', $badges->level(75)['key']);
-        $this->assertSame('elite', $badges->level(85)['key']);
+        $this->assertSame('brons', $badges->level($this->speler)['key']);
+
+        $this->speler->forceFill(['xp' => 150])->save();
+        $this->assertSame('zilver', $badges->level($this->speler->fresh())['key']);
+
+        $this->speler->forceFill(['xp' => 400])->save();
+        $this->assertSame('goud', $badges->level($this->speler->fresh())['key']);
+
+        $this->speler->forceFill(['xp' => 900])->save();
+        $this->assertSame('elite', $badges->level($this->speler->fresh())['key']);
     }
 
     public function test_mijlpalen_worden_verdiend_door_te_groeien(): void
@@ -243,7 +250,9 @@ class ProgressAndNotificationTest extends TestCase
             ->get("/players/{$this->speler->id}/card")
             ->assertOk()
             ->assertInertia(fn ($page) => $page
-                ->where('level.key', 'goud')
+                // Een rapport is 5 XP: brons, met zilver in zicht.
+                ->where('level.key', 'brons')
+                ->where('level.next.key', 'zilver')
                 ->has('badges', 9)
             );
     }

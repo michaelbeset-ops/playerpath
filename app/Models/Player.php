@@ -43,6 +43,8 @@ class Player extends Model
             'shared_at' => 'datetime',
             'deactivated_at' => 'datetime',
             'greeted_on' => 'date',
+            'xp' => 'integer',
+            'category_changed_on' => 'date',
         ];
     }
 
@@ -113,6 +115,18 @@ class Player extends Model
         return $this->belongsToMany(Group::class)
             ->withPivotValue('school_id', $this->pivotSchoolId())
             ->withTimestamps();
+    }
+
+    /** De XP-boekhouding; `xp` op de speler is de som. */
+    public function xpEvents(): HasMany
+    {
+        return $this->hasMany(XpEvent::class);
+    }
+
+    /** De kaarten van vorige jaargangen. */
+    public function cardSeasons(): HasMany
+    {
+        return $this->hasMany(PlayerCardSeason::class)->orderByDesc('season');
     }
 
     /** Wat deze speler heeft afgenomen: rittenkaarten, kampen, losse trainingen. */

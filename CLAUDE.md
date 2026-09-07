@@ -652,6 +652,55 @@ rapport gedaan is. Vier dingen die je niet moet omdraaien:
   Rapporten hangen bewust niet aan een training; een trainer schrijft over een
   speler, niet over een sessie. De datum is het enige eerlijke verband.
 
+### De rekenkern: rating, XP en level
+
+`Support\Rating\RatingEngine` is de enige plek waar de drie getallen van de
+spelerontwikkeling uit elkaar volgen. Ze betekenen verschillende dingen en dat
+moet je niet door elkaar halen:
+
+| Getal | Betekent | Komt uit | Kan dalen? |
+|---|---|---|---|
+| **Rating** | hoe goed, t.o.v. de leeftijdsgroep | de rapporten (`CalculatePlayerCard`) | ja |
+| **XP** | inzet | aanwezig zijn, rapporten, groei | nooit |
+| **Level** | brons · zilver · goud · elite | de XP | alleen bij een correctie |
+
+- **De rating wordt nooit achteraf gecorrigeerd op leeftijd.** De trainer
+  beoordeelt al relatief ("een goede 7 voor een O12"); het invulscherm zegt
+  dat. Een kaart die afwijkt van wat hij opschreef vertrouwt niemand meer.
+  Leeftijd is context op de kaart en in de uitleg, geen rekenfactor.
+- **XP daalt nooit door prestaties.** Achteruitgang in een rapport kost niets;
+  alleen een teruggedraaide aanwezigheid neemt zijn punten mee, want dat is een
+  correctie van een fout. Elke XP is een regel in `xp_events` met een reden en
+  een referentie — zo is een level altijd uitlegbaar, en levert twee keer
+  dezelfde training afvinken geen dubbele punten op.
+- **Groei-XP rekent met de gedempte kaartwaarde**, niet met het losse
+  rapportcijfer. Zo levert een uitschieter geen berg XP op die de volgende
+  week niet meer klopt.
+- **Levels lopen puur op XP**, met per school een optionele minimale rating
+  per level (standaard uit). Trouw komen brengt je naar goud, ook zonder
+  talent — dat is het stimuleringsdeel. Haal je de minimale rating niet, dan
+  zak je naar het level eronder, niet naar brons.
+
+Alle getallen staan in `Support\Rating\RatingSettings`: standaarden in code,
+in `schools.rating_settings` alleen afwijkingen — zoals bij de functies per
+school. Standaard: 10 XP per aanwezigheid, 5 per rapport, 2 per punt groei
+(plafond 30), levels op 0 / 150 / 400 / 900, drie rapporten als demping.
+
+#### Leeftijdscategorie en seizoenskaart
+
+`Support\Rating\AgeCategory` leidt de categorie af uit het **geboortejaar**
+(KNVB-jaargangen, even banden O8 t/m O18+, peildatum 1 januari van het
+seizoensjaar, seizoen vanaf augustus). Niet uit de groep: een speler kan in
+twee groepen zitten. `players.age_category` is de laatst vastgestelde waarde,
+opgeslagen om een overgang te kunnen zíen.
+
+`players:categories` draait elke nacht. Gaat een speler een jaargang omhoog,
+dan wordt zijn kaart eerst als **seizoenskaart** bewaard
+(`player_card_seasons`: "Seizoen 2025/26 · O12") en wisselt daarna de
+categorie. Geen rekenkundige truc bij de overgang: de demping over de laatste
+rapporten vangt de hogere lat op, en de oude kaart blijft als herinnering staan
+in plaats van te verdwijnen.
+
 ### Rapport en spelerskaart (fase 2)
 
 De categorieen staan in `App\Enums\ReportCategory`, zes per positie:

@@ -4,6 +4,7 @@ namespace App\Support\PlayerCard;
 
 use App\Enums\ReportCategory;
 use App\Models\Player;
+use App\Support\Rating\RatingSettings;
 
 /**
  * Rekent rapporten door naar de spelerskaart.
@@ -52,7 +53,8 @@ class CalculatePlayerCard
         $reports = $player->reports()
             ->newestFirst()
             ->with('scores')
-            ->limit(self::REPORTS_IN_AVERAGE)
+            // Per school instelbaar; de constante is de standaard.
+            ->limit(RatingSettings::for($player->school)->reportsInAverage())
             ->get();
 
         $categories = $player->position->categories();
