@@ -29,6 +29,7 @@ export interface FamilyTraining {
     label: string;
     /** Voor welk kind (of welke kinderen) deze training is. */
     for: string;
+    children: { id: number; first_name: string; registration: 'attending' | 'declined' | null }[];
     date: string;
     is_today: boolean;
     time: string;
@@ -48,6 +49,8 @@ export interface FamilyAanbod {
     period: string | null;
     location: string | null;
     spots_left: number | null;
+    image: string | null;
+    enroll_url: string;
 }
 
 export interface FamilyBericht {

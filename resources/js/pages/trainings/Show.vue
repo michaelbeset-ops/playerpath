@@ -12,6 +12,7 @@ interface SpelerRij {
     name: string;
     position: string;
     registration: string | null;
+    registration_note: string | null;
     status: string | null;
 }
 
@@ -252,6 +253,9 @@ const verwijderen = () => {
                                         {{ speler.registration === 'attending' ? 'aangemeld' : 'afgemeld' }}
                                     </span>
                                 </template>
+                            </p>
+                            <p v-if="speler.registration_note" class="mt-0.5 break-words text-xs italic text-muted-foreground">
+                                {{ speler.registration_note }}
                             </p>
                         </div>
 

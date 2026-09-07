@@ -2,8 +2,8 @@
 
 namespace Tests\Feature\Trainings;
 
-use App\Enums\Role;
 use App\Enums\AttendanceStatus;
+use App\Enums\Role;
 use App\Models\Attendance;
 use App\Models\Group;
 use App\Models\Player;

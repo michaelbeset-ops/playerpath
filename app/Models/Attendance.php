@@ -20,6 +20,7 @@ class Attendance extends Model
         'player_id',
         'registration',
         'registered_by_id',
+        'registration_note',
         'status',
     ];
 

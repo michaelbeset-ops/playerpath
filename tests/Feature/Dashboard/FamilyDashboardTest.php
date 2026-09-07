@@ -141,7 +141,7 @@ class FamilyDashboardTest extends TestCase
             ->assertInertia(fn ($page) => $page->count('upcoming', 5));
     }
 
-    public function test_een_openstaande_rekening_vraagt_om_actie_en_noemt_het_kind(): void
+    public function test_het_dashboard_heeft_geen_meldingsblokken(): void
     {
         Payment::factory()->for($this->school)->create([
             'player_id' => $this->sem->id,
@@ -150,21 +150,10 @@ class FamilyDashboardTest extends TestCase
             'due_on' => now()->addWeek(),
         ]);
 
+        // Een openstaande rekening staat in het menu, niet als blok bovenaan.
         $this->actingAs($this->ouder)
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page
-                ->count('todo', 1)
-                ->where('todo.0.key', 'payments')
-                ->where('todo.0.body', 'Voor Sem.')
-                ->where('todo.0.href', '/billing')
-            );
-    }
-
-    public function test_zonder_signalen_staat_er_geen_blok(): void
-    {
-        $this->actingAs($this->ouder)
-            ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->count('todo', 0));
+            ->assertInertia(fn ($page) => $page->missing('todo'));
     }
 
     public function test_het_aanbod_toont_alleen_waar_je_je_op_kunt_inschrijven(): void

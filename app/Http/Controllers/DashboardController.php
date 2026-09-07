@@ -229,10 +229,6 @@ class DashboardController extends Controller
         return Inertia::render('Dashboard', [
             'view' => 'gezin',
             'children' => $this->family->children($spelerIds),
-            // Eigen sleutel: het school-dashboard heeft een aandacht-blok met
-            // een andere vorm, en die twee door elkaar halen levert een blok op
-            // dat de helft van zijn eigen velden mist.
-            'todo' => $this->family->attention($user, $spelerIds),
             'upcoming' => $this->family->upcomingTrainings($user, $spelerIds),
             'offerings' => $this->family->openOfferings($user),
             'messages' => $this->family->messages($user),

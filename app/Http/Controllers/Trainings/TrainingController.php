@@ -163,6 +163,7 @@ class TrainingController extends Controller
                 'name' => $speler->full_name,
                 'position' => $speler->position->label(),
                 'registration' => $aanwezigheid->get($speler->id)?->registration?->value,
+                'registration_note' => $aanwezigheid->get($speler->id)?->registration_note,
                 'status' => $aanwezigheid->get($speler->id)?->status?->value,
             ]),
             'can' => [

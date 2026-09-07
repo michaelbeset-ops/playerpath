@@ -11,7 +11,7 @@ import ReportPrompt, { type Herinnering } from '@/components/dashboard/ReportPro
 import TrainingsWidget from '@/components/dashboard/TrainingsWidget.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem, type SharedData } from '@/types';
-import type { FamilyAanbod, FamilyBericht, FamilyKind, FamilyTaak, FamilyTraining } from '@/types/family';
+import type { FamilyAanbod, FamilyBericht, FamilyKind, FamilyTraining } from '@/types/family';
 import type { SpelerDashboardData } from '@/types/player-dashboard';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { CalendarPlus, Check, ClipboardList, Euro, Star, UserPlus, Users } from 'lucide-vue-next';
@@ -44,8 +44,6 @@ const props = defineProps<{
     // --- Ouder en speler ---
     /** De kinderen van deze ouder, compact; de kaart zit één tik verderop. */
     children?: FamilyKind[];
-    /** Wat er nú van een ouder gevraagd wordt; leeg betekent: geen blok. */
-    todo?: FamilyTaak[];
     upcoming?: FamilyTraining[];
     offerings?: FamilyAanbod[];
     messages?: FamilyBericht[];
@@ -281,7 +279,6 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
                     v-else
                     class="mt-6"
                     :children="children ?? []"
-                    :todo="todo ?? []"
                     :upcoming="upcoming ?? []"
                     :offerings="offerings ?? []"
                     :messages="messages ?? []"

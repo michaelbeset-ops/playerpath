@@ -78,10 +78,12 @@ const groepen = computed<NavGroup[]>(() =>
         title: groep.title,
         href: groep.href,
         icon: iconen[groep.icon] ?? LayoutGrid,
+        badge: (groep as { badge?: number }).badge ?? 0,
         items: (groep.items ?? []).map((item) => ({
             title: item.title,
             href: item.href,
             icon: iconen[item.icon] ?? LayoutGrid,
+            badge: (item as { badge?: number }).badge ?? 0,
         })),
     })),
 );
@@ -178,6 +180,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                             @click="wissel(groep.title)"
                         >
                             {{ groep.title }}
+                            <span v-if="groep.badge" class="size-2 rounded-full bg-warning" aria-label="Er staat iets open"></span>
                             <ChevronDown class="size-3.5 transition" :class="open === groep.title ? 'rotate-180' : ''" />
                         </button>
 
@@ -195,6 +198,11 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                             >
                                 <component :is="item.icon" class="size-4 shrink-0 opacity-70" />
                                 {{ item.title }}
+                                <span
+                                    v-if="item.badge"
+                                    class="tabular ml-auto rounded-full bg-warning px-1.5 text-[10px] font-semibold text-warning-foreground"
+                                    >{{ item.badge }}</span
+                                >
                             </Link>
                         </div>
                     </div>
@@ -324,7 +332,10 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                 </Link>
 
                 <template v-else>
-                    <p class="px-3 text-xs font-medium uppercase tracking-wide text-foreground/50">{{ groep.title }}</p>
+                    <p class="flex items-center gap-2 px-3 text-xs font-medium uppercase tracking-wide text-foreground/50">
+                        {{ groep.title }}
+                        <span v-if="groep.badge" class="size-2 rounded-full bg-warning"></span>
+                    </p>
                     <Link
                         v-for="item in groep.items"
                         :key="item.href"
@@ -335,6 +346,11 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                     >
                         <component :is="item.icon" class="size-4 shrink-0 opacity-70" />
                         {{ item.title }}
+                        <span
+                            v-if="item.badge"
+                            class="tabular ml-auto rounded-full bg-warning px-1.5 text-[10px] font-semibold text-warning-foreground"
+                            >{{ item.badge }}</span
+                        >
                     </Link>
                 </template>
             </div>

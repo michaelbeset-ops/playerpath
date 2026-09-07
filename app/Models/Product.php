@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Wat een school verkoopt: een abonnement, een rittenkaart, een losse
@@ -174,6 +175,12 @@ class Product extends Model
     public function spotsLeft(): ?int
     {
         return $this->capacity === null ? null : max(0, $this->capacity - $this->spotsTaken());
+    }
+
+    /** De afbeelding in de shop, als de school er een heeft gezet. */
+    public function getImageUrlAttribute(): ?string
+    {
+        return $this->photo_path ? Storage::url($this->photo_path) : null;
     }
 
     /** Past deze positie bij dit aanbod? Een keeperskamp is niet voor een spits. */

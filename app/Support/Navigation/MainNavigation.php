@@ -100,7 +100,7 @@ class MainNavigation
                     ['title' => 'Overzichten', 'href' => '/exports', 'icon' => 'exports', 'allowed' => $user->isEigenaar(), 'feature' => Feature::Exports],
                     // Alleen de ouder: die betaalt. Een kind met een eigen inlog
                     // ziet zijn kaart en zijn voortgang, geen rekeningen of shop.
-                    ['title' => 'Mijn abonnement', 'href' => '/billing', 'icon' => 'payments', 'allowed' => $user->isOuder(), 'feature' => Feature::Betalingen],
+                    ['title' => 'Betalingen', 'href' => '/billing', 'icon' => 'payments', 'allowed' => $user->isOuder(), 'feature' => Feature::Betalingen, 'badge' => fn () => $this->openstaand($user)],
                     // En wat ze er zelf bij kunnen afnemen: rittenkaarten, kampen.
                     ['title' => 'Shop', 'href' => '/shop', 'icon' => 'products', 'allowed' => $user->isOuder(), 'feature' => Feature::Betalingen],
                 ],
@@ -146,7 +146,7 @@ class MainNavigation
             }
 
             $items = array_values(array_map(
-                fn (array $item) => ['title' => $item['title'], 'href' => $item['href'], 'icon' => $item['icon']],
+                fn (array $item) => ['title' => $item['title'], 'href' => $item['href'], 'icon' => $item['icon'], 'badge' => isset($item['badge']) ? (int) $item['badge']() : 0],
                 array_filter($groep['items'], fn (array $item) => $this->mag($item)),
             ));
 
@@ -157,12 +157,12 @@ class MainNavigation
             // Eén item over: dan is de groepsnaam een belofte die hij niet
             // waarmaakt. Toon het item zelf.
             if (count($items) === 1) {
-                $zichtbaar[] = ['title' => $items[0]['title'], 'href' => $items[0]['href'], 'icon' => $items[0]['icon'], 'items' => []];
+                $zichtbaar[] = ['title' => $items[0]['title'], 'href' => $items[0]['href'], 'icon' => $items[0]['icon'], 'items' => [], 'badge' => $items[0]['badge']];
 
                 continue;
             }
 
-            $zichtbaar[] = ['title' => $groep['title'], 'href' => null, 'icon' => $groep['icon'], 'items' => $items];
+            $zichtbaar[] = ['title' => $groep['title'], 'href' => null, 'icon' => $groep['icon'], 'items' => $items, 'badge' => (int) array_sum(array_column($items, 'badge'))];
         }
 
         return $zichtbaar;
@@ -177,6 +177,19 @@ class MainNavigation
      *
      * @param  array<string, mixed>  $item
      */
+    /**
+     * Hoeveel rekeningen er voor de kinderen van deze ouder openstaan.
+     *
+     * Het meldingsblok op het dashboard is weg; dit bolletje is wat er voor in
+     * de plaats kwam. Subtiel, maar niet te missen.
+     */
+    protected function openstaand(User $user): int
+    {
+        $spelers = $user->visiblePlayerIds();
+
+        return $spelers === [] ? 0 : Payment::whereIn('player_id', $spelers)->outstanding()->count();
+    }
+
     protected function mag(array $item): bool
     {
         return ($item['allowed'] ?? false)

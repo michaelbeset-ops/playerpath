@@ -127,7 +127,7 @@ class FamilyDashboard
         $namen = Player::whereIn('id', $spelerIds)->pluck('first_name', 'id');
 
         return $this->visible->query($user)
-            ->with(['group.players', 'trainers', 'slot'])
+            ->with(['group.players', 'trainers', 'slot', 'attendances'])
             ->upcoming()
             ->limit($limiet)
             ->get()
@@ -136,10 +136,19 @@ class FamilyDashboard
                     ? $training->group->players->whereIn('id', $spelerIds)->pluck('id')
                     : collect([$training->slot?->player_id])->filter();
 
+                $aanwezigheid = $training->attendances->keyBy('player_id');
+
                 return [
                     'id' => $training->id,
                     'label' => $training->label(),
                     'for' => $eigen->map(fn ($id) => $namen[$id] ?? null)->filter()->join(' en '),
+                    // Per kind: wat is er doorgegeven, zodat je kunt afmelden of
+                    // weer aanmelden zonder eerst de training te openen.
+                    'children' => $eigen->map(fn ($id) => [
+                        'id' => $id,
+                        'first_name' => $namen[$id] ?? '',
+                        'registration' => $aanwezigheid->get($id)?->registration?->value,
+                    ])->values()->all(),
                     'date' => $training->starts_at->translatedFormat('l j F'),
                     'is_today' => $training->starts_at->isToday(),
                     'time' => $training->starts_at->format('H:i').' - '.$training->ends_at->format('H:i'),
@@ -243,6 +252,9 @@ class FamilyDashboard
                 'period' => $this->periode($aanbod),
                 'location' => $aanbod->location,
                 'spots_left' => $aanbod->spotsLeft(),
+                'image' => $aanbod->image_url,
+                // Direct de inschrijving van dít aanbod in, niet een overzicht.
+                'enroll_url' => route('enroll.show', $user->school).'?aanbod='.$aanbod->id,
             ])
             ->values()
             ->all();
