@@ -48,8 +48,14 @@ class PaymentController extends Controller
         // optellen en pas daarna de lijst afkappen.
         $totalen = $this->filter->totals($query);
 
+        // De lijst wordt per dag gegroepeerd, en welke dag dat is verschilt per
+        // tabblad: "ontvangen in maart" gaat over de betaaldatum, "openstaand"
+        // over de vervaldatum. Dezelfde kolom als waarop gefilterd wordt, zodat
+        // de kopjes niet iets anders zeggen dan het totaal.
+        $kolom = $this->filter->datumkolom($filters['tab']);
+
         $payments = (clone $query)
-            ->orderByDesc($this->filter->datumkolom($filters['tab']))
+            ->orderByDesc($kolom)
             ->orderByDesc('id')
             ->limit(200)
             ->get()
@@ -67,6 +73,7 @@ class PaymentController extends Controller
                 'due_on' => $payment->due_on->format('d-m-Y'),
                 'paid_at' => $payment->paid_at?->format('d-m-Y'),
                 'is_overdue' => $payment->isOverdue(),
+                ...$this->groep($payment, $kolom),
             ]);
 
         return Inertia::render('billing/Payments', [
@@ -127,5 +134,24 @@ class PaymentController extends Controller
             : "De betaling staat nu op '{$nieuw->label()}'.";
 
         return back()->with('status', $melding);
+    }
+
+    /**
+     * Onder welk kopje deze rekening hoort.
+     *
+     * De datum staat zo één keer boven een groepje in plaats van op elke regel;
+     * bij een school die op de eerste van de maand int scheelt dat dertig keer
+     * dezelfde datum lezen.
+     *
+     * @return array{group_key: string, group_label: string}
+     */
+    protected function groep(Payment $payment, string $kolom): array
+    {
+        $datum = $payment->{$kolom} ?? $payment->due_on;
+
+        return [
+            'group_key' => $datum->format('Y-m-d'),
+            'group_label' => ($kolom === 'paid_at' ? 'Betaald op ' : 'Vervalt ').$datum->translatedFormat('j F Y'),
+        ];
     }
 }
