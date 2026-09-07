@@ -165,6 +165,10 @@ class ShopController extends Controller
      */
     protected function eigenSpelers(Request $request): array
     {
+        // Kopen doet de ouder. Een kind met een eigen inlog ziet zijn kaart
+        // en zijn voortgang, maar sluit geen kamp of rittenkaart af.
+        abort_unless($request->user()->isOuder(), 403, 'Inschrijven en kopen doen je ouders.');
+
         $ids = $request->user()->visiblePlayerIds();
 
         abort_if($ids === [], 403, 'Je hebt geen spelers om iets voor af te nemen.');

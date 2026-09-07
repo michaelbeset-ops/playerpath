@@ -11,6 +11,7 @@ use App\Support\Dashboard\AttentionItems;
 use App\Support\Dashboard\DashboardTrends;
 use App\Support\Dashboard\DevelopmentOverview;
 use App\Support\Dashboard\FamilyDashboard;
+use App\Support\Dashboard\PlayerDashboard;
 use App\Support\Dashboard\SchoolDashboard;
 use App\Support\Dashboard\SetupChecklist;
 use App\Support\Dashboard\Signal;
@@ -65,6 +66,7 @@ class DashboardController extends Controller
         protected DevelopmentOverview $development,
         protected ReportPrompts $prompts,
         protected FamilyDashboard $family,
+        protected PlayerDashboard $speler,
     ) {}
 
     public function __invoke(Request $request): Response|RedirectResponse
@@ -80,9 +82,18 @@ class DashboardController extends Controller
 
         $eigenSpelers = $user->visiblePlayerIds();
 
-        return $eigenSpelers === []
-            ? $this->voorSchool($user)
-            : $this->voorGezin($user, $eigenSpelers);
+        if ($eigenSpelers === []) {
+            return $this->voorSchool($user);
+        }
+
+        // Een speler met een eigen inlog ziet alleen zichzelf: de kaart, de
+        // voortgang en de volgende training. Inschrijven en betalen zijn van
+        // zijn ouders.
+        if ($user->isSpeler() && ! $user->isOuder()) {
+            return $this->voorSpeler($user, Player::findOrFail($eigenSpelers[0]));
+        }
+
+        return $this->voorGezin($user, $eigenSpelers);
     }
 
     /** Eigenaar en trainer: de cijfers van de school. */
@@ -194,8 +205,17 @@ class DashboardController extends Controller
         ];
     }
 
+    /** De speler zelf: mijn kaart, hoe ga ik vooruit, wanneer is de training. */
+    protected function voorSpeler(User $user, Player $speler): Response
+    {
+        return Inertia::render('Dashboard', [
+            'view' => 'speler',
+            ...$this->speler->for($user, $speler),
+        ]);
+    }
+
     /**
-     * Het dashboard van een ouder of speler.
+     * Het dashboard van een ouder.
      *
      * Praktisch bovenaan, de spelerskaart klein. Een ouder komt hier om te
      * weten wanneer de training is, of hij nog moet betalen en of er nieuws is;

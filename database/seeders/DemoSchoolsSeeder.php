@@ -211,6 +211,18 @@ class DemoSchoolsSeeder extends Seeder
             $ouder->assignRole(Role::Ouder->value);
             $ouder->children()->attach($eersteSpeler->id, ['relationship' => 'moeder']);
 
+            // En de speler zelf, met een eigen inlog: zo zie je de kaart ook
+            // door de ogen van het kind, dat alleen zijn eigen kaart ziet.
+            $spelerAccount = User::create([
+                'school_id' => $school->id,
+                'name' => $eersteSpeler->full_name,
+                'email' => Str::replace('@', '+speler@', $eigenaarEmail),
+                'password' => 'wachtwoord',
+                'email_verified_at' => now(),
+            ]);
+            $spelerAccount->assignRole(Role::Speler->value);
+            $eersteSpeler->update(['user_id' => $spelerAccount->id]);
+
             // Twee rapporten per speler, zodat de kaarten meteen gevuld zijn
             // en je de doorrekening kunt zien.
             $gemaakteSpelers->each(fn (Player $speler) => $this->maakRapporten($speler, $trainer));

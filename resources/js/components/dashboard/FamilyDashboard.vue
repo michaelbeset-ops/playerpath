@@ -48,37 +48,14 @@ const levelRand: Record<string, string> = {
 
 <template>
     <div class="space-y-6">
-        <!-- 1. Wat er nú van je gevraagd wordt. Leeg is weg. -->
-        <section v-if="todo.length" class="space-y-2">
-            <div
-                v-for="item in todo"
-                :key="item.key"
-                class="flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center"
-                :class="item.tone === 'bad' ? 'border-destructive/30 bg-destructive/5' : 'border-warning/30 bg-warning/5'"
-            >
-                <span class="flex size-10 shrink-0 items-center justify-center rounded-xl" :class="toneChip[item.tone]">
-                    <component :is="iconen[item.icon] ?? Bell" class="size-5" />
-                </span>
-
-                <div class="min-w-0 flex-1">
-                    <p class="font-medium">{{ item.title }}</p>
-                    <p class="text-sm text-muted-foreground">{{ item.body }}</p>
-                </div>
-
-                <Link
-                    :href="item.href"
-                    class="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
-                >
-                    {{ item.action }}
-                </Link>
-            </div>
-        </section>
-
-        <!-- 2. Wanneer moet je waar zijn. Het eerste waar een ouder voor komt. -->
+        <!-- 1. Binnenkort: wanneer moet je waar zijn. Het scherm opent hiermee,
+             want dat is de vraag waarvoor een ouder zijn telefoon pakt. Drie
+             trainingen; de rest staat achter "Bekijk meer", en dat is alleen
+             wat de eigen kinderen aangaat. -->
         <section>
             <div class="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 class="font-semibold">Volgende trainingen</h2>
-                <Link href="/calendar" class="text-sm font-medium text-primary underline underline-offset-4">Naar de agenda</Link>
+                <h2 class="font-semibold">Binnenkort</h2>
+                <Link href="/trainings" class="text-sm font-medium text-primary underline underline-offset-4">Bekijk meer</Link>
             </div>
 
             <div v-if="upcoming.length" class="mt-3 space-y-2">
@@ -129,6 +106,32 @@ const levelRand: Record<string, string> = {
             <p v-else class="mt-3 rounded-xl border border-dashed border-border bg-card/50 p-5 text-center text-sm text-muted-foreground">
                 Er staat nog geen training gepland.
             </p>
+        </section>
+
+        <!-- 2. Wat er nú van je gevraagd wordt. Leeg is weg. -->
+        <section v-if="todo.length" class="space-y-2">
+            <div
+                v-for="item in todo"
+                :key="item.key"
+                class="flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center"
+                :class="item.tone === 'bad' ? 'border-destructive/30 bg-destructive/5' : 'border-warning/30 bg-warning/5'"
+            >
+                <span class="flex size-10 shrink-0 items-center justify-center rounded-xl" :class="toneChip[item.tone]">
+                    <component :is="iconen[item.icon] ?? Bell" class="size-5" />
+                </span>
+
+                <div class="min-w-0 flex-1">
+                    <p class="font-medium">{{ item.title }}</p>
+                    <p class="text-sm text-muted-foreground">{{ item.body }}</p>
+                </div>
+
+                <Link
+                    :href="item.href"
+                    class="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                >
+                    {{ item.action }}
+                </Link>
+            </div>
         </section>
 
         <!-- 3. Waar je je kind voor kunt inschrijven. Leeg is weg. -->

@@ -98,10 +98,11 @@ class MainNavigation
                     ['title' => 'Abonnementen', 'href' => '/subscriptions', 'icon' => 'subscriptions', 'allowed' => $user->can('viewAny', Subscription::class), 'feature' => Feature::Betalingen],
                     ['title' => 'Aanbod', 'href' => '/aanbod', 'icon' => 'products', 'allowed' => $user->can('viewAny', Product::class), 'feature' => Feature::Betalingen],
                     ['title' => 'Overzichten', 'href' => '/exports', 'icon' => 'exports', 'allowed' => $user->isEigenaar(), 'feature' => Feature::Exports],
-                    // Ouder en speler: hun eigen abonnement, niet dat van de school.
-                    ['title' => 'Mijn abonnement', 'href' => '/billing', 'icon' => 'payments', 'allowed' => $user->visiblePlayerIds() !== [], 'feature' => Feature::Betalingen],
+                    // Alleen de ouder: die betaalt. Een kind met een eigen inlog
+                    // ziet zijn kaart en zijn voortgang, geen rekeningen of shop.
+                    ['title' => 'Mijn abonnement', 'href' => '/billing', 'icon' => 'payments', 'allowed' => $user->isOuder(), 'feature' => Feature::Betalingen],
                     // En wat ze er zelf bij kunnen afnemen: rittenkaarten, kampen.
-                    ['title' => 'Shop', 'href' => '/shop', 'icon' => 'products', 'allowed' => $user->visiblePlayerIds() !== [], 'feature' => Feature::Betalingen],
+                    ['title' => 'Shop', 'href' => '/shop', 'icon' => 'products', 'allowed' => $user->isOuder(), 'feature' => Feature::Betalingen],
                 ],
             ],
             [

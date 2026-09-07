@@ -118,6 +118,29 @@ class FamilyDashboardTest extends TestCase
             );
     }
 
+    public function test_binnenkort_toont_er_drie_en_de_rest_staat_achter_bekijk_meer(): void
+    {
+        $groep = Group::factory()->for($this->school)->create();
+        $this->sem->groups()->attach($groep->id);
+
+        foreach (range(1, 5) as $dag) {
+            Training::factory()->for($this->school)->for($groep)->create(['starts_at' => now()->addDays($dag)]);
+        }
+
+        // Een training van een ander kind hoort ook op de volledige lijst niet.
+        $vreemd = Group::factory()->for($this->school)->create();
+        Training::factory()->for($this->school)->for($vreemd)->create(['starts_at' => now()->addDays(2)]);
+
+        $this->actingAs($this->ouder)
+            ->get('/dashboard')
+            ->assertInertia(fn ($page) => $page->count('upcoming', 3));
+
+        $this->actingAs($this->ouder)
+            ->get('/trainings')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->count('upcoming', 5));
+    }
+
     public function test_een_openstaande_rekening_vraagt_om_actie_en_noemt_het_kind(): void
     {
         Payment::factory()->for($this->school)->create([

@@ -115,11 +115,14 @@ class FamilyDashboard
      *
      * Bij welk kind een training hoort staat erbij: met twee kinderen in
      * verschillende groepen is een rij tijdstippen zonder naam onbruikbaar.
+     * Drie stuks: het scherm opent hiermee, en meer dan drie duwt de rest van
+     * het dashboard van het scherm af. "Bekijk meer" gaat naar /trainings, dat
+     * via VisibleTrainings dezelfde grens houdt: alleen de eigen kinderen.
      *
      * @param  list<int>  $spelerIds
      * @return list<array<string, mixed>>
      */
-    public function upcomingTrainings(User $user, array $spelerIds, int $limiet = 4): array
+    public function upcomingTrainings(User $user, array $spelerIds, int $limiet = 3): array
     {
         $namen = Player::whereIn('id', $spelerIds)->pluck('first_name', 'id');
 

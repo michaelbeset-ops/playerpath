@@ -24,6 +24,10 @@ class MyBillingController extends Controller
 
     public function index(Request $request): Response
     {
+        // Rekeningen zijn van de ouder; een kind met een eigen inlog heeft
+        // er niets aan en hoort ze ook niet te zien.
+        abort_unless($request->user()->isOuder(), 403, 'Betalingen regelen je ouders.');
+
         $spelerIds = $request->user()->visiblePlayerIds();
 
         abort_if($spelerIds === [], 403, 'Je hebt geen spelers waar een abonnement bij hoort.');

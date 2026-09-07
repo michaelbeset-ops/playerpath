@@ -6,17 +6,19 @@ import DevelopmentWidget from '@/components/dashboard/DevelopmentWidget.vue';
 import FamilyDashboard from '@/components/dashboard/FamilyDashboard.vue';
 import FinanceWidget from '@/components/dashboard/FinanceWidget.vue';
 import KpiWidget from '@/components/dashboard/KpiWidget.vue';
+import PlayerDashboard from '@/components/dashboard/PlayerDashboard.vue';
 import ReportPrompt, { type Herinnering } from '@/components/dashboard/ReportPrompt.vue';
 import TrainingsWidget from '@/components/dashboard/TrainingsWidget.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import type { FamilyAanbod, FamilyBericht, FamilyKind, FamilyTaak, FamilyTraining } from '@/types/family';
+import type { SpelerDashboardData } from '@/types/player-dashboard';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { CalendarPlus, Check, ClipboardList, Euro, Star, UserPlus, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 const props = defineProps<{
-    view: 'school' | 'gezin';
+    view: 'school' | 'gezin' | 'speler';
     /** Het antwoord op "wat moet ik doen?". Staat vast bovenaan. */
     /** Rapporten die nu ingevuld kunnen worden; zie ReportPrompts. */
     reportPrompts?: Herinnering[];
@@ -47,6 +49,17 @@ const props = defineProps<{
     upcoming?: FamilyTraining[];
     offerings?: FamilyAanbod[];
     messages?: FamilyBericht[];
+
+    // --- Speler ---
+    /** Alles van het spelerdashboard; zie PlayerDashboard.php. */
+    player?: SpelerDashboardData['player'];
+    card?: SpelerDashboardData['card'];
+    quarter?: SpelerDashboardData['quarter'];
+    categories?: SpelerDashboardData['categories'];
+    hasEnoughData?: boolean;
+    nextStep?: SpelerDashboardData['nextStep'];
+    nextBadge?: SpelerDashboardData['nextBadge'];
+    nextTraining?: SpelerDashboardData['nextTraining'];
 }>();
 
 const page = usePage<SharedData>();
@@ -71,6 +84,7 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
             <div class="flex flex-wrap items-baseline gap-x-3">
                 <h1 class="text-2xl font-semibold tracking-tight">
                     <template v-if="view === 'gezin'">Hallo {{ voornaam }}</template>
+                    <template v-else-if="view === 'speler'">Hoi {{ player?.first_name ?? voornaam }} 👋</template>
                     <template v-else>Dashboard</template>
                 </h1>
                 <p class="text-sm text-muted-foreground">
@@ -247,7 +261,21 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
                 </DashboardGrid>
             </template>
 
-            <!-- Ouder en speler: praktisch bovenaan, de kaart één tik verderop -->
+            <!-- De speler zelf: mijn kaart, mijn voortgang, volgende training -->
+            <PlayerDashboard
+                v-else-if="view === 'speler' && card && player && quarter && categories"
+                class="mt-6"
+                :player="player"
+                :card="card"
+                :quarter="quarter"
+                :categories="categories"
+                :has-enough-data="hasEnoughData ?? false"
+                :next-step="nextStep ?? null"
+                :next-badge="nextBadge ?? null"
+                :next-training="nextTraining ?? null"
+            />
+
+            <!-- Ouder: praktisch bovenaan, de kaart één tik verderop -->
             <FamilyDashboard
                 v-else
                 class="mt-6"
