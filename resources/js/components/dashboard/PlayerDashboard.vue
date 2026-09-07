@@ -76,10 +76,10 @@ const voortgangHref = computed(() => '/players/' + props.player.id + '/progress'
 </script>
 
 <template>
-    <!-- De donkere kant van het merk; zie CLAUDE.md hoofdstuk 4. Op een
-         telefoon loopt het vlak van rand tot rand, op groot scherm is het een
-         paneel. -->
-    <div class="theme-donker -mx-4 bg-background px-4 py-6 text-foreground sm:mx-0 sm:rounded-3xl sm:p-8">
+    <!-- De donkere kant van het merk; zie CLAUDE.md hoofdstuk 4. Het thema
+         staat op de pagina (Dashboard.vue), zodat ook de begroeting erboven
+         donker is en er geen lichte strook tussen balk en inhoud zit. -->
+    <div>
         <div class="mx-auto max-w-2xl space-y-6">
             <!-- 1. Mijn kaart. Dit is waar een kind voor komt. -->
             <section>
