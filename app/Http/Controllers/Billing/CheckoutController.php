@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Billing;
 
+use App\Actions\Payments\StartCheckout;
 use App\Actions\Payments\SyncPayment;
 use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
@@ -26,6 +27,7 @@ class CheckoutController extends Controller
 {
     public function __construct(
         protected PaymentGateway $gateway,
+        protected StartCheckout $checkout,
         protected SyncPayment $sync,
     ) {}
 
@@ -47,18 +49,10 @@ class CheckoutController extends Controller
             return back()->with('status', 'Deze betaling reken je af bij de school zelf.');
         }
 
-        // Een lopende betaling hervatten in plaats van een tweede aanmaken:
-        // anders staat er straks twee keer hetzelfde bedrag open omdat iemand
-        // halverwege iDEAL zijn browser sloot.
-        if ($payment->checkout_url !== null && $payment->status === PaymentStatus::Open) {
-            return Inertia::location($payment->checkout_url);
-        }
-
         try {
-            $remote = $this->gateway->start(
+            $checkout = $this->checkout->handle(
                 $payment,
                 route('billing.return', $payment),
-                route('webhooks.mollie'),
                 // Staat het abonnement op incasso, dan legt deze eerste
                 // betaling meteen het mandaat vast. Daarna hoeft de ouder er
                 // niets meer voor te doen.
@@ -70,12 +64,7 @@ class CheckoutController extends Controller
             return back()->withErrors(['payment' => 'Het starten van de betaling is niet gelukt. Probeer het straks nog eens.']);
         }
 
-        $payment->forceFill([
-            'external_reference' => $remote->reference,
-            'checkout_url' => $remote->checkoutUrl,
-        ])->save();
-
-        return Inertia::location($remote->checkoutUrl);
+        return Inertia::location($checkout);
     }
 
     /**

@@ -49,6 +49,11 @@ const opslaan = () =>
         onSuccess: () => {
             form.logo = null;
             form.remove_logo = false;
+
+            // De merkkleur staat als <style> in de <head>, en die schrijft
+            // Inertia niet opnieuw. Zonder deze herlading sla je op, verandert
+            // er zichtbaar niets, en denk je dat het niet werkt.
+            window.location.reload();
         },
     });
 </script>
@@ -102,8 +107,7 @@ const opslaan = () =>
                 <div class="rounded-xl border border-border bg-card p-5 shadow-sm">
                     <p class="font-medium">Merkkleur</p>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        Dit wordt de kleur van knoppen en accenten. Statuskleuren blijven staan: een waarschuwing hoort overal
-                        hetzelfde te betekenen.
+                        Dit wordt de kleur van knoppen en accenten. Statuskleuren blijven staan: een waarschuwing hoort overal hetzelfde te betekenen.
                     </p>
 
                     <div class="mt-4 flex flex-wrap items-end gap-4">

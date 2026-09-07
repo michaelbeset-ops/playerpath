@@ -99,6 +99,8 @@ class MainNavigation
                     ['title' => 'Overzichten', 'href' => '/exports', 'icon' => 'exports', 'allowed' => $user->isEigenaar(), 'feature' => Feature::Exports],
                     // Ouder en speler: hun eigen abonnement, niet dat van de school.
                     ['title' => 'Mijn abonnement', 'href' => '/billing', 'icon' => 'payments', 'allowed' => $user->visiblePlayerIds() !== [], 'feature' => Feature::Betalingen],
+                    // En wat ze er zelf bij kunnen afnemen: rittenkaarten, kampen.
+                    ['title' => 'Shop', 'href' => '/shop', 'icon' => 'products', 'allowed' => $user->visiblePlayerIds() !== [], 'feature' => Feature::Betalingen],
                 ],
             ],
             [

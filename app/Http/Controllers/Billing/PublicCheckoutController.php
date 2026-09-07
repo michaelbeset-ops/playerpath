@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Billing;
 
+use App\Actions\Payments\StartCheckout;
 use App\Actions\Payments\SyncPayment;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
@@ -35,6 +36,7 @@ class PublicCheckoutController extends Controller
 {
     public function __construct(
         protected PaymentGateway $gateway,
+        protected StartCheckout $checkout,
         protected SyncPayment $sync,
         protected Tenancy $tenancy,
     ) {}
@@ -73,18 +75,10 @@ class PublicCheckoutController extends Controller
             return back()->withErrors(['payment' => 'Online betalen kan hier nu niet. Neem contact op met de school.']);
         }
 
-        // Een lopende betaling hervatten in plaats van een tweede aanmaken:
-        // anders staat er straks twee keer hetzelfde bedrag open omdat iemand
-        // halverwege iDEAL zijn browser sloot.
-        if ($betaling->checkout_url !== null) {
-            return Inertia::location($betaling->checkout_url);
-        }
-
         try {
-            $remote = $this->gateway->start(
+            $checkout = $this->checkout->handle(
                 $betaling,
                 URL::temporarySignedRoute('public-pay.return', now()->addDay(), ['payment' => $betaling->id]),
-                route('webhooks.mollie'),
             );
         } catch (Throwable $e) {
             report($e);
@@ -92,12 +86,7 @@ class PublicCheckoutController extends Controller
             return back()->withErrors(['payment' => 'Het starten van de betaling is niet gelukt. Probeer het straks nog eens.']);
         }
 
-        $betaling->forceFill([
-            'external_reference' => $remote->reference,
-            'checkout_url' => $remote->checkoutUrl,
-        ])->save();
-
-        return Inertia::location($remote->checkoutUrl);
+        return Inertia::location($checkout);
     }
 
     /**

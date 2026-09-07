@@ -24,7 +24,6 @@ import {
     Receipt,
     Settings,
     Tag,
-    User,
     UserCog,
     Users,
     UsersRound,
@@ -268,14 +267,9 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                         v-if="open === 'gebruiker'"
                         class="absolute right-0 top-full mt-1 min-w-48 overflow-hidden rounded-xl border border-border bg-card py-1 shadow-lg"
                     >
-                        <Link
-                            href="/settings/profile"
-                            class="flex items-center gap-3 px-3 py-2.5 text-sm transition hover:bg-background/60"
-                            @click="sluit"
-                        >
-                            <User class="size-4 shrink-0 opacity-70" />
-                            Mijn profiel
-                        </Link>
+                        <!-- Alleen uitloggen: je instellingen staan al onder
+                             Mijn bedrijf, en twee wegen naar hetzelfde scherm
+                             laat je zoeken welke de goede is. -->
                         <Link
                             href="/logout"
                             method="post"

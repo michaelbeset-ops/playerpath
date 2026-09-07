@@ -6,6 +6,7 @@ use App\Http\Controllers\Billing\PaymentController;
 use App\Http\Controllers\Billing\ProductController;
 use App\Http\Controllers\Billing\PublicCheckoutController;
 use App\Http\Controllers\Billing\PurchaseController;
+use App\Http\Controllers\Billing\ShopController;
 use App\Http\Controllers\Billing\SubscriptionController;
 use App\Http\Controllers\Billing\WebhookController;
 use Illuminate\Support\Facades\Route;
@@ -31,6 +32,11 @@ Route::middleware(['auth', 'verified', 'feature:betalingen'])->group(function ()
 
     // Voor ouder en speler: het eigen abonnement.
     Route::get('billing', [MyBillingController::class, 'index'])->name('billing.index');
+
+    // De shop: wat een ouder zelf kan afnemen. Dezelfde prijslijst als bij
+    // Producten, min de abonnementen.
+    Route::get('shop', [ShopController::class, 'index'])->name('shop.index');
+    Route::post('shop/{product}', [ShopController::class, 'store'])->name('shop.store');
 
     // Fase 9: zelf betalen. De uitkomst komt via de webhook binnen, niet hier.
     Route::post('billing/payments/{payment}/betalen', [CheckoutController::class, 'pay'])->name('billing.pay');
