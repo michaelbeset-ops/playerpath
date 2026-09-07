@@ -980,6 +980,28 @@ small group, rittenkaart, overig. Vier afspraken:
   wie echt meedoet komt in de groep: iemand op de wachtlijst hoort niet op de
   aanwezigheidslijst van de eerstvolgende training.
 
+#### Betalen per soort aanbod
+
+- **Eenmalig of per maand staat los van het soort** (`billing_type`), en de
+  administratie volgt de betaalwijze: maandelijks wordt een `Subscription` met
+  termijnen, eenmalig een `Purchase` met één rekening. Een blok dat per maand
+  betaald wordt is dus een abonnement met een einddatum.
+- **Bij het inschrijven staat er wat je betaalt en wanneer**: bedrag, frequentie
+  en één zin die zegt wat er straks gebeurt ("je rekent af bij de school",
+  "je krijgt een betaallink na goedkeuring", "je betaalt pas als er plek is").
+  Een bedrag zonder "wanneer" laat een ouder gokken of er vanavond iets van zijn
+  rekening gaat.
+- **Het deelnemersscherm zegt wie er nog moet betalen** (betaald / openstaand /
+  te laat, met bedrag) en "X van Y betaald". Dat is de vraag die een school
+  stelt op de dag dat het kamp begint, en dan wil je niet eerst in het
+  betalingenscherm gaan zoeken.
+- **`/payments` filtert op aanbod.** Een rekening hangt aan een aankoop of aan
+  een abonnement; allebei wijzen ze naar het aanbod.
+- **Te laat is: de vervaldag is voorbij**, niet "de vervaldag is aangebroken".
+  `Payment::isOverdue()` gebruikte `isPast()` op een datumkolom (middernacht) en
+  zei daardoor op de dag zelf al "te laat", terwijl het tabblad Te laat die dag
+  niet meetelde. Twee waarheden over hetzelfde woord.
+
 #### Vol, en de wachtlijst
 
 - **Vol aanbod blijft op de aanmeldpagina staan**, met een wachtlijst. "Kom over

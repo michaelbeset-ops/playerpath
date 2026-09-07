@@ -28,12 +28,13 @@ interface Betaling {
 
 const props = defineProps<{
     payments: Betaling[];
-    filters: { tab: string; period: string; method: string; search: string };
+    filters: { tab: string; period: string; method: string; product: number | null; search: string };
     tabs: Record<string, string>;
     periods: Record<string, string>;
     totals: { count: number; total: string; excl_vat: string; vat: string; shown: number };
     statuses: Record<string, string>;
     methods: Record<string, string>;
+    products: { id: number; name: string }[];
     summary: {
         revenueThisMonth: string;
         outstanding: string;
@@ -58,7 +59,7 @@ watch(
     () => {
         clearTimeout(wachten);
         wachten = setTimeout(() => {
-            router.get('/payments', { ...filters }, { preserveState: true, replace: true });
+            router.get('/payments', { ...filters, product: filters.product ?? '' }, { preserveState: true, replace: true });
         }, 300);
     },
     { deep: true },
@@ -170,7 +171,7 @@ const zetMethode = (betaling: Betaling, method: string) =>
             </div>
 
             <!-- Filters -->
-            <div class="mt-3 grid gap-3 sm:grid-cols-3">
+            <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <div class="relative">
                     <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <input
@@ -188,6 +189,16 @@ const zetMethode = (betaling: Betaling, method: string) =>
                 <select v-model="filters.method" class="rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary">
                     <option value="">Alle methodes</option>
                     <option v-for="(label, waarde) in methods" :key="waarde" :value="waarde">{{ label }}</option>
+                </select>
+
+                <!-- "Wie heeft het zomerkamp al betaald?" is een vraag over een
+                     aanbod, niet over een maand. -->
+                <select
+                    v-model="filters.product"
+                    class="col-span-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary sm:col-span-1"
+                >
+                    <option :value="null">Al het aanbod</option>
+                    <option v-for="product in products" :key="product.id" :value="product.id">{{ product.name }}</option>
                 </select>
             </div>
 

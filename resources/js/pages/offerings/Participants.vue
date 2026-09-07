@@ -15,7 +15,9 @@ interface Deelnemer {
     age: number | null;
     position: string;
     since: string;
-    paid: boolean;
+    payment_status: 'paid' | 'open' | 'overdue' | 'none';
+    payment_label: string;
+    amount: string | null;
 }
 
 const props = defineProps<{
@@ -33,10 +35,28 @@ const props = defineProps<{
         location: string | null;
         group_id: number | null;
     };
+    paidCount: number;
     confirmed: Deelnemer[];
     waitlist: Deelnemer[];
     cancelled: Deelnemer[];
 }>();
+
+/** Betaald is groen, te laat is rood, de rest is rustig. */
+const betaalKlasse = (deelnemer: Deelnemer) => {
+    if (deelnemer.payment_status === 'paid') {
+        return 'bg-success/10 text-success';
+    }
+
+    if (deelnemer.payment_status === 'overdue') {
+        return 'bg-destructive/10 text-destructive';
+    }
+
+    if (deelnemer.payment_status === 'open') {
+        return 'bg-warning/10 text-warning';
+    }
+
+    return 'bg-secondary text-muted-foreground';
+};
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     { title: 'Aanbod', href: '/aanbod' },
@@ -108,8 +128,11 @@ const haalVanLijst = (deelnemer: Deelnemer) => {
                             <span class="tabular">{{ product.taken }}</span> {{ product.taken === 1 ? 'deelnemer' : 'deelnemers' }}
                         </template>
                     </p>
-                    <p v-if="waitlist.length" class="text-sm text-muted-foreground">
-                        <span class="tabular">{{ waitlist.length }}</span> op de wachtlijst
+                    <p class="text-sm text-muted-foreground">
+                        <template v-if="waitlist.length"
+                            ><span class="tabular">{{ waitlist.length }}</span> op de wachtlijst ·
+                        </template>
+                        <span class="tabular">{{ paidCount }} van {{ confirmed.length }}</span> betaald
                     </p>
                 </div>
 
@@ -145,11 +168,11 @@ const haalVanLijst = (deelnemer: Deelnemer) => {
                             </span>
                         </Link>
 
-                        <span
-                            v-if="!deelnemer.paid && product.amount !== '€ 0,00'"
-                            class="hidden shrink-0 rounded-lg bg-secondary px-2 py-1 text-xs text-muted-foreground sm:inline"
-                        >
-                            geen rekening
+                        <!-- Wie moet er nog betalen: de vraag die een school stelt
+                             op de dag dat het kamp begint. -->
+                        <span class="shrink-0 rounded-lg px-2 py-1 text-xs font-medium" :class="betaalKlasse(deelnemer)">
+                            <span class="tabular">{{ deelnemer.payment_status === 'none' ? '' : deelnemer.amount + ' ' }}</span>
+                            {{ deelnemer.payment_label }}
                         </span>
 
                         <button

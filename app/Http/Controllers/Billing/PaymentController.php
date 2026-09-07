@@ -6,6 +6,7 @@ use App\Enums\PaymentMethod;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
+use App\Models\Product;
 use App\Support\Money\Money;
 use App\Support\Payments\BillingOverview;
 use App\Support\Payments\PaymentGateway;
@@ -39,6 +40,7 @@ class PaymentController extends Controller
             'tab' => PaymentQuery::kies($request->string('tab'), PaymentQuery::TABBLADEN, 'all'),
             'period' => PaymentQuery::kies($request->string('period'), PaymentQuery::PERIODEN, 'this_month'),
             'method' => (string) $request->string('method'),
+            'product' => $request->integer('product') ?: null,
             'search' => trim((string) $request->string('search')),
         ];
 
@@ -92,6 +94,10 @@ class PaymentController extends Controller
             ],
             'statuses' => PaymentStatus::options(),
             'methods' => PaymentMethod::options(),
+            // Het aanbod om op te filteren: alles waar ooit iets voor is
+            // afgenomen, plus wat nu te koop staat.
+            'products' => Product::orderBy('name')->get(['id', 'name'])
+                ->map(fn (Product $product) => ['id' => $product->id, 'name' => $product->name]),
             'summary' => $this->overview->summary(),
             'gateway' => [
                 'connected' => $this->gateway->isConnected(),

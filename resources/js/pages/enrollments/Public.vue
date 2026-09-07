@@ -96,6 +96,32 @@ const leeftijd = (aanbod: Aanbod) => {
     return aanbod.max_age ? 't/m ' + aanbod.max_age + ' jaar' : null;
 };
 
+// Wat je betaalt en wanneer, in gewone taal. Een bedrag zonder "wanneer" laat
+// een ouder gokken of er vanavond iets van zijn rekening gaat.
+const betaalregel = computed(() => {
+    const aanbod = gekozen.value;
+
+    if (aanbod === null || aanbod.is_free) {
+        return null;
+    }
+
+    if (aanbod.is_full) {
+        return 'Je betaalt pas als er een plek vrijkomt.';
+    }
+
+    const gekozenMethode = betaalkeuzes.value.find((optie) => optie.value === form.payment_method);
+
+    if (gekozenMethode?.value === 'cash') {
+        return 'Je rekent ' + aanbod.amount + ' af bij de school.';
+    }
+
+    if (gekozenMethode?.value === 'directdebit') {
+        return 'De eerste betaling doe je zelf; daarna wordt ' + aanbod.amount + ' elke termijn afgeschreven.';
+    }
+
+    return 'Zodra de school je inschrijving goedkeurt, krijg je een betaallink van ' + aanbod.amount + '.';
+});
+
 const verstuur = () => form.post('/inschrijven/' + props.school.slug);
 </script>
 
@@ -216,6 +242,26 @@ const verstuur = () => form.post('/inschrijven/' + props.school.slug);
                                 <span v-if="!gekozen.is_free" class="block text-xs text-muted-foreground">{{ gekozen.billing }}</span>
                             </p>
                         </div>
+                        <!-- Wat je betaalt en waarvoor, vóór het invullen. -->
+                        <dl v-if="!gekozen.is_free" class="mt-3 space-y-1 border-t border-border pt-3 text-sm">
+                            <div class="flex items-baseline justify-between gap-3">
+                                <dt class="text-muted-foreground">Wat het kost</dt>
+                                <dd class="tabular font-semibold">{{ gekozen.amount }} {{ gekozen.billing }}</dd>
+                            </div>
+                            <div v-if="gekozen.is_subscription" class="flex items-baseline justify-between gap-3">
+                                <dt class="text-muted-foreground">Hoe vaak</dt>
+                                <dd>
+                                    {{ gekozen.interval }}<template v-if="gekozen.ends_on">, tot {{ gekozen.ends_on }}</template>
+                                </dd>
+                            </div>
+                        </dl>
+
+                        <p v-if="betaalregel" class="mt-2 text-xs text-muted-foreground">{{ betaalregel }}</p>
+
+                        <p v-if="gekozen.is_free" class="mt-3 rounded-lg bg-primary/10 p-3 text-sm text-primary">
+                            Dit kost niets. Er komt dus ook geen rekening.
+                        </p>
+
                         <p v-if="gekozen.is_full" class="mt-3 rounded-lg bg-warning/10 p-3 text-sm text-warning">
                             Dit zit vol. Je komt op de wachtlijst en betaalt pas als er een plek vrijkomt.
                         </p>

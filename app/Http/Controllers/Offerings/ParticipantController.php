@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Offerings;
 use App\Actions\Offerings\PromoteParticipation;
 use App\Enums\ParticipationStatus;
 use App\Http\Controllers\Controller;
+use App\Enums\PaymentStatus;
 use App\Models\Participation;
+use App\Models\Payment;
 use App\Models\Player;
 use App\Models\Product;
 use App\Support\Money\Money;
@@ -29,7 +31,7 @@ class ParticipantController extends Controller
         $this->authorize('update', $product);
 
         $deelnames = $product->participations()
-            ->with('player')
+            ->with(['player', 'purchase.payments', 'subscription.payments'])
             ->orderBy('created_at')
             ->get();
 
@@ -41,7 +43,7 @@ class ParticipantController extends Controller
             'age' => $deelname->player?->age,
             'position' => $deelname->player?->position->label(),
             'since' => $deelname->created_at->format('d-m-Y'),
-            'paid' => $deelname->purchase_id !== null || $deelname->subscription_id !== null,
+            ...$this->betaalstand($deelname),
         ];
 
         return Inertia::render('offerings/Participants', [
@@ -59,6 +61,10 @@ class ParticipantController extends Controller
                 'location' => $product->location,
                 'group_id' => $product->group?->id,
             ],
+            'paidCount' => $deelnames
+                ->where('status', ParticipationStatus::Confirmed)
+                ->filter(fn (Participation $d) => $this->betaalstand($d)['payment_status'] === 'paid')
+                ->count(),
             'confirmed' => $deelnames->where('status', ParticipationStatus::Confirmed)->map($vorm)->values(),
             'waitlist' => $deelnames->where('status', ParticipationStatus::Waitlist)->map($vorm)->values(),
             'cancelled' => $deelnames->where('status', ParticipationStatus::Cancelled)->map($vorm)->values(),
@@ -104,5 +110,40 @@ class ParticipantController extends Controller
         }
 
         return back()->with('status', $participation->player?->first_name.' staat niet meer op de lijst.');
+    }
+
+    /**
+     * Heeft deze deelnemer betaald?
+     *
+     * "Wie moet er nog betalen voor het kamp" is de vraag die een school stelt
+     * op de dag dat het kamp begint, en dan wil je niet eerst in het
+     * betalingenscherm gaan zoeken. Bij een abonnement kijken we naar de
+     * termijn die nu open staat; bij een aankoop is er één rekening.
+     *
+     * @return array{payment_status: string, payment_label: string, amount: string|null}
+     */
+    protected function betaalstand(Participation $deelname): array
+    {
+        $betalingen = $deelname->purchase?->payments ?? $deelname->subscription?->payments;
+
+        if ($betalingen === null || $betalingen->isEmpty()) {
+            return ['payment_status' => 'none', 'payment_label' => 'geen rekening', 'amount' => null];
+        }
+
+        $open = $betalingen->first(fn (Payment $betaling) => $betaling->status === PaymentStatus::Open);
+
+        if ($open === null) {
+            return [
+                'payment_status' => 'paid',
+                'payment_label' => 'betaald',
+                'amount' => Money::format($betalingen->sum('amount_cents')),
+            ];
+        }
+
+        return [
+            'payment_status' => $open->isOverdue() ? 'overdue' : 'open',
+            'payment_label' => $open->isOverdue() ? 'te laat' : 'openstaand',
+            'amount' => Money::format($open->amount_cents),
+        ];
     }
 }

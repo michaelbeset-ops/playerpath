@@ -39,7 +39,7 @@ class PaymentQuery
     ];
 
     /**
-     * @param  array{tab: string, period: string, search: string, method: string}  $filters
+     * @param  array{tab: string, period: string, search: string, method: string, product?: int|null}  $filters
      */
     public function build(array $filters): Builder
     {
@@ -50,6 +50,18 @@ class PaymentQuery
 
         if ($filters['method'] !== '') {
             $query->where('method', $filters['method']);
+        }
+
+        // Filteren op één aanbod: "wie heeft het zomerkamp al betaald?" is de
+        // vraag die een school stelt, en die gaat over een kamp en niet over
+        // een maand. De rekening hangt aan een aankoop of aan een abonnement;
+        // allebei wijzen ze naar het aanbod.
+        if (! empty($filters['product'])) {
+            $aanbod = (int) $filters['product'];
+
+            $query->where(fn (Builder $q) => $q
+                ->whereHas('purchase', fn (Builder $p) => $p->where('product_id', $aanbod))
+                ->orWhereHas('subscription', fn (Builder $a) => $a->where('product_id', $aanbod)));
         }
 
         if ($filters['search'] !== '') {

@@ -7,6 +7,7 @@ use App\Enums\ParticipationStatus;
 use App\Enums\Role;
 use App\Models\Enrollment;
 use App\Models\Participation;
+use App\Models\Payment;
 use App\Models\Player;
 use App\Models\Product;
 use App\Models\School;
@@ -211,5 +212,59 @@ class WaitlistTest extends TestCase
         $this->actingAs($this->eigenaar)
             ->post("/aanbod/{$ander->id}/deelnemers/{$wachtend->id}/plek")
             ->assertNotFound();
+    }
+
+    public function test_het_beheer_toont_wie_er_nog_moet_betalen(): void
+    {
+        Notification::fake();
+
+        $wachtend = $this->deelnemer(ParticipationStatus::Waitlist);
+
+        // Doorschuiven maakt de rekening; die staat dan open.
+        $this->actingAs($this->eigenaar)->post("/aanbod/{$this->blok->id}/deelnemers/{$wachtend->id}/plek");
+
+        $this->actingAs($this->eigenaar)
+            ->get('/aanbod/'.$this->blok->id.'/deelnemers')
+            ->assertInertia(fn ($page) => $page
+                ->where('paidCount', 0)
+                ->where('confirmed.0.payment_status', 'open')
+                ->where('confirmed.0.amount', '€ 120,00')
+            );
+
+        // En zodra hij betaald is, ook.
+        Payment::first()->update(['status' => \App\Enums\PaymentStatus::Paid, 'paid_at' => now()]);
+
+        $this->actingAs($this->eigenaar)
+            ->get('/aanbod/'.$this->blok->id.'/deelnemers')
+            ->assertInertia(fn ($page) => $page
+                ->where('paidCount', 1)
+                ->where('confirmed.0.payment_status', 'paid')
+            );
+    }
+
+    public function test_het_betaaloverzicht_filtert_op_aanbod(): void
+    {
+        Notification::fake();
+
+        $wachtend = $this->deelnemer(ParticipationStatus::Waitlist);
+        $this->actingAs($this->eigenaar)->post("/aanbod/{$this->blok->id}/deelnemers/{$wachtend->id}/plek");
+
+        // Een rekening die niet bij dit aanbod hoort.
+        Payment::create([
+            'player_id' => $wachtend->player_id,
+            'amount_cents' => 999,
+            'status' => \App\Enums\PaymentStatus::Open,
+            'description' => 'Iets anders',
+            'due_on' => now()->toDateString(),
+        ]);
+
+        // "Wie heeft het kamp al betaald" is een vraag over een aanbod, niet
+        // over een maand.
+        $this->actingAs($this->eigenaar)
+            ->get('/payments?period=all&tab=all&product='.$this->blok->id)
+            ->assertInertia(fn ($page) => $page
+                ->count('payments', 1)
+                ->where('payments.0.amount', '€ 120,00')
+            );
     }
 }
