@@ -10,6 +10,7 @@ use App\Http\Controllers\ExportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Players\PlayerDataController;
 use App\Http\Controllers\Pwa\ManifestController;
+use App\Http\Controllers\Schools\EnrollmentSettingsController;
 use App\Http\Controllers\Schools\LocationController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -51,6 +52,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Wat de school naar buiten kan laten zien. Alleen de eigenaar.
     Route::get('verantwoording', AccountabilityController::class)->name('accountability');
+
+    // Hoe de school inschrijft en int: de wizard en het overzicht erna.
+    // Alleen de eigenaar.
+    Route::get('instellingen/inschrijven', [EnrollmentSettingsController::class, 'index'])->name('enrollment-settings.index');
+    Route::get('instellingen/inschrijven/stap/{stap}', [EnrollmentSettingsController::class, 'edit'])->whereNumber('stap')->name('enrollment-settings.edit');
+    Route::patch('instellingen/inschrijven/stap/{stap}', [EnrollmentSettingsController::class, 'update'])->whereNumber('stap')->name('enrollment-settings.update');
 
     // Fase 11: eigen logo en kleur. Alleen de eigenaar.
     Route::get('branding', [BrandingController::class, 'edit'])->name('branding.edit');

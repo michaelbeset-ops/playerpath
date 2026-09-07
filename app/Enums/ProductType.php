@@ -26,6 +26,9 @@ enum ProductType: string
     case Privetraining = 'privetraining';
     case SmallGroup = 'small_group';
     case Rittenkaart = 'rittenkaart';
+    // Eén keer meedoen om te kijken of het bevalt. Of hij aanstaat en wat hij
+    // kost bepaalt de school in de inschrijfinstellingen.
+    case Proefles = 'proefles';
     case Overig = 'overig';
 
     public function label(): string
@@ -38,6 +41,7 @@ enum ProductType: string
             self::Privetraining => 'Privétraining',
             self::SmallGroup => 'Small group',
             self::Rittenkaart => 'Rittenkaart',
+            self::Proefles => 'Proefles',
             self::Overig => 'Overig',
         };
     }
@@ -52,6 +56,7 @@ enum ProductType: string
             self::Privetraining => 'Eén op één, op een moment dat jullie samen kiezen.',
             self::SmallGroup => 'Met een klein groepje, met een vaste reeks momenten.',
             self::Rittenkaart => 'Een aantal beurten die opraken zodra een trainer iemand aanwezig meldt.',
+            self::Proefles => 'Eén keer meetrainen om te kijken of het bevalt, gratis of tegen een klein bedrag.',
             self::Overig => 'Kleding, materiaal of iets anders dat je verkoopt.',
         };
     }
@@ -96,7 +101,7 @@ enum ProductType: string
     {
         return in_array(
             $this,
-            [self::Blok, self::Kamp, self::SmallGroup, self::Doorlopend, self::LosseTraining],
+            [self::Blok, self::Kamp, self::SmallGroup, self::Doorlopend, self::LosseTraining, self::Proefles],
             strict: true,
         );
     }

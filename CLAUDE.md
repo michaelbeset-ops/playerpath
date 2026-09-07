@@ -682,6 +682,47 @@ zodat die drie nooit uit elkaar lopen.
 De kaart is bewust donker, ook binnen de lichte admin-schil: dat is de
 speler/ouder-kant van het merk (hoofdstuk 4).
 
+### Inschrijven en betalen: de instellingen per school
+
+Scholen verschillen sterk in hoe ze inschrijven en innen, maar gebruiken
+dezelfde bouwstenen. Daarom **één generiek model, per school instelbaar**:
+`Support\Enrollment\EnrollmentSettings`. Standaarden in code, in
+`schools.enrollment_settings` alleen de antwoorden van de school — dezelfde
+afspraak als bij de rekenkern en de functies. Een nieuwe instelling krijgt zo
+bij elke bestaande school vanzelf zijn standaard.
+
+De eigenaar vult ze in via een **wizard van zes stappen** (Mijn bedrijf →
+Inschrijven en betalen, `/instellingen/inschrijven`): aanbod en proefles,
+kosten erbij (inschrijfgeld, kledingpakket), betalen (standaard betaalvorm,
+goedkeuren, verlengen, opzegtermijn, storneringskosten), annuleren en ziekte,
+kortingen, en het formulier (wachtlijst, aanmeldvelden, toestemmingen,
+ontwikkelingslaag). Drie dingen die je niet moet omdraaien:
+
+- **Eén formulier per onderwerp.** De eerste keer loop je de stappen achter
+  elkaar door; daarna opent het overzicht elke stap los. Het is hetzelfde
+  scherm, dus er is geen wizard én een instellingenpagina die uit elkaar lopen.
+  Zolang de wizard niet is afgerond opent het menu-item stap één, niet een
+  overzicht van standaarden die je nog nooit hebt gezien.
+- **Elke stap slaat alleen zijn eigen velden op**, laag voor laag samengevoegd.
+  Een school die alleen de proeflesprijs zet raakt haar andere antwoorden niet
+  kwijt, en een stap kan nooit een andere instelling overschrijven.
+- **Wat een instelling elders al is, wordt geen tweede instelling.** De
+  ontwikkelingslaag is `Feature::Ontwikkeling`; de wizard zet die functie en
+  het menu, de routes en de taken lezen hem al. De aanbodsoorten die de school
+  kiest bepalen wat er in het aanbodformulier staat (`ProductController`); een
+  bestaand aanbod van een uitgezette soort blijft gewoon staan.
+
+**Toestemmingen** (`consent_documents`) zijn een tabel en geen vinkje, omdat
+een toestemming aan een **documentversie** hangt: een andere tekst is een
+nieuwe versie, en wie de oude tekende heeft de nieuwe niet getekend. Vier
+soorten (AVG, beeldrecht, gedragsregels, medisch) met een standaardtekst als
+de school er nog geen heeft; AVG staat standaard op verplicht.
+
+**Goedkeuren is standaard handmatig**; een school die het vertrouwt zet het op
+automatisch, en dan bevestigt de betaling de inschrijving. **Proefles** is een
+eigen aanbodsoort (`ProductType::Proefles`); de instelling zegt of hij
+aanstaat en wat hij kost.
+
 ### Inschrijvingen
 
 #### De openbare aanmeldpagina
@@ -1348,10 +1389,11 @@ Het onderzoek (6-9-2026) leidde tot vier wijzigingen die je niet moet terugdraai
   ouderavond, een vereniging of een gemeente. Steeds meer steden stellen eisen
   aan commerciële voetbalscholen; cijfers over wat er feitelijk is vastgelegd
   zijn daar het tegenargument. Alleen totalen, nooit een kind bij naam.
-- **`Support\Dashboard\SetupChecklist`**: drie stappen voor een verse school,
+- **`Support\Dashboard\SetupChecklist`**: vier stappen voor een verse school,
   die **verdwijnen zodra ze gedaan zijn**. Meer dan negentig procent van de
-  gebruikers maakt een onboarding nooit af; drie stappen halveert de uitval
-  bijna ten opzichte van zeven.
+  gebruikers maakt een onboarding nooit af; een handvol stappen halveert de
+  uitval bijna ten opzichte van zeven. De eerste is de wizard Inschrijven en
+  betalen: alles daarna volgt daaruit.
 
 **Bewust niet gebouwd, en dat blijft zo: ranglijsten tussen spelers.** Onderzoek
 naar jeugdsport laat zien dat op beheersing gerichte feedback de motivatie

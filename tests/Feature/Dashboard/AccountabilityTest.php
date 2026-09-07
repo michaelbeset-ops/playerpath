@@ -9,6 +9,7 @@ use App\Models\Player;
 use App\Models\Product;
 use App\Models\School;
 use App\Models\User;
+use App\Support\Enrollment\EnrollmentSettings;
 use App\Support\Tenancy\Tenancy;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -141,22 +142,23 @@ class AccountabilityTest extends TestCase
 
     public function test_de_checklist_verdwijnt_zodra_de_school_draait(): void
     {
-        // Verse school: drie stappen open.
+        // Verse school: vier stappen open, de inschrijfinstellingen voorop.
         $this->actingAs($this->eigenaar)
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('checklist.done', 0)->has('checklist.steps', 3));
+            ->assertInertia(fn ($page) => $page->where('checklist.done', 0)->has('checklist.steps', 4));
 
+        EnrollmentSettings::complete($this->school);
         $speler = Player::factory()->for($this->school)->keeper()->create();
         Product::factory()->for($this->school)->create();
 
-        $this->actingAs($this->eigenaar)
+        $this->actingAs($this->eigenaar->fresh())
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('checklist.done', 2));
+            ->assertInertia(fn ($page) => $page->where('checklist.done', 3));
 
         $this->rapporteer($speler, 7);
 
         // Alles gedaan: weg ermee, en hij komt nooit terug.
-        $this->actingAs($this->eigenaar)
+        $this->actingAs($this->eigenaar->fresh())
             ->get('/dashboard')
             ->assertInertia(fn ($page) => $page->where('checklist', null));
     }

@@ -12,6 +12,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Location;
 use App\Models\Product;
 use App\Models\User;
+use App\Support\Enrollment\EnrollmentSettings;
 use App\Support\Money\Money;
 use App\Support\Payments\PaymentGateway;
 use App\Support\Tenancy\Tenancy;
@@ -195,6 +196,10 @@ class ProductController extends Controller
     /** @return list<array<string, mixed>> */
     protected function typen(): array
     {
+        // Alleen de soorten die deze school gebruikt (inschrijfinstellingen);
+        // een bestaand aanbod van een uitgezette soort blijft gewoon staan.
+        $soorten = EnrollmentSettings::for(app(Tenancy::class)->school())->offeringTypes();
+
         return array_map(fn (ProductType $type) => [
             'value' => $type->value,
             'label' => $type->label(),
@@ -204,7 +209,7 @@ class ProductController extends Controller
             'has_period' => $type->hasPeriod(),
             'has_schedule' => $type->hasSchedule(),
             'has_capacity' => $type->hasCapacity(),
-        ], ProductType::cases());
+        ], $soorten);
     }
 
     /**

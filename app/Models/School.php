@@ -31,6 +31,7 @@ class School extends Model
         'birthday_greeting',
         'birthday_message',
         'rating_settings',
+        'enrollment_settings',
     ];
 
     protected function casts(): array
@@ -40,6 +41,7 @@ class School extends Model
             'features' => 'array',
             'birthday_greeting' => 'boolean',
             'rating_settings' => 'array',
+            'enrollment_settings' => 'array',
         ];
     }
 

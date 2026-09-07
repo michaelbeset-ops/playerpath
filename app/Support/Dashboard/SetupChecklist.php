@@ -7,6 +7,8 @@ use App\Models\Player;
 use App\Models\Product;
 use App\Models\Report;
 use App\Models\User;
+use App\Support\Enrollment\EnrollmentSettings;
+use App\Support\Tenancy\Tenancy;
 
 /**
  * De drie dingen die een nieuwe school moet doen voordat het product werkt.
@@ -22,6 +24,8 @@ use App\Models\User;
  */
 class SetupChecklist
 {
+    public function __construct(protected Tenancy $tenancy) {}
+
     /**
      * @return array<string, mixed>|null null als de school al draait
      */
@@ -32,6 +36,14 @@ class SetupChecklist
         }
 
         $stappen = [
+            [
+                'key' => 'enrollment',
+                'title' => 'Stel in hoe je inschrijft en int',
+                'body' => 'Proefles, inschrijfgeld, termijnen, opzegtermijn, kortingen. Zes korte vragen; alles daarna volgt hieruit.',
+                'href' => '/instellingen/inschrijven',
+                'action' => 'Instellen',
+                'done' => EnrollmentSettings::for($this->tenancy->school() ?? $user->school)->isCompleted(),
+            ],
             [
                 'key' => 'players',
                 'title' => 'Voeg je eerste spelers toe',
