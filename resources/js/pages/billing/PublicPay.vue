@@ -30,7 +30,9 @@ const betaal = () => form.post(props.payUrl);
 <template>
     <Head title="Betalen" />
 
-    <div class="theme-donker flex min-h-svh items-center justify-center bg-background px-4 py-10 text-foreground">
+    <!-- Licht, net als de aanmeldpagina: dit is dezelfde bezoeker, een paar
+         dagen later. -->
+    <div class="flex min-h-svh items-center justify-center bg-background px-4 py-10 text-foreground">
         <div class="w-full max-w-md">
             <div class="flex items-center gap-3">
                 <div class="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">

@@ -288,9 +288,14 @@ Op donker komt diepte van kleurverschil, niet van harde schaduwen.
 
 ### Gedeelde schermen
 
-Inloggen, registreren en de startpagina zijn de gedeelde voordeur en staan nu
-op **donker** — dat is de merkbeleving die je als eerste ziet. Verandert dat
-inzicht, dan is het één klasse omzetten.
+Inloggen, registreren en de startpagina zijn de gedeelde voordeur en staan op
+**donker** — dat is de merkbeleving die je als eerste ziet.
+
+De **openbare pagina's voor ouders zijn licht**: de aanmeldpagina
+(`/inschrijven/{slug}`) en de betaalpagina uit een e-mail. Die staan vaak in een
+iframe op de eigen website van de school, en een donker vlak in een lichte
+website valt uit de toon. Ze gebruiken dezelfde tokens, dus het is één klasse
+verschil — geen aparte kleuren.
 
 ### Typografie
 

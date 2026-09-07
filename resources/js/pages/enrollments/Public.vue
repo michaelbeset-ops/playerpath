@@ -102,7 +102,10 @@ const verstuur = () => form.post('/inschrijven/' + props.school.slug);
 <template>
     <Head :title="'Inschrijven bij ' + school.name" />
 
-    <div class="theme-donker min-h-svh bg-background px-4 py-8 text-foreground sm:py-12">
+    <!-- Licht, net als de rest van de werkvloer. Dit is de eerste pagina die
+         een ouder van de school ziet, vaak in een iframe op haar eigen site;
+         een donker vlak in een lichte website valt daar uit de toon. -->
+    <div class="min-h-svh bg-background px-4 py-8 text-foreground sm:py-12">
         <div class="mx-auto w-full max-w-lg">
             <div class="flex items-center gap-3">
                 <div class="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
@@ -167,7 +170,7 @@ const verstuur = () => form.post('/inschrijven/' + props.school.slug);
                             <p
                                 v-if="aanbod.spots_left !== null"
                                 class="mt-3 inline-flex rounded-lg px-2 py-1 text-xs font-medium"
-                                :class="aanbod.spots_left <= 3 ? 'bg-gold/15 text-gold' : 'bg-primary/10 text-primary'"
+                                :class="aanbod.spots_left <= 3 ? 'bg-warning/10 text-warning' : 'bg-primary/10 text-primary'"
                             >
                                 <span v-if="aanbod.spots_left === 1">Nog 1 plek</span>
                                 <span v-else>Nog {{ aanbod.spots_left }} plekken</span>
