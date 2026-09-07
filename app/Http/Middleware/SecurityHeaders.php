@@ -22,7 +22,15 @@ class SecurityHeaders
 
         // De app mag niet in een iframe van iemand anders staan: dat is hoe
         // clickjacking werkt — een onzichtbare knop over die van jou heen.
-        $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
+        //
+        // Eén uitzondering: de aanmeldpagina. Die is bedoeld om op de eigen
+        // website van de school te zetten, en daar staat niets achter een
+        // sessie — geen inlog, geen gegevens van anderen, alleen een formulier
+        // dat een inschrijving oplevert. Clickjacking valt daar niets mee te
+        // winnen, en zonder deze uitzondering blijft het iframe leeg.
+        if (! $request->routeIs('enroll.*')) {
+            $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
+        }
 
         // Geen gokwerk over bestandstypen. Een geüpload "logo" dat stiekem
         // JavaScript is, wordt dan niet alsnog uitgevoerd.

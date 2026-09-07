@@ -5,26 +5,32 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Head, useForm } from '@inertiajs/vue3';
-import { CheckCircle2, LoaderCircle } from 'lucide-vue-next';
-import { computed, watch } from 'vue';
+import { CalendarRange, CheckCircle2, LoaderCircle, MapPin, Ticket, Users } from 'lucide-vue-next';
+import { computed, ref, watch } from 'vue';
 
-/**
- * Het openbare inschrijfformulier. Geen inlog, geen app-schil: de ouder
- * ziet alleen de school, het formulier en een bevestiging.
- *
- * Eén kolom, grote velden, alles op mobiel in te vullen met de duim.
- */
+interface Aanbod {
+    id: number;
+    name: string;
+    description: string | null;
+    type: string;
+    amount: string;
+    is_free: boolean;
+    billing: string;
+    is_subscription: boolean;
+    interval: string;
+    starts_on: string | null;
+    ends_on: string | null;
+    location: string | null;
+    min_age: number | null;
+    max_age: number | null;
+    credits: number | null;
+    spots_left: number | null;
+}
+
 const props = defineProps<{
     school: { name: string; slug: string };
-    products: {
-        id: number;
-        name: string;
-        description: string | null;
-        amount: string;
-        type: string;
-        is_subscription: boolean;
-        interval: string;
-    }[];
+    products: Aanbod[];
+    selected: number | null;
     positions: Record<string, string>;
     paymentOptions: { value: string; label: string; hint: string; subscription_only: boolean }[];
     submitted: boolean;
@@ -39,24 +45,56 @@ const form = useForm({
     guardian_email: '',
     guardian_phone: '',
     relationship: '',
-    product_id: props.products[0]?.id ?? null,
+    // Een school kan naast elk programma op haar eigen site een knop zetten die
+    // hierheen wijst; dan staat de keuze al goed.
+    product_id: props.selected ?? props.products[0]?.id ?? null,
     payment_method: props.paymentOptions[0]?.value ?? null,
     note: '',
     privacy: false,
 });
 
-const gekozenProduct = computed(() => props.products.find((product) => product.id === form.product_id) ?? null);
+const gekozen = computed(() => props.products.find((p) => p.id === form.product_id) ?? null);
 
 // Incasso hoort bij iets dat doorloopt. Bij een kamp of een losse training is
 // "elke termijn afschrijven" een belofte over een termijn die niet bestaat.
-const betaalkeuzes = computed(() => props.paymentOptions.filter((optie) => !optie.subscription_only || gekozenProduct.value?.is_subscription));
+const betaalkeuzes = computed(() =>
+    props.paymentOptions.filter((optie) => !optie.subscription_only || gekozen.value?.is_subscription),
+);
 
-// Verandert het product, dan kan de gekozen methode er niet meer bij horen.
 watch(betaalkeuzes, (keuzes) => {
     if (!keuzes.some((optie) => optie.value === form.payment_method)) {
         form.payment_method = keuzes[0]?.value ?? null;
     }
 });
+
+// Eerst kiezen, dan pas gegevens invullen. Andersom vraag je de geboortedatum
+// van een kind voordat iemand weet of er iets bij zit.
+const stap = ref<'aanbod' | 'gegevens'>(props.selected ? 'gegevens' : 'aanbod');
+
+const kies = (aanbod: Aanbod) => {
+    form.product_id = aanbod.id;
+    stap.value = 'gegevens';
+};
+
+const periode = (aanbod: Aanbod) => {
+    if (!aanbod.starts_on) {
+        return null;
+    }
+
+    return aanbod.ends_on && aanbod.ends_on !== aanbod.starts_on ? aanbod.starts_on + ' t/m ' + aanbod.ends_on : aanbod.starts_on;
+};
+
+const leeftijd = (aanbod: Aanbod) => {
+    if (aanbod.min_age && aanbod.max_age) {
+        return aanbod.min_age + ' t/m ' + aanbod.max_age + ' jaar';
+    }
+
+    if (aanbod.min_age) {
+        return 'vanaf ' + aanbod.min_age + ' jaar';
+    }
+
+    return aanbod.max_age ? 't/m ' + aanbod.max_age + ' jaar' : null;
+};
 
 const verstuur = () => form.post('/inschrijven/' + props.school.slug);
 </script>
@@ -70,125 +108,187 @@ const verstuur = () => form.post('/inschrijven/' + props.school.slug);
                 <div class="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
                     <AppLogoIcon class="size-6" />
                 </div>
-                <div>
+                <div class="min-w-0">
                     <p class="text-xs uppercase tracking-widest text-muted-foreground">Inschrijven bij</p>
-                    <h1 class="text-xl font-bold leading-tight">{{ school.name }}</h1>
+                    <p class="truncate text-lg font-semibold">{{ school.name }}</p>
                 </div>
             </div>
 
-            <!-- Bevestiging -->
-            <div v-if="submitted" class="mt-8 rounded-2xl border border-primary/30 bg-card p-6">
-                <div class="flex items-start gap-3">
-                    <CheckCircle2 class="mt-0.5 size-6 shrink-0 text-primary" />
-                    <div>
-                        <p class="text-lg font-semibold">Inschrijving ontvangen</p>
+            <!-- Verstuurd -->
+            <div v-if="submitted" class="mt-8 rounded-2xl border border-primary/40 bg-primary/10 p-6 text-center">
+                <CheckCircle2 class="mx-auto size-8 text-primary" />
+                <p class="mt-3 font-semibold">Je inschrijving is binnen</p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    {{ school.name }} kijkt ernaar en neemt contact met je op. Je hoort van ons hoe en wanneer je betaalt.
+                </p>
+            </div>
+
+            <template v-else>
+                <!-- Stap 1: waar schrijf je je voor in -->
+                <template v-if="stap === 'aanbod'">
+                    <h1 class="mt-8 text-2xl font-semibold tracking-tight">Waar wil je je voor inschrijven?</h1>
+
+                    <div v-if="products.length" class="mt-4 space-y-3">
+                        <article v-for="aanbod in products" :key="aanbod.id" class="rounded-2xl border border-border bg-card p-4">
+                            <div class="flex flex-wrap items-start justify-between gap-2">
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-xs uppercase tracking-wide text-muted-foreground">{{ aanbod.type }}</p>
+                                    <p class="font-semibold">{{ aanbod.name }}</p>
+                                </div>
+                                <p class="tabular shrink-0 text-right">
+                                    <span class="text-lg font-bold">{{ aanbod.is_free ? 'gratis' : aanbod.amount }}</span>
+                                    <span v-if="!aanbod.is_free" class="block text-xs text-muted-foreground">{{ aanbod.billing }}</span>
+                                </p>
+                            </div>
+
+                            <p v-if="aanbod.description" class="mt-2 text-sm text-muted-foreground">{{ aanbod.description }}</p>
+
+                            <div class="mt-3 space-y-1 text-sm text-muted-foreground">
+                                <p v-if="periode(aanbod)" class="flex items-start gap-2">
+                                    <CalendarRange class="mt-0.5 size-4 shrink-0" />
+                                    <span>{{ periode(aanbod) }}</span>
+                                </p>
+                                <p v-if="aanbod.location" class="flex items-start gap-2">
+                                    <MapPin class="mt-0.5 size-4 shrink-0" />
+                                    <span>{{ aanbod.location }}</span>
+                                </p>
+                                <p v-if="leeftijd(aanbod)" class="flex items-start gap-2">
+                                    <Users class="mt-0.5 size-4 shrink-0" />
+                                    <span>{{ leeftijd(aanbod) }}</span>
+                                </p>
+                                <p v-if="aanbod.credits" class="flex items-start gap-2">
+                                    <Ticket class="mt-0.5 size-4 shrink-0" />
+                                    <span>{{ aanbod.credits }} beurten</span>
+                                </p>
+                            </div>
+
+                            <!-- Nog maar een paar plekken is iets wat je wilt weten
+                                 vóórdat je je gegevens invult. -->
+                            <p
+                                v-if="aanbod.spots_left !== null"
+                                class="mt-3 inline-flex rounded-lg px-2 py-1 text-xs font-medium"
+                                :class="aanbod.spots_left <= 3 ? 'bg-gold/15 text-gold' : 'bg-primary/10 text-primary'"
+                            >
+                                <span v-if="aanbod.spots_left === 1">Nog 1 plek</span>
+                                <span v-else>Nog {{ aanbod.spots_left }} plekken</span>
+                            </p>
+
+                            <Button class="mt-4 h-11 w-full" @click="kies(aanbod)">Dit wil ik</Button>
+                        </article>
+                    </div>
+
+                    <div v-else class="mt-6 rounded-2xl border border-dashed border-border bg-card/50 p-8 text-center">
+                        <p class="font-medium">Er staat op dit moment niets open</p>
                         <p class="mt-1 text-sm text-muted-foreground">
-                            Bedankt! {{ school.name }} bekijkt de inschrijving en neemt contact met je op. Zodra hij is goedgekeurd krijg je een
-                            e-mail om in te loggen — daarmee zie je de spelerskaart, de trainingen en de voortgang van je kind.
+                            Neem contact op met {{ school.name }}; zodra er weer een training of kamp start, staat het hier.
                         </p>
                     </div>
-                </div>
-            </div>
+                </template>
 
-            <form v-else class="mt-8 space-y-6" @submit.prevent="verstuur">
-                <!-- Het kind -->
-                <section class="rounded-2xl border border-border bg-card p-5">
-                    <p class="font-semibold">Je kind</p>
-
-                    <div class="mt-4 grid gap-4 sm:grid-cols-2">
-                        <div class="grid gap-2">
-                            <Label for="first_name">Voornaam</Label>
-                            <Input id="first_name" v-model="form.first_name" required autocomplete="off" class="h-11" />
-                            <InputError :message="form.errors.first_name" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="last_name">Achternaam</Label>
-                            <Input id="last_name" v-model="form.last_name" required autocomplete="off" class="h-11" />
-                            <InputError :message="form.errors.last_name" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="date_of_birth">Geboortedatum</Label>
-                            <Input id="date_of_birth" v-model="form.date_of_birth" type="date" required class="h-11" />
-                            <InputError :message="form.errors.date_of_birth" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label>Positie</Label>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button
-                                    v-for="(label, waarde) in positions"
-                                    :key="waarde"
-                                    type="button"
-                                    class="h-11 rounded-lg border text-sm font-medium transition"
-                                    :class="
-                                        form.position === waarde ? 'border-primary bg-primary/15 text-primary' : 'border-border text-muted-foreground'
-                                    "
-                                    @click="form.position = waarde"
-                                >
-                                    {{ label }}
-                                </button>
-                            </div>
-                            <InputError :message="form.errors.position" />
-                        </div>
-                    </div>
-                </section>
-
-                <!-- De ouder -->
-                <section class="rounded-2xl border border-border bg-card p-5">
-                    <p class="font-semibold">Jijzelf</p>
-                    <p class="mt-0.5 text-xs text-muted-foreground">Met dit e-mailadres log je straks in om alles van je kind te volgen.</p>
-
-                    <div class="mt-4 grid gap-4 sm:grid-cols-2">
-                        <div class="grid gap-2">
-                            <Label for="guardian_name">Naam</Label>
-                            <Input id="guardian_name" v-model="form.guardian_name" required autocomplete="name" class="h-11" />
-                            <InputError :message="form.errors.guardian_name" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="relationship">Relatie <span class="text-muted-foreground">(optioneel)</span></Label>
-                            <Input id="relationship" v-model="form.relationship" placeholder="moeder, vader, verzorger" class="h-11" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="guardian_email">E-mailadres</Label>
-                            <Input id="guardian_email" v-model="form.guardian_email" type="email" required autocomplete="email" class="h-11" />
-                            <InputError :message="form.errors.guardian_email" />
-                        </div>
-                        <div class="grid gap-2">
-                            <Label for="guardian_phone">Telefoon <span class="text-muted-foreground">(optioneel)</span></Label>
-                            <Input id="guardian_phone" v-model="form.guardian_phone" type="tel" autocomplete="tel" class="h-11" />
-                            <InputError :message="form.errors.guardian_phone" />
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Het tarief -->
-                <section v-if="products.length" class="rounded-2xl border border-border bg-card p-5">
-                    <p class="font-semibold">Wat wil je afnemen?</p>
-                    <p class="mt-0.5 text-xs text-muted-foreground">De school bevestigt dit bij de goedkeuring. Er wordt nu nog niets betaald.</p>
-
-                    <div class="mt-4 space-y-2">
-                        <button
-                            v-for="product in products"
-                            :key="product.id"
-                            type="button"
-                            class="flex w-full items-center justify-between gap-3 rounded-xl border p-4 text-left transition"
-                            :class="form.product_id === product.id ? 'border-primary bg-primary/10' : 'border-border'"
-                            @click="form.product_id = product.id"
-                        >
+                <!-- Stap 2: de gegevens -->
+                <form v-else class="mt-8 space-y-5" @submit.prevent="verstuur">
+                    <div v-if="gekozen" class="rounded-2xl border border-primary/40 bg-primary/5 p-4">
+                        <div class="flex flex-wrap items-start justify-between gap-2">
                             <div class="min-w-0">
-                                <p class="font-medium">{{ product.name }}</p>
-                                <p v-if="product.description" class="text-xs text-muted-foreground">{{ product.description }}</p>
+                                <p class="text-xs uppercase tracking-wide text-muted-foreground">Je schrijft in voor</p>
+                                <p class="font-semibold">{{ gekozen.name }}</p>
+                                <p v-if="periode(gekozen)" class="mt-0.5 text-xs text-muted-foreground">{{ periode(gekozen) }}</p>
                             </div>
                             <p class="tabular shrink-0 text-right">
-                                <span class="font-bold">{{ product.amount }}</span>
-                                <span class="block text-xs text-muted-foreground">{{ product.interval.toLowerCase() }}</span>
+                                <span class="font-bold">{{ gekozen.is_free ? 'gratis' : gekozen.amount }}</span>
+                                <span v-if="!gekozen.is_free" class="block text-xs text-muted-foreground">{{ gekozen.billing }}</span>
                             </p>
+                        </div>
+                        <button
+                            v-if="products.length > 1"
+                            type="button"
+                            class="mt-3 text-sm text-muted-foreground underline underline-offset-4"
+                            @click="stap = 'aanbod'"
+                        >
+                            Iets anders kiezen
                         </button>
+                        <InputError class="mt-2" :message="form.errors.product_id" />
                     </div>
-                    <InputError :message="form.errors.product_id" />
 
-                    <div v-if="betaalkeuzes.length" class="mt-5 grid gap-2">
-                        <Label>Hoe wil je betalen?</Label>
-                        <div class="grid gap-2">
+                    <section class="rounded-2xl border border-border bg-card p-5">
+                        <p class="font-semibold">Je kind</p>
+
+                        <div class="mt-4 grid gap-4">
+                            <div class="grid gap-2">
+                                <Label for="first_name">Voornaam</Label>
+                                <Input id="first_name" v-model="form.first_name" required class="h-11" />
+                                <InputError :message="form.errors.first_name" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="last_name">Achternaam</Label>
+                                <Input id="last_name" v-model="form.last_name" required class="h-11" />
+                                <InputError :message="form.errors.last_name" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="date_of_birth">Geboortedatum</Label>
+                                <input
+                                    id="date_of_birth"
+                                    v-model="form.date_of_birth"
+                                    type="date"
+                                    required
+                                    class="h-11 w-full rounded-lg border border-input bg-background px-3 text-base outline-none focus:border-primary"
+                                />
+                                <InputError :message="form.errors.date_of_birth" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label>Positie</Label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button
+                                        v-for="(label, waarde) in positions"
+                                        :key="waarde"
+                                        type="button"
+                                        class="h-11 rounded-lg border text-sm font-medium transition"
+                                        :class="
+                                            form.position === waarde
+                                                ? 'border-primary bg-primary/15 text-primary'
+                                                : 'border-border text-muted-foreground'
+                                        "
+                                        @click="form.position = waarde"
+                                    >
+                                        {{ label }}
+                                    </button>
+                                </div>
+                                <InputError :message="form.errors.position" />
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="rounded-2xl border border-border bg-card p-5">
+                        <p class="font-semibold">Jijzelf</p>
+                        <p class="mt-0.5 text-xs text-muted-foreground">Met dit e-mailadres log je straks in om alles van je kind te volgen.</p>
+
+                        <div class="mt-4 grid gap-4">
+                            <div class="grid gap-2">
+                                <Label for="guardian_name">Naam</Label>
+                                <Input id="guardian_name" v-model="form.guardian_name" required class="h-11" />
+                                <InputError :message="form.errors.guardian_name" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="relationship">Relatie <span class="text-muted-foreground">(optioneel)</span></Label>
+                                <Input id="relationship" v-model="form.relationship" placeholder="moeder, vader, verzorger" class="h-11" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="guardian_email">E-mailadres</Label>
+                                <Input id="guardian_email" v-model="form.guardian_email" type="email" required autocomplete="email" class="h-11" />
+                                <InputError :message="form.errors.guardian_email" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="guardian_phone">Telefoon <span class="text-muted-foreground">(optioneel)</span></Label>
+                                <Input id="guardian_phone" v-model="form.guardian_phone" type="tel" autocomplete="tel" class="h-11" />
+                                <InputError :message="form.errors.guardian_phone" />
+                            </div>
+                        </div>
+                    </section>
+
+                    <section v-if="betaalkeuzes.length" class="rounded-2xl border border-border bg-card p-5">
+                        <p class="font-semibold">Hoe wil je betalen?</p>
+
+                        <div class="mt-4 grid gap-2">
                             <button
                                 v-for="optie in betaalkeuzes"
                                 :key="optie.value"
@@ -209,37 +309,38 @@ const verstuur = () => form.post('/inschrijven/' + props.school.slug);
                                 </span>
                             </button>
                         </div>
-                        <InputError :message="form.errors.payment_method" />
-                    </div>
-                </section>
+                        <InputError class="mt-2" :message="form.errors.payment_method" />
+                    </section>
 
-                <section class="rounded-2xl border border-border bg-card p-5">
-                    <Label for="note">Opmerking <span class="text-muted-foreground">(optioneel)</span></Label>
-                    <textarea
-                        id="note"
-                        v-model="form.note"
-                        rows="3"
-                        class="mt-2 w-full rounded-lg border border-input bg-background p-3 text-sm outline-none focus:border-primary"
-                        placeholder="Bijvoorbeeld: speelt al bij een club, of wil graag op zaterdag trainen."
-                    ></textarea>
+                    <section class="rounded-2xl border border-border bg-card p-5">
+                        <Label for="note">Opmerking <span class="text-muted-foreground">(optioneel)</span></Label>
+                        <textarea
+                            id="note"
+                            v-model="form.note"
+                            rows="3"
+                            class="mt-2 w-full rounded-lg border border-input bg-background p-3 text-base outline-none focus:border-primary"
+                            placeholder="Bijvoorbeeld: speelt al bij een club, of wil graag op zaterdag trainen."
+                        ></textarea>
 
-                    <label class="mt-4 flex items-start gap-3 text-sm">
-                        <input v-model="form.privacy" type="checkbox" class="mt-0.5 size-4 accent-[hsl(var(--primary))]" />
-                        <span>
-                            Ik ga ermee akkoord dat {{ school.name }} deze gegevens gebruikt om de inschrijving af te handelen en contact met me op te
-                            nemen.
-                        </span>
-                    </label>
-                    <InputError :message="form.errors.privacy" />
-                </section>
+                        <label class="mt-4 flex items-start gap-3 text-sm">
+                            <input v-model="form.privacy" type="checkbox" class="mt-0.5 size-4 shrink-0 rounded border-input accent-primary" />
+                            <span class="text-muted-foreground">
+                                Ik ga ermee akkoord dat {{ school.name }} deze gegevens gebruikt om de training te regelen.
+                            </span>
+                        </label>
+                        <InputError class="mt-2" :message="form.errors.privacy" />
+                    </section>
 
-                <Button type="submit" size="lg" class="w-full text-base" :disabled="form.processing">
-                    <LoaderCircle v-if="form.processing" class="mr-2 size-4 animate-spin" />
-                    Inschrijving versturen
-                </Button>
-            </form>
+                    <Button type="submit" class="h-12 w-full text-base" :disabled="form.processing">
+                        <LoaderCircle v-if="form.processing" class="mr-2 size-4 animate-spin" />
+                        Inschrijven
+                    </Button>
 
-            <p class="mt-8 text-center text-xs text-muted-foreground">Inschrijven via PlayerPath</p>
+                    <p class="text-center text-xs text-muted-foreground">
+                        Je zit nergens aan vast: {{ school.name }} bevestigt je inschrijving eerst.
+                    </p>
+                </form>
+            </template>
         </div>
     </div>
 </template>

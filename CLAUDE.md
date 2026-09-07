@@ -612,6 +612,27 @@ speler/ouder-kant van het merk (hoofdstuk 4).
 
 ### Inschrijvingen
 
+#### De openbare aanmeldpagina
+
+`/inschrijven/{slug}` is de **aanmeldpagina** van een school: eerst het aanbod,
+dan pas de gegevens. Andersom vraag je naam en geboortedatum van een kind
+voordat iemand weet of er überhaupt iets bij zit.
+
+- **Alleen aanbod waar je je op kunt aanmelden** staat erop: actief, status
+  open, en niet vol. Iets tonen waar je niet op kunt is een dode klik.
+- Per aanbod: omschrijving, data, locatie, leeftijd, prijs en hoeveel plekken
+  er nog zijn.
+- `?aanbod=12` opent meteen dat aanbod, zodat een school naast elk programma op
+  haar eigen site een knop kan zetten. `/inschrijven` zonder slug werkt op het
+  **subdomein** van de school.
+- **Deze pagina mag in een iframe** (`SecurityHeaders` slaat `X-Frame-Options`
+  over voor `enroll.*`): hij is bedoeld voor de eigen website van de school, en
+  er staat niets achter een sessie.
+- **Vol en leeftijd worden server-side gecontroleerd**, binnen `forSchool()`.
+  Buiten die scope telt een query nul deelnemers, en dan lijkt een vol blok nog
+  plek te hebben. Iemand met de pagina in een tabblad weet niet dat het blok
+  inmiddels dicht zit.
+
 Elke school heeft een **openbaar inschrijfformulier** op `/inschrijven/{slug}`.
 Dat is, naast de gedeelde kaart, de enige route zonder inlog; de school komt
 daar wél uit de URL, want er is geen ingelogde gebruiker. `HandleInertiaRequests`

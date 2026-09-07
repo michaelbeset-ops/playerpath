@@ -3,9 +3,12 @@
 namespace Tests\Feature\Enrollments;
 
 use App\Enums\EnrollmentStatus;
+use App\Enums\OfferingStatus;
+use App\Enums\ParticipationStatus;
 use App\Enums\ProductType;
 use App\Enums\Role;
 use App\Models\Enrollment;
+use App\Models\Participation;
 use App\Models\Player;
 use App\Models\Product;
 use App\Models\School;
@@ -376,5 +379,108 @@ class EnrollmentTest extends TestCase
 
             return true;
         });
+    }
+
+    // --- De aanmeldpagina zelf ---
+
+    public function test_de_aanmeldpagina_toont_alleen_aanbod_waar_je_op_kunt(): void
+    {
+        app(Tenancy::class)->set($this->school);
+
+        $blok = Product::factory()->for($this->school)->blok(capaciteit: 2)->create([
+            'name' => 'Keepersblok',
+            'location' => 'Sportpark De Vliert',
+            'min_age' => 8,
+            'max_age' => 12,
+        ]);
+
+        // Vol, gesloten en onzichtbaar horen er niet te staan: iets tonen waar
+        // je je niet op kunt aanmelden is een dode klik.
+        $vol = Product::factory()->for($this->school)->blok(capaciteit: 1)->create(['name' => 'Vol blok']);
+        Participation::create([
+            'product_id' => $vol->id,
+            'player_id' => Player::factory()->for($this->school)->create()->id,
+            'status' => ParticipationStatus::Confirmed,
+        ]);
+
+        Product::factory()->for($this->school)->blok()->create(['name' => 'Gesloten blok', 'status' => OfferingStatus::Gesloten]);
+        Product::factory()->for($this->school)->blok()->create(['name' => 'Verborgen blok', 'is_active' => false]);
+
+        app(Tenancy::class)->forget();
+
+        $this->get('/inschrijven/keepersschool-rob')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('enrollments/Public')
+                ->count('products', 1)
+                ->where('products.0.id', $blok->id)
+                ->where('products.0.name', 'Keepersblok')
+                ->where('products.0.location', 'Sportpark De Vliert')
+                ->where('products.0.min_age', 8)
+                ->where('products.0.spots_left', 2)
+            );
+    }
+
+    public function test_een_link_vanaf_de_eigen_website_opent_meteen_dat_aanbod(): void
+    {
+        app(Tenancy::class)->set($this->school);
+        $blok = Product::factory()->for($this->school)->blok()->create();
+        app(Tenancy::class)->forget();
+
+        $this->get('/inschrijven/keepersschool-rob?aanbod='.$blok->id)
+            ->assertInertia(fn ($page) => $page->where('selected', $blok->id));
+    }
+
+    public function test_de_aanmeldpagina_mag_in_een_iframe_van_de_school(): void
+    {
+        // Bedoeld om op de eigen website te zetten. Er staat niets achter een
+        // sessie, dus clickjacking valt hier niets mee te winnen.
+        $this->get('/inschrijven/keepersschool-rob')->assertHeaderMissing('X-Frame-Options');
+
+        // De rest van de app blijft dicht.
+        $this->actingAs($this->eigenaar)->get('/dashboard')->assertHeader('X-Frame-Options', 'SAMEORIGIN');
+    }
+
+    public function test_inschrijven_op_een_vol_blok_wordt_geweigerd(): void
+    {
+        app(Tenancy::class)->set($this->school);
+
+        $vol = Product::factory()->for($this->school)->blok(capaciteit: 1)->create();
+        Participation::create([
+            'product_id' => $vol->id,
+            'player_id' => Player::factory()->for($this->school)->create()->id,
+            'status' => ParticipationStatus::Confirmed,
+        ]);
+
+        app(Tenancy::class)->forget();
+
+        // Iemand met de pagina in een tabblad weet niet dat het inmiddels vol
+        // is; dat hoort de server te zeggen.
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier(['product_id' => $vol->id]))
+            ->assertSessionHasErrors('product_id');
+
+        $this->assertDatabaseCount('enrollments', 0);
+    }
+
+    public function test_een_kind_buiten_de_leeftijdsgrens_wordt_geweigerd(): void
+    {
+        app(Tenancy::class)->set($this->school);
+        $blok = Product::factory()->for($this->school)->blok()->create(['min_age' => 10, 'max_age' => 14]);
+        app(Tenancy::class)->forget();
+
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier([
+            'product_id' => $blok->id,
+            'date_of_birth' => now()->subYears(7)->toDateString(),
+        ]))->assertSessionHasErrors('date_of_birth');
+
+        $this->assertDatabaseCount('enrollments', 0);
+
+        // Een kind dat er wél bij past komt er gewoon door.
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier([
+            'product_id' => $blok->id,
+            'date_of_birth' => now()->subYears(11)->toDateString(),
+        ]))->assertSessionHasNoErrors();
+
+        $this->assertDatabaseCount('enrollments', 1);
     }
 }
