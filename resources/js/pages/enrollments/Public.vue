@@ -379,6 +379,23 @@ const invoer = 'h-11 w-full rounded-lg border border-input bg-background px-3 te
                     Er is een account voor je aangemaakt.
                     <a :href="loginUrl" class="font-medium text-primary underline underline-offset-4">Inloggen</a>
                 </p>
+
+                <!-- Ingelogd: terug naar waar je vandaan kwam. Nieuw account: inloggen is de weg. -->
+                <a
+                    v-if="ingelogd"
+                    href="/dashboard"
+                    class="mt-5 inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                >
+                    <ArrowLeft class="size-4" />
+                    Terug naar het dashboard
+                </a>
+                <a
+                    v-else-if="!submitted.new_account"
+                    :href="loginUrl"
+                    class="mt-5 inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                >
+                    Inloggen
+                </a>
             </div>
 
             <template v-else>
