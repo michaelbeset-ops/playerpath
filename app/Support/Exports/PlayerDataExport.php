@@ -156,7 +156,7 @@ final class PlayerDataExport implements WorkbookExport
     {
         foreach (Goal::query()->where('player_id', $this->player->id)->orderBy('starts_on')->get() as $doel) {
             yield [
-                $doel->category->label(),
+                $doel->label(),
                 $doel->start_rating,
                 $doel->target_rating,
                 $doel->starts_on->format('d-m-Y'),

@@ -10,7 +10,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ClipboardList, FileDown, IdCard, Pencil, Plus, Target, Trash2, UserPlus, X } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 interface Categorie {
     category: string;
@@ -74,10 +74,15 @@ const toonDoelFormulier = ref(false);
 
 const doelForm = useForm({
     category: props.goalCategories[0]?.value ?? '',
+    custom_label: '',
     target: 8,
     due_on: '',
     note: '',
 });
+
+// Een eigen doel gaat niet over een cijfer maar over een afspraak: dan verdwijnt
+// het streefcijfer en typ je zelf op waar het over gaat.
+const eigenDoel = computed(() => doelForm.category === 'overig');
 
 const stelDoel = () =>
     doelForm.post('/players/' + props.player.id + '/goals', {
@@ -105,6 +110,12 @@ const kenToe = () =>
 const trekIn = (id: number, naam: string) => {
     if (confirm(`${naam} intrekken? De rekening die eraan hangt blijft staan.`)) {
         router.delete('/players/' + props.player.id + '/purchases/' + id, { preserveScroll: true });
+    }
+};
+
+const vinkDoelAf = (id: number) => {
+    if (confirm('Dit doel op behaald zetten? De ouders krijgen daar bericht van.')) {
+        router.post('/goals/' + id + '/behaald', {}, { preserveScroll: true });
     }
 };
 
@@ -253,7 +264,7 @@ const verwijderen = () => {
                     <div>
                         <p class="font-medium">Ontwikkelingsdoelen</p>
                         <p class="mt-1 text-xs text-muted-foreground">
-                            Een streefcijfer per categorie, met een einddatum. Ouders zien dit op de kaart.
+                            Een streefcijfer per categorie, of een eigen doel dat je zelf opschrijft. Ouders zien dit op de kaart.
                         </p>
                     </div>
                     <Button v-if="can.goals && !toonDoelFormulier" variant="secondary" @click="toonDoelFormulier = true">
@@ -282,7 +293,16 @@ const verwijderen = () => {
                         </div>
                     </div>
 
-                    <div class="grid gap-2">
+                    <div v-if="eigenDoel" class="grid gap-2">
+                        <Label for="goal_label">Waar gaat het doel over?</Label>
+                        <Input id="goal_label" v-model="doelForm.custom_label" maxlength="60" placeholder="Bijvoorbeeld: uitverdedigen met links" />
+                        <p class="text-xs text-muted-foreground">
+                            Hier hoort geen cijfer bij, dus er is ook geen "op koers". Je vinkt dit doel zelf af zodra het gehaald is.
+                        </p>
+                        <InputError :message="doelForm.errors.custom_label" />
+                    </div>
+
+                    <div v-else class="grid gap-2">
                         <Label>Streefcijfer <span class="text-muted-foreground">(op de kaart wordt dit maal tien)</span></Label>
                         <div class="grid grid-cols-10 gap-1">
                             <button
@@ -316,7 +336,7 @@ const verwijderen = () => {
                     </div>
                 </form>
 
-                <GoalList v-if="goals.length" class="mt-4" :goals="goals" :can-stop="can.goals" @stop="stopDoel" />
+                <GoalList v-if="goals.length" class="mt-4" :goals="goals" :can-stop="can.goals" @stop="stopDoel" @achieve="vinkDoelAf" />
                 <p v-else-if="!toonDoelFormulier" class="mt-3 text-sm text-muted-foreground">
                     Nog geen doel. Een concreet doel maakt een rapport pas echt spannend.
                 </p>

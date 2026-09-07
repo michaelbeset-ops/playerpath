@@ -841,6 +841,9 @@ een verversing is hij weg: hij hoort bij die ene opslag, niet bij de pagina.
 ### Ontwikkelingsdoelen (Fase 7)
 
 - `goals`: één actief doel per speler per categorie; `start_rating` = kaartcijfer op het moment van stellen, `target_rating` = rapportcijfer × 10. Een nieuw doel in dezelfde categorie annuleert het oude.
+- **Een eigen doel** (`Goal::CUSTOM`, categorie `overig` + `custom_label`) gaat over iets wat niet in de zes categorieën past: "uitverdedigen met links". Er is geen cijfer om aan af te meten, dus `target_rating` is leeg, er is geen "op koers" en er staat geen balk — een percentage verzinnen bij iets wat je niet meet is erger dan het weglaten. De trainer vinkt zo'n doel zelf af (`POST /goals/{goal}/behaald`); verlopen gaat wél vanzelf, want een einddatum betekent overal hetzelfde. Meerdere eigen doelen naast elkaar mogen: het zijn verschillende dingen, geen twee metingen van dezelfde categorie.
+- **Vieren staat op één plek** (`Actions\Goals\AchieveGoal`), of het doel nu vanzelf gehaald wordt of met de hand wordt afgevinkt. Voor een kind is er geen verschil tussen die twee, dus het bericht aan de ouders hoort ook hetzelfde te zijn.
+- `goals.category` is bewust **geen enum-cast**: `overig` hoort niet in `ReportCategory`, want die enum bepaalt waarop een speler beoordeeld wordt. `Goal::label()` en `Goal::describe()` maken er leesbare tekst van.
 - "Op koers" = afgelegde weg (start → nu → streef) ≥ verstreken tijd (start → vandaag → einddatum). Zie `Support\Goals\GoalProgress`. Geen extra begrippen.
 - Beoordelen gebeurt alleen in `Actions\Goals\EvaluateGoals`, aangeroepen vanuit `StoreReport` na de kaartberekening: gehaald → `DoelBehaald` naar ouders + speler, badge `doel_gehaald`, mijlpaal in de tijdlijn; einddatum voorbij → `missed`.
 - Trainer/eigenaar stelt en stopt (`GoalPolicy`), ouder/speler ziet alleen. Het rapportscherm toont per categorie een chip "doel 80", niets meer.

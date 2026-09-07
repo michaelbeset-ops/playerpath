@@ -30,7 +30,9 @@ class NextStep
     public function for(Player $player, array $goals): ?array
     {
         foreach ($goals as $doel) {
-            if ($doel['status'] === 'active') {
+            // Een eigen doel heeft geen cijfers; hier gaat het juist over "van
+            // X naar Y". Het staat gewoon in de doelenlijst, alleen niet hier.
+            if ($doel['status'] === 'active' && $doel['target'] !== null) {
                 return [
                     'type' => 'goal',
                     'category' => $doel['category'],

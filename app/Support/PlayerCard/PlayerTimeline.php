@@ -84,7 +84,7 @@ class PlayerTimeline
                 'type' => 'mijlpaal',
                 'date' => $goal->achieved_at->format('d-m-Y'),
                 'sort' => $goal->achieved_at->format('Y-m-d').'-3',
-                'title' => 'Doel gehaald: '.$goal->category->label().' naar '.$goal->target_rating,
+                'title' => 'Doel gehaald: '.$goal->describe(),
                 'body' => $goal->note,
                 'value' => null,
                 'delta' => null,

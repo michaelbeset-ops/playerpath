@@ -18,43 +18,64 @@ class GoalProgress
 {
     /**
      * @return array{
-     *   id: int, category: string, label: string, target: int, start: int, current: int|null,
-     *   progress: int, expected: int, on_track: bool, status: string, status_label: string,
+     *   id: int, category: string, label: string, is_custom: bool, target: int|null,
+     *   start: int|null, current: int|null, progress: int|null, expected: int,
+     *   on_track: bool|null, status: string, status_label: string,
      *   due_on: string, days_left: int, note: string|null, achieved_at: string|null
      * }
      */
     public function describe(Goal $goal, Player $player): array
     {
-        $huidig = ($player->category_ratings ?? [])[$goal->category->value] ?? null;
-
-        $weg = max(1, $goal->target_rating - $goal->start_rating);
-        $afgelegd = $huidig === null ? 0 : max(0, $huidig - $goal->start_rating);
-        $voortgang = (int) min(100, round($afgelegd / $weg * 100));
-
         $totaalDagen = max(1, (int) $goal->starts_on->diffInDays($goal->due_on));
         $verstreken = max(0, min($totaalDagen, (int) $goal->starts_on->diffInDays(now()->startOfDay())));
         $verwacht = (int) round($verstreken / $totaalDagen * 100);
 
-        $opKoers = $goal->status === GoalStatus::Achieved
-            || ($huidig !== null && $huidig >= $goal->target_rating)
-            || $voortgang >= $verwacht;
-
-        return [
+        $basis = [
             'id' => $goal->id,
-            'category' => $goal->category->value,
-            'label' => $goal->category->label(),
-            'target' => $goal->target_rating,
-            'start' => $goal->start_rating,
-            'current' => $huidig,
-            'progress' => $voortgang,
-            'expected' => $verwacht,
-            'on_track' => $opKoers,
+            'category' => $goal->category,
+            'label' => $goal->label(),
+            'is_custom' => $goal->isCustom(),
             'status' => $goal->status->value,
             'status_label' => $goal->status->label(),
             'due_on' => $goal->due_on->format('d-m-Y'),
             'days_left' => max(0, (int) now()->startOfDay()->diffInDays($goal->due_on, false)),
             'note' => $goal->note,
             'achieved_at' => $goal->achieved_at?->format('d-m-Y'),
+        ];
+
+        // Een eigen doel heeft geen cijfer om aan af te meten. Dan is "op koers"
+        // geen bescheiden schatting maar een verzinsel, en dus laten we het weg
+        // in plaats van er een percentage bij te fantaseren.
+        if ($goal->isCustom()) {
+            return [
+                ...$basis,
+                'target' => null,
+                'start' => null,
+                'current' => null,
+                'progress' => null,
+                'expected' => $verwacht,
+                'on_track' => null,
+            ];
+        }
+
+        $huidig = ($player->category_ratings ?? [])[$goal->category] ?? null;
+
+        $weg = max(1, $goal->target_rating - $goal->start_rating);
+        $afgelegd = $huidig === null ? 0 : max(0, $huidig - $goal->start_rating);
+        $voortgang = (int) min(100, round($afgelegd / $weg * 100));
+
+        $opKoers = $goal->status === GoalStatus::Achieved
+            || ($huidig !== null && $huidig >= $goal->target_rating)
+            || $voortgang >= $verwacht;
+
+        return [
+            ...$basis,
+            'target' => $goal->target_rating,
+            'start' => $goal->start_rating,
+            'current' => $huidig,
+            'progress' => $voortgang,
+            'expected' => $verwacht,
+            'on_track' => $opKoers,
         ];
     }
 

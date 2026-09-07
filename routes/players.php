@@ -32,6 +32,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // Fase 7: ontwikkelingsdoelen.
         Route::post('players/{player}/goals', [GoalController::class, 'store'])->name('goals.store');
         Route::delete('goals/{goal}', [GoalController::class, 'destroy'])->name('goals.destroy');
+        // Een eigen doel afvinken; de doelen met een cijfer gaan vanzelf.
+        Route::post('goals/{goal}/behaald', [GoalController::class, 'achieve'])->name('goals.achieve');
     });
 
     // De deel-link aan- en uitzetten. De publieke pagina zelf staat hieronder,

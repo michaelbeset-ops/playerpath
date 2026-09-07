@@ -141,8 +141,13 @@ class PlayerController extends Controller
                     ])
                 : [],
             'goals' => $this->goals->forPlayer($player),
+            // De zes categorieën van zijn positie, plus een eigen doel dat je
+            // zelf intypt. Dat laatste heeft geen cijfer om aan af te meten en
+            // vink je met de hand af; zie Goal::CUSTOM.
             'goalCategories' => collect($player->position->categories())
-                ->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()])->values(),
+                ->map(fn ($c) => ['value' => $c->value, 'label' => $c->label()])
+                ->push(['value' => Goal::CUSTOM, 'label' => 'Overig (zelf invullen)'])
+                ->values(),
             // Ouders van deze school die nog niet aan deze speler hangen.
             'linkableGuardians' => User::ofCurrentSchool()
                 ->role(Role::Ouder->value)

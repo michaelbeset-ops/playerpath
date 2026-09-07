@@ -210,7 +210,11 @@ class GoalTest extends TestCase
         $this->actingAs($this->trainer)
             ->get("/players/{$this->keeper->id}")
             ->assertOk()
-            ->assertInertia(fn ($page) => $page->where('can.goals', true)->has('goalCategories', 6));
+            ->assertInertia(fn ($page) => $page
+                // Zes categorieën van zijn positie, plus "Overig (zelf invullen)".
+                ->where('can.goals', true)
+                ->has('goalCategories', 7)
+                ->where('goalCategories.6.value', 'overig'));
     }
 
     public function test_een_ouder_ziet_het_doel_maar_mag_er_geen_stellen(): void
@@ -248,5 +252,115 @@ class GoalTest extends TestCase
         // Het aantal spelers met een doel staat niet meer op het dashboard;
         // de telling zelf klopt nog steeds.
         $this->assertSame(1, app(SchoolDashboard::class)->stats()['playersWithGoal']);
+    }
+
+    // --- Een eigen doel: zelf intypen, zelf afvinken ---
+
+    public function test_een_eigen_doel_heeft_geen_streefcijfer(): void
+    {
+        $this->actingAs($this->trainer)->post("/players/{$this->keeper->id}/goals", [
+            'category' => Goal::CUSTOM,
+            'custom_label' => 'Uitverdedigen met links',
+            'due_on' => now()->addMonth()->toDateString(),
+            'note' => 'Elke training tien herhalingen.',
+        ])->assertSessionHasNoErrors();
+
+        $doel = Goal::firstOrFail();
+
+        $this->assertTrue($doel->isCustom());
+        $this->assertNull($doel->target_rating);
+        $this->assertSame('Uitverdedigen met links', $doel->label());
+
+        // Zonder cijfer valt er niets over koers te zeggen; dan hoort er ook
+        // geen percentage te staan.
+        $beeld = app(GoalProgress::class)->describe($doel->refresh(), $this->keeper);
+
+        $this->assertTrue($beeld['is_custom']);
+        $this->assertNull($beeld['progress']);
+        $this->assertNull($beeld['on_track']);
+        $this->assertSame('Uitverdedigen met links', $beeld['label']);
+    }
+
+    public function test_een_eigen_doel_zonder_omschrijving_wordt_geweigerd(): void
+    {
+        $this->actingAs($this->trainer)->post("/players/{$this->keeper->id}/goals", [
+            'category' => Goal::CUSTOM,
+            'due_on' => now()->addMonth()->toDateString(),
+        ])->assertSessionHasErrors('custom_label');
+
+        $this->assertDatabaseCount('goals', 0);
+    }
+
+    public function test_een_rapport_haalt_een_eigen_doel_nooit_vanzelf(): void
+    {
+        Notification::fake();
+
+        $this->actingAs($this->trainer)->post("/players/{$this->keeper->id}/goals", [
+            'category' => Goal::CUSTOM,
+            'custom_label' => 'Meer coachen',
+            'due_on' => now()->addMonth()->toDateString(),
+        ]);
+
+        // Een perfect rapport zegt niets over een doel dat niet over cijfers gaat.
+        $this->rapporteer(10);
+
+        $this->assertSame(GoalStatus::Active, Goal::firstOrFail()->status);
+    }
+
+    public function test_de_trainer_vinkt_een_eigen_doel_zelf_af(): void
+    {
+        Notification::fake();
+
+        $ouder = User::factory()->for($this->school)->create();
+        $ouder->assignRole(Role::Ouder->value);
+        $ouder->children()->attach($this->keeper->id);
+
+        $this->actingAs($this->trainer)->post("/players/{$this->keeper->id}/goals", [
+            'category' => Goal::CUSTOM,
+            'custom_label' => 'Meer coachen',
+            'due_on' => now()->addMonth()->toDateString(),
+        ]);
+
+        $doel = Goal::firstOrFail();
+
+        $this->actingAs($this->trainer)->post("/goals/{$doel->id}/behaald")->assertRedirect();
+
+        $this->assertSame(GoalStatus::Achieved, $doel->refresh()->status);
+        $this->assertNotNull($doel->achieved_at);
+
+        // Hetzelfde bericht als bij een doel dat vanzelf gehaald wordt.
+        Notification::assertSentTo($ouder, DoelBehaald::class);
+    }
+
+    public function test_een_doel_met_een_cijfer_vink_je_niet_met_de_hand_af(): void
+    {
+        $this->rapporteer(6);
+
+        $this->actingAs($this->trainer)->post("/players/{$this->keeper->id}/goals", [
+            'category' => ReportCategory::Reflexen->value,
+            'target' => 8,
+            'due_on' => now()->addMonth()->toDateString(),
+        ]);
+
+        // Dat gaat vanzelf zodra het cijfer er is; met de hand kunnen afvinken
+        // zou betekenen dat de kaart en het doel elkaar kunnen tegenspreken.
+        $this->actingAs($this->trainer)
+            ->post('/goals/'.Goal::firstOrFail()->id.'/behaald')
+            ->assertStatus(422);
+    }
+
+    public function test_een_ouder_vinkt_geen_doel_af(): void
+    {
+        $ouder = User::factory()->for($this->school)->create();
+        $ouder->assignRole(Role::Ouder->value);
+        $ouder->children()->attach($this->keeper->id);
+
+        $this->actingAs($this->trainer)->post("/players/{$this->keeper->id}/goals", [
+            'category' => Goal::CUSTOM,
+            'custom_label' => 'Meer coachen',
+            'due_on' => now()->addMonth()->toDateString(),
+        ]);
+
+        $this->actingAs($ouder)->post('/goals/'.Goal::firstOrFail()->id.'/behaald')->assertForbidden();
     }
 }
