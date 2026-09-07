@@ -95,7 +95,7 @@ class MainNavigation
                 'title' => 'Financiën', 'icon' => 'payments', 'items' => [
                     ['title' => 'Betalingen', 'href' => '/payments', 'icon' => 'payments', 'allowed' => $user->can('viewAny', Payment::class), 'feature' => Feature::Betalingen],
                     ['title' => 'Abonnementen', 'href' => '/subscriptions', 'icon' => 'subscriptions', 'allowed' => $user->can('viewAny', Subscription::class), 'feature' => Feature::Betalingen],
-                    ['title' => 'Producten', 'href' => '/products', 'icon' => 'products', 'allowed' => $user->can('viewAny', Product::class), 'feature' => Feature::Betalingen],
+                    ['title' => 'Aanbod', 'href' => '/aanbod', 'icon' => 'products', 'allowed' => $user->can('viewAny', Product::class), 'feature' => Feature::Betalingen],
                     ['title' => 'Overzichten', 'href' => '/exports', 'icon' => 'exports', 'allowed' => $user->isEigenaar(), 'feature' => Feature::Exports],
                     // Ouder en speler: hun eigen abonnement, niet dat van de school.
                     ['title' => 'Mijn abonnement', 'href' => '/billing', 'icon' => 'payments', 'allowed' => $user->visiblePlayerIds() !== [], 'feature' => Feature::Betalingen],

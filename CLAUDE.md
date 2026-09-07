@@ -925,6 +925,40 @@ Wat er wél staat, en waarom:
 - Alles hier is van de **eigenaar**. Een trainer beslist niet welke gegevens van
   andermans kind het gebouw uit gaan.
 
+### Het aanbod (was: Producten)
+
+`products` heet in de app **Aanbod** (`/aanbod`): dat is wat een voetbalschool
+verkoopt. Eén lijst, geen twee — een aanbod is tegelijk het ding met een prijs
+en het ding met data, plekken en trainers.
+
+`App\Enums\ProductType`: doorlopend, blok, kamp, losse training, privétraining,
+small group, rittenkaart, overig. Vier afspraken:
+
+- **Betalen is een eigenschap, geen soort** (`App\Enums\BillingType`: eenmalig /
+  maandelijks). Een blok van zes weken kan €120 ineens zijn of €30 per maand, en
+  dat is dezelfde training. De administratie volgt de **betaalwijze**:
+  maandelijks wordt een `Subscription`, eenmalig een `Purchase`. Het oude type
+  `abonnement` beschreef juist die betaalwijze en heet daarom nu `doorlopend`.
+- **Een blok, kamp of small group krijgt een gewone groep** (`groups.product_id`)
+  met gewone trainingen (`Actions\Offerings\ScheduleOffering`). Daar zit de
+  knoop met de rest van de app: aanwezigheid, rapporten, agenda en Mijn
+  trainingen werken zonder één regel wijziging. Opnieuw roosteren raakt alleen
+  wat nog moet komen — wat geweest is draagt aanwezigheid.
+- **"Vol" wordt niet opgeslagen** maar geteld: capaciteit min bevestigde
+  deelnemers (`Product::isFull()`). Een opgeslagen "vol" blijft staan zodra
+  iemand afzegt, en dan weigert een school een plek die er wel is. `status` kent
+  daarom alleen concept / open / gesloten.
+- **Meedoen is meer dan betalen.** `participations` draagt de status
+  (ingeschreven / wachtlijst / geannuleerd) en de rekening die eraan hangt;
+  `Actions\Offerings\JoinOffering` zet de speler er in én in de groep. Alleen
+  wie echt meedoet komt in de groep: iemand op de wachtlijst hoort niet op de
+  aanwezigheidslijst van de eerstvolgende training.
+
+**Een maandbedrag bij een blok stopt standaard op de einddatum**
+(`products.stops_at_end`). Een blok van zes weken dat na afloop blijft
+doorschrijven is precies waar een ouder boos over wordt; een school die
+doorlopende training verkoopt zet het uit.
+
 ### Producten (Fase 16)
 
 `plans` heette naar de tijd dat een school alleen abonnementen verkocht. Het is

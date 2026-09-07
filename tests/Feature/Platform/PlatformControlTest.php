@@ -81,7 +81,7 @@ class PlatformControlTest extends TestCase
         $this->actingAs($this->eigenaar)->get('/calendar')->assertNotFound();
         $this->actingAs($this->eigenaar)->get('/payments')->assertNotFound();
         $this->actingAs($this->eigenaar)->get('/subscriptions')->assertNotFound();
-        $this->actingAs($this->eigenaar)->get('/products')->assertNotFound();
+        $this->actingAs($this->eigenaar)->get('/aanbod')->assertNotFound();
         $this->actingAs($this->eigenaar)->get('/exports')->assertNotFound();
 
         // Wat aan blijft, blijft gewoon werken.

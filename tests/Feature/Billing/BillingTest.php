@@ -60,9 +60,9 @@ class BillingTest extends TestCase
     {
         // 12.50 * 100 geeft in floating point 1249.9999999999998. Precies
         // hierom mag geld geen float zijn. Zie CLAUDE.md 3.2.
-        $this->actingAs($this->eigenaar)->post('/products', [
+        $this->actingAs($this->eigenaar)->post('/aanbod', [
             'name' => 'Keeperstraining',
-            'type' => ProductType::Abonnement->value,
+            'type' => ProductType::Doorlopend->value,
             'amount' => '12,50',
             'vat_rate' => 21,
             'interval' => BillingInterval::Monthly->value,
@@ -77,7 +77,7 @@ class BillingTest extends TestCase
         // Nul is een geldige prijs: een proefles kost niets. Er ontstaat dan
         // ook geen rekening; zie Actions\\Products\\SellProduct.
         $this->actingAs($this->eigenaar)
-            ->post('/products', [
+            ->post('/aanbod', [
                 'name' => 'Proefles',
                 'type' => ProductType::LosseTraining->value,
                 'amount' => '0',
@@ -92,7 +92,7 @@ class BillingTest extends TestCase
     public function test_een_negatief_bedrag_wordt_geweigerd(): void
     {
         $this->actingAs($this->eigenaar)
-            ->post('/products', [
+            ->post('/aanbod', [
                 'name' => 'Fout',
                 'type' => ProductType::LosseTraining->value,
                 'amount' => '-5',
@@ -109,9 +109,9 @@ class BillingTest extends TestCase
         Product::factory()->for($this->school)->create(['name' => 'Keeperstraining']);
 
         $this->actingAs($this->eigenaar)
-            ->post('/products', [
+            ->post('/aanbod', [
                 'name' => 'Keeperstraining',
-                'type' => ProductType::Abonnement->value,
+                'type' => ProductType::Doorlopend->value,
                 'amount' => '30,00',
                 'vat_rate' => 21,
                 'interval' => BillingInterval::Monthly->value,
@@ -131,7 +131,7 @@ class BillingTest extends TestCase
             'amount_cents' => 2750,
         ]);
 
-        $this->actingAs($this->eigenaar)->delete('/products/'.$product->id)->assertRedirect('/products');
+        $this->actingAs($this->eigenaar)->delete('/aanbod/'.$product->id)->assertRedirect('/aanbod');
 
         $abonnement->refresh();
 
@@ -151,9 +151,9 @@ class BillingTest extends TestCase
             'starts_on' => now()->toDateString(),
         ]);
 
-        $this->actingAs($this->eigenaar)->put('/products/'.$product->id, [
+        $this->actingAs($this->eigenaar)->put('/aanbod/'.$product->id, [
             'name' => $product->name,
-            'type' => ProductType::Abonnement->value,
+            'type' => ProductType::Doorlopend->value,
             'amount' => '35,00',
             'vat_rate' => 21,
             'interval' => BillingInterval::Monthly->value,
@@ -292,7 +292,7 @@ class BillingTest extends TestCase
         $trainer = User::factory()->for($this->school)->create();
         $trainer->assignRole(Role::Trainer->value);
 
-        $this->actingAs($trainer)->get('/products')->assertForbidden();
+        $this->actingAs($trainer)->get('/aanbod')->assertForbidden();
         $this->actingAs($trainer)->get('/payments')->assertForbidden();
         $this->actingAs($trainer)->get('/subscriptions')->assertForbidden();
     }

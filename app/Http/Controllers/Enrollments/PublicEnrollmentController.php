@@ -52,10 +52,10 @@ class PublicEnrollmentController extends Controller
                 'description' => $product->description,
                 'amount' => Money::format($product->amount_cents),
                 'type' => $product->type->label(),
-                'is_subscription' => $product->type->isSubscription(),
+                'is_subscription' => $product->isRecurring(),
                 // Een kamp heeft geen frequentie; daar hoort "eenmalig" te staan
                 // en niet de frequentie van een abonnement.
-                'interval' => $product->type->isSubscription() ? $product->interval->label() : 'eenmalig',
+                'interval' => $product->isRecurring() ? $product->interval?->label() ?? 'per maand' : 'eenmalig',
             ]));
 
         return Inertia::render('enrollments/Public', [

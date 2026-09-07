@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Billing;
 
+use App\Enums\BillingType;
 use App\Enums\ProductType;
 use App\Enums\Role;
 use App\Models\Player;
@@ -53,6 +54,7 @@ class ShopTest extends TestCase
         return Product::factory()->for($this->school)->create(array_merge([
             'name' => 'Rittenkaart 10',
             'type' => ProductType::Rittenkaart,
+            'billing_type' => BillingType::Eenmalig,
             'amount_cents' => 12500,
             'credits' => 10,
             'is_active' => true,
@@ -64,9 +66,14 @@ class ShopTest extends TestCase
         $this->product();
         $this->product(['name' => 'Zomerkamp', 'type' => ProductType::Kamp, 'amount_cents' => 9500, 'credits' => null]);
 
-        // Een abonnement loopt door; dat regelt de school, anders krijgt een
-        // ouder twee keer per maand een rekening.
-        $this->product(['name' => 'Maandabonnement', 'type' => ProductType::Abonnement, 'credits' => null]);
+        // Wat per maand loopt regelt de school; zou een ouder dat er zelf bij
+        // aanzetten, dan krijgt hij twee keer per maand een rekening.
+        $this->product([
+            'name' => 'Doorlopende training',
+            'type' => ProductType::Doorlopend,
+            'billing_type' => BillingType::Maandelijks,
+            'credits' => null,
+        ]);
 
         // En wat niet meer verkocht wordt hoort er ook niet te staan.
         $this->product(['name' => 'Oude clinic', 'type' => ProductType::Kamp, 'credits' => null, 'is_active' => false]);
@@ -136,7 +143,11 @@ class ShopTest extends TestCase
 
     public function test_een_abonnement_koop_je_hier_niet(): void
     {
-        $abonnement = $this->product(['type' => ProductType::Abonnement, 'credits' => null]);
+        $abonnement = $this->product([
+            'type' => ProductType::Doorlopend,
+            'billing_type' => BillingType::Maandelijks,
+            'credits' => null,
+        ]);
 
         $this->actingAs($this->ouder)
             ->post('/shop/'.$abonnement->id, ['player_id' => $this->kind->id])

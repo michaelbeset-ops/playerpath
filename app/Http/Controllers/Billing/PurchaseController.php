@@ -49,9 +49,10 @@ class PurchaseController extends Controller
 
         $product = Product::findOrFail($validated['product_id']);
 
-        // Een abonnement loopt via het abonnementenscherm: daar horen termijnen
-        // en incasso bij. Ze door elkaar halen levert dubbele rekeningen op.
-        abort_if($product->type->isSubscription(), 422, 'Een abonnement ken je toe via Abonnementen.');
+        // Wat per maand loopt gaat via het abonnementenscherm: daar horen
+        // termijnen en incasso bij. Ze door elkaar halen levert dubbele
+        // rekeningen op.
+        abort_if($product->isRecurring(), 422, 'Aanbod per maand ken je toe via Abonnementen.');
 
         $aankoop = $this->verkoop->handle(
             $player,

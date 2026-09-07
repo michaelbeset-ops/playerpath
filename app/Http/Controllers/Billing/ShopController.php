@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Billing;
 
+use App\Actions\Offerings\JoinOffering;
 use App\Actions\Payments\StartCheckout;
 use App\Actions\Products\SellProduct;
-use App\Enums\ProductType;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Player;
@@ -39,6 +39,7 @@ class ShopController extends Controller
     public function __construct(
         protected SellProduct $verkoop,
         protected StartCheckout $checkout,
+        protected JoinOffering $deelname,
         protected PaymentGateway $gateway,
     ) {}
 
@@ -48,7 +49,7 @@ class ShopController extends Controller
 
         $producten = Product::query()
             ->where('is_active', true)
-            ->where('type', '!=', ProductType::Abonnement->value)
+            ->purchasable()
             ->orderBy('amount_cents')
             ->get()
             ->map(fn (Product $product) => [
@@ -85,12 +86,16 @@ class ShopController extends Controller
 
         abort_unless($product->is_active, 404);
 
-        // Een abonnement loopt door en heeft termijnen; dat regelt de school.
-        abort_if($product->type->isSubscription(), 422, 'Een abonnement regel je via de school.');
+        // Wat per maand loopt heeft termijnen; dat regelt de school.
+        abort_if($product->isRecurring(), 422, 'Aanbod per maand regel je via de school.');
 
         $speler = Player::findOrFail($validated['player_id']);
 
         $aankoop = $this->verkoop->handle($speler, $product);
+
+        // Meedoen is meer dan betalen: hier hangt de deelnemerslijst van het
+        // aanbod aan, en bij een blok ook de groep met de trainingen.
+        $this->deelname->handle($product, $speler, purchase: $aankoop);
 
         /** @var Payment|null $betaling */
         $betaling = $aankoop->payments()->first();

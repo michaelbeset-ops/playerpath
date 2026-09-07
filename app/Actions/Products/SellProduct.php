@@ -3,7 +3,6 @@
 namespace App\Actions\Products;
 
 use App\Enums\PaymentStatus;
-use App\Enums\ProductType;
 use App\Models\Payment;
 use App\Models\Player;
 use App\Models\Product;
@@ -30,8 +29,8 @@ class SellProduct
 {
     public function handle(Player $player, Product $product, ?Carbon $startOp = null, ?string $notitie = null): Purchase
     {
-        if ($product->type === ProductType::Abonnement) {
-            throw new \InvalidArgumentException('Een abonnement loopt via Subscription, niet via een aankoop.');
+        if ($product->isRecurring()) {
+            throw new \InvalidArgumentException('Aanbod dat per maand loopt gaat via Subscription, niet via een aankoop.');
         }
 
         $start = $startOp ?? now()->startOfDay();

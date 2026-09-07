@@ -2,6 +2,7 @@
 
 namespace App\Actions\Enrollments;
 
+use App\Actions\Offerings\JoinOffering;
 use App\Actions\Payments\GeneratePayments;
 use App\Actions\Products\SellProduct;
 use App\Enums\EnrollmentStatus;
@@ -31,6 +32,7 @@ class ApproveEnrollment
     public function __construct(
         protected GeneratePayments $facturen,
         protected SellProduct $verkoop,
+        protected JoinOffering $deelname,
     ) {}
 
     public function handle(Enrollment $enrollment, User $eigenaar): Player
@@ -85,28 +87,38 @@ class ApproveEnrollment
             // training of een rittenkaart is één keer afnemen en één rekening.
             // Alles als abonnement wegschrijven leverde een kamp met een
             // maandfrequentie op, en dat snapt later niemand meer.
-            if ($enrollment->product?->type->isSubscription()) {
+            $aanbod = $enrollment->product;
+
+            if ($aanbod?->isRecurring()) {
                 $abonnement = Subscription::create([
                     'player_id' => $player->id,
-                    'product_id' => $enrollment->product->id,
-                    'amount_cents' => $enrollment->product->amount_cents,
-                    'vat_rate' => $enrollment->product->vat_rate,
-                    'interval' => $enrollment->product->interval,
+                    'product_id' => $aanbod->id,
+                    'amount_cents' => $aanbod->amount_cents,
+                    'vat_rate' => $aanbod->vat_rate,
+                    'interval' => $aanbod->interval,
                     'status' => SubscriptionStatus::Active,
                     'payment_method' => $enrollment->payment_method,
                     'starts_on' => now()->toDateString(),
+                    // Een blok van zes weken dat na afloop blijft doorschrijven
+                    // is precies waar een ouder boos over wordt. Of het stopt
+                    // stelt de school per aanbod in.
+                    'ends_on' => $aanbod->stops_at_end ? $aanbod->ends_on : null,
                 ]);
 
                 // Meteen de eerste rekening, zodat er iets te betalen is zodra
                 // de ouder inlogt. Wachten op de nachtelijke facturenloop zou
                 // betekenen dat een net goedgekeurd gezin een leeg scherm ziet.
                 $this->facturen->handle($abonnement);
-            } elseif ($enrollment->product) {
-                $aankoop = $this->verkoop->handle($player, $enrollment->product);
+
+                $this->deelname->handle($aanbod, $player, subscription: $abonnement, enrollmentId: $enrollment->id);
+            } elseif ($aanbod) {
+                $aankoop = $this->verkoop->handle($player, $aanbod);
 
                 // De gekozen betaalwijze reist mee naar de rekening: die bepaalt
                 // of de ouder online kan afrekenen of bij de school betaalt.
                 $aankoop->payments()->update(['method' => $enrollment->payment_method]);
+
+                $this->deelname->handle($aanbod, $player, purchase: $aankoop, enrollmentId: $enrollment->id);
             }
 
             $enrollment->forceFill([

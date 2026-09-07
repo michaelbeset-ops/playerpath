@@ -80,7 +80,7 @@ class ProductTest extends TestCase
     public function test_een_rittenkaart_aanmaken(): void
     {
         $this->actingAs($this->eigenaar)
-            ->post('/products', [
+            ->post('/aanbod', [
                 'name' => '10-rittenkaart',
                 'type' => ProductType::Rittenkaart->value,
                 'amount' => '110,00',
@@ -106,7 +106,7 @@ class ProductTest extends TestCase
     public function test_een_rittenkaart_zonder_beurten_wordt_geweigerd(): void
     {
         $this->actingAs($this->eigenaar)
-            ->post('/products', [
+            ->post('/aanbod', [
                 'name' => 'Kaart',
                 'type' => ProductType::Rittenkaart->value,
                 'amount' => '110,00',
@@ -120,13 +120,15 @@ class ProductTest extends TestCase
     {
         // Een kamp met een maandfrequentie en beurten is een veld dat later
         // niemand meer snapt.
-        $this->actingAs($this->eigenaar)->post('/products', [
+        $this->actingAs($this->eigenaar)->post('/aanbod', [
             'name' => 'Zomerkamp',
             'type' => ProductType::Kamp->value,
             'amount' => '150,00',
             'vat_rate' => 21,
             'credits' => 10,
             'interval' => 'monthly',
+            'starts_on' => now()->addMonth()->toDateString(),
+            'ends_on' => now()->addMonth()->addDays(4)->toDateString(),
             'is_active' => true,
         ])->assertSessionHasNoErrors();
 
@@ -146,7 +148,7 @@ class ProductTest extends TestCase
 
     public function test_een_trainer_komt_niet_bij_de_producten(): void
     {
-        $this->actingAs($this->trainer)->get('/products')->assertForbidden();
+        $this->actingAs($this->trainer)->get('/aanbod')->assertForbidden();
     }
 
     // ---------------------------------------------------------------

@@ -15,8 +15,16 @@ use Illuminate\Support\Facades\Route;
 // bestaan tarieven, abonnementen, facturen en de betaalpagina van de ouder
 // simpelweg niet voor die school.
 Route::middleware(['auth', 'verified', 'feature:betalingen'])->group(function () {
-    // Beheer: alleen de eigenaar, zie de policies.
-    Route::resource('products', ProductController::class)->except(['show']);
+    // Het aanbod van de school. Beheer: alleen de eigenaar, zie de policies.
+    // De routenamen blijven products.*: in code heet dit Product, in de taal van
+    // de school heet het Aanbod (CLAUDE.md 3.3).
+    Route::resource('aanbod', ProductController::class)
+        ->parameters(['aanbod' => 'product'])
+        ->names('products')
+        ->except(['show']);
+
+    // Dat adres stond in bladwijzers voordat dit Aanbod heette.
+    Route::get('products', fn () => redirect()->route('products.index'));
 
     // Een product toekennen aan een speler. Staat op de pagina van die speler,
     // want daar zit je als een ouder om een rittenkaart vraagt.
