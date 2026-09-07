@@ -197,15 +197,19 @@ class DemoSchoolsSeeder extends Seeder
             // Iedereen in de eerste groep; indelen blijft handwerk, dit is alleen demo-data.
             $gemaakteSpelers->each(fn (Player $speler) => $speler->groups()->sync([$gemaakteGroepen->first()->id]));
 
+            // Een echte naam, want die staat straks in een begroeting: "Hallo
+            // Ouder van Sem" is geen begroeting maar een rolomschrijving.
+            $eersteSpeler = $gemaakteSpelers->first();
+
             $ouder = User::create([
                 'school_id' => $school->id,
-                'name' => 'Ouder van '.$gemaakteSpelers->first()->first_name,
+                'name' => 'Marieke '.$eersteSpeler->last_name,
                 'email' => Str::replace('@', '+ouder@', $eigenaarEmail),
                 'password' => 'wachtwoord',
                 'email_verified_at' => now(),
             ]);
             $ouder->assignRole(Role::Ouder->value);
-            $ouder->children()->attach($gemaakteSpelers->first()->id, ['relationship' => 'moeder']);
+            $ouder->children()->attach($eersteSpeler->id, ['relationship' => 'moeder']);
 
             // Twee rapporten per speler, zodat de kaarten meteen gevuld zijn
             // en je de doorrekening kunt zien.
