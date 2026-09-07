@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import InputError from '@/components/InputError.vue';
+import SettingsCard from '@/components/SettingsCard.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { TransitionRoot } from '@headlessui/vue';
 import { Head, useForm } from '@inertiajs/vue3';
+import { Check, KeyRound } from 'lucide-vue-next';
 import { ref } from 'vue';
 
-import HeadingSmall from '@/components/HeadingSmall.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,10 +20,8 @@ interface Props {
 defineProps<Props>();
 
 const breadcrumbItems: BreadcrumbItem[] = [
-    {
-        title: 'Wachtwoord',
-        href: '/settings/password',
-    },
+    { title: 'Instellingen', href: '/settings/profile' },
+    { title: 'Wachtwoord', href: '/settings/password' },
 ];
 
 const passwordInput = ref<HTMLInputElement>();
@@ -62,10 +61,8 @@ const updatePassword = () => {
         <Head title="Wachtwoord wijzigen" />
 
         <SettingsLayout>
-            <div class="space-y-6">
-                <HeadingSmall title="Wachtwoord wijzigen" description="Kies een lang, uniek wachtwoord zodat je account goed beveiligd blijft" />
-
-                <form @submit.prevent="updatePassword" class="space-y-6">
+            <SettingsCard title="Wachtwoord wijzigen" description="Kies een lang wachtwoord dat je nergens anders gebruikt." :icon="KeyRound">
+                <form class="space-y-5" @submit.prevent="updatePassword">
                     <div class="grid gap-2">
                         <Label for="current_password">Huidig wachtwoord</Label>
                         <Input
@@ -73,42 +70,32 @@ const updatePassword = () => {
                             ref="currentPasswordInput"
                             v-model="form.current_password"
                             type="password"
-                            class="mt-1 block w-full"
+                            class="h-11"
                             autocomplete="current-password"
-                            placeholder="Huidig wachtwoord"
                         />
                         <InputError :message="form.errors.current_password" />
                     </div>
 
                     <div class="grid gap-2">
                         <Label for="password">Nieuw wachtwoord</Label>
-                        <Input
-                            id="password"
-                            ref="passwordInput"
-                            v-model="form.password"
-                            type="password"
-                            class="mt-1 block w-full"
-                            autocomplete="new-password"
-                            placeholder="Nieuw wachtwoord"
-                        />
+                        <Input id="password" ref="passwordInput" v-model="form.password" type="password" class="h-11" autocomplete="new-password" />
                         <InputError :message="form.errors.password" />
                     </div>
 
                     <div class="grid gap-2">
-                        <Label for="password_confirmation">Wachtwoord bevestigen</Label>
+                        <Label for="password_confirmation">Nog een keer</Label>
                         <Input
                             id="password_confirmation"
                             v-model="form.password_confirmation"
                             type="password"
-                            class="mt-1 block w-full"
+                            class="h-11"
                             autocomplete="new-password"
-                            placeholder="Herhaal je nieuwe wachtwoord"
                         />
                         <InputError :message="form.errors.password_confirmation" />
                     </div>
 
                     <div class="flex items-center gap-4">
-                        <Button :disabled="form.processing">Wachtwoord opslaan</Button>
+                        <Button class="h-11 px-5" :disabled="form.processing">Wachtwoord opslaan</Button>
 
                         <TransitionRoot
                             :show="form.recentlySuccessful"
@@ -117,11 +104,14 @@ const updatePassword = () => {
                             leave="transition ease-in-out"
                             leave-to="opacity-0"
                         >
-                            <p class="text-sm text-muted-foreground">Opgeslagen</p>
+                            <p class="flex items-center gap-1.5 text-sm font-medium text-primary">
+                                <Check class="size-4" />
+                                Opgeslagen
+                            </p>
                         </TransitionRoot>
                     </div>
                 </form>
-            </div>
+            </SettingsCard>
         </SettingsLayout>
     </AppLayout>
 </template>

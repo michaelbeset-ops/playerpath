@@ -3,7 +3,6 @@ import { useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 // Components
-import HeadingSmall from '@/components/HeadingSmall.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -43,13 +42,12 @@ const closeModal = () => {
 </script>
 
 <template>
-    <div class="space-y-6">
-        <HeadingSmall title="Account verwijderen" description="Verwijder je account en alle bijbehorende gegevens" />
-        <div class="space-y-4 rounded-xl border border-destructive/25 bg-destructive/5 p-4">
-            <div class="relative space-y-0.5 text-destructive">
-                <p class="font-medium">Let op</p>
-                <p class="text-sm">Dit kan niet ongedaan worden gemaakt.</p>
-            </div>
+    <!-- De kaart eromheen komt van de pagina (SettingsCard, tone danger). -->
+    <div class="space-y-4">
+        <p class="text-sm text-muted-foreground">
+            Je account en alles wat eraan hangt worden definitief gewist. Dit kan niet ongedaan worden gemaakt.
+        </p>
+        <div>
             <Dialog>
                 <DialogTrigger as-child>
                     <Button variant="destructive">Account verwijderen</Button>
@@ -59,14 +57,21 @@ const closeModal = () => {
                         <DialogHeader class="space-y-3">
                             <DialogTitle>Weet je zeker dat je je account wilt verwijderen?</DialogTitle>
                             <DialogDescription>
-                                Zodra je account is verwijderd, worden ook alle bijbehorende gegevens definitief gewist. Vul je wachtwoord in
-                                om te bevestigen dat je je account permanent wilt verwijderen.
+                                Zodra je account is verwijderd, worden ook alle bijbehorende gegevens definitief gewist. Vul je wachtwoord in om te
+                                bevestigen dat je je account permanent wilt verwijderen.
                             </DialogDescription>
                         </DialogHeader>
 
                         <div class="grid gap-2">
                             <Label for="password" class="sr-only">Wachtwoord</Label>
-                            <Input id="password" type="password" name="password" ref="passwordInput" v-model="form.password" placeholder="Wachtwoord" />
+                            <Input
+                                id="password"
+                                type="password"
+                                name="password"
+                                ref="passwordInput"
+                                v-model="form.password"
+                                placeholder="Wachtwoord"
+                            />
                             <InputError :message="form.errors.password" />
                         </div>
 

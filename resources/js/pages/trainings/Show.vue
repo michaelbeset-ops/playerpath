@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { CalendarX2, Check, MapPin, Pencil, RotateCcw, Trash2, UserCog, X } from 'lucide-vue-next';
+import { CalendarDays, CalendarX2, Check, Clock, MapPin, MessageSquareText, Pencil, RotateCcw, Trash2, UserCog, Users, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 interface SpelerRij {
@@ -44,13 +44,17 @@ const toonAfzeggen = ref(false);
 const reden = ref('');
 
 const afzeggen = () => {
-    router.post('/trainings/' + props.training.id + '/afzeggen', { reason: reden.value }, {
-        preserveScroll: true,
-        onSuccess: () => {
-            toonAfzeggen.value = false;
-            reden.value = '';
+    router.post(
+        '/trainings/' + props.training.id + '/afzeggen',
+        { reason: reden.value },
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                toonAfzeggen.value = false;
+                reden.value = '';
+            },
         },
-    });
+    );
 };
 
 const terugzetten = () => {
@@ -72,14 +76,6 @@ const vink = (spelerId: number, status: string, huidig: string | null) => {
     );
 };
 
-const meld = (spelerId: number, registration: string) => {
-    router.post(
-        '/trainings/' + props.training.id + '/registration/' + spelerId,
-        { registration },
-        { preserveScroll: true },
-    );
-};
-
 const verwijderen = () => {
     if (confirm('Deze training verwijderen? De afgevinkte aanwezigheid verdwijnt mee.')) {
         router.delete('/trainings/' + props.training.id);
@@ -97,15 +93,6 @@ const verwijderen = () => {
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div class="min-w-0">
                     <h1 class="text-2xl font-semibold tracking-tight">{{ training.group }}</h1>
-                    <p class="mt-1 text-sm text-muted-foreground first-letter:uppercase">{{ training.date }} &middot; {{ training.time }}</p>
-                    <p v-if="training.location" class="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <MapPin class="size-4" />
-                        {{ training.location }}
-                    </p>
-                    <p v-if="training.trainers.length" class="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
-                        <UserCog class="size-4" />
-                        {{ training.trainers.map((t) => t.name).join(', ') }}
-                    </p>
                 </div>
 
                 <Link
@@ -118,7 +105,73 @@ const verwijderen = () => {
                 </Link>
             </div>
 
-            <p v-if="training.note" class="mt-4 rounded-lg bg-secondary px-3 py-2 text-sm">{{ training.note }}</p>
+            <!-- De details: wanneer, waar, met wie. Voor een ouder of speler is
+                 dit de pagina; aan- of afmelden hoeft niet, je bent er gewoon. -->
+            <div class="mt-5 divide-y divide-border rounded-xl border border-border bg-card shadow-sm">
+                <div class="flex items-start gap-3 p-4">
+                    <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <CalendarDays class="size-5" />
+                    </span>
+                    <div class="min-w-0">
+                        <p class="text-xs text-muted-foreground">Wanneer</p>
+                        <p class="font-medium first-letter:uppercase">{{ training.date }}</p>
+                        <p class="tabular flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <Clock class="size-3.5" />
+                            {{ training.time }}
+                        </p>
+                    </div>
+                </div>
+
+                <div v-if="training.location" class="flex items-start gap-3 p-4">
+                    <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <MapPin class="size-5" />
+                    </span>
+                    <div class="min-w-0">
+                        <p class="text-xs text-muted-foreground">Waar</p>
+                        <p class="break-words font-medium">{{ training.location }}</p>
+                    </div>
+                </div>
+
+                <div v-if="training.trainers.length" class="flex items-start gap-3 p-4">
+                    <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <UserCog class="size-5" />
+                    </span>
+                    <div class="min-w-0">
+                        <p class="text-xs text-muted-foreground">{{ training.trainers.length === 1 ? 'Trainer' : 'Trainers' }}</p>
+                        <p class="break-words font-medium">{{ training.trainers.map((t) => t.name).join(', ') }}</p>
+                    </div>
+                </div>
+
+                <div v-if="!can.record && players.length" class="flex items-start gap-3 p-4">
+                    <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                        <Users class="size-5" />
+                    </span>
+                    <div class="min-w-0">
+                        <p class="text-xs text-muted-foreground">{{ players.length === 1 ? 'Voor' : 'Voor' }}</p>
+                        <p class="break-words font-medium">{{ players.map((s) => s.name.split(' ')[0]).join(' en ') }}</p>
+                        <!-- Na afloop: wat de trainer heeft afgevinkt, per kind. -->
+                        <p v-if="training.has_passed" class="mt-0.5 text-sm text-muted-foreground">
+                            <template v-for="(speler, index) in players" :key="speler.id">
+                                <template v-if="index > 0"> &middot; </template>
+                                {{ speler.name.split(' ')[0] }}
+                                <span :class="speler.status === 'present' ? 'text-primary' : ''">
+                                    {{ speler.status === 'present' ? 'was erbij' : speler.status === 'absent' ? 'was er niet' : 'niet afgevinkt' }}
+                                </span>
+                            </template>
+                        </p>
+                    </div>
+                </div>
+
+                <div v-if="training.note" class="flex items-start gap-3 p-4">
+                    <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gold/15 text-gold">
+                        <MessageSquareText class="size-5" />
+                    </span>
+                    <div class="min-w-0">
+                        <p class="text-xs text-muted-foreground">Van de trainer</p>
+                        <p class="whitespace-pre-line text-sm">{{ training.note }}</p>
+                    </div>
+                </div>
+            </div>
 
             <!-- Afgezegd: blijft in het rooster staan, maar duidelijk gemarkeerd -->
             <div v-if="training.cancelled_at" class="mt-4 rounded-xl border border-warning/30 bg-warning/10 p-4">
@@ -242,57 +295,6 @@ const verwijderen = () => {
                         Bekijk de groep
                     </Link>
                 </p>
-            </div>
-
-            <!-- Aan- en afmelden (speler of ouder) -->
-            <div v-else class="mt-6 rounded-xl border border-border bg-card p-5 shadow-sm">
-                <p class="font-medium">Kun je erbij zijn?</p>
-                <p class="mt-1 text-xs text-muted-foreground">Je trainer ziet dit, zodat hij weet op wie hij kan rekenen.</p>
-
-                <div v-if="players.length" class="mt-4 space-y-3">
-                    <div v-for="speler in players" :key="speler.id" class="rounded-lg border border-border p-3">
-                        <p class="text-sm font-medium">{{ speler.name }}</p>
-
-                        <div v-if="!training.has_passed" class="mt-3 flex gap-2">
-                            <button
-                                type="button"
-                                class="flex flex-1 items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition"
-                                :class="
-                                    speler.registration === 'attending'
-                                        ? 'border-transparent bg-primary text-primary-foreground'
-                                        : 'border-border text-muted-foreground hover:border-primary hover:text-primary'
-                                "
-                                @click="meld(speler.id, 'attending')"
-                            >
-                                <Check class="size-4" />
-                                Ik kom
-                            </button>
-
-                            <button
-                                type="button"
-                                class="flex flex-1 items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-sm font-medium transition"
-                                :class="
-                                    speler.registration === 'declined'
-                                        ? 'border-transparent bg-secondary text-secondary-foreground'
-                                        : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground'
-                                "
-                                @click="meld(speler.id, 'declined')"
-                            >
-                                <X class="size-4" />
-                                Ik kom niet
-                            </button>
-                        </div>
-
-                        <p v-else class="mt-2 text-sm text-muted-foreground">
-                            <template v-if="speler.status">
-                                Je was {{ speler.status === 'present' ? 'aanwezig' : 'afwezig' }}.
-                            </template>
-                            <template v-else>Deze training is geweest.</template>
-                        </p>
-                    </div>
-                </div>
-
-                <p v-else class="mt-3 text-sm text-muted-foreground">Je hebt geen spelers in deze groep.</p>
             </div>
 
             <div v-if="can.delete" class="mt-4 rounded-xl border border-destructive/25 bg-destructive/5 p-5">
