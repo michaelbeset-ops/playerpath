@@ -185,7 +185,7 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                 <div class="flex min-w-0 items-center gap-1">
                     <button
                         type="button"
-                        class="flex size-10 items-center justify-center rounded-lg border border-border bg-card shadow-sm transition hover:border-primary"
+                        class="flex size-11 items-center justify-center rounded-lg border border-border bg-card shadow-sm transition hover:border-primary"
                         aria-label="Vorige"
                         @click="vorige"
                     >
@@ -193,14 +193,14 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                     </button>
                     <button
                         type="button"
-                        class="h-10 rounded-lg border border-border bg-card px-3 text-sm font-medium shadow-sm transition hover:border-primary"
+                        class="h-11 rounded-lg border border-border bg-card px-3 text-sm font-medium shadow-sm transition hover:border-primary"
                         @click="naarVandaag"
                     >
                         Vandaag
                     </button>
                     <button
                         type="button"
-                        class="flex size-10 items-center justify-center rounded-lg border border-border bg-card shadow-sm transition hover:border-primary"
+                        class="flex size-11 items-center justify-center rounded-lg border border-border bg-card shadow-sm transition hover:border-primary"
                         aria-label="Volgende"
                         @click="volgende"
                     >
@@ -216,7 +216,7 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                     <div class="inline-flex rounded-lg border border-border bg-card p-1 shadow-sm">
                         <button
                             type="button"
-                            class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+                            class="min-h-11 rounded-md px-3 text-sm font-medium transition"
                             :class="view === 'month' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
                             @click="wisselWeergave('month')"
                         >
@@ -224,7 +224,7 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                         </button>
                         <button
                             type="button"
-                            class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+                            class="min-h-11 rounded-md px-3 text-sm font-medium transition"
                             :class="view === 'week' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
                             @click="wisselWeergave('week')"
                         >
@@ -235,7 +235,7 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                     <Link
                         v-if="canManage"
                         href="/trainings/create"
-                        class="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                        class="inline-flex h-11 items-center gap-2 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
                     >
                         <Plus class="size-4" />
                         <span class="hidden sm:inline">Inplannen</span>
@@ -248,7 +248,7 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                 <div v-if="canChooseScope" class="inline-flex rounded-lg border border-border bg-card p-1 shadow-sm">
                     <button
                         type="button"
-                        class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+                        class="min-h-11 rounded-md px-3 text-sm font-medium transition"
                         :class="scope === 'all' ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground'"
                         @click="kiesBereik('all')"
                     >
@@ -256,7 +256,7 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                     </button>
                     <button
                         type="button"
-                        class="rounded-md px-3 py-1.5 text-sm font-medium transition"
+                        class="min-h-11 rounded-md px-3 text-sm font-medium transition"
                         :class="scope === 'mine' ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground'"
                         @click="kiesBereik('mine')"
                     >
@@ -269,7 +269,7 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                 <div v-if="view === 'month'" class="inline-flex rounded-lg border border-border bg-card p-1 shadow-sm sm:hidden">
                     <button
                         type="button"
-                        class="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition"
+                        class="flex min-h-11 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition"
                         :class="weergave === 'lijst' ? 'bg-secondary text-foreground' : 'text-muted-foreground'"
                         @click="kiesWeergave('lijst')"
                     >
@@ -278,7 +278,7 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                     </button>
                     <button
                         type="button"
-                        class="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium transition"
+                        class="flex min-h-11 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition"
                         :class="weergave === 'raster' ? 'bg-secondary text-foreground' : 'text-muted-foreground'"
                         @click="kiesWeergave('raster')"
                     >

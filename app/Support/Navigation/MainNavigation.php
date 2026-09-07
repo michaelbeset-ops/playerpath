@@ -4,6 +4,7 @@ namespace App\Support\Navigation;
 
 use App\Enums\Feature;
 use App\Models\Announcement;
+use App\Models\AvailabilityException;
 use App\Models\Enrollment;
 use App\Models\Group;
 use App\Models\Location;
@@ -116,6 +117,10 @@ class MainNavigation
                 // Alles wat over de school zelf gaat en niet over een klant.
                 'title' => 'Mijn bedrijf', 'icon' => 'business', 'items' => [
                     ['title' => 'Personeel', 'href' => '/staff', 'icon' => 'staff', 'allowed' => $user->can('viewAny', Player::class)],
+                    // Je eigen beschikbaarheid vul je in; het overzicht van het
+                    // hele team is van de eigenaar, die er zijn planning op maakt.
+                    ['title' => 'Mijn beschikbaarheid', 'href' => '/beschikbaarheid', 'icon' => 'availability', 'allowed' => $user->can('viewAny', AvailabilityException::class)],
+                    ['title' => 'Beschikbaarheid team', 'href' => '/personeel/beschikbaarheid', 'icon' => 'availability', 'allowed' => $user->can('viewTeam', AvailabilityException::class)],
                     ['title' => 'Locaties', 'href' => '/locaties', 'icon' => 'locations', 'allowed' => $user->can('viewAny', Location::class)],
                     ['title' => 'Inschrijven en betalen', 'href' => '/instellingen/inschrijven', 'icon' => 'enrollments', 'allowed' => $user->isEigenaar()],
                     ['title' => 'Huisstijl', 'href' => '/branding', 'icon' => 'branding', 'allowed' => $user->isEigenaar()],

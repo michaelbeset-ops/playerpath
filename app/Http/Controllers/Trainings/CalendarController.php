@@ -81,7 +81,13 @@ class CalendarController extends Controller
                 'has_passed' => $training->hasPassed(),
                 'cancelled' => $training->isCancelled(),
                 // Zodat je in "Alle trainingen" ziet welke van jou zijn.
-                'is_mine' => $canChooseScope && $training->belongsToTrainer($user),
+                //
+                // Hier telt alleen een échte koppeling, en niet de regel dat
+                // een training zonder trainers "van iedereen" is. Die regel
+                // bepaalt wat je te zien krijgt; zou hij ook het merkteken
+                // zetten, dan staat er "jij" bij elke training waar niemand aan
+                // gekoppeld is, en dan zegt het merkteken niets meer.
+                'is_mine' => $canChooseScope && $training->trainers->contains('id', $user->id),
             ]);
 
         return Inertia::render('calendar/Index', [

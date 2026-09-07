@@ -73,7 +73,7 @@ const kleuren: Record<string, { rand: string; vlak: string; tekst: string }> = {
 
     <section v-else class="rounded-2xl border border-warning/30 bg-warning/5 p-4 sm:p-5" aria-label="Vraagt om aandacht">
         <div class="flex items-start justify-between gap-3">
-            <p class="flex items-center gap-2 font-medium">
+            <p class="flex min-w-0 items-center gap-2 font-medium">
                 <AlertTriangle class="size-4 shrink-0 text-warning" />
                 Vraagt om aandacht
             </p>
@@ -83,7 +83,7 @@ const kleuren: Record<string, { rand: string; vlak: string; tekst: string }> = {
             <button
                 v-if="signature"
                 type="button"
-                class="-m-1 shrink-0 rounded-lg p-1 text-muted-foreground transition hover:bg-card hover:text-foreground"
+                class="-my-2.5 -mr-2 flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-card hover:text-foreground"
                 aria-label="Aandacht-blok wegklikken tot er iets verandert"
                 title="Gezien. Komt terug zodra er iets verandert."
                 @click="wegklikken"
@@ -110,7 +110,7 @@ const kleuren: Record<string, { rand: string; vlak: string; tekst: string }> = {
 
                 <Link
                     :href="item.href"
-                    class="inline-flex h-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background px-3 text-sm font-medium transition hover:border-primary"
+                    class="inline-flex min-h-11 shrink-0 items-center justify-center rounded-lg border border-border bg-background px-3 text-sm font-medium transition hover:border-primary"
                 >
                     {{ item.action }}
                 </Link>

@@ -15,6 +15,7 @@ use App\Support\Dashboard\PlayerDashboard;
 use App\Support\Dashboard\SchoolDashboard;
 use App\Support\Dashboard\SetupChecklist;
 use App\Support\Dashboard\Signal;
+use App\Support\Dashboard\TrainerDashboard;
 use App\Support\Dashboard\WidgetRegistry;
 use App\Support\Goals\GoalProgress;
 use App\Support\Money\Money;
@@ -67,6 +68,7 @@ class DashboardController extends Controller
         protected ReportPrompts $prompts,
         protected FamilyDashboard $family,
         protected PlayerDashboard $speler,
+        protected TrainerDashboard $trainer,
     ) {}
 
     public function __invoke(Request $request): Response|RedirectResponse
@@ -142,12 +144,19 @@ class DashboardController extends Controller
                     : null,
                 'trainings' => $toont(DashboardWidget::Trainings) ? $this->dashboard->upcomingTrainings(3) : null,
                 'birthdays' => $toont(DashboardWidget::Birthdays) ? $this->dashboard->birthdays(limit: 4) : null,
+                // Van de trainer. Alleen berekend als ze er ook staan; een
+                // eigenaar die niet traint kost dit dus geen enkele query.
+                'my_trainings' => $toont(DashboardWidget::MyTrainings) ? $this->trainer->trainings($user) : null,
+                'my_players' => $toont(DashboardWidget::MyPlayers) ? $this->trainer->players($user) : null,
             ],
             'can' => [
                 'managePlayers' => $user->can('create', Player::class),
                 'manageGroups' => $user->can('create', Group::class),
                 'planTrainings' => $user->can('create', Training::class),
             ],
+            // De rol bepaalt de kop en de snelle acties: een trainer krijgt
+            // "Mijn trainingen" waar een eigenaar "Speler toevoegen" krijgt.
+            'isTrainerOnly' => $user->isTrainer() && ! $user->isEigenaar(),
         ]);
     }
 

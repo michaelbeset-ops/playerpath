@@ -251,7 +251,7 @@ const laatLos = () => clearTimeout(timer);
                     <button
                         v-if="teVoegen.length"
                         type="button"
-                        class="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-medium transition hover:border-primary"
+                        class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-medium transition hover:border-primary"
                         @click="toonKiezer = !toonKiezer"
                     >
                         <Plus class="size-4" />
@@ -260,7 +260,7 @@ const laatLos = () => clearTimeout(timer);
 
                     <button
                         type="button"
-                        class="inline-flex h-9 items-center gap-2 rounded-lg px-2 text-sm text-muted-foreground transition hover:text-foreground"
+                        class="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm text-muted-foreground transition hover:text-foreground"
                         @click="herstel"
                     >
                         <RotateCcw class="size-4" />
@@ -269,7 +269,7 @@ const laatLos = () => clearTimeout(timer);
 
                     <button
                         type="button"
-                        class="inline-flex h-9 items-center rounded-lg px-3 text-sm text-muted-foreground transition hover:text-foreground"
+                        class="inline-flex min-h-11 items-center rounded-lg px-3 text-sm text-muted-foreground transition hover:text-foreground"
                         @click="annuleer"
                     >
                         Annuleren
@@ -277,7 +277,7 @@ const laatLos = () => clearTimeout(timer);
 
                     <button
                         type="button"
-                        class="inline-flex h-9 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+                        class="inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
                         :disabled="bezig"
                         @click="bewaar"
                     >
@@ -289,7 +289,7 @@ const laatLos = () => clearTimeout(timer);
                 <button
                     v-else
                     type="button"
-                    class="inline-flex h-9 items-center gap-2 rounded-lg px-2 text-sm text-muted-foreground transition hover:text-foreground"
+                    class="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm text-muted-foreground transition hover:text-foreground"
                     @click="start"
                 >
                     <LayoutGrid class="size-4" />
@@ -359,7 +359,7 @@ const laatLos = () => clearTimeout(timer);
                         <button
                             v-if="!smal && kanWisselen(item.i)"
                             type="button"
-                            class="tabular inline-flex h-8 items-center rounded-lg border border-border px-2 text-xs font-medium transition hover:border-primary"
+                            class="tabular inline-flex min-h-11 items-center rounded-lg border border-border px-2 text-xs font-medium transition hover:border-primary"
                             :aria-label="'Breedte van ' + labelVan(item.i) + ' wijzigen'"
                             @click="wisselFormaat(item.i)"
                         >
@@ -368,7 +368,7 @@ const laatLos = () => clearTimeout(timer);
 
                         <button
                             type="button"
-                            class="absolute right-2 top-2 flex size-8 items-center justify-center rounded-full border border-destructive/30 bg-card text-destructive shadow-sm transition hover:bg-destructive hover:text-background"
+                            class="absolute right-2 top-2 flex size-11 items-center justify-center rounded-full border border-destructive/30 bg-card text-destructive shadow-sm transition hover:bg-destructive hover:text-background"
                             :aria-label="labelVan(item.i) + ' weghalen'"
                             @click="verwijder(item.i)"
                         >

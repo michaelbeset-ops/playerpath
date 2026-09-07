@@ -27,6 +27,9 @@ enum DashboardWidget: string
     case Finance = 'finance';
     case Trainings = 'trainings';
     case Birthdays = 'birthdays';
+    // Van de trainer: waar moet ik zijn, en wie moet ik nog beoordelen.
+    case MyTrainings = 'my_trainings';
+    case MyPlayers = 'my_players';
 
     public function label(): string
     {
@@ -39,6 +42,8 @@ enum DashboardWidget: string
             self::Finance => 'Financieel',
             self::Trainings => 'Komende trainingen',
             self::Birthdays => 'Verjaardagen',
+            self::MyTrainings => 'Mijn trainingen',
+            self::MyPlayers => 'Mijn spelers',
         };
     }
 
@@ -53,6 +58,8 @@ enum DashboardWidget: string
             self::Finance => 'Openstaand, lopende abonnementen en de verwachte jaaromzet.',
             self::Trainings => 'De eerstvolgende drie trainingen.',
             self::Birthdays => 'Wie er de komende weken jarig is.',
+            self::MyTrainings => 'De trainingen die jij geeft, met afvinken en rapporten binnen handbereik.',
+            self::MyPlayers => 'De spelers uit jouw groepen, en wanneer ze voor het laatst beoordeeld zijn.',
         };
     }
 
@@ -73,6 +80,8 @@ enum DashboardWidget: string
             self::Development => [8, 12],
             self::Finance => [4, 6, 12],
             self::Trainings, self::Birthdays => [6, 4, 12],
+            // Van de trainer, en dus zijn hoofdmoot: standaard breed.
+            self::MyTrainings, self::MyPlayers => [6, 12, 4],
         };
     }
 
@@ -89,6 +98,7 @@ enum DashboardWidget: string
             self::Development => 7,
             self::Finance => 7,
             self::Trainings, self::Birthdays => 5,
+            self::MyTrainings, self::MyPlayers => 8,
         };
     }
 
@@ -103,6 +113,8 @@ enum DashboardWidget: string
             self::Finance => 'revenue',
             self::Trainings => 'trainings',
             self::Birthdays => 'birthdays',
+            self::MyTrainings => 'trainings',
+            self::MyPlayers => 'players',
         };
     }
 
@@ -110,7 +122,7 @@ enum DashboardWidget: string
     public function feature(): ?Feature
     {
         return match ($this) {
-            self::KpiRating, self::KpiReports, self::Development => Feature::Ontwikkeling,
+            self::KpiRating, self::KpiReports, self::Development, self::MyPlayers => Feature::Ontwikkeling,
             self::KpiRevenue, self::Finance => Feature::Betalingen,
             default => null,
         };
@@ -120,6 +132,18 @@ enum DashboardWidget: string
     public function ownerOnly(): bool
     {
         return in_array($this, [self::KpiRevenue, self::Finance], true);
+    }
+
+    /**
+     * Alleen voor wie zelf voor de groep staat.
+     *
+     * Een eigenaar die niet traint heeft niets aan "mijn spelers"; hij kan de
+     * widget wel plaatsen, want bij een kleine school geeft hij zelf training.
+     * Een ouder of speler komt hier sowieso niet: die heeft een eigen dashboard.
+     */
+    public function trainerOnly(): bool
+    {
+        return in_array($this, [self::MyTrainings, self::MyPlayers], true);
     }
 
     /** @return list<string> */

@@ -6,6 +6,8 @@ import DevelopmentWidget from '@/components/dashboard/DevelopmentWidget.vue';
 import FamilyDashboard from '@/components/dashboard/FamilyDashboard.vue';
 import FinanceWidget from '@/components/dashboard/FinanceWidget.vue';
 import KpiWidget from '@/components/dashboard/KpiWidget.vue';
+import MyPlayersWidget from '@/components/dashboard/MyPlayersWidget.vue';
+import MyTrainingsWidget from '@/components/dashboard/MyTrainingsWidget.vue';
 import PlayerDashboard from '@/components/dashboard/PlayerDashboard.vue';
 import ReportPrompt, { type Herinnering } from '@/components/dashboard/ReportPrompt.vue';
 import TrainingsWidget from '@/components/dashboard/TrainingsWidget.vue';
@@ -14,7 +16,7 @@ import { type BreadcrumbItem, type SharedData } from '@/types';
 import type { FamilyAanbod, FamilyBericht, FamilyKind, FamilyTraining } from '@/types/family';
 import type { SpelerDashboardData } from '@/types/player-dashboard';
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import { CalendarPlus, Check, ClipboardList, Euro, Star, UserPlus, Users } from 'lucide-vue-next';
+import { CalendarDays, CalendarPlus, Check, ClipboardList, Euro, Star, UserPlus, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 const props = defineProps<{
@@ -40,6 +42,8 @@ const props = defineProps<{
         hasTrainer: boolean;
     } | null;
     can?: { managePlayers: boolean; manageGroups: boolean; planTrainings: boolean };
+    /** Trainer zonder eigenaarsrol: andere kop, andere snelle acties. */
+    isTrainerOnly?: boolean;
 
     // --- Ouder en speler ---
     /** De kinderen van deze ouder, compact; de kaart zit één tik verderop. */
@@ -84,6 +88,7 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
                     <h1 class="text-2xl font-semibold tracking-tight">
                         <template v-if="view === 'gezin'">Hallo {{ voornaam }}</template>
                         <template v-else-if="view === 'speler'">Hoi {{ player?.first_name ?? voornaam }} 👋</template>
+                        <template v-else-if="isTrainerOnly">Hallo {{ voornaam }}</template>
                         <template v-else>Dashboard</template>
                     </h1>
                     <p class="text-sm text-muted-foreground">
@@ -138,16 +143,27 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
                     <div class="mt-5 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
                         <Link
                             href="/reports"
-                            class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 sm:justify-start sm:px-4"
+                            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 sm:justify-start sm:px-4"
                         >
                             <ClipboardList class="size-4" />
                             Rapport invullen
                         </Link>
 
+                        <!-- Voor wie zelf voor de groep staat: waar moet ik zijn.
+                             Dat is zijn eerste vraag, nog voor het invullen. -->
+                        <Link
+                            v-if="isTrainerOnly"
+                            href="/trainings/mijn"
+                            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-medium shadow-sm transition hover:border-primary sm:justify-start sm:px-4"
+                        >
+                            <CalendarDays class="size-4" />
+                            Mijn trainingen
+                        </Link>
+
                         <Link
                             v-if="can?.planTrainings"
                             href="/trainings/create"
-                            class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-medium shadow-sm transition hover:border-primary sm:justify-start sm:px-4"
+                            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-medium shadow-sm transition hover:border-primary sm:justify-start sm:px-4"
                         >
                             <CalendarPlus class="size-4" />
                             Training inplannen
@@ -156,7 +172,7 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
                         <Link
                             v-if="can?.managePlayers"
                             href="/players/create"
-                            class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-medium shadow-sm transition hover:border-primary sm:justify-start sm:px-4"
+                            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-medium shadow-sm transition hover:border-primary sm:justify-start sm:px-4"
                         >
                             <UserPlus class="size-4" />
                             Speler toevoegen
@@ -165,7 +181,7 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
                         <Link
                             v-if="can?.manageGroups"
                             href="/groups/create"
-                            class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 text-sm font-medium shadow-sm transition hover:border-primary sm:justify-start sm:px-4"
+                            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-medium shadow-sm transition hover:border-primary sm:justify-start sm:px-4"
                         >
                             <Users class="size-4" />
                             Groep toevoegen
@@ -256,6 +272,14 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
 
                         <template #birthdays>
                             <BirthdaysWidget v-if="widgets?.birthdays" :data="widgets.birthdays" />
+                        </template>
+
+                        <template #my_trainings>
+                            <MyTrainingsWidget v-if="widgets?.my_trainings" :data="widgets.my_trainings" />
+                        </template>
+
+                        <template #my_players>
+                            <MyPlayersWidget v-if="widgets?.my_players" :data="widgets.my_players" />
                         </template>
                     </DashboardGrid>
                 </template>

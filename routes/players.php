@@ -10,6 +10,8 @@ use App\Http\Controllers\Players\PlayerController;
 use App\Http\Controllers\Players\PlayerProgressController;
 use App\Http\Controllers\Players\SharedCardController;
 use App\Http\Controllers\Reports\ReportController;
+use App\Http\Controllers\Reports\TrainingReportController;
+use App\Http\Controllers\Staff\AvailabilityController;
 use App\Http\Controllers\Staff\StaffController;
 use App\Http\Controllers\Staff\TrainerController;
 use App\Http\Middleware\PreventSearchIndexing;
@@ -25,6 +27,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('players/{player}/reports/create', [ReportController::class, 'create'])->name('reports.create');
         Route::post('players/{player}/reports', [ReportController::class, 'store'])->name('reports.store');
         Route::get('players/{player}/card', [PlayerCardController::class, 'show'])->name('players.card');
+
+        // De snelle invulflow: alle spelers van een training achter elkaar.
+        // "klaar" staat vóór de gewone route, anders vangt {player} dat woord.
+        Route::get('trainings/{training}/rapporten/klaar', [TrainingReportController::class, 'summary'])->name('trainings.reports.summary');
+        Route::get('trainings/{training}/rapporten', [TrainingReportController::class, 'show'])->name('trainings.reports.show');
+        Route::post('trainings/{training}/rapporten/{player}', [TrainingReportController::class, 'store'])->name('trainings.reports.store');
 
         // Fase 5: groei over de tijd en de tijdlijn.
         Route::get('players/{player}/progress', [PlayerProgressController::class, 'show'])->name('players.progress');
@@ -51,6 +59,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('staff', [StaffController::class, 'index'])->name('staff.index');
     Route::post('staff/trainers', [TrainerController::class, 'store'])->name('trainers.store');
     Route::delete('staff/trainers/{user}', [TrainerController::class, 'destroy'])->name('trainers.destroy');
+
+    // Beschikbaarheid: van jezelf, en voor de eigenaar het overzicht van zijn
+    // team. Wie wat mag staat in AvailabilityExceptionPolicy.
+    Route::get('beschikbaarheid', [AvailabilityController::class, 'index'])->name('availability.index');
+    Route::put('beschikbaarheid', [AvailabilityController::class, 'update'])->name('availability.update');
+    Route::post('beschikbaarheid/uitzonderingen', [AvailabilityController::class, 'storeException'])->name('availability.exceptions.store');
+    Route::delete('beschikbaarheid/uitzonderingen/{exception}', [AvailabilityController::class, 'destroyException'])->name('availability.exceptions.destroy');
+    Route::get('personeel/beschikbaarheid', [AvailabilityController::class, 'team'])->name('availability.team');
 
     // Profielfoto's. Wie wat mag staat in de policies: update op de speler
     // (de eigenaar) en update op de gebruiker (jezelf, of de eigenaar).

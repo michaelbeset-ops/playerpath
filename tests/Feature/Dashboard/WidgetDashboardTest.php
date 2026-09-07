@@ -91,7 +91,11 @@ class WidgetDashboardTest extends TestCase
             }));
     }
 
-    public function test_een_trainer_krijgt_dezelfde_indeling_zonder_de_geldwidgets(): void
+    /**
+     * Een trainer is personeel, geen directie: zijn standaarddashboard gaat over
+     * zijn eigen werk. Geld krijgt hij niet eens aangeboden.
+     */
+    public function test_een_trainer_begint_met_zijn_eigen_werk(): void
     {
         $this->actingAs($this->trainer)
             ->get('/dashboard')
@@ -99,12 +103,21 @@ class WidgetDashboardTest extends TestCase
             ->assertInertia(fn ($page) => $page->where('layout', function ($layout) {
                 $sleutels = $this->widgetKeys($layout);
 
+                $this->assertSame(['my_trainings', 'my_players', 'kpi_reports', 'kpi_rating'], $sleutels);
                 $this->assertNotContains('kpi_revenue', $sleutels);
                 $this->assertNotContains('finance', $sleutels);
-                $this->assertContains('development', $sleutels);
 
                 return true;
             }));
+    }
+
+    /** De eigenaar houdt het schoolbrede dashboard; hij kan de trainerwidgets erbij zetten. */
+    public function test_de_eigenaar_kan_de_trainerwidgets_erbij_zetten(): void
+    {
+        $sleutels = collect(app(WidgetRegistry::class)->describe($this->eigenaar))->pluck('key');
+
+        $this->assertContains('my_trainings', $sleutels);
+        $this->assertContains('my_players', $sleutels);
     }
 
     public function test_een_uitgezette_functie_haalt_de_widget_weg(): void

@@ -8,6 +8,7 @@ import {
     Building2,
     Cake,
     CalendarDays,
+    CalendarCheck,
     CalendarRange,
     ChevronDown,
     ClipboardList,
@@ -70,6 +71,7 @@ const iconen: Record<string, Component> = {
     business: Building2,
     staff: UserCog,
     locations: MapPin,
+    availability: CalendarCheck,
     settings: Settings,
 };
 

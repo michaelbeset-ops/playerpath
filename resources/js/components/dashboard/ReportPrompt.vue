@@ -15,6 +15,8 @@ import { Check, ClipboardList, MapPin } from 'lucide-vue-next';
  */
 export interface Herinnering {
     id: number;
+    /** Naar de snelle invulflow van deze training. */
+    href: string;
     group: string;
     time: string;
     date: string;
@@ -57,14 +59,26 @@ defineProps<{ prompts: Herinnering[] }>();
                 </p>
             </div>
 
+            <!-- De hoofdweg: alle spelers achter elkaar, zonder terug naar een
+                 lijst. Groot en bovenaan, want dit is wat je na een training wilt. -->
+            <Link
+                :href="training.href"
+                class="mt-4 flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+            >
+                <ClipboardList class="size-4 shrink-0" />
+                {{ training.open === 1 ? 'Nog één speler invullen' : training.open + ' spelers invullen' }}
+            </Link>
+
+            <p class="mt-3 text-xs text-muted-foreground">Of kies er een:</p>
+
             <!-- Eén tik naar het invulscherm van die speler. Wie klaar is staat
                  er grijs bij, zodat je ziet wie je nog mist zonder te tellen. -->
-            <div class="mt-4 grid gap-2 sm:grid-cols-2">
+            <div class="mt-2 grid gap-2 sm:grid-cols-2">
                 <Link
                     v-for="speler in training.players"
                     :key="speler.id"
-                    :href="'/players/' + speler.id + '/reports/create'"
-                    class="flex items-center gap-3 rounded-xl border p-2.5 transition"
+                    :href="training.href + '?speler=' + speler.id"
+                    class="flex min-h-14 items-center gap-3 rounded-xl border p-2.5 transition"
                     :class="speler.done ? 'border-border bg-card/60 text-muted-foreground' : 'border-border bg-card hover:border-primary'"
                 >
                     <Avatar :name="speler.name" :photo="speler.photo" size="size-9" />

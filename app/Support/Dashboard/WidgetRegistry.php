@@ -36,8 +36,16 @@ class WidgetRegistry
      *
      * @return list<array{widget: DashboardWidget, x: int, y: int, w: int}>
      */
-    public function defaultLayout(): array
+    public function defaultLayout(?User $user = null): array
     {
+        // Een trainer is personeel, geen directie. Zijn standaarddashboard
+        // beantwoordt zijn twee vragen — waar moet ik zijn, en wie moet ik nog
+        // beoordelen — en niet die van de eigenaar. Hij kan er alsnog cijfers
+        // bij zetten; dit is waar hij mee begint.
+        if ($user !== null && $user->isTrainer() && ! $user->isEigenaar()) {
+            return $this->trainerLayout();
+        }
+
         return [
             ['widget' => DashboardWidget::KpiPlayers, 'x' => 0, 'y' => 0, 'w' => 3],
             ['widget' => DashboardWidget::KpiRating, 'x' => 3, 'y' => 0, 'w' => 3],
@@ -47,6 +55,25 @@ class WidgetRegistry
             ['widget' => DashboardWidget::Finance, 'x' => 8, 'y' => 3, 'w' => 4],
             ['widget' => DashboardWidget::Trainings, 'x' => 0, 'y' => 10, 'w' => 6],
             ['widget' => DashboardWidget::Birthdays, 'x' => 6, 'y' => 10, 'w' => 6],
+        ];
+    }
+
+    /**
+     * De standaardindeling van een trainer.
+     *
+     * Zijn trainingen en zijn spelers naast elkaar, met daaronder de cijfers
+     * die over zijn eigen werk gaan. Geld en schoolbrede cijfers staan er niet:
+     * die krijgt hij ook niet aangeboden.
+     *
+     * @return list<array{widget: DashboardWidget, x: int, y: int, w: int}>
+     */
+    public function trainerLayout(): array
+    {
+        return [
+            ['widget' => DashboardWidget::MyTrainings, 'x' => 0, 'y' => 0, 'w' => 6],
+            ['widget' => DashboardWidget::MyPlayers, 'x' => 6, 'y' => 0, 'w' => 6],
+            ['widget' => DashboardWidget::KpiReports, 'x' => 0, 'y' => 8, 'w' => 6],
+            ['widget' => DashboardWidget::KpiRating, 'x' => 6, 'y' => 8, 'w' => 6],
         ];
     }
 
@@ -68,7 +95,7 @@ class WidgetRegistry
         // de standaard terug te krijgen.
         $rijen = is_array($opgeslagen)
             ? $this->uitOpslag($opgeslagen)
-            : $this->defaultLayout();
+            : $this->defaultLayout($user);
 
         $zichtbaar = array_filter($rijen, fn (array $rij) => $this->available($user, $rij['widget']));
 
@@ -160,6 +187,12 @@ class WidgetRegistry
     protected function available(User $user, DashboardWidget $widget): bool
     {
         if ($widget->ownerOnly() && ! $user->isEigenaar()) {
+            return false;
+        }
+
+        // "Mijn trainingen" en "mijn spelers" gaan over voor de groep staan.
+        // Een ouder of speler heeft een eigen dashboard en komt hier niet.
+        if ($widget->trainerOnly() && ! $user->isTrainer() && ! $user->isEigenaar()) {
             return false;
         }
 

@@ -54,7 +54,7 @@ const stap = (verschil: number) => {
              raken met een duim lastig, met een knop niet. -->
         <button
             type="button"
-            class="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-lg leading-none text-muted-foreground transition hover:border-primary hover:text-foreground"
+            class="flex size-11 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-lg leading-none text-muted-foreground transition hover:border-primary hover:text-foreground"
             :aria-label="props.label + ': een tiende lager'"
             @click.stop="stap(-0.1)"
         >
@@ -77,7 +77,7 @@ const stap = (verschil: number) => {
 
         <button
             type="button"
-            class="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-lg leading-none text-muted-foreground transition hover:border-primary hover:text-foreground"
+            class="flex size-11 shrink-0 items-center justify-center rounded-lg border border-border bg-background text-lg leading-none text-muted-foreground transition hover:border-primary hover:text-foreground"
             :aria-label="props.label + ': een tiende hoger'"
             @click.stop="stap(0.1)"
         >

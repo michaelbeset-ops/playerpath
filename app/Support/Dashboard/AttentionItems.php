@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\Player;
 use App\Models\Report;
 use App\Models\User;
+use App\Support\Availability\TrainerAvailability;
 use App\Support\Features\Features;
 use App\Support\Money\Money;
 
@@ -39,7 +40,10 @@ class AttentionItems
     /** Na hoeveel dagen zonder rapport een speler aandacht verdient. */
     public const RAPPORT_NA_DAGEN = 30;
 
-    public function __construct(protected Features $features) {}
+    public function __construct(
+        protected Features $features,
+        protected TrainerAvailability $availability,
+    ) {}
 
     /**
      * De vingerafdruk van wat er nu in het blok staat.
@@ -73,6 +77,65 @@ class AttentionItems
 
         if ($this->features->enabled(Feature::Ontwikkeling, $user->school)) {
             $items = [...$items, ...$this->rapporten()];
+        }
+
+        // De planning is werk van de eigenaar. Een trainer kan niets met "er
+        // staat nergens een trainer bij"; die geeft zijn eigen trainingen.
+        if ($user->isEigenaar()) {
+            $items = [...$items, ...$this->planning()];
+        }
+
+        return $items;
+    }
+
+    /**
+     * Waar de planning en de beschikbaarheid uit elkaar lopen.
+     *
+     * Twee losse signalen, want het zijn twee verschillende gesprekken: bij het
+     * ene bel je een trainer, bij het andere koppel je er een. Ze samenvatten
+     * als "vier trainingen hebben een probleem" laat je alsnog zoeken welk.
+     *
+     * @return list<array<string, mixed>>
+     */
+    protected function planning(): array
+    {
+        $conflicten = $this->availability->conflicts();
+        $items = [];
+
+        $onbeschikbaar = count($conflicten['unavailable']);
+
+        if ($onbeschikbaar > 0) {
+            $eerste = $conflicten['unavailable'][0];
+
+            $items[] = [
+                'key' => 'unavailable_trainers',
+                'tone' => 'warning',
+                'icon' => 'trainer',
+                'title' => $onbeschikbaar === 1
+                    ? $eerste['trainer'].' staat ingepland op een moment dat hij niet kan'
+                    : $onbeschikbaar.' trainingen staan gepland met een trainer die dan niet kan',
+                'body' => ucfirst($eerste['date']).', '.$eerste['time'].' · '.$eerste['group'].'.',
+                'href' => '/personeel/beschikbaarheid',
+                'action' => 'Naar de planning',
+            ];
+        }
+
+        $zonder = count($conflicten['unstaffed']);
+
+        if ($zonder > 0) {
+            $eerste = $conflicten['unstaffed'][0];
+
+            $items[] = [
+                'key' => 'unstaffed_trainings',
+                'tone' => 'neutral',
+                'icon' => 'trainer',
+                'title' => $zonder === 1
+                    ? 'Bij één training staat nog geen trainer'
+                    : "Bij {$zonder} trainingen staat nog geen trainer",
+                'body' => ucfirst($eerste['date']).', '.$eerste['time'].' · '.$eerste['group'].'.',
+                'href' => '/personeel/beschikbaarheid',
+                'action' => 'Trainer koppelen',
+            ];
         }
 
         return $items;

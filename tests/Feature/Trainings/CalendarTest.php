@@ -175,15 +175,22 @@ class CalendarTest extends TestCase
         $vanDeTrainer = $this->training('2026-09-15');
         $vanDeTrainer->trainers()->attach($this->trainer->id);
 
-        $vanNiemand = $this->training('2026-09-16');
+        $vanHemzelf = $this->training('2026-09-16');
+        $vanHemzelf->trainers()->attach($eigenaar->id);
+
+        // En eentje waar niemand aan gekoppeld is. Die telt als "van iedereen"
+        // in de filters, maar krijgt geen merkteken: zou dat wel zo zijn, dan
+        // staat er "jij" bij elke ongekoppelde training en zegt het niets meer.
+        $vanNiemand = $this->training('2026-09-17');
 
         $this->actingAs($eigenaar)
             ->get('/calendar?view=month&date=2026-09-01')
             ->assertInertia(fn ($page) => $page
                 ->where('scope', 'all')
-                ->count('trainings', 2)
+                ->count('trainings', 3)
                 ->where('trainings.0.is_mine', false)
                 ->where('trainings.1.is_mine', true)
+                ->where('trainings.2.is_mine', false)
             );
     }
 

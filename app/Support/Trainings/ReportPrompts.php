@@ -137,6 +137,9 @@ class ReportPrompts
 
         return [
             'id' => $training->id,
+            // Eén tik naar de snelle invulflow: alle spelers van deze training
+            // achter elkaar. Dat is waarom dit blok er staat.
+            'href' => '/trainings/'.$training->id.'/rapporten',
             'group' => $training->label(),
             'time' => $training->starts_at->format('H:i').' - '.$training->ends_at->format('H:i'),
             'date' => $training->starts_at->translatedFormat('l j F'),
