@@ -57,6 +57,12 @@ class Payment extends Model
         return $this->belongsTo(Subscription::class);
     }
 
+    /** De order waar deze rekening uit voortkomt, als hij via een inschrijving ontstond. */
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
+    }
+
     /** De eenmalige aankoop waar deze rekening bij hoort, als die er is. */
     public function purchase(): BelongsTo
     {

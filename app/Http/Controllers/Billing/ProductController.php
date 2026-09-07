@@ -6,10 +6,13 @@ use App\Actions\Offerings\ScheduleOffering;
 use App\Enums\BillingInterval;
 use App\Enums\BillingType;
 use App\Enums\OfferingStatus;
+use App\Enums\PaymentOptionType;
+use App\Enums\ProductAudience;
 use App\Enums\ProductType;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Location;
+use App\Models\PaymentOption;
 use App\Models\Product;
 use App\Models\User;
 use App\Support\Enrollment\EnrollmentSettings;
@@ -142,6 +145,7 @@ class ProductController extends Controller
      */
     protected function naOpslaan(Product $product, array $extra): void
     {
+        $product->syncPaymentOptions($extra['payment_options']);
         $product->trainers()->sync($extra['trainers']);
 
         if (! $product->type->hasSchedule()) {
@@ -228,6 +232,7 @@ class ProductController extends Controller
                 : BillingType::Eenmalig)->value,
             'status' => OfferingStatus::Open->value,
             'stops_at_end' => true,
+            'audience' => ProductAudience::All->value,
         ]);
 
         $betaling = BillingType::tryFrom((string) $request->input('billing_type'));
@@ -265,6 +270,17 @@ class ProductController extends Controller
             'min_participants' => ['nullable', 'integer', 'between:1,500', 'lte:capacity'],
             'min_age' => ['nullable', 'integer', 'between:3,99'],
             'max_age' => ['nullable', 'integer', 'between:3,99', 'gte:min_age'],
+            'audience' => ['required', Rule::enum(ProductAudience::class)],
+            'sessions_count' => ['nullable', 'integer', 'between:1,200'],
+
+            // Extra betaalvormen naast de standaard (billing_type + amount).
+            // Elke regel: eenmalig, termijnen (aantal × bedrag) of abonnement.
+            'payment_options' => ['nullable', 'array', 'max:5'],
+            'payment_options.*.type' => ['required', Rule::enum(PaymentOptionType::class)],
+            'payment_options.*.amount' => ['required', 'string', 'max:20'],
+            'payment_options.*.installments' => ['nullable', 'integer', 'between:2,12'],
+            'payment_options.*.interval' => ['nullable', 'string', Rule::in(['month', 'week', 'monthly', 'quarterly', 'yearly'])],
+            'payment_options.*.label' => ['nullable', 'string', 'max:60'],
             'location_id' => [
                 'nullable', 'integer',
                 Rule::exists('locations', 'id')->where('school_id', $schoolId),
@@ -295,6 +311,8 @@ class ProductController extends Controller
             'min_participants.lte' => 'Het minimum kan niet hoger zijn dan het aantal plekken.',
             'max_age.gte' => 'De maximumleeftijd kan niet lager zijn dan de minimumleeftijd.',
             'ends_at.after' => 'De eindtijd moet na de begintijd liggen.',
+            'payment_options.*.amount.required' => 'Vul een bedrag in.',
+            'payment_options.*.installments.between' => 'Kies tussen 2 en 12 termijnen.',
         ], [
             'name' => 'De naam',
             'description' => 'De omschrijving',
@@ -311,6 +329,8 @@ class ProductController extends Controller
             'min_participants' => 'Het minimum aantal deelnemers',
             'min_age' => 'De minimumleeftijd',
             'max_age' => 'De maximumleeftijd',
+            'audience' => 'Voor wie',
+            'sessions_count' => 'Het aantal sessies',
             'location_id' => 'De locatie',
             'status' => 'De status',
             'is_active' => 'De zichtbaarheid',
@@ -346,6 +366,8 @@ class ProductController extends Controller
             'min_participants' => $capaciteit ? ($validated['min_participants'] ?? null) : null,
             'min_age' => $validated['min_age'] ?? null,
             'max_age' => $validated['max_age'] ?? null,
+            'audience' => $validated['audience'],
+            'sessions_count' => $validated['sessions_count'] ?? null,
             // De gekozen locatie vult de tekst; die blijft staan zoals hij op
             // dat moment heette. Zie Location.
             'location_id' => $validated['location_id'] ?? null,
@@ -357,7 +379,25 @@ class ProductController extends Controller
             'is_active' => $validated['is_active'],
         ];
 
+        // De standaard betaalvorm komt uit het prijsblok; daarachter de extra's.
+        $betaalvormen = [[
+            'type' => ($betaling?->isRecurring() ?? false) ? PaymentOptionType::Abonnement->value : PaymentOptionType::Eenmalig->value,
+            'amount_cents' => Money::toCents($validated['amount']),
+            'interval' => ($betaling?->isRecurring() ?? false) ? $validated['interval'] : null,
+        ]];
+
+        foreach ($validated['payment_options'] ?? [] as $optie) {
+            $betaalvormen[] = [
+                'type' => $optie['type'],
+                'amount_cents' => max(0, Money::toCents($optie['amount'])),
+                'installments' => $optie['installments'] ?? null,
+                'interval' => $optie['interval'] ?? null,
+                'label' => $optie['label'] ?? null,
+            ];
+        }
+
         $extra = [
+            'payment_options' => $betaalvormen,
             'trainers' => $validated['trainers'] ?? [],
             'weekdays' => $validated['weekdays'] ?? [],
             'dates' => $validated['dates'] ?? [],
@@ -389,6 +429,17 @@ class ProductController extends Controller
                 'min_participants' => $product->min_participants,
                 'min_age' => $product->min_age,
                 'max_age' => $product->max_age,
+                'audience' => $product->audience->value,
+                'sessions_count' => $product->sessions_count,
+                // Alleen de extra's; de standaard staat in het prijsblok.
+                'payment_options' => $product->paymentOptions()->where('is_default', false)->get()
+                    ->map(fn (PaymentOption $optie) => [
+                        'type' => $optie->type->value,
+                        'amount' => number_format($optie->amount_cents / 100, 2, ',', ''),
+                        'installments' => $optie->installments,
+                        'interval' => $optie->interval,
+                        'label' => $optie->label,
+                    ])->values()->all(),
                 'location' => $product->location,
                 'location_id' => $product->location_id,
                 'status' => $product->status->value,
@@ -401,6 +452,8 @@ class ProductController extends Controller
             'types' => $this->typen(),
             'intervals' => BillingInterval::options(),
             'billingTypes' => BillingType::options(),
+            'audiences' => ProductAudience::options(),
+            'paymentOptionTypes' => PaymentOptionType::options(),
             'statuses' => OfferingStatus::options(),
             'locations' => Location::active()->orderBy('name')->get(['id', 'name'])
                 ->map(fn (Location $locatie) => ['id' => $locatie->id, 'name' => $locatie->name]),

@@ -100,6 +100,24 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    /** Wat deze ouder heeft afgerekend of nog moet afrekenen. */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    /** De incassomachtigingen van deze ouder; alleen kenmerken, nooit een IBAN. */
+    public function mandates(): HasMany
+    {
+        return $this->hasMany(Mandate::class);
+    }
+
+    /** De toestemmingen die deze ouder gaf, met de versie van toen. */
+    public function consents(): HasMany
+    {
+        return $this->hasMany(Consent::class);
+    }
+
     /** Het spelersprofiel van deze gebruiker, als hij zelf speler is. */
     public function player(): HasOne
     {

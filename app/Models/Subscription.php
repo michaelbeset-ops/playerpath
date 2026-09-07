@@ -21,6 +21,8 @@ class Subscription extends Model
     protected $fillable = [
         'player_id',
         'product_id',
+        'payment_option_id',
+        'enrollment_id',
         'amount_cents',
         'vat_rate',
         'interval',
@@ -54,6 +56,17 @@ class Subscription extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /** De betaalvorm waaruit dit abonnement ontstond; het bedrag hier is leidend. */
+    public function paymentOption(): BelongsTo
+    {
+        return $this->belongsTo(PaymentOption::class);
+    }
+
+    public function enrollment(): BelongsTo
+    {
+        return $this->belongsTo(Enrollment::class);
     }
 
     public function payments(): HasMany

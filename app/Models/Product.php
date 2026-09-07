@@ -6,6 +6,9 @@ use App\Enums\BillingInterval;
 use App\Enums\BillingType;
 use App\Enums\OfferingStatus;
 use App\Enums\ParticipationStatus;
+use App\Enums\PaymentOptionType;
+use App\Enums\PlayerPosition;
+use App\Enums\ProductAudience;
 use App\Enums\ProductType;
 use App\Models\Concerns\BelongsToSchool;
 use Database\Factories\ProductFactory;
@@ -50,6 +53,8 @@ class Product extends Model
         'min_participants',
         'min_age',
         'max_age',
+        'audience',
+        'sessions_count',
         'location',
         'location_id',
         'status',
@@ -85,6 +90,8 @@ class Product extends Model
             'min_participants' => 'integer',
             'min_age' => 'integer',
             'max_age' => 'integer',
+            'audience' => ProductAudience::class,
+            'sessions_count' => 'integer',
             'starts_on' => 'date',
             'ends_on' => 'date',
             'stops_at_end' => 'boolean',
@@ -167,6 +174,73 @@ class Product extends Model
     public function spotsLeft(): ?int
     {
         return $this->capacity === null ? null : max(0, $this->capacity - $this->spotsTaken());
+    }
+
+    /** Past deze positie bij dit aanbod? Een keeperskamp is niet voor een spits. */
+    public function fitsPosition(?PlayerPosition $position): bool
+    {
+        return $position === null || ($this->audience ?? ProductAudience::All)->fits($position);
+    }
+
+    /**
+     * De manieren om dit aanbod te betalen: eenmalig, termijnen of abonnement.
+     *
+     * Precies één is de standaard; die staat ook in `billing_type`,
+     * `amount_cents` en `interval` op het aanbod zelf, zodat alles wat vóór
+     * de betaalvormen bestond blijft werken. Zie syncPaymentOptions().
+     */
+    public function paymentOptions(): HasMany
+    {
+        return $this->hasMany(PaymentOption::class)->orderBy('sort');
+    }
+
+    public function defaultPaymentOption(): HasOne
+    {
+        return $this->hasOne(PaymentOption::class)->where('is_default', true);
+    }
+
+    /**
+     * De betaalvormen vervangen door deze lijst, en de standaard overnemen op
+     * het aanbod zelf.
+     *
+     * De eerste in de lijst is de standaard. Een abonnement als standaard maakt
+     * het aanbod "maandelijks" voor de rest van de app; alles anders "eenmalig".
+     *
+     * @param  list<array{type: string, amount_cents: int, installments?: int|null, interval?: string|null, label?: string|null}>  $opties
+     */
+    public function syncPaymentOptions(array $opties): void
+    {
+        $this->paymentOptions()->delete();
+
+        foreach (array_values($opties) as $i => $optie) {
+            $type = PaymentOptionType::from($optie['type']);
+
+            $this->paymentOptions()->make([
+                'type' => $type,
+                'label' => $optie['label'] ?? null,
+                'amount_cents' => (int) $optie['amount_cents'],
+                'installments' => $type === PaymentOptionType::Termijnen ? (int) ($optie['installments'] ?? 2) : null,
+                'interval' => match ($type) {
+                    PaymentOptionType::Termijnen => $optie['interval'] ?? 'month',
+                    PaymentOptionType::Abonnement => $optie['interval'] ?? 'monthly',
+                    default => null,
+                },
+                'is_default' => $i === 0,
+                'sort' => $i,
+            ])->forceFill(['school_id' => $this->school_id])->save();
+        }
+
+        $standaard = $opties[0] ?? null;
+
+        if ($standaard !== null) {
+            $abonnement = PaymentOptionType::from($standaard['type']) === PaymentOptionType::Abonnement;
+
+            $this->forceFill([
+                'billing_type' => $abonnement ? BillingType::Maandelijks : BillingType::Eenmalig,
+                'amount_cents' => (int) $standaard['amount_cents'],
+                'interval' => $abonnement ? ($standaard['interval'] ?? 'monthly') : null,
+            ])->save();
+        }
     }
 
     /** Past deze leeftijd bij dit aanbod? Zonder grenzen mag iedereen mee. */

@@ -722,6 +722,43 @@ automatisch, en dan bevestigt de betaling de inschrijving. **Proefles** is een
 eigen aanbodsoort (`ProductType::Proefles`); de instelling zegt of hij
 aanstaat en wat hij kost.
 
+### Het datamodel van inschrijven en betalen
+
+Zoveel mogelijk bestaande tabellen, uitgebreid. Geen tweede model ernaast.
+
+| Ding | Tabel | Wat het is |
+|---|---|---|
+| Aanbod | `products` | Soort, doelgroep (`audience`: iedereen / keepers / veldspelers), leeftijd, capaciteit, data, aantal sessies, locatie, trainers, status |
+| Betaalvorm | `payment_options` | Eenmalig, termijnen (n × bedrag) of abonnement (interval + bedrag). **Meerdere per aanbod**, precies één is de standaard |
+| Ouder ↔ kind | `guardian_player` | Bestond al: één ouder met meerdere kinderen, een kind met twee ouders |
+| Inschrijving | `enrollments` | Kind + aanbod + gekozen betaalvorm + order + ouderaccount; draagt de status |
+| Order | `orders` + `order_lines` | De financiële kop per gezin; regels voor aanbod, inschrijfgeld, kledingpakket en korting |
+| Betaling, abonnement | `payments`, `subscriptions` | Bestonden al; wijzen nu ook naar de order en de betaalvorm |
+| Mandaat | `mandates` | Per **ouder** (die betaalt en tekent): alleen kenmerken van de provider. **Nooit een IBAN** |
+| Korting | `discounts` | Gezin, vroegboek, volume, code; procent óf vast bedrag |
+| Toestemming | `consents` | Wie, welk document, **welke versie**, wanneer |
+| Wachtlijst | `waitlist_invitations` | Uitnodiging met token en tijdslimiet (onderdeel 6) |
+
+Vier dingen die je niet moet omdraaien:
+
+- **De standaard betaalvorm staat óók op het aanbod** (`billing_type`,
+  `amount_cents`, `interval`), gezet door `Product::syncPaymentOptions()`.
+  Alles wat er vóór de betaalvormen was (shop, inschrijfformulier,
+  abonnementen, aankopen) leest die kolommen en blijft dus werken. Een
+  abonnement als standaard maakt het aanbod "maandelijks", al het andere
+  "eenmalig". In het formulier is het prijsblok de standaard en staan de
+  extra's eronder.
+- **Een aanbod heeft altijd minstens één betaalvorm.** De migratie gaf elk
+  bestaand aanbod er een uit zijn betaalwijze; de factory doet hetzelfde.
+- **Korting is een orderregel met een negatief bedrag.** Het totaal is de som
+  van de regels (`Order::recalculate()`), en je ziet later nog waarom het
+  lager was. Naam en bedrag op een regel zijn overgenomen op het moment van
+  bestellen, net als bij een aankoop.
+- **Een mandaat hoort bij de ouder, niet bij het kind.** Eerder stond het
+  klantkenmerk op de speler; met orders die meerdere kinderen bundelen betaalt
+  en tekent één ouder. `players.payment_customer_reference` blijft staan tot
+  de incasso (onderdeel 7) op het mandaat is overgezet.
+
 ### Inschrijvingen
 
 #### De openbare aanmeldpagina

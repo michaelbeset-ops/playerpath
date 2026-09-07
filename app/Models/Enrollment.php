@@ -27,6 +27,9 @@ class Enrollment extends Model
         'guardian_phone',
         'relationship',
         'product_id',
+        'payment_option_id',
+        'order_id',
+        'guardian_user_id',
         'payment_method',
         'waitlist',
         'note',
@@ -52,6 +55,23 @@ class Enrollment extends Model
     public function player(): BelongsTo
     {
         return $this->belongsTo(Player::class);
+    }
+
+    /** De gekozen betaalvorm; het bedrag zelf staat op de order en de afspraak. */
+    public function paymentOption(): BelongsTo
+    {
+        return $this->belongsTo(PaymentOption::class);
+    }
+
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
+    }
+
+    /** De ouder met een account, zodra die er is. */
+    public function guardian(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'guardian_user_id');
     }
 
     public function handledBy(): BelongsTo

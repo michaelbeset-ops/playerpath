@@ -5,6 +5,7 @@ namespace Database\Factories;
 use App\Enums\BillingInterval;
 use App\Enums\BillingType;
 use App\Enums\OfferingStatus;
+use App\Enums\PaymentOptionType;
 use App\Enums\ProductType;
 use App\Models\Product;
 use App\Models\School;
@@ -33,6 +34,19 @@ class ProductFactory extends Factory
 
             if (! $product->billing_type->isRecurring()) {
                 $product->interval = null;
+            }
+        })->afterCreating(function (Product $product) {
+            // Nergens een aanbod zonder betaalvorm: de standaard volgt de
+            // betaalwijze, precies zoals de migratie het bij bestaand aanbod deed.
+            if ($product->paymentOptions()->doesntExist()) {
+                // De school van het aanbod, niet die van de tenancy: in een
+                // test staat er niet altijd een actieve school.
+                $product->paymentOptions()->make([
+                    'type' => $product->billing_type->isRecurring() ? PaymentOptionType::Abonnement : PaymentOptionType::Eenmalig,
+                    'amount_cents' => $product->amount_cents,
+                    'interval' => $product->billing_type->isRecurring() ? ($product->interval?->value ?? 'monthly') : null,
+                    'is_default' => true,
+                ])->forceFill(['school_id' => $product->school_id])->save();
             }
         });
     }

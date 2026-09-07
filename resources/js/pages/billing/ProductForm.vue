@@ -38,6 +38,9 @@ const props = defineProps<{
         min_participants: number | null;
         min_age: number | null;
         max_age: number | null;
+        audience: string;
+        sessions_count: number | null;
+        payment_options: Betaalvorm[];
         location: string | null;
         location_id: number | null;
         status: string;
@@ -50,10 +53,20 @@ const props = defineProps<{
     types: Soort[];
     intervals: Record<string, string>;
     billingTypes: Record<string, string>;
+    audiences: Record<string, string>;
+    paymentOptionTypes: Record<string, string>;
     statuses: Record<string, string>;
     locations: { id: number; name: string }[];
     availableTrainers: { id: number; name: string }[];
 }>();
+
+interface Betaalvorm {
+    type: string;
+    amount: string;
+    installments: number | null;
+    interval: string | null;
+    label: string | null;
+}
 
 const bewerken = computed(() => props.product !== null);
 
@@ -80,6 +93,9 @@ const form = useForm({
     min_participants: props.product?.min_participants ?? null,
     min_age: props.product?.min_age ?? null,
     max_age: props.product?.max_age ?? null,
+    audience: props.product?.audience ?? 'all',
+    sessions_count: props.product?.sessions_count ?? null,
+    payment_options: (props.product?.payment_options ?? []) as Betaalvorm[],
     location_id: props.product?.location_id ?? null,
     status: props.product?.status ?? 'open',
     stops_at_end: props.product?.stops_at_end ?? true,
@@ -97,6 +113,10 @@ const form = useForm({
 const soort = computed(() => props.types.find((t) => t.value === form.type) ?? props.types[0]);
 
 const perMaand = computed(() => form.billing_type === 'maandelijks');
+
+// Extra betaalvormen naast de standaard: "of 3 × € 40", "of € 30 per maand".
+const voegBetaalvormToe = () => form.payment_options.push({ type: 'termijnen', amount: '', installments: 3, interval: 'month', label: null });
+const verwijderBetaalvorm = (i: number) => form.payment_options.splice(i, 1);
 
 // Een kamp gaat over losse dagen; een blok over elke week dezelfde dag.
 const losseDagen = computed(() => form.type === 'kamp');
@@ -297,8 +317,8 @@ const veldKlassen = 'h-11 w-full rounded-lg border border-input bg-background px
                     <p class="text-xs text-muted-foreground">
                         Hier maken we de trainingen van. Ze komen in de agenda en op de aanwezigheidslijst, net als elke andere training.
                         <template v-if="bewerken && product!.trainings_count">
-                            Er staan er nu <span class="tabular">{{ product!.trainings_count }}</span>. Trainingen die al geweest zijn blijven
-                            staan.
+                            Er staan er nu <span class="tabular">{{ product!.trainings_count }}</span
+                            >. Trainingen die al geweest zijn blijven staan.
                         </template>
                     </p>
                 </div>
@@ -306,6 +326,15 @@ const veldKlassen = 'h-11 w-full rounded-lg border border-input bg-background px
                 <!-- Voor wie -->
                 <div class="space-y-4 rounded-xl border border-border bg-card p-5 shadow-sm">
                     <p class="font-medium">Voor wie</p>
+
+                    <div class="grid gap-2">
+                        <Label for="audience">Positie</Label>
+                        <select id="audience" v-model="form.audience" :class="veldKlassen">
+                            <option v-for="(label, waarde) in audiences" :key="waarde" :value="waarde">{{ label }}</option>
+                        </select>
+                        <p class="text-xs text-muted-foreground">Een keeperskamp is niet voor een spits. Het inschrijfformulier houdt dit aan.</p>
+                        <InputError :message="form.errors.audience" />
+                    </div>
 
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="grid gap-2">
@@ -320,10 +349,33 @@ const veldKlassen = 'h-11 w-full rounded-lg border border-input bg-background px
                         </div>
                     </div>
 
+                    <div v-if="soort?.has_period" class="grid gap-2 sm:max-w-xs">
+                        <Label for="sessions_count">Aantal sessies <span class="text-muted-foreground">(optioneel)</span></Label>
+                        <Input
+                            id="sessions_count"
+                            v-model.number="form.sessions_count"
+                            type="number"
+                            min="1"
+                            max="200"
+                            placeholder="6"
+                            class="h-11 sm:h-10"
+                        />
+                        <p class="text-xs text-muted-foreground">Hoeveel trainingen erin zitten; staat op het inschrijfformulier.</p>
+                        <InputError :message="form.errors.sessions_count" />
+                    </div>
+
                     <div v-if="soort?.has_capacity" class="grid gap-4 sm:grid-cols-2">
                         <div class="grid gap-2">
                             <Label for="capacity">Aantal plekken <span class="text-muted-foreground">(optioneel)</span></Label>
-                            <Input id="capacity" v-model.number="form.capacity" type="number" min="1" max="500" placeholder="12" class="h-11 sm:h-10" />
+                            <Input
+                                id="capacity"
+                                v-model.number="form.capacity"
+                                type="number"
+                                min="1"
+                                max="500"
+                                placeholder="12"
+                                class="h-11 sm:h-10"
+                            />
                             <p class="text-xs text-muted-foreground">Vol is vol: dan gaat de inschrijving vanzelf dicht.</p>
                             <InputError :message="form.errors.capacity" />
                         </div>
@@ -406,6 +458,77 @@ const veldKlassen = 'h-11 w-full rounded-lg border border-input bg-background px
                         </div>
                     </div>
 
+                    <!-- Extra betaalvormen naast de standaard hierboven. -->
+                    <div class="space-y-3 border-t border-border pt-4">
+                        <div class="flex flex-wrap items-baseline justify-between gap-2">
+                            <p class="text-sm font-medium">Andere manieren om te betalen <span class="text-muted-foreground">(optioneel)</span></p>
+                            <button type="button" class="text-sm font-medium text-primary underline underline-offset-4" @click="voegBetaalvormToe">
+                                Betaalvorm toevoegen
+                            </button>
+                        </div>
+                        <p class="text-xs text-muted-foreground">
+                            Bijvoorbeeld: hetzelfde blok in drie termijnen, of per maand. De ouder kiest bij het inschrijven.
+                        </p>
+
+                        <div v-for="(optie, i) in form.payment_options" :key="i" class="rounded-lg border border-border p-3">
+                            <div class="grid gap-3 sm:grid-cols-[1fr_auto]">
+                                <div class="grid gap-3 sm:grid-cols-3">
+                                    <div class="grid gap-1">
+                                        <Label :for="'po_type_' + i" class="text-xs">Soort</Label>
+                                        <select :id="'po_type_' + i" v-model="optie.type" :class="veldKlassen">
+                                            <option v-for="(label, waarde) in paymentOptionTypes" :key="waarde" :value="waarde">{{ label }}</option>
+                                        </select>
+                                    </div>
+                                    <div class="grid gap-1">
+                                        <Label :for="'po_amount_' + i" class="text-xs">{{
+                                            optie.type === 'termijnen' ? 'Per termijn' : 'Bedrag'
+                                        }}</Label>
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-muted-foreground">€</span>
+                                            <Input
+                                                :id="'po_amount_' + i"
+                                                v-model="optie.amount"
+                                                inputmode="decimal"
+                                                placeholder="40,00"
+                                                class="h-11 sm:h-10"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div v-if="optie.type === 'termijnen'" class="grid gap-1">
+                                        <Label :for="'po_inst_' + i" class="text-xs">Aantal termijnen</Label>
+                                        <Input
+                                            :id="'po_inst_' + i"
+                                            v-model.number="optie.installments"
+                                            type="number"
+                                            min="2"
+                                            max="12"
+                                            class="h-11 sm:h-10"
+                                        />
+                                    </div>
+                                    <div v-else-if="optie.type === 'abonnement'" class="grid gap-1">
+                                        <Label :for="'po_int_' + i" class="text-xs">Hoe vaak</Label>
+                                        <select :id="'po_int_' + i" v-model="optie.interval" :class="veldKlassen">
+                                            <option v-for="(label, waarde) in intervals" :key="waarde" :value="waarde">{{ label }}</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    class="self-end text-sm text-muted-foreground underline underline-offset-4 hover:text-destructive"
+                                    @click="verwijderBetaalvorm(i)"
+                                >
+                                    Weghalen
+                                </button>
+                            </div>
+                            <InputError
+                                :message="
+                                    (form.errors as any)['payment_options.' + i + '.amount'] ??
+                                    (form.errors as any)['payment_options.' + i + '.installments']
+                                "
+                            />
+                        </div>
+                    </div>
+
                     <div v-if="perMaand" class="grid gap-2">
                         <Label for="interval">Hoe vaak in rekening brengen</Label>
                         <select id="interval" v-model="form.interval" :class="veldKlassen">
@@ -414,16 +537,11 @@ const veldKlassen = 'h-11 w-full rounded-lg border border-input bg-background px
                         <InputError :message="form.errors.interval" />
                     </div>
 
-                    <label
-                        v-if="perMaand && soort?.has_period"
-                        class="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3"
-                    >
+                    <label v-if="perMaand && soort?.has_period" class="flex cursor-pointer items-start gap-3 rounded-lg border border-border p-3">
                         <input v-model="form.stops_at_end" type="checkbox" class="mt-0.5 size-4 shrink-0 rounded border-input accent-primary" />
                         <span class="text-sm">
                             <span class="block font-medium">Stopt vanzelf op de einddatum</span>
-                            <span class="block text-xs text-muted-foreground">
-                                Uit betekent dat het doorloopt tot iemand het stopt.
-                            </span>
+                            <span class="block text-xs text-muted-foreground"> Uit betekent dat het doorloopt tot iemand het stopt. </span>
                         </span>
                     </label>
 
