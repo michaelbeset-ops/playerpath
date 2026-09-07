@@ -96,7 +96,10 @@
      * puur zwart — dat is hard — maar met een klein beetje blauw voor diepte.
      */
     .theme-donker {
-        --background: 225 12% 6%; /* #0D0F12 — de ene basis voor balk en pagina */
+        --background: 225 12% 6%; /* #0D0F12 — de basis van de donkere pagina's */
+        /* De balk bovenin heeft zijn eigen, iets blauwere tint (#111A2E): dat is
+           hoe hij altijd was, en de eigenaar wilde hem zo terug. */
+        --topbar: 221 46% 12%;
         --foreground: 210 40% 96%; /* #F1F5F9 */
 
         --card: 225 9% 10%; /* #171A1D */

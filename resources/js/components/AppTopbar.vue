@@ -135,9 +135,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
 </script>
 
 <template>
-    <!-- Dezelfde basiskleur als de donkere pagina eronder (--background), met
-         alleen een dunne lijn: geen naadje tussen balk en scherm. -->
-    <header class="theme-donker sticky top-0 z-40 border-b border-border/70 bg-background text-foreground">
+    <!-- De balk heeft zijn eigen tint (--topbar in app.css), zoals hij altijd was. -->
+    <header class="theme-donker sticky top-0 z-40 bg-[hsl(var(--topbar))] text-foreground">
         <!-- Klik naast een open uitklap sluit hem. Zit achter de balk, dus
              hij vangt niets af zolang er niets openstaat. -->
         <div v-if="open" class="fixed inset-0 -z-10" @click="sluit"></div>
