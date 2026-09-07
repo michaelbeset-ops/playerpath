@@ -50,6 +50,7 @@ class Enrollment extends Model
             'confirmed_at' => 'datetime',
             'cancelled_at' => 'datetime',
             'refund_cents' => 'integer',
+            'renewal_invited_at' => 'datetime',
         ];
     }
 

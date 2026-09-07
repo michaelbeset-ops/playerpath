@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Offerings;
 
 use App\Actions\Offerings\PromoteParticipation;
 use App\Enums\ParticipationStatus;
-use App\Http\Controllers\Controller;
 use App\Enums\PaymentStatus;
+use App\Http\Controllers\Controller;
 use App\Models\Participation;
 use App\Models\Payment;
 use App\Models\Player;

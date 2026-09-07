@@ -29,6 +29,10 @@ Schedule::command('players:digest')->monthlyOn(1, '10:00');
 // alleen bij scholen die hem zelf hebben aangezet.
 Schedule::command('players:birthday')->dailyAt('08:00');
 
+// De levensloop van inschrijvingen: activeren, verleng-uitnodigingen,
+// beëindigen, en abonnementen waarvan de opzegtermijn om is.
+Schedule::command('enrollments:lifecycle')->dailyAt('04:00');
+
 // Leeftijdscategorieen vaststellen. Bijna altijd verandert er niets; rond de
 // jaarwisseling gaat een deel omhoog en wordt hun oude kaart bewaard.
 Schedule::command('players:categories')->dailyAt('03:00');

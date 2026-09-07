@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Billing\FamilyEnrollmentController;
 use App\Http\Controllers\Enrollments\EnrollmentController;
 use App\Http\Controllers\Enrollments\PublicEnrollmentController;
 use Illuminate\Support\Facades\Route;
@@ -10,6 +11,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('enrollments/{enrollment}/approve', [EnrollmentController::class, 'approve'])->name('enrollments.approve');
     Route::post('enrollments/{enrollment}/decline', [EnrollmentController::class, 'decline'])->name('enrollments.decline');
     Route::get('enrollments/{enrollment}/betaallink', [EnrollmentController::class, 'paymentLink'])->name('enrollments.payment-link');
+    Route::post('enrollments/{enrollment}/annuleren', [EnrollmentController::class, 'cancel'])->name('enrollments.cancel');
+
+    // Wat een ouder zelf kan: annuleren vóór de start (restitutiebeleid) en
+    // een abonnement opzeggen (opzegtermijn). Alleen de eigen kinderen.
+    Route::post('billing/inschrijvingen/{enrollment}/annuleren', [FamilyEnrollmentController::class, 'cancel'])->name('billing.enrollments.cancel');
+    Route::post('billing/abonnementen/{subscription}/opzeggen', [FamilyEnrollmentController::class, 'cancelSubscription'])->name('billing.subscriptions.cancel');
 });
 
 /*

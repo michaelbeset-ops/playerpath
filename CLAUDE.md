@@ -801,6 +801,34 @@ tweede kind erbij zetten. Meerdere kinderen gaan in één order.
 en `transitionTo()` weigert de rest. Geen losse vlaggetjes die elkaar kunnen
 tegenspreken. Een status met de hand zetten omzeilt de machine; doe dat niet.
 
+### Verlengen, opzeggen en annuleren
+
+- **Een blok verlengt niet vanzelf.** `enrollments:lifecycle` (dagelijks)
+  stuurt veertien dagen voor het einde een `VerlengUitnodiging` naar de ouder,
+  één keer (`renewal_invited_at`), met een knop naar de inschrijfpagina.
+  Staat `auto_renew_block` aan, dan gaat er geen uitnodiging: dan loopt een
+  blok dat per maand betaald wordt gewoon door.
+- **Dezelfde opdracht zet bevestigd op actief** zodra het aanbod begint, en
+  op beëindigd zodra het voorbij is; en hij beëindigt abonnementen waarvan de
+  opzegtermijn om is. Idempotent: elke stap kijkt naar de status van nu.
+- **Opzeggen is niet stoppen** (`Actions\Subscriptions\PlanCancellation`): het
+  abonnement gaat op "opzegging gepland" met een einddatum op de opzegtermijn
+  uit de instellingen, en brengt tot dan gewoon rekeningen voort.
+  `Subscription::active()` telt daarom alles wat nog factureert
+  (`SubscriptionStatus::bills()`), niet alleen "actief".
+- **Annuleren vóór de start volgt het restitutiebeleid**
+  (`Support\Enrollment\RefundPolicy`, `Actions\Enrollments\CancelEnrollment`):
+  kosteloos tot X dagen vooraf, daarna Y% ingehouden. Het bedrag komt op de
+  inschrijving (`refund_cents`) en in de mail aan school én ouder; het
+  terugbetalen zelf is een handeling van de school, de app boekt niets. Wat
+  betaald was blijft betaald: dat is de historie. Ziekte of afwezigheid geeft
+  standaard niets terug; de instelling zegt het anders en het formulier toont
+  wat er geldt.
+- **Wie mag wat**: annuleren en opzeggen kan de school, en de ouder van dít
+  kind (`cancel` in `EnrollmentPolicy` en `SubscriptionPolicy`). Op het
+  ouderscherm (`/billing`) staat per inschrijving wat annuleren nu oplevert,
+  vóórdat je klikt.
+
 ### Inschrijvingen
 
 #### De openbare aanmeldpagina

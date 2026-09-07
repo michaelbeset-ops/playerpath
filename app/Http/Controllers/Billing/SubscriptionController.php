@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Billing;
 
 use App\Actions\Payments\GeneratePayments;
+use App\Actions\Subscriptions\PlanCancellation;
 use App\Enums\PaymentMethod;
 use App\Enums\SubscriptionStatus;
 use App\Http\Controllers\Controller;
@@ -141,10 +142,16 @@ class SubscriptionController extends Controller
 
         $nieuw = SubscriptionStatus::from($validated['status']);
 
-        $subscription->update([
-            'status' => $nieuw,
-            'ends_on' => $nieuw === SubscriptionStatus::Cancelled ? ($subscription->ends_on ?? now()->toDateString()) : null,
-        ]);
+        if (! $subscription->status->canTransitionTo($nieuw) && $subscription->status !== $nieuw) {
+            return back()->withErrors(['status' => "Van '{$subscription->status->label()}' kan een abonnement niet naar '{$nieuw->label()}'."]);
+        }
+
+        if ($nieuw === SubscriptionStatus::CancellationPlanned) {
+            app(PlanCancellation::class)->handle($subscription);
+        } else {
+            $stopt = in_array($nieuw, [SubscriptionStatus::Cancelled, SubscriptionStatus::Ended], strict: true);
+            $subscription->transitionTo($nieuw, ['ends_on' => $stopt ? ($subscription->ends_on ?? now()->toDateString()) : null]);
+        }
 
         return back()->with('status', "Het abonnement staat nu op '{$nieuw->label()}'.");
     }

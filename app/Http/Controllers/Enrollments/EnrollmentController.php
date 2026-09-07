@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Enrollments;
 
 use App\Actions\Enrollments\ApproveEnrollment;
+use App\Actions\Enrollments\CancelEnrollment;
 use App\Enums\EnrollmentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Enrollment;
 use App\Support\Money\Money;
 use App\Support\Payments\PaymentLink;
+use App\Support\Status\TransitionException;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -53,6 +55,7 @@ class EnrollmentController extends Controller
             'player_id' => $e->player_id,
             'can_approve' => in_array($e->status, [EnrollmentStatus::AwaitingApproval, EnrollmentStatus::Waitlist], strict: true),
             'can_decline' => $e->status->isOpen(),
+            'can_cancel' => $e->status->isSettled(),
             'first_payment_id' => $e->order?->payments()->outstanding()->orderBy('due_on')->value('id'),
         ];
 
@@ -101,6 +104,26 @@ class EnrollmentController extends Controller
         $enrollment->order?->payments()->outstanding()->update(['status' => 'cancelled']);
 
         return back()->with('status', 'De inschrijving is afgewezen.');
+    }
+
+    /** Annuleren door de school, met hetzelfde restitutiebeleid als voor een ouder. */
+    public function cancel(Request $request, Enrollment $enrollment, CancelEnrollment $annuleer): RedirectResponse
+    {
+        $this->authorize('cancel', $enrollment);
+
+        $validated = $request->validate(['reason' => ['nullable', 'string', 'max:300']]);
+
+        try {
+            $annuleer->handle($enrollment, $request->user(), $validated['reason'] ?? null);
+        } catch (TransitionException $e) {
+            return back()->withErrors(['enrollment' => $e->getMessage()]);
+        }
+
+        $restitutie = (int) ($enrollment->refresh()->refund_cents ?? 0);
+
+        return back()->with('status', $restitutie > 0
+            ? 'Geannuleerd. Volgens je beleid komt er '.Money::format($restitutie).' terug; dat betaal je zelf terug.'
+            : 'De inschrijving is geannuleerd.');
     }
 
     /** De betaallink nog eens, bijvoorbeeld om zelf naar de ouder te sturen. */

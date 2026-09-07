@@ -35,6 +35,7 @@ interface Inschrijving {
     player_id: number | null;
     can_approve: boolean;
     can_decline: boolean;
+    can_cancel: boolean;
     first_payment_id: number | null;
 }
 
@@ -83,6 +84,14 @@ const keurGoed = (i: Inschrijving) => {
 const wijsAf = (i: Inschrijving) => {
     if (confirm(`De inschrijving van ${i.child_name} afwijzen?`)) {
         router.post('/enrollments/' + i.id + '/decline', {}, { preserveScroll: true });
+    }
+};
+
+const annuleer = (i: Inschrijving) => {
+    const reden = prompt(`De inschrijving van ${i.child_name} annuleren? Het restitutiebeleid van je school geldt. Reden (optioneel):`);
+
+    if (reden !== null) {
+        router.post('/enrollments/' + i.id + '/annuleren', { reason: reden }, { preserveScroll: true });
     }
 };
 
@@ -241,6 +250,15 @@ const detailLabels: Record<string, string> = { kledingmaat: 'Kledingmaat', nivea
                         >
                             Naar de speler
                         </Link>
+                        <button
+                            v-if="i.can_cancel"
+                            type="button"
+                            class="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm text-muted-foreground hover:text-destructive"
+                            @click="annuleer(i)"
+                        >
+                            <X class="size-4" />
+                            Annuleren
+                        </button>
                         <button
                             v-if="i.can_decline"
                             type="button"

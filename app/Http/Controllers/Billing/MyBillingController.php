@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers\Billing;
 
+use App\Enums\EnrollmentStatus;
 use App\Enums\PaymentStatus;
+use App\Enums\SubscriptionStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Enrollment;
 use App\Models\Payment;
 use App\Models\Player;
+use App\Support\Enrollment\EnrollmentSettings;
+use App\Support\Enrollment\RefundPolicy;
 use App\Support\Money\Money;
 use App\Support\Payments\PaymentGateway;
 use Illuminate\Http\Request;
@@ -37,6 +42,7 @@ class MyBillingController extends Controller
             ->get()
             ->map(function (Player $speler) {
                 $abonnement = $speler->activeSubscription();
+                $kanOpzeggen = $abonnement !== null && $abonnement->status->canTransitionTo(SubscriptionStatus::CancellationPlanned);
 
                 return [
                     'id' => $speler->id,
@@ -48,6 +54,10 @@ class MyBillingController extends Controller
                         'method' => $abonnement->payment_method?->label(),
                         'status_label' => $abonnement->status->label(),
                         'starts_on' => $abonnement->starts_on->format('d-m-Y'),
+                        'ends_on' => $abonnement->ends_on?->format('d-m-Y'),
+                        'status' => $abonnement->status->value,
+                        'id' => $abonnement->id,
+                        'can_cancel' => $kanOpzeggen,
                     ] : null,
                 ];
             });
@@ -82,7 +92,41 @@ class MyBillingController extends Controller
 
         $openstaand = (int) Payment::whereIn('player_id', $spelerIds)->outstanding()->sum('amount_cents');
 
+        // De inschrijvingen van de kinderen: wat loopt, en wat je nog kunt
+        // annuleren volgens het restitutiebeleid.
+        $instellingen = EnrollmentSettings::for($request->user()->school);
+        $beleid = RefundPolicy::for($instellingen);
+
+        $inschrijvingen = Enrollment::whereIn('player_id', $spelerIds)
+            ->with(['product', 'order.payments'])
+            ->whereNotIn('status', [EnrollmentStatus::Declined->value, EnrollmentStatus::Expired->value])
+            ->latest()
+            ->limit(12)
+            ->get()
+            ->map(function (Enrollment $e) use ($beleid) {
+                $regel = $e->order?->lines()->where('enrollment_id', $e->id)->whereIn('type', ['offering', 'trial'])->sum('amount_cents') ?? 0;
+                $betaald = $e->order ? (int) $e->order->payments->filter(fn ($p) => $p->status->countsAsRevenue())->sum('amount_cents') : 0;
+                $terug = $beleid->refundCents(max(0, min((int) $regel, $betaald)), $e->product?->starts_on);
+
+                return [
+                    'id' => $e->id,
+                    'child' => $e->first_name,
+                    'product' => $e->product?->name,
+                    'starts_on' => $e->product?->starts_on?->format('d-m-Y'),
+                    'ends_on' => $e->product?->ends_on?->format('d-m-Y'),
+                    'status' => $e->status->value,
+                    'status_label' => $e->status->label(),
+                    'can_cancel' => $e->status->canTransitionTo(EnrollmentStatus::Cancelled) && ! $e->status->isOpen(),
+                    'refund' => Money::format($terug),
+                    'refund_cents' => $terug,
+                    'is_free' => $beleid->isFree($e->product?->starts_on),
+                ];
+            })
+            ->values();
+
         return Inertia::render('billing/MyBilling', [
+            'enrollments' => $inschrijvingen,
+            'policy' => ['cancellation' => $beleid->describe(), 'notice_months' => $instellingen->noticeMonths()],
             'players' => $spelers,
             'payments' => $betalingen,
             'outstanding' => Money::format($openstaand),

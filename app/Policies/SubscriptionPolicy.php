@@ -30,6 +30,17 @@ class SubscriptionPolicy
         return $user->isEigenaar();
     }
 
+    /** Opzeggen: de school, of de ouder van dit kind. */
+    public function cancel(User $user, Subscription $subscription): bool
+    {
+        if (! $user->belongsToSameSchool($subscription)) {
+            return false;
+        }
+
+        return $user->isEigenaar()
+            || ($user->isOuder() && in_array($subscription->player_id, $user->visiblePlayerIds(), true));
+    }
+
     public function update(User $user, Subscription $subscription): bool
     {
         return $user->belongsToSameSchool($subscription) && $user->isEigenaar();

@@ -16,8 +16,26 @@ defineProps<{
             method: string | null;
             status_label: string;
             starts_on: string;
+            ends_on: string | null;
+            status: string;
+            id: number;
+            can_cancel: boolean;
         } | null;
     }[];
+    enrollments: {
+        id: number;
+        child: string;
+        product: string | null;
+        starts_on: string | null;
+        ends_on: string | null;
+        status: string;
+        status_label: string;
+        can_cancel: boolean;
+        refund: string;
+        refund_cents: number;
+        is_free: boolean;
+    }[];
+    policy: { cancellation: string; notice_months: number };
     payments: {
         id: number;
         player: string | null;
@@ -45,6 +63,25 @@ const bezig = ref<number | null>(null);
 const betaal = (id: number) => {
     bezig.value = id;
     router.post('/billing/payments/' + id + '/betalen', {}, { onFinish: () => (bezig.value = null) });
+};
+
+// Annuleren en opzeggen: met een bevestiging die zegt wat er terugkomt, want
+// dat is wat een ouder wil weten vóórdat hij klikt.
+const annuleer = (e: { id: number; child: string; refund: string; refund_cents: number; is_free: boolean }) => {
+    const uitleg = e.refund_cents > 0 ? `Je krijgt ${e.refund} terug.` : 'Er komt volgens de voorwaarden niets terug.';
+    const reden = prompt(`De inschrijving van ${e.child} annuleren? ${uitleg} Reden (optioneel):`);
+
+    if (reden !== null) {
+        router.post('/billing/inschrijvingen/' + e.id + '/annuleren', { reason: reden }, { preserveScroll: true });
+    }
+};
+
+const zegOp = (id: number, maanden: number) => {
+    const termijn = maanden === 0 ? 'per direct' : `met ${maanden} ${maanden === 1 ? 'maand' : 'maanden'} opzegtermijn`;
+
+    if (confirm(`Het abonnement opzeggen, ${termijn}? Tot die tijd loopt het gewoon door.`)) {
+        router.post('/billing/abonnementen/' + id + '/opzeggen', {}, { preserveScroll: true });
+    }
 };
 
 const kleurVoor = (status: string) => {
@@ -88,10 +125,53 @@ const kleurVoor = (status: string) => {
                         <p class="mt-2 text-xs text-muted-foreground">
                             Sinds {{ speler.subscription.starts_on }}
                             <span v-if="speler.subscription.method"> &middot; {{ speler.subscription.method }}</span>
+                            <span v-if="speler.subscription.ends_on"> &middot; loopt tot {{ speler.subscription.ends_on }}</span>
                         </p>
+
+                        <button
+                            v-if="speler.subscription.can_cancel"
+                            type="button"
+                            class="mt-3 text-sm text-muted-foreground underline underline-offset-4 hover:text-destructive"
+                            @click="zegOp(speler.subscription.id, policy.notice_months)"
+                        >
+                            Abonnement opzeggen
+                        </button>
                     </template>
 
                     <p v-else class="mt-2 text-sm text-muted-foreground">Er loopt nog geen abonnement. Je schoolbeheerder regelt dat.</p>
+                </div>
+            </div>
+
+            <!-- De inschrijvingen: wat loopt, en wat je nog kunt annuleren. -->
+            <div v-if="enrollments.length" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+                <p class="font-medium">Inschrijvingen</p>
+                <p class="mt-1 text-xs text-muted-foreground">{{ policy.cancellation }}</p>
+
+                <div class="mt-4 space-y-2">
+                    <div
+                        v-for="e in enrollments"
+                        :key="e.id"
+                        class="flex flex-col gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center"
+                    >
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-medium">{{ e.child }} &middot; {{ e.product ?? 'aanbod' }}</p>
+                            <p class="text-xs text-muted-foreground">
+                                <template v-if="e.starts_on">Vanaf {{ e.starts_on }}</template
+                                ><template v-if="e.ends_on"> t/m {{ e.ends_on }}</template>
+                            </p>
+                        </div>
+                        <span class="shrink-0 self-start rounded-lg bg-secondary px-2 py-1 text-xs font-medium sm:self-auto">{{
+                            e.status_label
+                        }}</span>
+                        <button
+                            v-if="e.can_cancel"
+                            type="button"
+                            class="shrink-0 self-start text-xs text-muted-foreground underline underline-offset-4 hover:text-destructive sm:self-auto"
+                            @click="annuleer(e)"
+                        >
+                            Annuleren{{ e.refund_cents > 0 ? (e.is_free ? ' (kosteloos)' : ' (' + e.refund + ' terug)') : '' }}
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -107,40 +187,48 @@ const kleurVoor = (status: string) => {
                 <p class="font-medium">Betalingen</p>
 
                 <div v-if="payments.length" class="mt-4 space-y-2">
-                    <div v-for="betaling in payments" :key="betaling.id" class="flex items-center gap-3 rounded-lg border border-border p-3">
+                    <!-- Op een telefoon stapelt de rij: naam, dan bedrag en status. Met alles
+                         naast elkaar werd "Keeperstraining september 2026" afgekapt. -->
+                    <div
+                        v-for="betaling in payments"
+                        :key="betaling.id"
+                        class="flex flex-col gap-2 rounded-lg border border-border p-3 sm:flex-row sm:items-center sm:gap-3"
+                    >
                         <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
                             <Receipt class="size-4" />
                         </span>
 
                         <div class="min-w-0 flex-1">
-                            <p class="truncate text-sm font-medium">{{ betaling.description }}</p>
-                            <p class="truncate text-xs text-muted-foreground">
+                            <p class="break-words text-sm font-medium">{{ betaling.description }}</p>
+                            <p class="break-words text-xs text-muted-foreground">
                                 <span v-if="betaling.player">{{ betaling.player }} &middot; </span>
                                 <template v-if="betaling.paid_at">betaald {{ betaling.paid_at }}</template>
                                 <template v-else>vervalt {{ betaling.due_on }}</template>
                             </p>
                         </div>
 
-                        <p class="tabular shrink-0 text-sm font-semibold">{{ betaling.amount }}</p>
+                        <div class="flex flex-wrap items-center gap-2 sm:contents">
+                            <p class="tabular shrink-0 text-sm font-semibold">{{ betaling.amount }}</p>
 
-                        <span class="shrink-0 rounded-lg px-2 py-1 text-xs font-medium" :class="kleurVoor(betaling.status)">
-                            {{ betaling.status_label }}
-                        </span>
+                            <span class="shrink-0 rounded-lg px-2 py-1 text-xs font-medium" :class="kleurVoor(betaling.status)">
+                                {{ betaling.status_label }}
+                            </span>
 
-                        <p v-if="betaling.offline && betaling.status !== 'paid'" class="shrink-0 text-xs text-muted-foreground">
-                            {{ betaling.method === 'Contant' ? 'Contant bij de training' : 'Via overboeking' }}
-                        </p>
+                            <p v-if="betaling.offline && betaling.status !== 'paid'" class="shrink-0 text-xs text-muted-foreground">
+                                {{ betaling.method === 'Contant' ? 'Contant bij de training' : 'Via overboeking' }}
+                            </p>
 
-                        <button
-                            v-if="betaling.payable"
-                            type="button"
-                            class="inline-flex h-9 shrink-0 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
-                            :disabled="bezig === betaling.id"
-                            @click="betaal(betaling.id)"
-                        >
-                            <CreditCard class="mr-2 size-4" />
-                            {{ bezig === betaling.id ? 'Bezig…' : 'Nu betalen' }}
-                        </button>
+                            <button
+                                v-if="betaling.payable"
+                                type="button"
+                                class="inline-flex h-9 shrink-0 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+                                :disabled="bezig === betaling.id"
+                                @click="betaal(betaling.id)"
+                            >
+                                <CreditCard class="mr-2 size-4" />
+                                {{ bezig === betaling.id ? 'Bezig…' : 'Nu betalen' }}
+                            </button>
+                        </div>
                     </div>
                 </div>
 

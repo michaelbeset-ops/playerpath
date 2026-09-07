@@ -75,9 +75,13 @@ class Subscription extends Model
         return $this->hasMany(Payment::class);
     }
 
+    /** Alles wat nog rekeningen voortbrengt: ook met een geplande opzegging loopt het door. */
     public function scopeActive(Builder $query): Builder
     {
-        return $query->where('status', SubscriptionStatus::Active->value);
+        return $query->whereIn('status', array_map(
+            fn (SubscriptionStatus $s) => $s->value,
+            array_filter(SubscriptionStatus::cases(), fn (SubscriptionStatus $s) => $s->bills()),
+        ));
     }
 
     /** Wat dit abonnement per jaar oplevert. Eenmalig telt niet mee. */
