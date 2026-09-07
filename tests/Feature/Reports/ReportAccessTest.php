@@ -7,6 +7,7 @@ use App\Enums\ReportCategory;
 use App\Enums\Role;
 use App\Models\Group;
 use App\Models\Player;
+use App\Models\Report;
 use App\Models\School;
 use App\Models\User;
 use App\Support\Tenancy\Tenancy;
@@ -144,6 +145,38 @@ class ReportAccessTest extends TestCase
             ->get("/players/{$speler->id}/card")
             ->assertOk()
             ->assertInertia(fn ($page) => $page->where('canReport', false));
+    }
+
+    public function test_de_rapportenlijst_zegt_hoe_lang_geleden_iemand_beoordeeld_is(): void
+    {
+        $school = School::factory()->create();
+        $trainer = $this->gebruiker($school, Role::Trainer);
+
+        app(Tenancy::class)->set($school);
+
+        $recent = Player::factory()->for($school)->keeper()->create(['first_name' => 'Aap']);
+        $lang = Player::factory()->for($school)->keeper()->create(['first_name' => 'Beer']);
+        Player::factory()->for($school)->keeper()->create(['first_name' => 'Cees']);
+
+        Report::factory()->for($school)->create([
+            'player_id' => $recent->id,
+            'reported_on' => now()->subDays(3),
+        ]);
+
+        Report::factory()->for($school)->create([
+            'player_id' => $lang->id,
+            'reported_on' => now()->subDays(45),
+        ]);
+
+        $this->actingAs($trainer)
+            ->get('/reports')
+            ->assertInertia(fn ($page) => $page
+                ->where('players.0.days_since_report', 3)
+                ->where('players.1.days_since_report', 45)
+                // Nooit beoordeeld is geen nul dagen geleden.
+                ->where('players.2.days_since_report', null)
+                ->where('staleAfterDays', 30)
+            );
     }
 
     public function test_de_rapportenlijst_kan_op_groep_filteren(): void

@@ -8,6 +8,7 @@ use App\Http\Requests\Reports\StoreReportRequest;
 use App\Models\Group;
 use App\Models\Player;
 use App\Models\Report;
+use App\Support\Dashboard\SchoolDashboard;
 use App\Support\Goals\GoalProgress;
 use App\Support\PlayerCard\CalculatePlayerCard;
 use App\Support\Reports\ReportOutcome;
@@ -38,14 +39,22 @@ class ReportController extends Controller
             ->when($groep > 0, fn ($q) => $q->whereHas('groups', fn ($g) => $g->whereKey($groep)))
             ->orderBy('first_name')
             ->get()
-            ->map(fn (Player $player) => [
-                'id' => $player->id,
-                'name' => $player->full_name,
-                'position' => $player->position->label(),
-                'age' => $player->age,
-                'overall_rating' => $player->overall_rating,
-                'last_report_on' => $player->reports()->newestFirst()->value('reported_on')?->format('d-m-Y'),
-            ]);
+            ->map(function (Player $player) {
+                $laatste = $player->reports()->newestFirst()->value('reported_on');
+
+                return [
+                    'id' => $player->id,
+                    'name' => $player->full_name,
+                    'position' => $player->position->label(),
+                    'age' => $player->age,
+                    'overall_rating' => $player->overall_rating,
+                    'last_report_on' => $laatste?->format('d-m-Y'),
+                    // Hoe lang geleden, zodat het scherm kan laten zien waar het
+                    // stilvalt. De grens ligt op 30 dagen, dezelfde als het
+                    // aandacht-blok op het dashboard: één begrip van "te lang".
+                    'days_since_report' => $laatste?->startOfDay()->diffInDays(now()->startOfDay()),
+                ];
+            });
 
         return Inertia::render('reports/Index', [
             'players' => $players,
@@ -54,6 +63,9 @@ class ReportController extends Controller
             'group' => $groep > 0
                 ? Group::whereKey($groep)->value('name')
                 : null,
+            // Dezelfde grens als het aandacht-blok op het dashboard: "te lang
+            // geleden" hoort in de hele app hetzelfde te betekenen.
+            'staleAfterDays' => SchoolDashboard::AANDACHT_NA_DAGEN,
         ]);
     }
 

@@ -12,13 +12,36 @@ interface SpelerRij {
     age: number | null;
     overall_rating: number | null;
     last_report_on: string | null;
+    days_since_report: number | null;
 }
 
-const props = defineProps<{ players: SpelerRij[]; group: string | null }>();
+const props = defineProps<{ players: SpelerRij[]; group: string | null; staleAfterDays: number }>();
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Rapporten', href: '/reports' }];
 
 const zoek = ref('');
+
+/**
+ * Wanneer is een speler voor het laatst beoordeeld?
+ *
+ * Groen als het recent is, oranje zodra het te lang geleden is. De grens komt
+ * van de server (dezelfde 30 dagen als het aandacht-blok op het dashboard),
+ * want "te lang geleden" hoort overal hetzelfde te betekenen. Een speler zonder
+ * enig rapport is geen neutraal geval maar precies waar het product stilvalt:
+ * een lege kaart is de reden dat een ouder afhaakt.
+ */
+const beoordeling = (speler: SpelerRij) => {
+    if (speler.days_since_report === null) {
+        return { tekst: 'nog geen rapport', oud: true };
+    }
+
+    const dagen = speler.days_since_report;
+
+    return {
+        tekst: dagen === 0 ? 'vandaag beoordeeld' : dagen === 1 ? 'gisteren beoordeeld' : `${dagen} dagen geleden`,
+        oud: dagen > props.staleAfterDays,
+    };
+};
 
 const gefilterd = computed(() => {
     const term = zoek.value.trim().toLowerCase();
@@ -71,9 +94,17 @@ const gefilterd = computed(() => {
                         <p class="truncate font-medium">{{ speler.name }}</p>
                         <p class="truncate text-xs text-muted-foreground">
                             {{ speler.position }}<span v-if="speler.age"> &middot; {{ speler.age }} jaar</span>
-                            <span v-if="speler.last_report_on"> &middot; laatst beoordeeld {{ speler.last_report_on }}</span>
-                            <span v-else> &middot; nog geen rapport</span>
                         </p>
+                        <!-- Laatst beoordeeld, met een kleur: zo zie je in één
+                             oogopslag waar het stilvalt. -->
+                        <span
+                            class="mt-1 inline-flex items-center gap-1.5 rounded-lg px-2 py-0.5 text-xs font-medium"
+                            :class="beoordeling(speler).oud ? 'bg-warning/10 text-warning' : 'bg-success/10 text-success'"
+                            :title="speler.last_report_on ? 'Laatst beoordeeld op ' + speler.last_report_on : 'Nog nooit beoordeeld'"
+                        >
+                            <span class="size-1.5 rounded-full" :class="beoordeling(speler).oud ? 'bg-warning' : 'bg-success'"></span>
+                            {{ beoordeling(speler).tekst }}
+                        </span>
                     </div>
 
                     <ChevronRight class="size-5 shrink-0 text-muted-foreground" />
