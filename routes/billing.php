@@ -10,6 +10,7 @@ use App\Http\Controllers\Billing\ShopController;
 use App\Http\Controllers\Billing\SubscriptionController;
 use App\Http\Controllers\Billing\WebhookController;
 use App\Http\Controllers\Offerings\ParticipantController;
+use App\Http\Controllers\Offerings\SlotController;
 use Illuminate\Support\Facades\Route;
 
 // De hele financiële kant hangt aan één feature: staat betalingen uit, dan
@@ -31,6 +32,12 @@ Route::middleware(['auth', 'verified', 'feature:betalingen'])->group(function ()
     Route::get('aanbod/{product}/deelnemers', [ParticipantController::class, 'index'])->name('offerings.participants');
     Route::post('aanbod/{product}/deelnemers/{participation}/plek', [ParticipantController::class, 'promote'])->name('offerings.promote');
     Route::delete('aanbod/{product}/deelnemers/{participation}', [ParticipantController::class, 'cancel'])->name('offerings.cancel');
+
+    // Beschikbare momenten bij een privétraining: de school zet ze neer, een
+    // ouder boekt er een in de shop.
+    Route::get('aanbod/{product}/momenten', [SlotController::class, 'index'])->name('offerings.slots');
+    Route::post('aanbod/{product}/momenten', [SlotController::class, 'store'])->name('offerings.slots.store');
+    Route::delete('aanbod/{product}/momenten/{slot}', [SlotController::class, 'destroy'])->name('offerings.slots.destroy');
 
     // Een product toekennen aan een speler. Staat op de pagina van die speler,
     // want daar zit je als een ouder om een rittenkaart vraagt.

@@ -34,9 +34,11 @@ class VisibleTrainings
             return $query->whereRaw('1 = 0');
         }
 
-        return $query->whereHas(
-            'group.players',
-            fn (Builder $players) => $players->whereIn('players.id', $playerIds)
-        );
+        // De groep van zijn kind, plus de privétrainingen die hij geboekt heeft.
+        // Een privétraining heeft geen groep; zonder deze tweede tak zou een
+        // ouder zijn eigen afspraak niet in de agenda zien staan.
+        return $query->where(fn (Builder $q) => $q
+            ->whereHas('group.players', fn (Builder $players) => $players->whereIn('players.id', $playerIds))
+            ->orWhereHas('slot', fn (Builder $slot) => $slot->whereIn('player_id', $playerIds)));
     }
 }

@@ -1000,6 +1000,29 @@ small group, rittenkaart, overig. Vier afspraken:
   waar geen plek voor is. Iemand van de lijst halen maakt de plek vrij en haalt
   hem ook uit de groep, zodat hij niet op de aanwezigheidslijst blijft staan.
 
+#### Privétraining: momenten in plaats van inschrijven
+
+Een blok schrijf je je op in; een privétraining **boek je**. De school zet in
+`slots` neer wanneer welke trainer kan (`/aanbod/{id}/momenten`, per stuk of een
+reeks weken), en een ouder kiest daaruit in de shop.
+
+- **Eén moment, één boeking.** `player_id` gevuld is bezet; een inschrijving die
+  nog op goedkeuring wacht houdt een moment óók vast (`enrollment_id`), anders
+  boekt de volgende ouder hetzelfde uur terwijl de eerste nog wacht. Het boeken
+  zelf gebeurt in een transactie met `lockForUpdate`: twee ouders die tegelijk
+  klikken mogen niet allebei dat uur krijgen.
+- **Bij het boeken ontstaat een echte training** (`trainings.slot_id`). Daardoor
+  staat dat uur in de agenda en bij Mijn trainingen, en werken aanwezigheid en
+  rapporten precies als bij elke andere training.
+- **Daarvoor mag een training zonder groep**: een privétraining is één kind, geen
+  groep. `Training::expectedPlayers()` valt dan terug op de speler van het
+  moment, en `Training::label()` geeft de naam van het aanbod. `VisibleTrainings`
+  en `TrainingPolicy` kijken daarnaast naar het moment, anders ziet een ouder
+  zijn eigen afspraak niet.
+- **Een boeking terugdraaien laat de rekening staan.** Wat er is afgesproken
+  hoort in de historie; of er iets terugbetaald wordt is een gesprek tussen
+  school en ouder, geen automatische boeking.
+
 **Een maandbedrag bij een blok stopt standaard op de einddatum**
 (`products.stops_at_end`). Een blok van zes weken dat na afloop blijft
 doorschrijven is precies waar een ouder boos over wordt; een school die

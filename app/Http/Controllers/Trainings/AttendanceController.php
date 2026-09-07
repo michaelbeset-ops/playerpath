@@ -25,7 +25,7 @@ class AttendanceController extends Controller
 
         // De speler moet in de groep van deze training zitten, anders vink je
         // iemand af die er niet hoort.
-        abort_unless($training->group->players()->whereKey($player->id)->exists(), 404);
+        abort_unless($training->expectedPlayers()->contains('id', $player->id), 404);
 
         $validated = $request->validate([
             'status' => ['nullable', Rule::enum(AttendanceStatus::class)],
@@ -51,7 +51,7 @@ class AttendanceController extends Controller
                 $player,
                 'attendance',
                 $this->engine->settingsFor($player)->xpForAttendance(),
-                'Aanwezig bij '.$training->group->name,
+                'Aanwezig bij '.$training->label(),
                 $aanwezigheid,
                 $training->starts_at,
             );

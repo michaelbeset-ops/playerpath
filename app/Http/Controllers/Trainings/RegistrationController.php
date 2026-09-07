@@ -30,7 +30,7 @@ class RegistrationController extends Controller
         abort_unless(in_array($player->id, $user->visiblePlayerIds(), strict: true), 403,
             'Je kunt alleen je eigen kind aan- of afmelden.');
 
-        abort_unless($training->group->players()->whereKey($player->id)->exists(), 404);
+        abort_unless($training->expectedPlayers()->contains('id', $player->id), 404);
 
         abort_if($training->hasPassed(), 422, 'Deze training is al geweest.');
 

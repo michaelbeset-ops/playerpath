@@ -41,7 +41,7 @@ class MyTrainingsController extends Controller
             ->get()
             ->map(fn (Training $training) => [
                 'id' => $training->id,
-                'group' => $training->group->name,
+                'group' => $training->label(),
                 'date' => $training->starts_at->translatedFormat('l j F'),
                 'day' => $training->starts_at->translatedFormat('D'),
                 'dayNumber' => $training->starts_at->format('j'),
@@ -52,7 +52,7 @@ class MyTrainingsController extends Controller
                 'cancellationReason' => $training->cancellation_reason,
                 'trainers' => $training->trainers->pluck('name')->all(),
                 'isToday' => $training->starts_at->isToday(),
-                'expected' => $training->group->players()->active()->count(),
+                'expected' => $training->expectedPlayers()->count(),
             ])
             ->values();
 

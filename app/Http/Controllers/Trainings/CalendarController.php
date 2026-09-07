@@ -75,7 +75,7 @@ class CalendarController extends Controller
                 'date' => $training->starts_at->format('Y-m-d'),
                 'starts_at' => $training->starts_at->format('H:i'),
                 'ends_at' => $training->ends_at->format('H:i'),
-                'group' => $training->group->name,
+                'group' => $training->label(),
                 'location' => $training->location,
                 'trainers' => $training->trainers->pluck('name')->all(),
                 'has_passed' => $training->hasPassed(),

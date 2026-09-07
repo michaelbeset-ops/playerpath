@@ -137,7 +137,7 @@ class ReportPrompts
 
         return [
             'id' => $training->id,
-            'group' => $training->group->name,
+            'group' => $training->label(),
             'time' => $training->starts_at->format('H:i').' - '.$training->ends_at->format('H:i'),
             'date' => $training->starts_at->translatedFormat('l j F'),
             'location' => $training->location,

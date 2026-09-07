@@ -30,10 +30,16 @@ class TrainingPolicy
         }
 
         // Speler en ouder zien alleen trainingen van een groep waar hun eigen
-        // speler in zit.
+        // speler in zit — of hun eigen privétraining, want die heeft geen groep.
+        $eigen = $user->visiblePlayerIds();
+
+        if ($training->group === null) {
+            return in_array($training->slot?->player_id, $eigen, strict: true);
+        }
+
         return $training->group
             ->players()
-            ->whereIn('players.id', $user->visiblePlayerIds())
+            ->whereIn('players.id', $eigen)
             ->exists();
     }
 

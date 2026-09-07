@@ -35,7 +35,7 @@ class TrainingController extends Controller
 
         $vorm = fn (Training $training) => [
             'id' => $training->id,
-            'group' => $training->group->name,
+            'group' => $training->label(),
             'group_id' => $training->group_id,
             'day' => $training->starts_at->format('Y-m-d'),
             'day_label' => $training->starts_at->translatedFormat('l j F'),
@@ -53,7 +53,7 @@ class TrainingController extends Controller
             // afgevinkt" is geen "afwezig". Daarom allebei een eigen getal.
             'recorded_count' => $training->attendances_count,
             'present_count' => $training->present_count,
-            'expected_count' => $training->group->players_count,
+            'expected_count' => $training->group?->players_count ?? $training->expectedPlayers()->count(),
             // Alleen relevant voor ouder en speler: wat gaf ik door?
             'my_registration' => $eigenSpelers === [] ? null : $training->attendances
                 ->whereIn('player_id', $eigenSpelers)
@@ -141,7 +141,7 @@ class TrainingController extends Controller
         return Inertia::render('trainings/Show', [
             'training' => [
                 'id' => $training->id,
-                'group' => $training->group->name,
+                'group' => $training->label(),
                 'group_id' => $training->group_id,
                 'date' => $training->starts_at->translatedFormat('l j F Y'),
                 'time' => $training->starts_at->format('H:i').' - '.$training->ends_at->format('H:i'),

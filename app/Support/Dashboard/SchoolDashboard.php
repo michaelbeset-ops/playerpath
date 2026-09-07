@@ -171,7 +171,7 @@ class SchoolDashboard
             ->get()
             ->map(fn (Training $training) => [
                 'id' => $training->id,
-                'group' => $training->group->name,
+                'group' => $training->label(),
                 'date' => $training->starts_at->translatedFormat('l j F'),
                 'time' => $training->starts_at->format('H:i'),
                 'location' => $training->location,

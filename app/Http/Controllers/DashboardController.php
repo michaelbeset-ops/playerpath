@@ -215,7 +215,7 @@ class DashboardController extends Controller
             'players' => $spelers,
             'nextTraining' => $volgende ? [
                 'id' => $volgende->id,
-                'group' => $volgende->group->name,
+                'group' => $volgende->label(),
                 'date' => $volgende->starts_at->translatedFormat('l j F'),
                 'time' => $volgende->starts_at->format('H:i').' - '.$volgende->ends_at->format('H:i'),
                 'location' => $volgende->location,

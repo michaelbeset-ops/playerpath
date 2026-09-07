@@ -19,6 +19,7 @@ class Training extends Model
 
     protected $fillable = [
         'group_id',
+        'slot_id',
         'starts_at',
         'ends_at',
         'location',
@@ -62,15 +63,43 @@ class Training extends Model
         return $this->hasMany(Attendance::class);
     }
 
+    /** Het geboekte moment, bij een privétraining. */
+    public function slot(): BelongsTo
+    {
+        return $this->belongsTo(Slot::class);
+    }
+
+    /** Een privétraining hoort bij één kind en niet bij een groep. */
+    public function isPrivate(): bool
+    {
+        return $this->group_id === null;
+    }
+
     /**
      * Wie worden hier verwacht: de actieve spelers van de groep.
      *
      * Bewust niet vastgelegd bij het inplannen. Komt er morgen een speler bij
      * de groep, dan staat hij vanzelf op de lijst van de training van overmorgen.
+     *
+     * Bij een privétraining is er geen groep: dan is het het kind dat geboekt
+     * heeft, en dat is er precies één.
      */
     public function expectedPlayers(): Collection
     {
+        if ($this->group === null) {
+            $speler = $this->slot?->player;
+
+            return $speler === null ? new Collection : new Collection([$speler]);
+        }
+
         return $this->group->players()->active()->orderBy('first_name')->get();
+    }
+
+    /** Waar deze training over gaat, in het rooster. */
+    public function label(): string
+    {
+        return $this->group?->name
+            ?? ($this->slot?->product?->name ?? 'Privétraining');
     }
 
     /**

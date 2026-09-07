@@ -173,6 +173,12 @@ class Product extends Model
         return $this->hasMany(Participation::class);
     }
 
+    /** De beschikbare momenten, bij een privétraining. */
+    public function slots(): HasMany
+    {
+        return $this->hasMany(Slot::class);
+    }
+
     /**
      * De groep die bij dit aanbod hoort.
      *

@@ -2,13 +2,16 @@
 
 namespace App\Http\Controllers\Billing;
 
+use App\Actions\Offerings\BookSlot;
 use App\Actions\Offerings\JoinOffering;
 use App\Actions\Payments\StartCheckout;
 use App\Actions\Products\SellProduct;
+use App\Enums\ProductType;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Player;
 use App\Models\Product;
+use App\Models\Slot;
 use App\Support\Money\Money;
 use App\Support\Payments\PaymentGateway;
 use Illuminate\Http\RedirectResponse;
@@ -40,6 +43,7 @@ class ShopController extends Controller
         protected SellProduct $verkoop,
         protected StartCheckout $checkout,
         protected JoinOffering $deelname,
+        protected BookSlot $boeking,
         protected PaymentGateway $gateway,
     ) {}
 
@@ -62,6 +66,17 @@ class ShopController extends Controller
                 // Wat je krijgt: beurten en hoe lang het geldig blijft.
                 'credits' => $product->type->needsCredits() ? $product->credits : null,
                 'validity_months' => $product->validity_months,
+                // Bij een privétraining kies je een moment in plaats van je in
+                // te schrijven op een vaste reeks.
+                'slots' => $product->type === ProductType::Privetraining
+                    ? $product->slots()->bookable()->with('trainer')->limit(20)->get()->map(fn (Slot $slot) => [
+                        'id' => $slot->id,
+                        'day' => $slot->starts_at->translatedFormat('l j F'),
+                        'time' => $slot->starts_at->format('H:i').' – '.$slot->ends_at->format('H:i'),
+                        'trainer' => $slot->trainer?->name,
+                        'location' => $slot->location,
+                    ])->values()
+                    : [],
             ]);
 
         return Inertia::render('billing/Shop', [
@@ -80,9 +95,17 @@ class ShopController extends Controller
 
         $validated = $request->validate([
             'player_id' => ['required', 'integer', Rule::in($spelerIds)],
+            // Bij een privétraining hoort er een moment bij; anders staat er een
+            // afspraak zonder tijd, en dan belt er iemand.
+            'slot_id' => [
+                Rule::requiredIf(fn () => $product->type === ProductType::Privetraining),
+                'nullable', 'integer',
+                Rule::exists('slots', 'id')->where('product_id', $product->id),
+            ],
         ], [
             'player_id.in' => 'Kies een van je eigen spelers.',
-        ], ['player_id' => 'De speler']);
+            'slot_id.required' => 'Kies een moment.',
+        ], ['player_id' => 'De speler', 'slot_id' => 'Het moment']);
 
         abort_unless($product->is_active, 404);
 
@@ -90,6 +113,12 @@ class ShopController extends Controller
         abort_if($product->isRecurring(), 422, 'Aanbod per maand regel je via de school.');
 
         $speler = Player::findOrFail($validated['player_id']);
+
+        // Een privétraining loopt anders: daar hoort een moment bij, en dat
+        // moment wordt meteen de training in de agenda.
+        if ($product->type === ProductType::Privetraining) {
+            return $this->boek($product, $speler, (int) $validated['slot_id']);
+        }
 
         $aankoop = $this->verkoop->handle($speler, $product);
 
@@ -141,5 +170,51 @@ class ShopController extends Controller
         abort_if($ids === [], 403, 'Je hebt geen spelers om iets voor af te nemen.');
 
         return $ids;
+    }
+
+    /**
+     * Een privétraining boeken op een gekozen moment.
+     *
+     * Net als bij de rest: is er een provider, dan reken je meteen af; anders
+     * staat de rekening open en reken je bij de school af.
+     */
+    protected function boek(Product $product, Player $speler, int $slotId): HttpResponse|RedirectResponse
+    {
+        $slot = Slot::whereKey($slotId)->where('product_id', $product->id)->firstOrFail();
+
+        try {
+            $slot = $this->boeking->handle($slot, $speler);
+        } catch (Throwable $e) {
+            // Twee ouders die tegelijk op dezelfde knop drukken: dan is er één
+            // te laat, en dat hoort er te staan in plaats van een lege pagina.
+            return back()->withErrors(['slot_id' => $e->getMessage()]);
+        }
+
+        $betaling = $slot->purchase?->payments()->first();
+
+        if ($betaling === null) {
+            return redirect()->route('billing.index')->with(
+                'status',
+                "{$product->name} staat ingepland op {$slot->starts_at->translatedFormat('l j F')} om {$slot->starts_at->format('H:i')}.",
+            );
+        }
+
+        try {
+            $checkout = $this->checkout->handle($betaling, route('billing.return', $betaling));
+        } catch (Throwable $e) {
+            report($e);
+
+            return redirect()->route('billing.index')
+                ->withErrors(['payment' => 'Het starten van de betaling is niet gelukt. Je kunt het hier opnieuw proberen.']);
+        }
+
+        if ($checkout === null) {
+            return redirect()->route('billing.index')->with(
+                'status',
+                "{$product->name} staat ingepland op {$slot->starts_at->translatedFormat('l j F')}. Je rekent af bij de school.",
+            );
+        }
+
+        return Inertia::location($checkout);
     }
 }

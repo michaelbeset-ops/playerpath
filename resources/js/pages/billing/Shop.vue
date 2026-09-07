@@ -15,6 +15,7 @@ interface Product {
     is_free: boolean;
     credits: number | null;
     validity_months: number | null;
+    slots: { id: number; day: string; time: string; trainer: string | null; location: string | null }[];
 }
 
 const props = defineProps<{
@@ -34,10 +35,17 @@ const speler = ref<number>(props.players[0]?.id ?? 0);
 
 const bezig = ref<number | null>(null);
 
+// Bij een privétraining kies je een moment; bij de rest is er niets te kiezen.
+const gekozenMoment = ref<Record<number, number | null>>({});
+
 const koop = (product: Product) => {
     bezig.value = product.id;
 
-    router.post('/shop/' + product.id, { player_id: speler.value }, { onFinish: () => (bezig.value = null) });
+    router.post(
+        '/shop/' + product.id,
+        { player_id: speler.value, slot_id: gekozenMoment.value[product.id] ?? null },
+        { onFinish: () => (bezig.value = null) },
+    );
 };
 </script>
 
@@ -97,10 +105,39 @@ const koop = (product: Product) => {
                         <p class="tabular shrink-0 text-lg font-bold">{{ product.is_free ? 'gratis' : product.amount }}</p>
                     </div>
 
+                    <!-- Een privétraining boek je op een moment; zonder vrije
+                         momenten valt er niets te kiezen, en dan zeggen we dat. -->
+                    <div v-if="product.slots.length" class="mt-3 grid gap-2">
+                        <p class="text-sm font-medium">Kies een moment</p>
+                        <label
+                            v-for="moment in product.slots"
+                            :key="moment.id"
+                            class="flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition"
+                            :class="gekozenMoment[product.id] === moment.id ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'"
+                        >
+                            <input
+                                v-model="gekozenMoment[product.id]"
+                                type="radio"
+                                :value="moment.id"
+                                class="mt-0.5 size-4 shrink-0 accent-primary"
+                            />
+                            <span class="min-w-0">
+                                <span class="block text-sm font-medium first-letter:uppercase">{{ moment.day }} · {{ moment.time }}</span>
+                                <span class="block text-xs text-muted-foreground">
+                                    {{ moment.trainer ?? 'trainer volgt' }}<template v-if="moment.location"> · {{ moment.location }}</template>
+                                </span>
+                            </span>
+                        </label>
+                    </div>
+
+                    <p v-else-if="product.type === 'Privétraining'" class="mt-3 rounded-lg bg-secondary p-3 text-sm text-muted-foreground">
+                        Er staan nu geen vrije momenten. Neem contact op met de school.
+                    </p>
+
                     <button
                         type="button"
                         class="mt-3 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60 sm:w-auto"
-                        :disabled="bezig === product.id"
+                        :disabled="bezig === product.id || (product.type === 'Privétraining' && !gekozenMoment[product.id])"
                         @click="koop(product)"
                     >
                         <ShoppingBag class="size-4" />

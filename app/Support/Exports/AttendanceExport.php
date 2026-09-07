@@ -53,7 +53,7 @@ class AttendanceExport implements Export
             yield [
                 $rij->training->starts_at->format('d-m-Y'),
                 $rij->training->starts_at->format('H:i'),
-                $rij->training->group->name,
+                $rij->training->label(),
                 $rij->player->full_name,
                 $rij->player->position->label(),
                 $rij->registration?->label() ?? '',

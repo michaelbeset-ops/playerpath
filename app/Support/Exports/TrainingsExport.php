@@ -50,7 +50,7 @@ class TrainingsExport implements Export
                 $training->starts_at->format('d-m-Y'),
                 $training->starts_at->format('H:i'),
                 $training->ends_at->format('H:i'),
-                $training->group->name,
+                $training->label(),
                 $training->trainers->pluck('name')->implode(', '),
                 $training->location,
                 $verwacht,

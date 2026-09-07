@@ -4,7 +4,7 @@ import GatewayNotice from '@/components/GatewayNotice.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
-import { CalendarDays, CalendarRange, MapPin, Pencil, Plus, Tag, Tent, Ticket, User, Users } from 'lucide-vue-next';
+import { CalendarDays, CalendarRange, Clock, MapPin, Pencil, Plus, Tag, Tent, Ticket, User, Users } from 'lucide-vue-next';
 import { computed, type Component } from 'vue';
 
 interface ProductRij {
@@ -200,6 +200,15 @@ const leeftijd = (product: ProductRij) => {
 
                                 <div class="flex shrink-0 items-center gap-1">
                                     <Link
+                                        v-if="product.type === 'privetraining'"
+                                        :href="'/aanbod/' + product.id + '/momenten'"
+                                        class="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                                        :aria-label="'Momenten van ' + product.name"
+                                    >
+                                        <Clock class="size-4" />
+                                    </Link>
+                                    <Link
+                                        v-else
                                         :href="'/aanbod/' + product.id + '/deelnemers'"
                                         class="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-foreground"
                                         :aria-label="'Deelnemers van ' + product.name"
