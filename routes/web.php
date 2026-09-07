@@ -8,6 +8,7 @@ use App\Http\Controllers\Dashboard\LayoutController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Players\BadgeSettingsController;
 use App\Http\Controllers\Players\PlayerDataController;
 use App\Http\Controllers\Pwa\ManifestController;
 use App\Http\Controllers\Schools\EnrollmentSettingsController;
@@ -58,6 +59,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('instellingen/inschrijven', [EnrollmentSettingsController::class, 'index'])->name('enrollment-settings.index');
     Route::get('instellingen/inschrijven/stap/{stap}', [EnrollmentSettingsController::class, 'edit'])->whereNumber('stap')->name('enrollment-settings.edit');
     Route::patch('instellingen/inschrijven/stap/{stap}', [EnrollmentSettingsController::class, 'update'])->whereNumber('stap')->name('enrollment-settings.update');
+
+    // Welke mijlpalen gelden. Eigenaar en trainer.
+    Route::get('mijlpalen', [BadgeSettingsController::class, 'edit'])->name('badges.edit');
+    Route::patch('mijlpalen', [BadgeSettingsController::class, 'update'])->name('badges.update');
 
     // Fase 11: eigen logo en kleur. Alleen de eigenaar.
     Route::get('branding', [BrandingController::class, 'edit'])->name('branding.edit');

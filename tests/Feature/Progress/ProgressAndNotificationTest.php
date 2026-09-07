@@ -238,7 +238,8 @@ class ProgressAndNotificationTest extends TestCase
 
         $this->assertTrue($badges['eerste_rapport']['earned']);
         $this->assertTrue($badges['groei']['earned'], 'Van 50 naar 70 is 20 punten groei.');
-        $this->assertFalse($badges['vijf_rapporten']['earned']);
+        // Standaard gelden er vier; "vijf rapporten" hoort daar niet bij.
+        $this->assertArrayNotHasKey('vijf_rapporten', $badges->all());
         $this->assertFalse($badges['aanwezig_vijf']['earned']);
     }
 
@@ -253,7 +254,8 @@ class ProgressAndNotificationTest extends TestCase
                 // Een rapport is 5 XP: brons, met zilver in zicht.
                 ->where('card.level.key', 'brons')
                 ->where('card.level.next.key', 'zilver')
-                ->has('badges', 9)
+                // Standaard vier mijlpalen; zie BadgeSettings.
+                ->has('badges', 4)
             );
     }
 }

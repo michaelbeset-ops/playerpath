@@ -126,10 +126,10 @@ class NavigationTest extends TestCase
             }
         }
 
-        // Ontwikkeling heeft maar een item (Rapporten) en toont dat dus zelf.
+        // Ontwikkeling heeft twee items (Rapporten, Mijlpalen) en is dus een
+        // groep; de regel "één item wordt het item" zit in de lus hierboven.
         $titels = array_column($groepen, 'title');
-        $this->assertContains('Rapporten', $titels);
-        $this->assertNotContains('Ontwikkeling', $titels);
+        $this->assertContains('Ontwikkeling', $titels);
     }
 
     public function test_een_ouder_krijgt_geen_beheer_items_te_zien(): void
@@ -162,7 +162,7 @@ class NavigationTest extends TestCase
             '/dashboard',
             '/calendar', '/trainings', '/trainings/mijn',
             '/clients', '/groups', '/enrollments',
-            '/reports',
+            '/reports', '/mijlpalen',
             '/payments', '/subscriptions', '/aanbod', '/exports',
             '/announcements', '/announcements/verjaardagen',
             '/staff', '/locaties', '/instellingen/inschrijven', '/branding', '/verantwoording', '/settings/profile',

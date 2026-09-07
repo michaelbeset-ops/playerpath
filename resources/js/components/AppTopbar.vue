@@ -3,6 +3,7 @@ import AppLogo from '@/components/AppLogo.vue';
 import { type NavGroup, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
 import {
+    Award,
     Bell,
     Building2,
     Cake,
@@ -63,6 +64,7 @@ const iconen: Record<string, Component> = {
     enrollments: Inbox,
     branding: Palette,
     accountability: FileCheck2,
+    badges: Award,
     announcements: Megaphone,
     birthdays: Cake,
     business: Building2,

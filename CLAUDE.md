@@ -574,6 +574,15 @@ staat er bewust leeg bij tot fase 7 — geen voorbeeldcijfers.
 een afgevlakte lijn in plaats van wat de trainer die dag opschreef. Vanaf twee
 rapporten is er een grafiek; daarvoor niet.
 
+**Mijlpalen zijn instelbaar** (`Support\PlayerCard\BadgeSettings`, opgeslagen in
+`schools.rating_settings['badges']`): negen bestaan er, standaard staan er
+**vier** aan (eerste rapport, vijf keer aanwezig, vijf punten groei, doel
+gehaald). De eigenaar of trainer kiest op `/mijlpalen` welke gelden, voor alle
+spelers of per leeftijdscategorie; `PlayerBadges::for()` geeft alleen die.
+Een lijst van negen was te lang, en een kaart met acht "nog te behalen" leest
+als een verlanglijst. De tijdlijn op de voortgangspagina toont standaard de
+laatste vier momenten, de rest achter "Meer weergeven".
+
 **Tijdlijn en mijlpalen worden afgeleid**, niet opgeslagen. Er is geen
 gebeurtenissen-tabel die uit de pas kan lopen met de werkelijkheid, en een
 nieuwe badge kost één regel in `PlayerBadges`. Ook de **level-momenten** komen

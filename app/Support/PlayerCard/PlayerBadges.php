@@ -47,6 +47,29 @@ class PlayerBadges
     }
 
     /**
+     * Alle mijlpalen die er bestaan, in vaste volgorde.
+     *
+     * @return list<array{key: string, label: string, description: string}>
+     */
+    public static function catalogue(): array
+    {
+        return [
+            ['key' => 'eerste_rapport', 'label' => 'Op de kaart', 'description' => 'Je eerste rapport is binnen'],
+            ['key' => 'vijf_rapporten', 'label' => 'Vaste waarde', 'description' => 'Vijf rapporten of meer'],
+            ['key' => 'groei', 'label' => 'In de lift', 'description' => 'Vijf punten gegroeid sinds je eerste rapport'],
+            ['key' => 'sterke_groei', 'label' => 'Grote sprong', 'description' => 'Tien punten gegroeid sinds je eerste rapport'],
+            ['key' => 'uitblinker', 'label' => 'Uitblinker', 'description' => 'Een categorie op 85 of hoger'],
+            ['key' => 'compleet', 'label' => 'Compleet', 'description' => 'Alle categorieën op 70 of hoger'],
+            ['key' => 'doel_gehaald', 'label' => 'Doelgericht', 'description' => 'Een ontwikkelingsdoel gehaald'],
+            ['key' => 'aanwezig_vijf', 'label' => 'Altijd op tijd', 'description' => 'Vijf trainingen aanwezig'],
+            ['key' => 'aanwezig_tien', 'label' => 'Onmisbaar', 'description' => 'Tien trainingen aanwezig'],
+        ];
+    }
+
+    /**
+     * De mijlpalen die voor deze speler gelden (BadgeSettings), met of ze
+     * behaald zijn.
+     *
      * @return list<array{key: string, label: string, description: string, earned: bool}>
      */
     public function for(Player $player, PlayerProgress $progress): array
@@ -61,63 +84,23 @@ class PlayerBadges
             ->where('status', AttendanceStatus::Present->value)
             ->count();
 
-        $badges = [
-            [
-                'key' => 'eerste_rapport',
-                'label' => 'Op de kaart',
-                'description' => 'Je eerste rapport is binnen',
-                'earned' => $aantalRapporten >= 1,
-            ],
-            [
-                'key' => 'vijf_rapporten',
-                'label' => 'Vaste waarde',
-                'description' => 'Vijf rapporten of meer',
-                'earned' => $aantalRapporten >= 5,
-            ],
-            [
-                'key' => 'groei',
-                'label' => 'In de lift',
-                'description' => 'Vijf punten gegroeid sinds je eerste rapport',
-                'earned' => $groei !== null && $groei >= 5,
-            ],
-            [
-                'key' => 'sterke_groei',
-                'label' => 'Grote sprong',
-                'description' => 'Tien punten gegroeid sinds je eerste rapport',
-                'earned' => $groei !== null && $groei >= 10,
-            ],
-            [
-                'key' => 'uitblinker',
-                'label' => 'Uitblinker',
-                'description' => 'Een categorie op 85 of hoger',
-                'earned' => $ratings !== [] && max($ratings) >= 85,
-            ],
-            [
-                'key' => 'compleet',
-                'label' => 'Compleet',
-                'description' => 'Alle categorieën op 70 of hoger',
-                'earned' => $ratings !== [] && min($ratings) >= 70,
-            ],
-            [
-                'key' => 'doel_gehaald',
-                'label' => 'Doelgericht',
-                'description' => 'Een ontwikkelingsdoel gehaald',
-                'earned' => $player->goals()->where('status', GoalStatus::Achieved->value)->exists(),
-            ],
-            [
-                'key' => 'aanwezig_vijf',
-                'label' => 'Altijd op tijd',
-                'description' => 'Vijf trainingen aanwezig',
-                'earned' => $aanwezig >= 5,
-            ],
-            [
-                'key' => 'aanwezig_tien',
-                'label' => 'Onmisbaar',
-                'description' => 'Tien trainingen aanwezig',
-                'earned' => $aanwezig >= 10,
-            ],
+        $behaald = [
+            'eerste_rapport' => $aantalRapporten >= 1,
+            'vijf_rapporten' => $aantalRapporten >= 5,
+            'groei' => $groei !== null && $groei >= 5,
+            'sterke_groei' => $groei !== null && $groei >= 10,
+            'uitblinker' => $ratings !== [] && max($ratings) >= 85,
+            'compleet' => $ratings !== [] && min($ratings) >= 70,
+            'doel_gehaald' => $player->goals()->where('status', GoalStatus::Achieved->value)->exists(),
+            'aanwezig_vijf' => $aanwezig >= 5,
+            'aanwezig_tien' => $aanwezig >= 10,
         ];
 
-        return $badges;
+        $geldig = BadgeSettings::for($player->school)->keysFor($player->age_category);
+
+        return array_values(array_map(
+            fn (array $badge) => [...$badge, 'earned' => $behaald[$badge['key']]],
+            array_filter(self::catalogue(), fn (array $badge) => in_array($badge['key'], $geldig, true)),
+        ));
     }
 }

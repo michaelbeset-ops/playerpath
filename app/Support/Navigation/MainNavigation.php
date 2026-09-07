@@ -90,6 +90,7 @@ class MainNavigation
             [
                 'title' => 'Ontwikkeling', 'icon' => 'reports', 'items' => [
                     ['title' => 'Rapporten', 'href' => '/reports', 'icon' => 'reports', 'allowed' => $user->can('viewAny', Report::class), 'feature' => Feature::Ontwikkeling],
+                    ['title' => 'Mijlpalen', 'href' => '/mijlpalen', 'icon' => 'badges', 'allowed' => $user->isEigenaar() || $user->isTrainer(), 'feature' => Feature::Ontwikkeling],
                 ],
             ],
             [

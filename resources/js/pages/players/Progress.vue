@@ -118,6 +118,12 @@ const trendIcoon = (trend: Trend | null) => {
 };
 
 const tijdlijnIcoon = (type: string) => (type === 'level' ? Sparkles : type === 'mijlpaal' ? Trophy : ClipboardList);
+
+// Standaard de laatste paar; de rest achter een knop. Een tijdlijn van dertig
+// rapporten is geen scherm maar een archief.
+const TIJDLIJN_KORT = 4;
+const tijdlijnUit = ref(false);
+const tijdlijnZichtbaar = computed(() => (tijdlijnUit.value ? props.timeline : props.timeline.slice(0, TIJDLIJN_KORT)));
 </script>
 
 <template>
@@ -371,10 +377,10 @@ const tijdlijnIcoon = (type: string) => (type === 'level' ? Sparkles : type === 
                 <p class="font-medium">Tijdlijn</p>
 
                 <ol v-if="timeline.length" class="mt-4">
-                    <li v-for="(item, index) in timeline" :key="index" class="relative flex gap-3 pb-5 last:pb-0">
+                    <li v-for="(item, index) in tijdlijnZichtbaar" :key="index" class="relative flex gap-3 pb-5 last:pb-0">
                         <!-- De verbindingslijn loopt door tot het volgende punt -->
                         <span
-                            v-if="index < timeline.length - 1"
+                            v-if="index < tijdlijnZichtbaar.length - 1"
                             class="absolute bottom-0 left-4 top-9 w-px -translate-x-1/2 bg-border"
                             aria-hidden="true"
                         ></span>
@@ -412,6 +418,15 @@ const tijdlijnIcoon = (type: string) => (type === 'level' ? Sparkles : type === 
                         </div>
                     </li>
                 </ol>
+
+                <button
+                    v-if="timeline.length > TIJDLIJN_KORT"
+                    type="button"
+                    class="mt-3 inline-flex h-10 w-full items-center justify-center rounded-lg border border-border text-sm font-medium transition hover:border-primary"
+                    @click="tijdlijnUit = !tijdlijnUit"
+                >
+                    {{ tijdlijnUit ? 'Minder weergeven' : 'Meer weergeven (' + (timeline.length - TIJDLIJN_KORT) + ')' }}
+                </button>
 
                 <p v-else class="mt-3 text-sm text-muted-foreground">Er is nog niets gebeurd om te laten zien.</p>
             </div>
