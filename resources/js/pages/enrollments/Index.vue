@@ -74,9 +74,13 @@ const kopieer = async () => {
 };
 
 const keurGoed = (i: Inschrijving) => {
-    const wat = i.order_total ? ` De ouder krijgt een betaalverzoek van ${i.order_total}.` : '';
+    const wat = i.waitlist
+        ? ' De ouder krijgt een betaallink met een tijdslimiet; de plek is van hen zodra er betaald is.'
+        : i.order_total
+          ? ` De ouder krijgt een betaalverzoek van ${i.order_total}.`
+          : '';
 
-    if (confirm(`De inschrijving van ${i.child_name} goedkeuren?${wat}`)) {
+    if (confirm(`${i.waitlist ? 'Uitnodigen vanaf de wachtlijst' : 'De inschrijving van ' + i.child_name + ' goedkeuren'}?${wat}`)) {
         router.post('/enrollments/' + i.id + '/approve', {}, { preserveScroll: true });
     }
 };
@@ -224,7 +228,7 @@ const detailLabels: Record<string, string> = { kledingmaat: 'Kledingmaat', nivea
                             @click="keurGoed(i)"
                         >
                             <Check class="size-4" />
-                            {{ i.waitlist ? 'Plek geven' : 'Goedkeuren' }}
+                            {{ i.waitlist ? 'Uitnodigen' : 'Goedkeuren' }}
                         </button>
                         <Link
                             v-if="i.first_payment_id"

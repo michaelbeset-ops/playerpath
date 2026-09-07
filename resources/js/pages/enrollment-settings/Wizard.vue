@@ -103,6 +103,7 @@ const form = useForm(
                 : {
                       waitlist: s.capacity.waitlist as boolean,
                       pay_on_placement: s.capacity.pay_on_placement as boolean,
+                      invitation_days: s.capacity.invitation_days as number,
                       fields: { ...(s.fields as Record<string, string>) },
                       consents: Object.fromEntries(
                           props.consents.map((c) => [c.key, { required: c.required, title: c.title, body: c.body }]),
@@ -513,6 +514,26 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                             label="Betalen pas bij plaatsing"
                             description="Op de wachtlijst staat niets open. Aan te raden."
                         />
+                        <div v-if="f.waitlist" class="flex items-center justify-between gap-4 py-3">
+                            <label for="invitation_days" class="min-w-0">
+                                <span class="block text-sm font-medium">Hoe lang een uitnodiging geldig is</span>
+                                <span class="block text-xs text-muted-foreground"
+                                    >Komt er plek, dan krijgt de ouder een betaallink. Verloopt die, dan schuift de volgende door.</span
+                                >
+                            </label>
+                            <div class="flex shrink-0 items-center gap-2">
+                                <input
+                                    id="invitation_days"
+                                    v-model.number="f.invitation_days"
+                                    type="number"
+                                    min="1"
+                                    max="30"
+                                    :class="'w-20 ' + getalKlasse"
+                                />
+                                <span class="text-sm text-muted-foreground">dagen</span>
+                            </div>
+                        </div>
+                        <InputError :message="form.errors.invitation_days" />
                     </section>
 
                     <section class="rounded-xl border border-border bg-card p-5 shadow-sm">

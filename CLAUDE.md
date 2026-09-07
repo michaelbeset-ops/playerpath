@@ -829,6 +829,26 @@ tegenspreken. Een status met de hand zetten omzeilt de machine; doe dat niet.
   ouderscherm (`/billing`) staat per inschrijving wat annuleren nu oplevert,
   vóórdat je klikt.
 
+### De wachtlijst
+
+- **Vol aanbod blijft op de inschrijfpagina staan** (als de school de
+  wachtlijst aan heeft) en een aanmelding wordt een wachtlijstplek: wél een
+  speler en een ouderaccount, wél een deelname met status wachtlijst (zodat
+  het aanbodbeheer hem ziet), **geen order en geen rekening**.
+- **Uitnodigen** (`Actions\Enrollments\InviteFromWaitlist`, via de inbox of
+  het deelnemersscherm) kan alleen als er plek is. Dan ontstaat de order, gaat
+  hij open, en krijgt de ouder `PlekVrijgekomen` met een betaallink die
+  verloopt op de tijdslimiet uit de instellingen (`capacity.invitation_days`,
+  standaard drie dagen). Betaald op tijd → SettleOrder bevestigt en het kind
+  komt in de groep.
+- **Verlopen** doet `enrollments:lifecycle`: de plek vervalt (inschrijving op
+  verlopen, rekening geannuleerd, deelname geannuleerd), de ouder hoort het
+  (`UitnodigingVerlopen`), en **de volgende in de rij wordt automatisch
+  uitgenodigd**. Dat is de enige plek waar de app zelf kiest wie er
+  doorschuift; de eerste uitnodiging blijft een keuze van de school.
+- Een wachtlijstplek zonder inschrijving (met de hand op de lijst gezet) gaat
+  nog de oude weg (`PromoteParticipation`): meteen een plek en een rekening.
+
 ### Inschrijvingen
 
 #### De openbare aanmeldpagina

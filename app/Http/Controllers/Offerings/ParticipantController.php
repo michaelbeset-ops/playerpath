@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Offerings;
 
+use App\Actions\Enrollments\InviteFromWaitlist;
 use App\Actions\Offerings\PromoteParticipation;
+use App\Enums\EnrollmentStatus;
 use App\Enums\ParticipationStatus;
 use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Enrollment;
 use App\Models\Participation;
 use App\Models\Payment;
 use App\Models\Player;
@@ -15,6 +18,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use RuntimeException;
 
 /**
  * Wie er meedoet aan een aanbod, en wie er wacht.
@@ -83,6 +87,21 @@ class ParticipantController extends Controller
         // dertiende bij, en dan staat er een kind op het veld waar geen plek
         // voor is.
         abort_if($product->isFull(), 422, 'Er is nog geen plek vrij. Zet eerst iemand van de lijst.');
+
+        // Hoort er een inschrijving bij (via het formulier), dan loopt het via
+        // de uitnodiging met betaallink en tijdslimiet. Zonder inschrijving
+        // (met de hand op de lijst gezet) gaat het zoals altijd: meteen een plek.
+        $inschrijving = $participation->enrollment_id ? Enrollment::find($participation->enrollment_id) : null;
+
+        if ($inschrijving !== null && in_array($inschrijving->status, [EnrollmentStatus::Waitlist, EnrollmentStatus::Expired], strict: true)) {
+            try {
+                app(InviteFromWaitlist::class)->handle($inschrijving, $request->user());
+            } catch (RuntimeException $e) {
+                return back()->withErrors(['participation' => $e->getMessage()]);
+            }
+
+            return back()->with('status', $participation->player?->first_name.' is uitgenodigd. De ouders hebben een betaallink gekregen; de plek is van hen zodra er betaald is.');
+        }
 
         $doorschuiven->handle($participation);
 

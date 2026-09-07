@@ -7,8 +7,6 @@ use App\Models\Enrollment;
 use App\Models\Player;
 use App\Models\User;
 use App\Notifications\InschrijvingGoedgekeurd;
-use App\Support\Enrollment\EnrollmentSettings;
-use App\Support\Enrollment\OrderWriter;
 use App\Support\Status\TransitionException;
 use RuntimeException;
 
@@ -24,7 +22,7 @@ use RuntimeException;
  */
 class ApproveEnrollment
 {
-    public function __construct(protected ConfirmEnrollment $bevestig, protected OrderWriter $orders) {}
+    public function __construct(protected ConfirmEnrollment $bevestig, protected InviteFromWaitlist $uitnodigen) {}
 
     public function handle(Enrollment $enrollment, User $eigenaar): Player
     {
@@ -36,25 +34,12 @@ class ApproveEnrollment
             throw new RuntimeException('Bij deze inschrijving hoort geen speler meer.');
         }
 
-        // Vanaf de wachtlijst: alleen als er echt plek is, en dan ontstaat nu
-        // pas de order — op de wachtlijst stond immers niets open.
+        // Vanaf de wachtlijst: een uitnodiging met betaallink en tijdslimiet.
+        // Op de wachtlijst stond niets open; de order ontstaat daar pas.
         if ($enrollment->status === EnrollmentStatus::Waitlist) {
-            $aanbod = $enrollment->product;
+            $this->uitnodigen->handle($enrollment, $eigenaar);
 
-            if ($aanbod === null || $aanbod->isFull()) {
-                throw new RuntimeException('Dit aanbod zit nog vol. Maak eerst een plek vrij.');
-            }
-
-            if ($enrollment->order === null && $enrollment->paymentOption !== null && $enrollment->guardian !== null) {
-                $this->orders->write(EnrollmentSettings::for($enrollment->school), [[
-                    'product' => $aanbod,
-                    'option' => $enrollment->paymentOption,
-                    'child_name' => $enrollment->first_name,
-                    'player_id' => $enrollment->player_id,
-                    'enrollment' => $enrollment,
-                ]], $enrollment->guardian);
-                $enrollment->refresh();
-            }
+            return $enrollment->player;
         }
 
         $enrollment->forceFill([

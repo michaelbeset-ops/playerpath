@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Models\Player;
 use App\Models\Product;
 use App\Notifications\Concerns\SendsFromSchool;
+use Carbon\CarbonInterface;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -23,6 +24,8 @@ class PlekVrijgekomen extends Notification implements ShouldQueue
     public function __construct(
         public Product $product,
         public Player $player,
+        public ?string $payUrl = null,
+        public ?CarbonInterface $deadline = null,
     ) {}
 
     /** @return list<string> */
@@ -42,7 +45,14 @@ class PlekVrijgekomen extends Notification implements ShouldQueue
             $bericht->line('Het begint op '.$this->product->starts_on->translatedFormat('j F Y').'.');
         }
 
-        if ($this->product->amount_cents > 0) {
+        // Uitgenodigd vanaf de wachtlijst: betalen vóór de deadline, anders
+        // gaat de plek naar de volgende.
+        if ($this->payUrl !== null && $this->deadline !== null) {
+            $bericht->line('Betaal vóór **'.$this->deadline->translatedFormat('j F').'** om de plek vast te leggen; daarna gaat hij naar de volgende op de wachtlijst.')
+                ->action('Nu betalen', $this->payUrl);
+        } elseif ($this->deadline !== null) {
+            $bericht->line('Bevestig vóór **'.$this->deadline->translatedFormat('j F').'** bij de school; daarna gaat de plek naar de volgende op de wachtlijst.');
+        } elseif ($this->product->amount_cents > 0) {
             $bericht->line('De rekening staat klaar; je ziet bij Mijn abonnement hoe je betaalt.')
                 ->action('Bekijk je betalingen', route('billing.index'));
         }

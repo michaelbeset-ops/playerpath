@@ -130,6 +130,7 @@ class EnrollmentSettingsTest extends TestCase
         $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/6', [
             'waitlist' => true,
             'pay_on_placement' => true,
+            'invitation_days' => 5,
             'fields' => ['kledingmaat' => 'required', 'positie' => 'required', 'niveau' => 'off', 'medisch' => 'optional'],
             'consents' => $this->toestemmingen(['avg' => true, 'beeldrecht' => true, 'gedragsregels' => false, 'medisch' => false]),
             'development' => false,
@@ -168,7 +169,7 @@ class EnrollmentSettingsTest extends TestCase
     public function test_een_andere_tekst_is_een_nieuwe_versie_van_de_toestemming(): void
     {
         $antwoorden = fn (string $tekst) => [
-            'waitlist' => true, 'pay_on_placement' => true,
+            'waitlist' => true, 'pay_on_placement' => true, 'invitation_days' => 3,
             'fields' => ['kledingmaat' => 'off', 'positie' => 'required', 'niveau' => 'optional', 'medisch' => 'optional'],
             'consents' => $this->toestemmingen(['avg' => true, 'beeldrecht' => false, 'gedragsregels' => false, 'medisch' => false], $tekst),
             'development' => true,

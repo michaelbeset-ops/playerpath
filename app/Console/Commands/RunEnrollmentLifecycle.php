@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Actions\Enrollments\InviteFromWaitlist;
 use App\Enums\EnrollmentStatus;
 use App\Enums\Feature;
 use App\Enums\SubscriptionStatus;
@@ -18,8 +19,10 @@ use Illuminate\Console\Command;
 /**
  * De levensloop van inschrijvingen en abonnementen, één keer per dag.
  *
- * Vier dingen, in deze volgorde:
+ * Vijf dingen, in deze volgorde:
  *
+ * 0. **Verlopen wachtlijst-uitnodigingen**: de plek vervalt en de volgende
+ *    in de rij wordt uitgenodigd (InviteFromWaitlist).
  * 1. **Bevestigd → actief** zodra het aanbod begonnen is.
  * 2. **Verleng-uitnodiging** voor een blok dat binnenkort afloopt en niet
  *    automatisch verlengt: de ouder krijgt vóór het einde bericht en meldt
@@ -40,7 +43,7 @@ class RunEnrollmentLifecycle extends Command
 
     protected $description = 'Activeert, beëindigt en verlengt inschrijvingen en abonnementen';
 
-    public function handle(Tenancy $tenancy): int
+    public function handle(Tenancy $tenancy, InviteFromWaitlist $wachtlijst): int
     {
         $droog = (bool) $this->option('dry-run');
         $vandaag = CarbonImmutable::today();
@@ -50,8 +53,18 @@ class RunEnrollmentLifecycle extends Command
                 continue;
             }
 
-            $tenancy->forSchool($school, function () use ($school, $droog, $vandaag) {
+            $tenancy->forSchool($school, function () use ($school, $droog, $vandaag, $wachtlijst) {
                 $instellingen = EnrollmentSettings::for($school);
+
+                // 0. Verlopen uitnodigingen vanaf de wachtlijst: de plek vervalt en
+                //    de volgende in de rij krijgt hem.
+                if (! $droog) {
+                    $verlopen = $wachtlijst->expire();
+
+                    if ($verlopen > 0) {
+                        $this->line("  {$verlopen} verlopen uitnodiging(en) afgehandeld");
+                    }
+                }
 
                 // 1. Bevestigd → actief
                 foreach (Enrollment::where('status', EnrollmentStatus::Confirmed->value)->with('product')->get() as $e) {

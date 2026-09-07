@@ -291,6 +291,7 @@ class EnrollmentSettingsController extends Controller
         $validated = $request->validate([
             'waitlist' => ['required', 'boolean'],
             'pay_on_placement' => ['required', 'boolean'],
+            'invitation_days' => ['required', 'integer', 'min:1', 'max:30'],
             'fields' => ['required', 'array'],
             ...collect($velden)->mapWithKeys(fn ($v) => ["fields.{$v}" => ['required', Rule::in(EnrollmentSettings::VELD_STANDEN)]])->all(),
             'consents' => ['required', 'array'],
@@ -320,6 +321,7 @@ class EnrollmentSettingsController extends Controller
             'capacity' => [
                 'waitlist' => (bool) $validated['waitlist'],
                 'pay_on_placement' => (bool) $validated['pay_on_placement'],
+                'invitation_days' => (int) $validated['invitation_days'],
             ],
             'fields' => collect($velden)->mapWithKeys(fn ($v) => [$v => $validated['fields'][$v]])->all(),
         ];

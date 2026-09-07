@@ -71,7 +71,9 @@ const samenvatting = computed<Record<string, string[]>>(() => {
         ],
         kortingen: kortingen.length ? [kortingen.join(' · '), s.discounts.stackable ? 'Stapelbaar' : 'Alleen de hoogste telt'] : ['Geen kortingen'],
         formulier: [
-            s.capacity.waitlist ? `Wachtlijst aan${s.capacity.pay_on_placement ? ', betalen bij plaatsing' : ''}` : 'Geen wachtlijst',
+            s.capacity.waitlist
+                ? `Wachtlijst aan${s.capacity.pay_on_placement ? ', betalen bij plaatsing' : ''}, uitnodiging ${s.capacity.invitation_days} dagen geldig`
+                : 'Geen wachtlijst',
             Object.entries(s.fields as Record<string, string>)
                 .filter(([, stand]) => stand !== 'off')
                 .map(([veld, stand]) => `${veldNaam[veld] ?? veld} ${veldStand[stand]}`)

@@ -3,6 +3,7 @@
 namespace App\Support\Payments;
 
 use App\Models\Payment;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\URL;
 
 /**
@@ -28,11 +29,11 @@ class PaymentLink
     /** Hoe lang een betaallink bruikbaar blijft. */
     public const DAGEN_GELDIG = 14;
 
-    public function for(Payment $payment): string
+    public function for(Payment $payment, ?CarbonInterface $verlooptOp = null): string
     {
         return URL::temporarySignedRoute(
             'public-pay.show',
-            now()->addDays(self::DAGEN_GELDIG),
+            $verlooptOp ?? now()->addDays(self::DAGEN_GELDIG),
             ['payment' => $payment->id],
         );
     }

@@ -62,7 +62,7 @@ class EnrollmentSettings
         ],
 
         // 6. Formulier
-        'capacity' => ['waitlist' => true, 'pay_on_placement' => true],
+        'capacity' => ['waitlist' => true, 'pay_on_placement' => true, 'invitation_days' => 3],
         'fields' => ['kledingmaat' => 'off', 'positie' => 'required', 'niveau' => 'optional', 'medisch' => 'optional'],
 
         // Wanneer de wizard voor het eerst is afgerond; null zolang niet.
