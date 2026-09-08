@@ -5,6 +5,7 @@ use App\Http\Controllers\Goals\GoalController;
 use App\Http\Controllers\Groups\GroupController;
 use App\Http\Controllers\Media\PhotoController;
 use App\Http\Controllers\Players\GuardianController;
+use App\Http\Controllers\Players\PlayerBadgeController;
 use App\Http\Controllers\Players\PlayerCardController;
 use App\Http\Controllers\Players\PlayerController;
 use App\Http\Controllers\Players\PlayerProgressController;
@@ -42,6 +43,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::delete('goals/{goal}', [GoalController::class, 'destroy'])->name('goals.destroy');
         // Een eigen doel afvinken; de doelen met een cijfer gaan vanzelf.
         Route::post('goals/{goal}/behaald', [GoalController::class, 'achieve'])->name('goals.achieve');
+
+        // Eigen mijlpalen toekennen en intrekken; zie PlayerBadgeController.
+        Route::post('players/{player}/mijlpalen/{badge}', [PlayerBadgeController::class, 'store'])->name('players.badges.store');
+        Route::delete('players/{player}/mijlpalen/{badge}', [PlayerBadgeController::class, 'destroy'])->name('players.badges.destroy');
     });
 
     // De deel-link aan- en uitzetten. De publieke pagina zelf staat hieronder,

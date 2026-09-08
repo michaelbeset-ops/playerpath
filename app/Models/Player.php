@@ -98,6 +98,12 @@ class Player extends Model
         return $this->hasMany(Goal::class);
     }
 
+    /** Eigen mijlpalen die een trainer heeft toegekend; zie BadgeSettings. */
+    public function awardedBadges(): HasMany
+    {
+        return $this->hasMany(PlayerBadge::class);
+    }
+
     public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class);

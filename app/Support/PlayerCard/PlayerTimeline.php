@@ -91,6 +91,28 @@ class PlayerTimeline
             ];
         }
 
+        // Eigen mijlpalen die een trainer heeft toegekend: het enige in deze
+        // tijdlijn dat wél is opgeslagen, omdat er niets is om het uit af te leiden.
+        $eigen = collect(BadgeSettings::for($player->school)->customBadges())->keyBy('key');
+
+        foreach ($player->awardedBadges()->with('awardedBy')->get() as $toekenning) {
+            $definitie = $eigen->get($toekenning->badge_key);
+
+            if ($definitie === null) {
+                continue;
+            }
+
+            $items[] = [
+                'type' => 'mijlpaal',
+                'date' => $toekenning->awarded_on->format('d-m-Y'),
+                'sort' => $toekenning->awarded_on->format('Y-m-d').'-4',
+                'title' => 'Mijlpaal: '.$definitie['label'],
+                'body' => $toekenning->note ?: ($toekenning->awardedBy ? 'Toegekend door '.$toekenning->awardedBy->name : $definitie['description']),
+                'value' => null,
+                'delta' => null,
+            ];
+        }
+
         $items = array_merge($items, $this->levelMomenten($player));
 
         usort($items, fn ($a, $b) => strcmp($b['sort'], $a['sort']));

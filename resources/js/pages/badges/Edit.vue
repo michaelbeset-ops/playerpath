@@ -5,7 +5,7 @@ import ToggleSwitch from '@/components/ToggleSwitch.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/vue3';
-import { Award, Check } from 'lucide-vue-next';
+import { Award, Check, Plus, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 /**
@@ -24,6 +24,8 @@ const props = defineProps<{
     categories: { key: string; label: string }[];
     overrides: Record<string, string[]>;
     standard: string[];
+    /** De mijlpalen die deze school zelf heeft bedacht. */
+    custom: { key: string; label: string; description: string }[];
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Mijlpalen', href: '/mijlpalen' }];
@@ -31,7 +33,15 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Mijlpalen', href: '/mijlpalen' 
 const form = useForm({
     default: [...props.defaultKeys] as string[],
     overrides: Object.fromEntries(Object.entries(props.overrides ?? {}).map(([k, v]) => [k, [...v]])) as Record<string, string[]>,
+    custom: props.custom.map((b) => ({ ...b })) as { key: string | null; label: string; description: string }[],
 });
+
+// Eigen mijlpalen: een naam die je zelf typt. De sleutel komt van de server
+// bij het opslaan, zodat een toekenning aan de mijlpaal blijft hangen als je
+// hem later hernoemt.
+const voegEigenToe = () => form.custom.push({ key: null, label: '', description: '' });
+const haalEigenWeg = (i: number) => form.custom.splice(i, 1);
+const eigenFout = (i: number, veld: 'label' | 'description') => (form.errors as Record<string, string>)[`custom.${i}.${veld}`];
 
 const wissel = (lijst: string[], key: string) => {
     const i = lijst.indexOf(key);
@@ -114,6 +124,67 @@ const opslaan = () => form.patch('/mijlpalen', { preserveScroll: true });
                     <InputError class="mt-2" :message="form.errors.default" />
                 </section>
 
+                <!-- Eigen mijlpalen: wat de school zelf belangrijk vindt en wat
+                     nergens uit af te leiden is. De trainer kent ze toe op de
+                     pagina van de speler. -->
+                <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
+                    <p class="font-medium">Eigen mijlpalen</p>
+                    <p class="mt-1 text-sm text-muted-foreground">
+                        Iets wat jouw school viert en wat de app niet kan meten: "Eerste wedstrijd gekeept", "Strafschop gestopt". Je kent ze zelf toe
+                        op de pagina van een speler; ze komen op de kaart en in de tijdlijn.
+                    </p>
+
+                    <div v-if="form.custom.length" class="mt-4 space-y-3">
+                        <div v-for="(badge, i) in form.custom" :key="badge.key ?? 'nieuw-' + i" class="rounded-xl border border-border p-3">
+                            <div class="flex items-start gap-2">
+                                <div class="min-w-0 flex-1 space-y-2">
+                                    <div>
+                                        <label :for="'eigen-naam-' + i" class="sr-only">Naam van mijlpaal {{ i + 1 }}</label>
+                                        <input
+                                            :id="'eigen-naam-' + i"
+                                            v-model="badge.label"
+                                            type="text"
+                                            maxlength="40"
+                                            placeholder="Naam, bijvoorbeeld: Eerste wedstrijd gekeept"
+                                            class="min-h-11 w-full rounded-lg border border-input bg-background px-3 text-sm font-medium outline-none focus:border-primary"
+                                        />
+                                        <InputError class="mt-1" :message="eigenFout(i, 'label')" />
+                                    </div>
+                                    <div>
+                                        <label :for="'eigen-omschrijving-' + i" class="sr-only">Omschrijving van mijlpaal {{ i + 1 }}</label>
+                                        <input
+                                            :id="'eigen-omschrijving-' + i"
+                                            v-model="badge.description"
+                                            type="text"
+                                            maxlength="120"
+                                            placeholder="Omschrijving (optioneel), bijvoorbeeld: Je eerste hele wedstrijd in het doel"
+                                            class="min-h-11 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
+                                        />
+                                        <InputError class="mt-1" :message="eigenFout(i, 'description')" />
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    class="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:text-destructive"
+                                    :aria-label="'Mijlpaal ' + (badge.label || i + 1) + ' weghalen'"
+                                    @click="haalEigenWeg(i)"
+                                >
+                                    <Trash2 class="size-4" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        class="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-background px-3 text-sm font-medium transition hover:border-primary"
+                        @click="voegEigenToe"
+                    >
+                        <Plus class="size-4" />
+                        Eigen mijlpaal toevoegen
+                    </button>
+                </section>
+
                 <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
                     <p class="font-medium">Per leeftijdscategorie</p>
                     <p class="mt-1 text-sm text-muted-foreground">
@@ -183,7 +254,7 @@ const opslaan = () => form.patch('/mijlpalen', { preserveScroll: true });
                     class="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
                 >
                     <Check class="size-4" />
-                    Opslaan en toepassen op alle spelers
+                    Mijlpalen opslaan
                 </button>
             </div>
         </div>

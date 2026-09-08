@@ -97,4 +97,77 @@ class BadgeSettingsTest extends TestCase
         $this->actingAs($trainer)->get('/mijlpalen')->assertForbidden();
         $this->actingAs($ouder)->get('/mijlpalen')->assertForbidden();
     }
+
+    /**
+     * Eigen mijlpalen: de school typt ze zelf, en een trainer kent ze toe.
+     * Wat niet af te leiden is moet iemand met de hand zetten.
+     */
+    public function test_de_eigenaar_bedenkt_een_eigen_mijlpaal_en_die_houdt_zijn_sleutel(): void
+    {
+        $this->actingAs($this->eigenaar)
+            ->patch('/mijlpalen', [
+                'default' => ['eerste_rapport'],
+                'custom' => [['key' => null, 'label' => 'Eerste wedstrijd gekeept', 'description' => 'Een hele wedstrijd in het doel']],
+            ])
+            ->assertSessionHas('status');
+
+        $eigen = BadgeSettings::for($this->school->refresh())->customBadges();
+
+        $this->assertCount(1, $eigen);
+        $this->assertSame('Eerste wedstrijd gekeept', $eigen[0]['label']);
+        $this->assertStringStartsWith('eigen_', $eigen[0]['key']);
+
+        // Hernoemen met dezelfde sleutel: de sleutel blijft, dus een toekenning ook.
+        $this->actingAs($this->eigenaar)->patch('/mijlpalen', [
+            'default' => ['eerste_rapport'],
+            'custom' => [['key' => $eigen[0]['key'], 'label' => 'Eerste wedstrijd', 'description' => '']],
+        ]);
+
+        $this->assertSame($eigen[0]['key'], BadgeSettings::for($this->school->refresh())->customBadges()[0]['key']);
+    }
+
+    public function test_een_eigen_mijlpaal_zonder_naam_wordt_geweigerd(): void
+    {
+        $this->actingAs($this->eigenaar)
+            ->from('/mijlpalen')
+            ->patch('/mijlpalen', ['default' => ['eerste_rapport'], 'custom' => [['key' => null, 'label' => '', 'description' => 'x']]])
+            ->assertSessionHasErrors('custom.0.label');
+    }
+
+    public function test_een_trainer_kent_een_eigen_mijlpaal_toe_en_die_staat_op_de_kaart(): void
+    {
+        BadgeSettings::save($this->school, ['eerste_rapport'], [], [['label' => 'Strafschop gestopt', 'description' => '']]);
+        $key = BadgeSettings::for($this->school->refresh())->customBadges()[0]['key'];
+
+        $trainer = User::factory()->for($this->school)->create();
+        $trainer->assignRole(Role::Trainer->value);
+
+        $speler = Player::factory()->for($this->school)->keeper()->create();
+
+        $this->actingAs($trainer)
+            ->post('/players/'.$speler->id.'/mijlpalen/'.$key)
+            ->assertSessionHas('status');
+
+        $badges = collect(app(PlayerBadges::class)->for($speler->refresh(), app(PlayerProgress::class)));
+
+        $this->assertTrue($badges->firstWhere('key', $key)['earned']);
+
+        // Intrekken haalt hem weer weg; een onbekende sleutel bestaat niet.
+        $this->actingAs($trainer)->delete('/players/'.$speler->id.'/mijlpalen/'.$key)->assertSessionHas('status');
+        $this->assertFalse(collect(app(PlayerBadges::class)->for($speler->refresh(), app(PlayerProgress::class)))->firstWhere('key', $key)['earned']);
+        $this->actingAs($trainer)->post('/players/'.$speler->id.'/mijlpalen/eigen_bestaatniet')->assertNotFound();
+    }
+
+    public function test_een_ouder_kent_geen_mijlpaal_toe(): void
+    {
+        BadgeSettings::save($this->school, ['eerste_rapport'], [], [['label' => 'Strafschop gestopt']]);
+        $key = BadgeSettings::for($this->school->refresh())->customBadges()[0]['key'];
+
+        $ouder = User::factory()->for($this->school)->create();
+        $ouder->assignRole(Role::Ouder->value);
+        $speler = Player::factory()->for($this->school)->create();
+        $ouder->children()->attach($speler->id, ['relationship' => 'moeder', 'school_id' => $this->school->id]);
+
+        $this->actingAs($ouder)->post('/players/'.$speler->id.'/mijlpalen/'.$key)->assertForbidden();
+    }
 }

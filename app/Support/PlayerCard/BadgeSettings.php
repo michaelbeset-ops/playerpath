@@ -4,6 +4,7 @@ namespace App\Support\PlayerCard;
 
 use App\Models\School;
 use App\Support\Rating\AgeCategory;
+use Illuminate\Support\Str;
 
 /**
  * Welke mijlpalen er bij deze school gelden.
@@ -17,13 +18,21 @@ use App\Support\Rating\AgeCategory;
  * spelers of per leeftijdscategorie (een O8 hoeft niet aan "alle categorieën
  * op 70" te werken). Opslag in `schools.rating_settings['badges']`, net als
  * de rest van de rekenkern: standaard in code, alleen afwijkingen bewaard.
+ *
+ * Daarnaast kan een school **eigen mijlpalen** bedenken ("Eerste wedstrijd
+ * gekeept"), met een naam en een omschrijving die je zelf typt. Die hebben
+ * geen regel om uit af te leiden, dus de trainer kent ze met de hand toe
+ * (`player_badges`). Ze gelden voor alle spelers en staan naast de standaard.
  */
 class BadgeSettings
 {
     /** @var list<string> */
     public const STANDAARD = ['eerste_rapport', 'aanwezig_vijf', 'groei', 'doel_gehaald'];
 
-    /** @var array{default: list<string>, categories: array<string, list<string>>} */
+    /** Voorvoegsel van een eigen mijlpaal, zodat hij nooit botst met de catalogus. */
+    public const EIGEN = 'eigen_';
+
+    /** @var array{default: list<string>, categories: array<string, list<string>>, custom: list<array{key: string, label: string, description: string}>} */
     protected array $waarden;
 
     public function __construct(?School $school = null)
@@ -36,6 +45,7 @@ class BadgeSettings
                 ->map(fn ($keys) => $this->schoon($keys))
                 ->filter()
                 ->all(),
+            'custom' => self::eigen($opgeslagen['custom'] ?? []),
         ];
     }
 
@@ -71,6 +81,16 @@ class BadgeSettings
     }
 
     /**
+     * De mijlpalen die deze school zelf heeft bedacht.
+     *
+     * @return list<array{key: string, label: string, description: string}>
+     */
+    public function customBadges(): array
+    {
+        return $this->waarden['custom'];
+    }
+
+    /**
      * Alle leeftijdscategorieën waarvoor je kunt afwijken.
      *
      * @return list<array{key: string, label: string}>
@@ -86,8 +106,9 @@ class BadgeSettings
     /**
      * @param  list<string>  $default
      * @param  array<string, list<string>|null>  $categories  null of leeg = geen afwijking
+     * @param  list<array{key?: ?string, label: string, description?: ?string}>  $custom
      */
-    public static function save(School $school, array $default, array $categories): void
+    public static function save(School $school, array $default, array $categories, array $custom = []): void
     {
         $instellingen = $school->rating_settings ?? [];
 
@@ -97,9 +118,50 @@ class BadgeSettings
                 ->map(fn ($keys) => $keys === null ? null : array_values($keys))
                 ->filter(fn ($keys) => $keys !== null && $keys !== [])
                 ->all(),
+            'custom' => self::eigen($custom),
         ];
 
         $school->update(['rating_settings' => $instellingen]);
+    }
+
+    /**
+     * Eigen mijlpalen opschonen: een naam is verplicht, en elke mijlpaal krijgt
+     * een vaste sleutel die hij daarna houdt — daar hangen de toekenningen aan.
+     * Een mijlpaal hernoemen mag dus zonder dat iemand zijn badge kwijtraakt.
+     *
+     * @return list<array{key: string, label: string, description: string}>
+     */
+    protected static function eigen(mixed $lijst): array
+    {
+        if (! is_array($lijst)) {
+            return [];
+        }
+
+        $uit = [];
+        $gezien = [];
+
+        foreach ($lijst as $badge) {
+            $label = trim((string) ($badge['label'] ?? ''));
+
+            if ($label === '') {
+                continue;
+            }
+
+            $key = (string) ($badge['key'] ?? '');
+
+            if (! str_starts_with($key, self::EIGEN) || strlen($key) > 40 || in_array($key, $gezien, true)) {
+                $key = self::EIGEN.Str::lower(Str::random(10));
+            }
+
+            $gezien[] = $key;
+            $uit[] = [
+                'key' => $key,
+                'label' => Str::limit($label, 40, ''),
+                'description' => Str::limit(trim((string) ($badge['description'] ?? '')), 120, ''),
+            ];
+        }
+
+        return $uit;
     }
 
     /**

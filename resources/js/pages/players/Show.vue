@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { ClipboardList, FileDown, IdCard, Pencil, Plus, Target, Trash2, UserPlus, X } from 'lucide-vue-next';
+import { Award, ClipboardList, FileDown, IdCard, Pencil, Plus, Target, Trash2, UserPlus, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 interface Categorie {
@@ -58,8 +58,18 @@ const props = defineProps<{
     sellableProducts: { id: number; name: string; type_label: string; amount: string; credits: number | null }[];
     linkableGuardians: { id: number; name: string; email: string }[];
     goals: Doel[];
+    /** Eigen mijlpalen van de school, met of ze aan deze speler zijn toegekend. */
+    customBadges: {
+        key: string;
+        label: string;
+        description: string;
+        earned: boolean;
+        awarded_on: string | null;
+        awarded_by: string | null;
+        note: string | null;
+    }[];
     goalCategories: { value: string; label: string }[];
-    can: { manage: boolean; delete: boolean; report: boolean; goals: boolean; dataExport: boolean };
+    can: { manage: boolean; delete: boolean; report: boolean; goals: boolean; dataExport: boolean; badges: boolean };
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -70,6 +80,14 @@ const breadcrumbs: BreadcrumbItem[] = [
 const bestaandeOuder = useForm({ user_id: '', relationship: '' });
 
 const toonNieuweOuder = ref(false);
+
+// --- Eigen mijlpalen: toekennen en intrekken ---
+const kenMijlpaalToe = (key: string) => router.post('/players/' + props.player.id + '/mijlpalen/' + key, {}, { preserveScroll: true });
+const trekMijlpaalIn = (key: string, label: string) => {
+    if (confirm('Mijlpaal "' + label + '" intrekken?')) {
+        router.delete('/players/' + props.player.id + '/mijlpalen/' + key, { preserveScroll: true });
+    }
+};
 
 // --- Doelen ---
 const toonDoelFormulier = ref(false);
@@ -333,6 +351,58 @@ const verwijderen = () => {
                 <p v-else-if="!toonDoelFormulier" class="mt-3 text-sm text-muted-foreground">
                     Nog geen doel. Een concreet doel maakt een rapport pas echt spannend.
                 </p>
+            </div>
+
+            <!-- Eigen mijlpalen: wat de school zelf viert, en wat een trainer
+                 met de hand toekent. De standaardmijlpalen staan op de kaart. -->
+            <div v-if="customBadges.length" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+                <p class="font-medium">Mijlpalen van de school</p>
+                <p class="mt-1 text-xs text-muted-foreground">Toegekend door een trainer; ze komen op de kaart en in de tijdlijn.</p>
+
+                <ul class="mt-4 space-y-2">
+                    <li
+                        v-for="badge in customBadges"
+                        :key="badge.key"
+                        class="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-center"
+                        :class="badge.earned ? 'border-gold/50 bg-gold/5' : 'border-border'"
+                    >
+                        <div class="min-w-0 flex-1">
+                            <p class="flex flex-wrap items-center gap-2 text-sm font-medium">
+                                {{ badge.label }}
+                                <span
+                                    v-if="badge.earned"
+                                    class="rounded-full bg-gold/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold"
+                                >
+                                    behaald
+                                </span>
+                            </p>
+                            <p v-if="badge.description" class="text-xs text-muted-foreground">{{ badge.description }}</p>
+                            <p v-if="badge.earned" class="mt-0.5 text-xs text-muted-foreground">
+                                Op {{ badge.awarded_on }}<template v-if="badge.awarded_by"> door {{ badge.awarded_by }}</template>
+                            </p>
+                        </div>
+
+                        <div v-if="can.badges" class="flex shrink-0 gap-2">
+                            <button
+                                v-if="!badge.earned"
+                                type="button"
+                                class="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                                @click="kenMijlpaalToe(badge.key)"
+                            >
+                                <Award class="size-4" />
+                                Toekennen
+                            </button>
+                            <button
+                                v-else
+                                type="button"
+                                class="inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-sm font-medium text-muted-foreground transition hover:border-destructive hover:text-destructive"
+                                @click="trekMijlpaalIn(badge.key, badge.label)"
+                            >
+                                Intrekken
+                            </button>
+                        </div>
+                    </li>
+                </ul>
             </div>
 
             <!-- Ouders -->

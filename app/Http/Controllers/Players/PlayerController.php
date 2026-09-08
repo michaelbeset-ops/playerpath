@@ -17,6 +17,7 @@ use App\Models\User;
 use App\Support\Features\Features;
 use App\Support\Goals\GoalProgress;
 use App\Support\Money\Money;
+use App\Support\PlayerCard\BadgeSettings;
 use App\Support\PlayerCard\CalculatePlayerCard;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -159,6 +160,10 @@ class PlayerController extends Controller
                     ])
                 : [],
             'goals' => $this->goals->forPlayer($player),
+            // De eigen mijlpalen van de school, met of ze aan deze speler zijn
+            // toegekend. De standaardmijlpalen staan op de kaart; die kent
+            // niemand met de hand toe.
+            'customBadges' => $this->eigenMijlpalen($player),
             // De zes categorieën van zijn positie, plus een eigen doel dat je
             // zelf intypt. Dat laatste heeft geen cijfer om aan af te meten en
             // vink je met de hand af; zie Goal::CUSTOM.
@@ -178,8 +183,35 @@ class PlayerController extends Controller
                 'report' => $request->user()->can('createReport', $player),
                 'goals' => $request->user()->can('createFor', [Goal::class, $player]),
                 'dataExport' => $request->user()->isEigenaar(),
+                'badges' => $request->user()->can('createReport', $player),
             ],
         ]);
+    }
+
+    /**
+     * @return list<array{key: string, label: string, description: string, earned: bool, awarded_on: ?string, awarded_by: ?string, note: ?string}>
+     */
+    protected function eigenMijlpalen(Player $player): array
+    {
+        $eigen = BadgeSettings::for($player->school)->customBadges();
+
+        if ($eigen === []) {
+            return [];
+        }
+
+        $toegekend = $player->awardedBadges()->with('awardedBy')->get()->keyBy('badge_key');
+
+        return array_map(function (array $badge) use ($toegekend) {
+            $toekenning = $toegekend->get($badge['key']);
+
+            return [
+                ...$badge,
+                'earned' => $toekenning !== null,
+                'awarded_on' => $toekenning?->awarded_on->format('d-m-Y'),
+                'awarded_by' => $toekenning?->awardedBy?->name,
+                'note' => $toekenning?->note,
+            ];
+        }, $eigen);
     }
 
     public function edit(Player $player): Response

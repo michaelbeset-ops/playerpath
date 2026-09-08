@@ -96,11 +96,26 @@ class PlayerBadges
             'aanwezig_tien' => $aanwezig >= 10,
         ];
 
-        $geldig = BadgeSettings::for($player->school)->keysFor($player->age_category);
+        $instellingen = BadgeSettings::for($player->school);
+        $geldig = $instellingen->keysFor($player->age_category);
 
-        return array_values(array_map(
+        $lijst = array_values(array_map(
             fn (array $badge) => [...$badge, 'earned' => $behaald[$badge['key']]],
             array_filter(self::catalogue(), fn (array $badge) => in_array($badge['key'], $geldig, true)),
         ));
+
+        // De eigen mijlpalen van de school erachter. Die worden niet afgeleid
+        // maar toegekend; "behaald" is dus: er ligt een toekenning.
+        $eigen = $instellingen->customBadges();
+
+        if ($eigen !== []) {
+            $toegekend = $player->awardedBadges()->pluck('badge_key')->all();
+
+            foreach ($eigen as $badge) {
+                $lijst[] = [...$badge, 'earned' => in_array($badge['key'], $toegekend, true)];
+            }
+        }
+
+        return $lijst;
     }
 }

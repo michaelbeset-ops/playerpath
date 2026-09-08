@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppTabbar from '@/components/AppTabbar.vue';
 import AppTopbar from '@/components/AppTopbar.vue';
+import FlashToast from '@/components/FlashToast.vue';
 import AppTour from '@/components/onboarding/AppTour.vue';
 import DemoBanner from '@/components/onboarding/DemoBanner.vue';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
@@ -118,6 +119,9 @@ const toonDemo = computed(() => page.props.onboarding?.demo === true);
 
         <!-- De rondleiding. Staat in de schil omdat hij naar de balk wijst. -->
         <AppTour />
+
+        <!-- De bevestiging na een opslag, op elke pagina, waar je kijkt. -->
+        <FlashToast />
 
         <!-- Het menu onderin, alleen als de app als app draait. -->
         <AppTabbar />
