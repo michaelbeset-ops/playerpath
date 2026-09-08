@@ -7,6 +7,8 @@ use App\Enums\PaymentStatus;
 use App\Models\Payment;
 use App\Models\Player;
 use App\Models\Report;
+use App\Models\Training;
+use App\Models\TrainingEnrollment;
 use App\Models\User;
 use App\Support\Availability\TrainerAvailability;
 use App\Support\Features\Features;
@@ -85,7 +87,47 @@ class AttentionItems
             $items = [...$items, ...$this->planning()];
         }
 
+        // Aanvragen voor trainingen die om goedkeuring vragen: de eigenaar
+        // ziet ze allemaal, een trainer die van zijn eigen trainingen.
+        $items = [...$items, ...$this->aanvragen($user)];
+
         return $items;
+    }
+
+    /**
+     * Losse aanmeldingen die op een ja of nee wachten.
+     *
+     * @return list<array<string, mixed>>
+     */
+    protected function aanvragen(User $user): array
+    {
+        $query = TrainingEnrollment::query()
+            ->requested()
+            ->whereHas('training', fn ($q) => $q->where('starts_at', '>=', now())
+                ->when(! $user->isEigenaar(), fn ($t) => $t->forTrainer($user)))
+            ->with(['training', 'player'])
+            ->orderBy('created_at');
+
+        $aantal = $query->count();
+
+        if ($aantal === 0) {
+            return [];
+        }
+
+        $eerste = $query->first();
+        $training = $eerste->training;
+
+        return [[
+            'key' => 'training_requests',
+            'tone' => 'warning',
+            'icon' => 'trainings',
+            'title' => $aantal === 1
+                ? "{$eerste->player?->first_name} wil meedoen aan {$training->label()}"
+                : "{$aantal} aanvragen voor trainingen wachten op je antwoord",
+            'body' => ucfirst($training->starts_at->translatedFormat('l j F')).', '.$training->starts_at->format('H:i').' · goedkeuren of afwijzen.',
+            'href' => '/trainings/'.$training->id,
+            'action' => 'Bekijk de aanvraag',
+        ]];
     }
 
     /**

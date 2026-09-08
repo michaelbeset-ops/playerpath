@@ -152,6 +152,15 @@ class ProductController extends Controller
             return;
         }
 
+        // Het ritme bewaren, zodat de nachtelijke loop het rooster kan
+        // doortrekken en het formulier het terug kan tonen.
+        $product->forceFill(['schedule' => [
+            'weekdays' => array_values(array_map('intval', $extra['weekdays'])),
+            'dates' => array_values($extra['dates']),
+            'starts_at' => $extra['starts_at'],
+            'ends_at' => $extra['ends_at'],
+        ]])->save();
+
         $product->refresh()->load('trainers');
 
         $this->rooster->handle(
@@ -451,6 +460,11 @@ class ProductController extends Controller
                 'trainers' => $product->trainers->pluck('id')->all(),
                 'group_id' => $product->group?->id,
                 'trainings_count' => $product->group?->trainings()->count() ?? 0,
+                // Het bewaarde ritme, zodat het formulier de dagen voorvult.
+                'weekdays' => $product->schedule['weekdays'] ?? [],
+                'dates' => $product->schedule['dates'] ?? [],
+                'time_from' => $product->schedule['starts_at'] ?? '18:00',
+                'time_to' => $product->schedule['ends_at'] ?? '19:30',
             ] : null,
             'types' => $this->typen(),
             'intervals' => BillingInterval::options(),

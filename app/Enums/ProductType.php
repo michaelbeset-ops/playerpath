@@ -93,7 +93,10 @@ enum ProductType: string
      */
     public function hasSchedule(): bool
     {
-        return $this->hasPeriod();
+        // Doorlopende training heeft geen einddatum maar wél een vast ritme:
+        // elke woensdag O11 om 18:00. Daar hangt een groep met trainingen aan,
+        // zodat een abonnement een kind vanzelf op al die trainingen zet.
+        return $this->hasPeriod() || $this === self::Doorlopend;
     }
 
     /** Kun je hier plekken voor tellen? */

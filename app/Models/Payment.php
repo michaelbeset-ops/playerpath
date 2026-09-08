@@ -23,6 +23,7 @@ class Payment extends Model
         'subscription_id',
         'purchase_id',
         'order_id',
+        'training_enrollment_id',
         'parent_id',
         'amount_cents',
         'vat_rate',
@@ -124,6 +125,24 @@ class Payment extends Model
 
     public function isOverdue(): bool
     {
-        return $this->status === PaymentStatus::Open && $this->due_on->lt(today());
+        return $this->status === PaymentStatus::Open && $this->due_on->lt(today()) && ! $this->isCashAtTraining();
+    }
+
+    /** De losse trainingsaanmelding waar deze rekening bij hoort, als die er is. */
+    public function trainingEnrollment(): BelongsTo
+    {
+        return $this->belongsTo(TrainingEnrollment::class);
+    }
+
+    /**
+     * Contant af te rekenen bij de training.
+     *
+     * Dat is geen achterstand en geen reden voor een aanmaning: de afspraak
+     * is dat het geld bij de training wordt gegeven, en de trainer vinkt dat
+     * daar af. Het staat bij de school als "nog te ontvangen".
+     */
+    public function isCashAtTraining(): bool
+    {
+        return $this->training_enrollment_id !== null && $this->method === PaymentMethod::Cash;
     }
 }

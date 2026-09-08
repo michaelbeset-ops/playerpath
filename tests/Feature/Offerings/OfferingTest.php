@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Offerings;
 
+use App\Actions\Offerings\ScheduleOffering;
 use App\Enums\BillingType;
 use App\Enums\ParticipationStatus;
 use App\Enums\ProductType;
@@ -123,6 +124,46 @@ class OfferingTest extends TestCase
         $this->assertSame('2026-11-09 19:30', $trainingen->last()->ends_at->format('Y-m-d H:i'));
         $this->assertSame('Sportpark De Vliert', $trainingen->first()->location);
         $this->assertTrue($trainingen->first()->trainers->contains('id', $trainer->id));
+    }
+
+    /**
+     * Doorlopende training heeft geen einddatum maar wél een vast ritme. Het
+     * rooster wordt twaalf weken vooruit gelegd en de nachtelijke loop legt
+     * er telkens bij, zodat een abonnement vanzelf op nieuwe trainingen staat.
+     */
+    public function test_doorlopend_aanbod_rolt_twaalf_weken_vooruit(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-21')); // maandag
+
+        $this->actingAs($this->eigenaar)->post('/aanbod', $this->blokGegevens([
+            'name' => 'Woensdag O11',
+            'type' => ProductType::Doorlopend->value,
+            'billing_type' => 'maandelijks',
+            'interval' => 'monthly',
+            'amount' => '35,00',
+            'starts_on' => null,
+            'ends_on' => null,
+            'weekdays' => [3], // woensdag
+            'starts_at' => '18:00',
+            'ends_at' => '19:00',
+        ]))->assertRedirect('/aanbod');
+
+        $aanbod = Product::firstWhere('name', 'Woensdag O11');
+        $this->assertSame([3], $aanbod->schedule['weekdays']);
+
+        $groep = Group::firstWhere('product_id', $aanbod->id);
+        $this->assertNotNull($groep);
+
+        $trainingen = Training::where('group_id', $groep->id)->orderBy('starts_at')->get();
+        $this->assertCount(12, $trainingen);
+        $this->assertSame('2026-09-23 18:00', $trainingen->first()->starts_at->format('Y-m-d H:i'));
+
+        // Een week later legt de loop er één bij; wat er stond blijft staan.
+        $this->travelTo(CarbonImmutable::parse('2026-09-28'));
+        $nieuw = app(ScheduleOffering::class)->refresh($aanbod->refresh());
+
+        $this->assertSame(1, $nieuw);
+        $this->assertSame(13, Training::where('group_id', $groep->id)->count());
     }
 
     public function test_een_kamp_krijgt_de_dagen_die_je_invult(): void

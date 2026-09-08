@@ -3,10 +3,13 @@
 namespace App\Console\Commands;
 
 use App\Actions\Enrollments\InviteFromWaitlist;
+use App\Actions\Offerings\ScheduleOffering;
 use App\Enums\EnrollmentStatus;
 use App\Enums\Feature;
+use App\Enums\ProductType;
 use App\Enums\SubscriptionStatus;
 use App\Models\Enrollment;
+use App\Models\Product;
 use App\Models\School;
 use App\Models\Subscription;
 use App\Notifications\VerlengUitnodiging;
@@ -63,6 +66,18 @@ class RunEnrollmentLifecycle extends Command
 
                     if ($verlopen > 0) {
                         $this->line("  {$verlopen} verlopen uitnodiging(en) afgehandeld");
+                    }
+                }
+
+                // 0b. Doorlopende training: het rooster een stuk verder leggen,
+                //     zodat abonnementhouders de nieuwe trainingen vanzelf zien.
+                if (! $droog) {
+                    foreach (Product::query()->active()->where('type', ProductType::Doorlopend->value)->whereNotNull('schedule')->get() as $aanbod) {
+                        $nieuw = app(ScheduleOffering::class)->refresh($aanbod);
+
+                        if ($nieuw > 0) {
+                            $this->line("  {$aanbod->name}: {$nieuw} training(en) bijgelegd");
+                        }
                     }
                 }
 

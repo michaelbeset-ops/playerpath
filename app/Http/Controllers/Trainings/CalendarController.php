@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Trainings;
 use App\Http\Controllers\Controller;
 use App\Models\Group;
 use App\Models\Location;
+use App\Models\Player;
 use App\Models\Training;
 use App\Models\User;
 use App\Support\Trainings\VisibleTrainings;
@@ -112,7 +113,41 @@ class CalendarController extends Controller
                 // zetten, dan staat er "jij" bij elke training waar niemand aan
                 // gekoppeld is, en dan zegt het merkteken niets meer.
                 'is_mine' => $canChooseScope && $training->trainers->contains('id', $user->id),
+                'enrollable' => false,
             ]);
+
+        // Voor een ouder: ook de open trainingen waar een van zijn kinderen op
+        // past, herkenbaar als "inschrijven". Aantikken opent de inschrijving.
+        if (! $canChooseScope && $user->isOuder()) {
+            $kinderen = Player::whereIn('id', $user->visiblePlayerIds())->get();
+
+            $open = Training::query()
+                ->with(['group', 'trainers'])
+                ->where('open_enrollment', true)
+                ->whereNull('cancelled_at')
+                ->whereBetween('starts_at', [max($van, CarbonImmutable::now()), $tot])
+                ->whereNotIn('id', $trainingen->pluck('id'))
+                ->orderBy('starts_at')
+                ->get()
+                ->filter(fn (Training $t) => $kinderen->contains(fn (Player $k) => $t->acceptsPlayer($k)))
+                ->map(fn (Training $training) => [
+                    'id' => $training->id,
+                    'date' => $training->starts_at->format('Y-m-d'),
+                    'starts_at' => $training->starts_at->format('H:i'),
+                    'ends_at' => $training->ends_at->format('H:i'),
+                    'group' => $training->label(),
+                    'location' => $training->location,
+                    'trainers' => $training->trainers->pluck('name')->all(),
+                    'has_passed' => false,
+                    'cancelled' => false,
+                    'is_mine' => false,
+                    'enrollable' => true,
+                    'price' => $training->price_cents > 0 ? $training->formattedPrice() : null,
+                    'is_full' => $training->isFull(),
+                ]);
+
+            $trainingen = $trainingen->concat($open)->sortBy(fn (array $t) => $t['date'].' '.$t['starts_at'])->values();
+        }
 
         return Inertia::render('calendar/Index', [
             'view' => $view,

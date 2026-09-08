@@ -94,6 +94,9 @@ class SendPaymentReminders extends Command
                 }
                 $betalingen = Payment::query()
                     ->outstanding()
+                    // Contant bij de training: dat rekent de ouder ter plaatse
+                    // af, daar hoort geen aanmaning bij.
+                    ->whereNot(fn ($q) => $q->whereNotNull('training_enrollment_id')->where('method', 'cash'))
                     ->whereDate('due_on', '<=', $grens)
                     ->where(fn ($q) => $q->whereNull('reminded_at')->orWhere('reminded_at', '<=', now()->subWeeks(2)))
                     ->with('player.guardians')

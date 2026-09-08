@@ -6,6 +6,8 @@ use App\Http\Controllers\Trainings\CancellationController;
 use App\Http\Controllers\Trainings\MyTrainingsController;
 use App\Http\Controllers\Trainings\RegistrationController;
 use App\Http\Controllers\Trainings\TrainingController;
+use App\Http\Controllers\Trainings\TrainingEnrollmentController;
+use App\Http\Controllers\Trainings\TrainingRequestController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -22,6 +24,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('trainings/{training}/registration/{player}', [RegistrationController::class, 'store'])
         ->name('registration.store');
+
+    // Los inschrijven op een training (ouder), en wat de school daarmee doet.
+    Route::get('trainings/{training}/inschrijven', [TrainingEnrollmentController::class, 'show'])->name('trainings.enroll.show');
+    Route::post('trainings/{training}/inschrijven', [TrainingEnrollmentController::class, 'store'])->name('trainings.enroll.store');
+    Route::delete('trainings/{training}/inschrijven/{player}', [TrainingEnrollmentController::class, 'destroy'])->name('trainings.enroll.destroy');
+    Route::post('trainings/{training}/aanmeldingen/{enrollment}/goedkeuren', [TrainingRequestController::class, 'approve'])->name('trainings.requests.approve');
+    Route::post('trainings/{training}/aanmeldingen/{enrollment}/afwijzen', [TrainingRequestController::class, 'decline'])->name('trainings.requests.decline');
+    Route::delete('trainings/{training}/aanmeldingen/{enrollment}', [TrainingRequestController::class, 'remove'])->name('trainings.requests.remove');
+    Route::post('trainings/{training}/aanmeldingen/{enrollment}/contant', [TrainingRequestController::class, 'cash'])->name('trainings.requests.cash');
 
     // Fase 10: afzeggen stuurt meteen bericht aan de groep.
     Route::post('trainings/{training}/afzeggen', [CancellationController::class, 'store'])->name('trainings.cancel');

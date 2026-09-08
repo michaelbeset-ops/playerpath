@@ -2,7 +2,11 @@
 
 namespace App\Models;
 
+use App\Enums\ProductAudience;
+use App\Enums\TrainingEnrollmentStatus;
 use App\Models\Concerns\BelongsToSchool;
+use App\Support\Money\Money;
+use App\Support\Rating\AgeCategory;
 use Database\Factories\TrainingFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -25,6 +29,15 @@ class Training extends Model
         'location',
         'location_id',
         'note',
+        // Los inschrijven: wie mag meedoen, hoeveel, wat kost het, hoe betaal
+        // je, en keurt de school eerst goed. Zie EnrollInTraining.
+        'open_enrollment',
+        'age_categories',
+        'audience',
+        'capacity',
+        'price_cents',
+        'payment_methods',
+        'requires_approval',
     ];
 
     /**
@@ -51,7 +64,118 @@ class Training extends Model
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
             'cancelled_at' => 'datetime',
+            'open_enrollment' => 'boolean',
+            'age_categories' => 'array',
+            'audience' => ProductAudience::class,
+            'capacity' => 'integer',
+            'price_cents' => 'integer',
+            'payment_methods' => 'array',
+            'requires_approval' => 'boolean',
         ];
+    }
+
+    /** De losse aanmeldingen op deze training; zie TrainingEnrollment. */
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(TrainingEnrollment::class);
+    }
+
+    // ------------------------------------------------------------------
+    // Los inschrijven: de regels staan op de training zelf
+    // ------------------------------------------------------------------
+
+    /** Staat hij open voor losse aanmeldingen, en is hij nog niet geweest? */
+    public function isOpenForEnrollment(): bool
+    {
+        return $this->open_enrollment && ! $this->isCancelled() && ! $this->hasPassed();
+    }
+
+    /**
+     * Mag dit kind meedoen? Leeftijdscategorie én positie, allebei.
+     *
+     * Dit is de echte grens; het scherm verbergt alleen wat toch niet kan.
+     * Een leeg lijstje categorieën betekent iedereen.
+     */
+    public function acceptsPlayer(Player $player): bool
+    {
+        return $this->fitsAge($player) && $this->fitsPosition($player);
+    }
+
+    public function fitsAge(Player $player): bool
+    {
+        $categorieen = $this->age_categories ?? [];
+
+        if ($categorieen === []) {
+            return true;
+        }
+
+        $categorie = $player->age_category
+            ?? ($player->date_of_birth ? AgeCategory::forBirthDate($player->date_of_birth) : null);
+
+        return $categorie !== null && in_array($categorie, $categorieen, true);
+    }
+
+    public function fitsPosition(Player $player): bool
+    {
+        return ($this->audience ?? ProductAudience::All)->fits($player->position);
+    }
+
+    /** Waarom een kind niet mag: één zin, voor op het scherm. */
+    public function rejectionReason(Player $player): ?string
+    {
+        if (! $this->fitsAge($player)) {
+            return 'valt buiten de leeftijd ('.$this->ageLabel().')';
+        }
+
+        if (! $this->fitsPosition($player)) {
+            return strtolower($this->audience->label());
+        }
+
+        return null;
+    }
+
+    /** "Onder 10, Onder 12" of "alle leeftijden". */
+    public function ageLabel(): string
+    {
+        $categorieen = $this->age_categories ?? [];
+
+        return $categorieen === []
+            ? 'alle leeftijden'
+            : implode(', ', array_map(fn (string $c) => AgeCategory::describe($c), $categorieen));
+    }
+
+    /** Welke betaalwijzen de school bij deze training toestaat. */
+    public function allowsPayment(string $method): bool
+    {
+        return in_array($method, $this->payment_methods ?? ['online', 'cash'], true);
+    }
+
+    public function formattedPrice(): string
+    {
+        return Money::format($this->price_cents);
+    }
+
+    /**
+     * Bezette plekken: de groep plus de bevestigde losse aanmeldingen.
+     *
+     * Geteld, niet opgeslagen — een opgeslagen "vol" blijft staan als iemand
+     * zich afmeldt. Zonder capaciteit is er geen grens.
+     */
+    public function spotsTaken(): int
+    {
+        $groep = $this->group_id === null ? 0 : $this->group->players()->active()->count();
+
+        return $groep + $this->enrollments()->where('status', TrainingEnrollmentStatus::Confirmed->value)->count();
+    }
+
+    public function isFull(): bool
+    {
+        return $this->capacity !== null && $this->spotsTaken() >= $this->capacity;
+    }
+
+    public function spotsLeft(): ?int
+    {
+        return $this->capacity === null ? null : max(0, $this->capacity - $this->spotsTaken());
     }
 
     public function isCancelled(): bool
@@ -105,13 +229,27 @@ class Training extends Model
      */
     public function expectedPlayers(): Collection
     {
+        // Wie los is ingeschreven hoort er net zo goed bij als de groep.
+        $los = Player::query()
+            ->whereIn('id', $this->enrollments()->where('status', TrainingEnrollmentStatus::Confirmed->value)->pluck('player_id'))
+            ->active()
+            ->get();
+
         if ($this->group === null) {
             $speler = $this->slot?->player;
 
-            return $speler === null ? new Collection : new Collection([$speler]);
+            $basis = $speler === null ? new Collection : new Collection([$speler]);
+        } else {
+            $basis = $this->group->players()->active()->get();
         }
 
-        return $this->group->players()->active()->orderBy('first_name')->get();
+        return $basis->merge($los)->unique('id')->sortBy('first_name')->values();
+    }
+
+    /** Is dit kind hier als losse aanmelding, en niet via de groep? */
+    public function isLooseParticipant(int $playerId): bool
+    {
+        return $this->enrollments->contains(fn ($e) => $e->player_id === $playerId && $e->status === TrainingEnrollmentStatus::Confirmed);
     }
 
     /** Waar deze training over gaat, in het rooster. */

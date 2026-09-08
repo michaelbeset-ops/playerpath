@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import FlashMessage from '@/components/FlashMessage.vue';
 import DemoBadge from '@/components/onboarding/DemoBadge.vue';
+import FamilyTrainingList, { type GezinsTraining } from '@/components/trainings/FamilyTrainingList.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
@@ -28,6 +29,9 @@ interface TrainingRij {
     present_count: number;
     expected_count: number;
     my_registration: string | null;
+    open?: boolean;
+    spots_left?: number | null;
+    requests_count?: number;
 }
 
 const props = defineProps<{
@@ -36,6 +40,11 @@ const props = defineProps<{
     canManage: boolean;
     canRecord: boolean;
     isParticipant: boolean;
+    /** Ouder: mag inschrijven. Een speler met eigen inlog kijkt alleen. */
+    canEnroll?: boolean;
+    /** Alleen voor een gezin: de kinderen en wat er nog open staat. */
+    children?: { id: number; first_name: string }[];
+    enrollable?: GezinsTraining[];
     filters: { group: number | null; trainer: number | null };
     groups: { id: number; name: string }[];
     trainers: { id: number; name: string }[];
@@ -136,7 +145,7 @@ const toonKlasse = (toon: 'goed' | 'aandacht' | 'rustig') =>
                 <div class="min-w-0">
                     <h1 class="text-2xl font-semibold tracking-tight">Trainingen</h1>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        {{ isParticipant ? 'De trainingen van jouw groep.' : 'Het rooster van je school.' }}
+                        {{ isParticipant ? 'Waar je kind bij is, waar het nog bij kan, en hoe het ging.' : 'Het rooster van je school.' }}
                     </p>
                 </div>
 
@@ -150,150 +159,176 @@ const toonKlasse = (toon: 'goed' | 'aandacht' | 'rustig') =>
                 </Link>
             </div>
 
-            <!-- Komend / geweest -->
-            <div class="mt-6 inline-flex rounded-lg border border-border bg-card p-1 shadow-sm">
-                <button
-                    type="button"
-                    class="min-h-11 rounded-md px-4 text-sm font-medium transition"
-                    :class="tab === 'upcoming' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
-                    @click="tab = 'upcoming'"
-                >
-                    Komend ({{ upcoming.length }})
-                </button>
-                <button
-                    type="button"
-                    class="min-h-11 rounded-md px-4 text-sm font-medium transition"
-                    :class="tab === 'past' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
-                    @click="tab = 'past'"
-                >
-                    Geweest ({{ past.length }})
-                </button>
-            </div>
+            <!-- Ouder en speler: drie stapels per kind. Zie FamilyTrainingList. -->
+            <FamilyTrainingList
+                v-if="isParticipant"
+                :children="children ?? []"
+                :upcoming="upcoming as unknown as GezinsTraining[]"
+                :enrollable="enrollable ?? []"
+                :past="past as unknown as GezinsTraining[]"
+                :can-enroll="canEnroll ?? false"
+            />
 
-            <!-- Filteren op groep en trainer -->
-            <div v-if="groups.length || trainers.length" class="mt-3 flex flex-wrap items-center gap-2">
-                <label class="sr-only" for="filter-groep">Groep</label>
-                <select id="filter-groep" v-model="groep" :class="selectKlassen" @change="filter">
-                    <option value="">Alle groepen</option>
-                    <option v-for="g in groups" :key="g.id" :value="String(g.id)">{{ g.name }}</option>
-                </select>
+            <template v-else>
+                <!-- Komend / geweest -->
+                <div class="mt-6 inline-flex rounded-lg border border-border bg-card p-1 shadow-sm">
+                    <button
+                        type="button"
+                        class="min-h-11 rounded-md px-4 text-sm font-medium transition"
+                        :class="tab === 'upcoming' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
+                        @click="tab = 'upcoming'"
+                    >
+                        Komend ({{ upcoming.length }})
+                    </button>
+                    <button
+                        type="button"
+                        class="min-h-11 rounded-md px-4 text-sm font-medium transition"
+                        :class="tab === 'past' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
+                        @click="tab = 'past'"
+                    >
+                        Geweest ({{ past.length }})
+                    </button>
+                </div>
 
-                <label class="sr-only" for="filter-trainer">Trainer</label>
-                <select id="filter-trainer" v-model="trainer" :class="selectKlassen" @change="filter">
-                    <option value="">Alle trainers</option>
-                    <option v-for="t in trainers" :key="t.id" :value="String(t.id)">{{ t.name }}</option>
-                </select>
+                <!-- Filteren op groep en trainer -->
+                <div v-if="groups.length || trainers.length" class="mt-3 flex flex-wrap items-center gap-2">
+                    <label class="sr-only" for="filter-groep">Groep</label>
+                    <select id="filter-groep" v-model="groep" :class="selectKlassen" @change="filter">
+                        <option value="">Alle groepen</option>
+                        <option v-for="g in groups" :key="g.id" :value="String(g.id)">{{ g.name }}</option>
+                    </select>
 
-                <button
-                    v-if="gefilterd"
-                    type="button"
-                    class="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
-                    @click="wisFilters"
-                >
-                    <X class="size-4" />
-                    Wis filter
-                </button>
-            </div>
+                    <label class="sr-only" for="filter-trainer">Trainer</label>
+                    <select id="filter-trainer" v-model="trainer" :class="selectKlassen" @change="filter">
+                        <option value="">Alle trainers</option>
+                        <option v-for="t in trainers" :key="t.id" :value="String(t.id)">{{ t.name }}</option>
+                    </select>
 
-            <!-- Het rooster, per dag -->
-            <div v-if="dagen.length" class="mt-5 space-y-5">
-                <section v-for="dag in dagen" :key="dag.day">
-                    <div class="flex items-center gap-2">
-                        <h2 class="text-sm font-semibold first-letter:uppercase" :class="dag.isToday ? 'text-primary' : ''">
-                            {{ dag.label }}
-                        </h2>
-                        <span v-if="dag.isToday" class="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">
-                            vandaag
-                        </span>
-                    </div>
+                    <button
+                        v-if="gefilterd"
+                        type="button"
+                        class="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+                        @click="wisFilters"
+                    >
+                        <X class="size-4" />
+                        Wis filter
+                    </button>
+                </div>
 
-                    <div class="mt-2 space-y-2">
-                        <article
-                            v-for="training in dag.items"
-                            :key="training.id"
-                            class="rounded-xl border bg-card p-3 shadow-sm"
-                            :class="training.is_mine && !training.cancelled ? 'border-primary/40' : 'border-border'"
-                        >
-                            <div class="flex min-w-0 gap-3">
-                                <span
-                                    class="tabular w-12 shrink-0 text-sm font-semibold"
-                                    :class="training.cancelled ? 'text-muted-foreground' : 'text-primary'"
-                                >
-                                    {{ training.starts_at }}
-                                    <span class="block text-xs font-normal text-muted-foreground">{{ training.ends_at }}</span>
-                                </span>
+                <!-- Het rooster, per dag -->
+                <div v-if="dagen.length" class="mt-5 space-y-5">
+                    <section v-for="dag in dagen" :key="dag.day">
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-sm font-semibold first-letter:uppercase" :class="dag.isToday ? 'text-primary' : ''">
+                                {{ dag.label }}
+                            </h2>
+                            <span v-if="dag.isToday" class="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                                vandaag
+                            </span>
+                        </div>
 
-                                <div class="min-w-0 flex-1">
-                                    <div class="flex flex-wrap items-center gap-2">
-                                        <Link
-                                            :href="'/trainings/' + training.id"
-                                            class="inline-flex min-h-11 items-center font-medium hover:text-primary"
-                                            :class="training.cancelled ? 'line-through' : ''"
-                                        >
-                                            {{ training.group }}
-                                        </Link>
-                                        <DemoBadge v-if="training.is_demo" />
-                                        <span
-                                            v-if="training.is_mine"
-                                            class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary"
-                                        >
-                                            jij
-                                        </span>
-                                        <span
-                                            v-if="training.cancelled"
-                                            class="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
-                                        >
-                                            afgezegd
-                                        </span>
-                                    </div>
+                        <div class="mt-2 space-y-2">
+                            <article
+                                v-for="training in dag.items"
+                                :key="training.id"
+                                class="rounded-xl border bg-card p-3 shadow-sm"
+                                :class="training.is_mine && !training.cancelled ? 'border-primary/40' : 'border-border'"
+                            >
+                                <div class="flex min-w-0 gap-3">
+                                    <span
+                                        class="tabular w-12 shrink-0 text-sm font-semibold"
+                                        :class="training.cancelled ? 'text-muted-foreground' : 'text-primary'"
+                                    >
+                                        {{ training.starts_at }}
+                                        <span class="block text-xs font-normal text-muted-foreground">{{ training.ends_at }}</span>
+                                    </span>
 
-                                    <p class="mt-1 flex items-start gap-1.5 text-xs text-muted-foreground">
-                                        <MapPin class="mt-0.5 size-3.5 shrink-0" />
-                                        <span>{{ training.location || 'Geen locatie ingevuld' }}</span>
-                                    </p>
-                                    <p class="mt-0.5 flex items-start gap-1.5 text-xs text-muted-foreground">
-                                        <UserCog class="mt-0.5 size-3.5 shrink-0" />
-                                        <span>{{ training.trainers.join(', ') || 'Geen trainer gekoppeld' }}</span>
-                                    </p>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <Link
+                                                :href="'/trainings/' + training.id"
+                                                class="inline-flex min-h-11 items-center font-medium hover:text-primary"
+                                                :class="training.cancelled ? 'line-through' : ''"
+                                            >
+                                                {{ training.group }}
+                                            </Link>
+                                            <DemoBadge v-if="training.is_demo" />
+                                            <span
+                                                v-if="training.is_mine"
+                                                class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary"
+                                            >
+                                                jij
+                                            </span>
+                                            <span
+                                                v-if="training.cancelled"
+                                                class="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                                            >
+                                                afgezegd
+                                            </span>
+                                            <span
+                                                v-if="training.open && !training.has_passed"
+                                                class="tabular rounded-full bg-gold/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold"
+                                            >
+                                                inschrijven<template v-if="training.spots_left !== null && training.spots_left !== undefined">
+                                                    · {{ training.spots_left }} vrij</template
+                                                >
+                                            </span>
+                                            <span
+                                                v-if="training.requests_count"
+                                                class="tabular rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-warning"
+                                            >
+                                                {{ training.requests_count }} {{ training.requests_count === 1 ? 'aanvraag' : 'aanvragen' }}
+                                            </span>
+                                        </div>
 
-                                    <!-- Stand en acties op één regel: dit is een lijst waar je
+                                        <p class="mt-1 flex items-start gap-1.5 text-xs text-muted-foreground">
+                                            <MapPin class="mt-0.5 size-3.5 shrink-0" />
+                                            <span>{{ training.location || 'Geen locatie ingevuld' }}</span>
+                                        </p>
+                                        <p class="mt-0.5 flex items-start gap-1.5 text-xs text-muted-foreground">
+                                            <UserCog class="mt-0.5 size-3.5 shrink-0" />
+                                            <span>{{ training.trainers.join(', ') || 'Geen trainer gekoppeld' }}</span>
+                                        </p>
+
+                                        <!-- Stand en acties op één regel: dit is een lijst waar je
                                          doorheen scrolt, dus elke extra regel telt. -->
-                                    <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-                                        <!-- Voor een trainer: hoe staat het met de aanwezigheid? -->
-                                        <span
-                                            v-if="!isParticipant"
-                                            class="inline-flex items-center rounded-lg px-2 py-1 text-xs font-medium"
-                                            :class="toonKlasse(aanwezigheid(training).toon)"
-                                        >
-                                            {{ aanwezigheid(training).tekst }}
-                                        </span>
+                                        <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                                            <!-- Voor een trainer: hoe staat het met de aanwezigheid? -->
+                                            <span
+                                                v-if="!isParticipant"
+                                                class="inline-flex items-center rounded-lg px-2 py-1 text-xs font-medium"
+                                                :class="toonKlasse(aanwezigheid(training).toon)"
+                                            >
+                                                {{ aanwezigheid(training).tekst }}
+                                            </span>
 
-                                        <Link
-                                            :href="'/trainings/' + training.id"
-                                            class="ml-auto inline-flex min-h-11 items-center gap-0.5 px-1 text-xs font-medium text-muted-foreground transition hover:text-foreground"
-                                        >
-                                            Details
-                                            <ChevronRight class="size-3.5" />
-                                        </Link>
+                                            <Link
+                                                :href="'/trainings/' + training.id"
+                                                class="ml-auto inline-flex min-h-11 items-center gap-0.5 px-1 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+                                            >
+                                                Details
+                                                <ChevronRight class="size-3.5" />
+                                            </Link>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </article>
-                    </div>
-                </section>
-            </div>
+                            </article>
+                        </div>
+                    </section>
+                </div>
 
-            <div v-else class="mt-5 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
-                <p class="font-medium">
-                    <template v-if="gefilterd">Geen trainingen met dit filter</template>
-                    <template v-else>{{ tab === 'upcoming' ? 'Geen komende trainingen' : 'Nog geen trainingen geweest' }}</template>
-                </p>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    <template v-if="gefilterd">Kies een andere groep of trainer, of wis het filter.</template>
-                    <template v-else-if="tab === 'upcoming' && canManage">Plan er een in om te beginnen.</template>
-                    <template v-else-if="tab === 'upcoming'">Zodra je trainer er een inplant, staat hij hier.</template>
-                </p>
-            </div>
+                <div v-else class="mt-5 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
+                    <p class="font-medium">
+                        <template v-if="gefilterd">Geen trainingen met dit filter</template>
+                        <template v-else>{{ tab === 'upcoming' ? 'Geen komende trainingen' : 'Nog geen trainingen geweest' }}</template>
+                    </p>
+                    <p class="mt-1 text-sm text-muted-foreground">
+                        <template v-if="gefilterd">Kies een andere groep of trainer, of wis het filter.</template>
+                        <template v-else-if="tab === 'upcoming' && canManage">Plan er een in om te beginnen.</template>
+                        <template v-else-if="tab === 'upcoming'">Zodra je trainer er een inplant, staat hij hier.</template>
+                    </p>
+                </div>
+            </template>
         </div>
     </AppLayout>
 </template>

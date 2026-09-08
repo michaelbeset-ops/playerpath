@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import InputError from '@/components/InputError.vue';
+import ToggleSwitch from '@/components/ToggleSwitch.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,10 +21,20 @@ const props = defineProps<{
         location_id: number | null;
         note: string | null;
         trainers: number[];
+        open_enrollment: boolean;
+        age_categories: string[];
+        audience: string;
+        capacity: number | null;
+        price: string;
+        payment_methods: string[];
+        requires_approval: boolean;
     } | null;
     groups: { id: number; name: string; age_category: string | null }[];
     availableTrainers: { id: number; name: string }[];
     locations: { id: number; name: string }[];
+    ageCategories: { key: string; label: string }[];
+    audiences: Record<string, string>;
+    gatewayConnected: boolean;
 }>();
 
 const bewerken = computed(() => props.training !== null);
@@ -42,7 +53,29 @@ const form = useForm({
     note: props.training?.note ?? '',
     trainers: props.training?.trainers ?? ([] as number[]),
     repeat_until: '',
+    // Los inschrijven: wie mag meedoen, hoeveel, wat kost het, hoe betalen.
+    open_enrollment: props.training?.open_enrollment ?? false,
+    age_categories: (props.training?.age_categories ?? []) as string[],
+    audience: props.training?.audience ?? 'all',
+    capacity: props.training?.capacity ?? null,
+    price: props.training?.price ?? '0,00',
+    payment_methods: (props.training?.payment_methods ?? ['online', 'cash']) as string[],
+    requires_approval: props.training?.requires_approval ?? false,
 });
+
+const wisselCategorie = (key: string) => {
+    const i = form.age_categories.indexOf(key);
+    if (i === -1) form.age_categories.push(key);
+    else form.age_categories.splice(i, 1);
+};
+
+const wisselBetaalwijze = (key: string) => {
+    const i = form.payment_methods.indexOf(key);
+    if (i === -1) form.payment_methods.push(key);
+    else form.payment_methods.splice(i, 1);
+};
+
+const gratis = computed(() => !form.price || Number(String(form.price).replace(',', '.')) === 0);
 
 const wisselTrainer = (id: number) => {
     const positie = form.trainers.indexOf(id);
@@ -107,6 +140,116 @@ const opslaan = () => {
                         <Label for="ends_at">Tot</Label>
                         <Input id="ends_at" v-model="form.ends_at" type="time" required />
                         <InputError :message="form.errors.ends_at" />
+                    </div>
+                </div>
+
+                <!-- Los inschrijven: naast de groep mogen er kinderen van buiten
+                     aanschuiven. De regels staan op de training zelf; het scherm
+                     van de ouder laat alleen zien wat hier is toegestaan, de server
+                     controleert het echt. -->
+                <div class="rounded-xl border border-border bg-background p-4">
+                    <ToggleSwitch
+                        v-model="form.open_enrollment"
+                        label="Los inschrijven mogelijk"
+                        description="Ouders kunnen hun kind voor deze ene training aanmelden, naast de groep."
+                    />
+
+                    <div v-if="form.open_enrollment" class="mt-4 space-y-5 border-t border-border pt-4">
+                        <div class="grid gap-2">
+                            <Label>Leeftijd</Label>
+                            <p class="text-xs text-muted-foreground">Niets aangevinkt is iedereen.</p>
+                            <div class="flex flex-wrap gap-2">
+                                <button
+                                    v-for="cat in ageCategories"
+                                    :key="cat.key"
+                                    type="button"
+                                    class="min-h-11 rounded-lg border px-3 text-sm transition"
+                                    :class="
+                                        form.age_categories.includes(cat.key)
+                                            ? 'border-primary bg-primary/10 font-medium text-primary'
+                                            : 'border-border bg-card text-muted-foreground hover:border-primary'
+                                    "
+                                    :aria-pressed="form.age_categories.includes(cat.key)"
+                                    @click="wisselCategorie(cat.key)"
+                                >
+                                    {{ cat.label }}
+                                </button>
+                            </div>
+                            <InputError :message="form.errors.age_categories" />
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label for="audience">Positie</Label>
+                            <select
+                                id="audience"
+                                v-model="form.audience"
+                                class="min-h-11 rounded-lg border border-input bg-card px-3 text-sm outline-none focus:border-primary"
+                            >
+                                <option v-for="(label, waarde) in audiences" :key="waarde" :value="waarde">{{ label }}</option>
+                            </select>
+                            <InputError :message="form.errors.audience" />
+                        </div>
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="grid gap-2">
+                                <Label for="capacity">Maximaal aantal <span class="text-muted-foreground">(leeg = onbeperkt)</span></Label>
+                                <Input id="capacity" v-model.number="form.capacity" type="number" min="1" max="500" placeholder="Onbeperkt" />
+                                <p class="text-xs text-muted-foreground">De groep telt mee. Vol is vol; daarna komt er een wachtlijst.</p>
+                                <InputError :message="form.errors.capacity" />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label for="price">Prijs per training</Label>
+                                <div class="relative">
+                                    <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">€</span>
+                                    <Input id="price" v-model="form.price" type="text" inputmode="decimal" class="pl-7" placeholder="0,00" />
+                                </div>
+                                <p class="text-xs text-muted-foreground">
+                                    {{ gratis ? 'Gratis: er ontstaat geen rekening.' : 'Per kind, per training.' }}
+                                </p>
+                                <InputError :message="form.errors.price" />
+                            </div>
+                        </div>
+
+                        <div v-if="!gratis" class="grid gap-2">
+                            <Label>Betalen</Label>
+                            <div class="grid gap-2 sm:grid-cols-2">
+                                <button
+                                    type="button"
+                                    class="flex min-h-11 items-center gap-3 rounded-lg border p-3 text-left text-sm transition"
+                                    :class="form.payment_methods.includes('online') ? 'border-primary bg-primary/10' : 'border-border bg-card'"
+                                    :aria-pressed="form.payment_methods.includes('online')"
+                                    @click="wisselBetaalwijze('online')"
+                                >
+                                    <span class="min-w-0">
+                                        <span class="block font-medium">Direct online betalen</span>
+                                        <span class="block text-xs text-muted-foreground">
+                                            {{ gatewayConnected ? 'Via de betaalprovider.' : 'Pas mogelijk zodra de betaalprovider is aangesloten.' }}
+                                        </span>
+                                    </span>
+                                </button>
+                                <button
+                                    type="button"
+                                    class="flex min-h-11 items-center gap-3 rounded-lg border p-3 text-left text-sm transition"
+                                    :class="form.payment_methods.includes('cash') ? 'border-primary bg-primary/10' : 'border-border bg-card'"
+                                    :aria-pressed="form.payment_methods.includes('cash')"
+                                    @click="wisselBetaalwijze('cash')"
+                                >
+                                    <span class="min-w-0">
+                                        <span class="block font-medium">Contant ter plaatse</span>
+                                        <span class="block text-xs text-muted-foreground"
+                                            >De trainer vinkt bij de training af dat het binnen is.</span
+                                        >
+                                    </span>
+                                </button>
+                            </div>
+                            <InputError :message="form.errors.payment_methods" />
+                        </div>
+
+                        <ToggleSwitch
+                            v-model="form.requires_approval"
+                            label="Goedkeuring nodig"
+                            description="Een aanmelding is dan eerst een aanvraag; je keurt goed of wijst af, en betalen komt daarna. Handig bij kampen of selectietrainingen."
+                        />
                     </div>
                 </div>
 

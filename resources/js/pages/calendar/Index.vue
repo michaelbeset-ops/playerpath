@@ -17,6 +17,10 @@ interface Training {
     has_passed: boolean;
     cancelled: boolean;
     is_mine: boolean;
+    /** Ouder: hier kan een van je kinderen nog op inschrijven. */
+    enrollable?: boolean;
+    price?: string | null;
+    is_full?: boolean;
 }
 
 const props = defineProps<{
@@ -220,6 +224,9 @@ const wisselWeergave = (view: 'month' | 'week') => ga(view, props.date);
 const kiesBereik = (scope: 'all' | 'mine') => ga(props.view, props.date, scope);
 
 const open = (id: number) => router.get('/trainings/' + id);
+
+// Een inschrijfbare training opent meteen de inschrijving.
+const hrefVoor = (t: Training) => (t.enrollable ? '/trainings/' + t.id + '/inschrijven' : '/trainings/' + t.id);
 
 const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van jou in deze periode.' : 'Geen trainingen in deze periode.'));
 </script>
@@ -440,7 +447,7 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                                 v-for="t in perDag[dag.iso].slice(0, 3)"
                                 :key="t.id"
                                 class="size-1.5 rounded-full"
-                                :class="t.has_passed ? 'bg-muted-foreground/40' : 'bg-primary'"
+                                :class="t.enrollable ? 'bg-gold' : t.has_passed ? 'bg-muted-foreground/40' : 'bg-primary'"
                             ></span>
                         </div>
 
@@ -451,7 +458,7 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                                 role="link"
                                 class="block min-w-0 cursor-pointer border-l-2 pl-1.5 text-[11px] leading-tight transition hover:opacity-70"
                                 :class="t.has_passed || t.cancelled ? 'border-border text-muted-foreground' : 'border-primary'"
-                                @click.stop="open(t.id)"
+                                @click.stop="router.get(hrefVoor(t))"
                             >
                                 <span class="block truncate">
                                     <span class="tabular font-semibold">{{ t.starts_at }}</span>
@@ -478,7 +485,7 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                     <Link
                         v-for="t in geselecteerdeTrainingen"
                         :key="t.id"
-                        :href="'/trainings/' + t.id"
+                        :href="hrefVoor(t)"
                         class="block rounded-xl border border-border bg-card p-3 shadow-sm transition hover:border-primary"
                     >
                         <div class="flex items-baseline justify-between gap-2">
@@ -520,7 +527,7 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                         <Link
                             v-for="t in perDag[dag.iso] ?? []"
                             :key="t.id"
-                            :href="'/trainings/' + t.id"
+                            :href="hrefVoor(t)"
                             class="block min-w-0 rounded-lg border p-2.5 transition hover:border-primary"
                             :class="t.has_passed || t.cancelled ? 'border-border bg-secondary/40' : 'border-primary/30 bg-primary/5'"
                         >
@@ -532,6 +539,9 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                                 jouw training
                             </p>
                             <p v-if="t.cancelled" class="mt-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">afgezegd</p>
+                            <p v-if="t.enrollable" class="mt-1 text-[10px] font-semibold uppercase tracking-wide text-gold">
+                                {{ t.is_full ? 'wachtlijst' : 'inschrijven' }}<template v-if="t.price"> · {{ t.price }}</template>
+                            </p>
                             <p class="mt-1 flex items-start gap-1 text-xs text-muted-foreground">
                                 <UserCog class="mt-0.5 size-3 shrink-0" />
                                 <span>{{ t.trainers.join(', ') || 'geen trainer' }}</span>
@@ -564,9 +574,11 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                         <Link
                             v-for="t in perDag[dag.iso] ?? []"
                             :key="t.id"
-                            :href="'/trainings/' + t.id"
+                            :href="hrefVoor(t)"
                             class="flex min-w-0 gap-3 rounded-xl border bg-card p-3 shadow-sm transition hover:border-primary"
-                            :class="t.is_mine && scope === 'all' ? 'border-primary/40' : 'border-border'"
+                            :class="
+                                t.enrollable ? 'border-dashed border-gold/60' : t.is_mine && scope === 'all' ? 'border-primary/40' : 'border-border'
+                            "
                         >
                             <span
                                 class="tabular w-14 shrink-0 text-sm font-semibold"
@@ -590,6 +602,12 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                                         class="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
                                     >
                                         afgezegd
+                                    </span>
+                                    <span
+                                        v-if="t.enrollable"
+                                        class="rounded-full bg-gold/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold"
+                                    >
+                                        {{ t.is_full ? 'wachtlijst' : 'inschrijven' }}<template v-if="t.price"> · {{ t.price }}</template>
                                     </span>
                                 </span>
                                 <span class="mt-1 flex items-start gap-1.5 text-xs text-muted-foreground">

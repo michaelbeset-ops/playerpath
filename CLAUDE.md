@@ -1230,6 +1230,66 @@ Juist dat verschil is voor een school interessant, dus het blijft gescheiden.
 Wekelijks herhalen maakt **losse** trainingen, geen reeks. Er is dus geen
 "pas de hele serie aan" — dat is bewust weggelaten tot iemand erom vraagt.
 
+### Los inschrijven op een training, naast de groep
+
+Een kind doet op **twee manieren** mee aan een training, en die bestaan
+naast elkaar:
+
+1. **Via de groep** — de school heeft het ingedeeld, of het heeft een
+   abonnement (`products` van het soort *doorlopend*, dat sinds dit onderdeel
+   een vast ritme en een groep heeft; zie hieronder). Wie in de groep zit is er
+   gewoon, ook bij trainingen die later in die reeks worden ingepland.
+2. **Los** — de ouder schrijft het kind in op precies die ene training
+   (`training_enrollments`). De regels staan **op de training zelf**:
+   `open_enrollment`, `age_categories` (leeg = iedereen), `audience`
+   (positie), `capacity`, `price_cents`, `payment_methods` (online/contant) en
+   `requires_approval`.
+
+Wat je niet moet omdraaien:
+
+- **De grens ligt op de server** (`Training::acceptsPlayer()`,
+  `Actions\Trainings\EnrollInTraining`). Het scherm van de ouder grijst
+  alleen uit wat toch niet kan, met de reden erbij. Leeftijd gaat op de
+  categorie van de speler (KNVB-jaargang), positie op `ProductAudience`.
+- **Vol wordt geteld, niet opgeslagen**: de groep plus de bevestigde losse
+  aanmeldingen (`spotsTaken()`). Is het vol, dan wordt een aanmelding een
+  **wachtlijstplek** zonder rekening. Meldt iemand zich af, dan krijgt de
+  eerste op de wachtlijst bericht (`PlekVrijTraining`) en schrijft zélf
+  alsnog in — geen automatische toekenning, dat gezin heeft misschien allang
+  iets anders geregeld.
+- **Goedkeuring vóór betaling.** Vraagt de training om goedkeuring, dan is
+  een aanmelding eerst een *aanvraag*; de school keurt goed of wijst af (met
+  bericht, `TrainingAanmeldingBeoordeeld`), en pas bij het ja ontstaat de
+  rekening. Aanvragen staan in het aandacht-blok (`training_requests`).
+- **De rekening is een gewone `Payment`** met `training_enrollment_id`, zodat
+  hij meetelt in het financiële overzicht. **Contant bij de training is geen
+  achterstand** (`Payment::isCashAtTraining()`): niet in het tabblad Te laat,
+  geen herinnering, en de ouder ziet "contant te voldoen bij de training". De
+  trainer vinkt bij de training af dat het binnen is; dan staat hij op betaald
+  met methode contant.
+- **Twee manieren van afmelden, bewust.** Wie in de groep zit meldt zich af
+  voor die ene keer (`registration`) en blijft in de groep; wie los was
+  ingeschreven wordt uitgeschreven en de plek gaat naar de wachtlijst.
+- **`expectedPlayers()` telt de losse aanmeldingen mee**, dus afvinken,
+  rapporten en de rapport-herinnering werken zonder wijziging. Op de
+  aanwezigheidslijst staat er "los ingeschreven" bij, met de contantknop.
+- **De ouder ziet drie stapels per kind** (`Support\Trainings\FamilyTrainings`,
+  `FamilyTrainingList.vue`): Komend, Inschrijven, Geweest, met een wisselaar
+  bij meer dan één kind. In de agenda staat een inschrijfbare training met
+  een gestippelde rand en het label "inschrijven"; aantikken opent de
+  inschrijving. Wie mag inschrijven is de ouder (`TrainingPolicy::enroll`);
+  een kind met eigen inlog kijkt alleen.
+
+#### Doorlopend aanbod als abonnement op een vast ritme
+
+`ProductType::Doorlopend` heeft nu een rooster (`hasSchedule()`): dagen en
+tijd staan in `products.schedule`, er hangt een groep aan, en
+`ScheduleOffering` legt de trainingen **twaalf weken vooruit**;
+`enrollments:lifecycle` legt er elke nacht een dag bij (`refresh()`). Wie het
+abonnement afneemt (via de inschrijfpagina, `ConfirmEnrollment` →
+`JoinOffering`) komt in de groep en staat daarmee op álle trainingen, ook de
+later ingeplande. Een blok houdt zijn einddatum; alleen doorlopend rolt.
+
 ### Mijn trainingen en de rapport-herinnering
 
 `/trainings/mijn` is het scherm dat een trainer op zijn telefoon openslaat: alleen

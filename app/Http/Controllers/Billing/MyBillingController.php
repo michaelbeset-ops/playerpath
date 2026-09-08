@@ -72,7 +72,12 @@ class MyBillingController extends Controller
                 'player' => $betaling->player?->first_name,
                 'amount' => Money::format($betaling->amount_cents),
                 'status' => $betaling->status->value,
-                'status_label' => $betaling->status->label(),
+                // Contant bij de training is geen openstaande rekening maar een
+                // afspraak; dat hoort het scherm zo te zeggen.
+                'status_label' => $betaling->isCashAtTraining() && $betaling->status === PaymentStatus::Open
+                    ? 'Contant te voldoen bij de training'
+                    : $betaling->status->label(),
+                'cash_at_training' => $betaling->isCashAtTraining(),
                 'description' => $betaling->description,
                 'due_on' => $betaling->due_on->format('d-m-Y'),
                 'paid_at' => $betaling->paid_at?->format('d-m-Y'),

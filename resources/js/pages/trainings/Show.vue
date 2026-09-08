@@ -5,7 +5,22 @@ import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { CalendarDays, CalendarX2, Check, Clock, MapPin, MessageSquareText, Pencil, RotateCcw, Trash2, UserCog, Users, X } from 'lucide-vue-next';
+import {
+    Banknote,
+    CalendarDays,
+    CalendarPlus,
+    CalendarX2,
+    Check,
+    Clock,
+    MapPin,
+    MessageSquareText,
+    Pencil,
+    RotateCcw,
+    Trash2,
+    UserCog,
+    Users,
+    X,
+} from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 interface SpelerRij {
@@ -15,6 +30,23 @@ interface SpelerRij {
     registration: string | null;
     registration_note: string | null;
     status: string | null;
+    loose: boolean;
+    enrollment_id: number | null;
+    cash_due: boolean;
+    paid: boolean;
+    amount: string | null;
+}
+
+interface Aanmelding {
+    id: number;
+    player_id: number;
+    name: string;
+    position: string;
+    status: string;
+    status_label: string;
+    payment_method: string | null;
+    invited: boolean;
+    since: string;
 }
 
 const props = defineProps<{
@@ -30,10 +62,52 @@ const props = defineProps<{
         has_passed: boolean;
         cancelled_at: string | null;
         cancellation_reason: string | null;
+        open: boolean;
+        is_open: boolean;
+        price: string;
+        is_free: boolean;
+        capacity: number | null;
+        spots_taken: number | null;
+        spots_left: number | null;
+        is_full: boolean;
+        requires_approval: boolean;
+        age_label: string;
+        audience_label: string;
     };
     players: SpelerRij[];
+    enrollments: Aanmelding[];
+    enrollUrl: string | null;
     can: { record: boolean; manage: boolean; delete: boolean };
 }>();
+
+const aanvragen = computed(() => props.enrollments.filter((e) => e.status === 'requested'));
+const wachtlijst = computed(() => props.enrollments.filter((e) => e.status === 'waitlisted'));
+
+// Afwijzen vraagt om een bericht: een "nee" zonder waarom levert een telefoontje op.
+const afwijzen = ref<number | null>(null);
+const afwijsBericht = ref('');
+
+const keurGoed = (id: number) => router.post(`/trainings/${props.training.id}/aanmeldingen/${id}/goedkeuren`, {}, { preserveScroll: true });
+const wijsAf = (id: number) =>
+    router.post(
+        `/trainings/${props.training.id}/aanmeldingen/${id}/afwijzen`,
+        { message: afwijsBericht.value },
+        { preserveScroll: true, onSuccess: () => ((afwijzen.value = null), (afwijsBericht.value = '')) },
+    );
+const haalVanLijst = (e: Aanmelding) => {
+    if (confirm(`${e.name} van deze training halen?`)) {
+        router.delete(`/trainings/${props.training.id}/aanmeldingen/${e.id}`, { preserveScroll: true });
+    }
+};
+const contantOntvangen = (speler: SpelerRij) =>
+    router.post(`/trainings/${props.training.id}/aanmeldingen/${speler.enrollment_id}/contant`, {}, { preserveScroll: true });
+
+// Een ouder meldt een los ingeschreven kind af: de plek gaat naar de wachtlijst.
+const schrijfUit = (speler: SpelerRij) => {
+    if (confirm(`${speler.name.split(' ')[0]} afmelden voor deze training? De plek gaat naar de wachtlijst.`)) {
+        router.delete(`/trainings/${props.training.id}/inschrijven/${speler.id}`, { preserveScroll: true });
+    }
+};
 
 const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Trainingen', href: '/trainings' },
@@ -167,9 +241,21 @@ const verwijderen = () => {
                                     {{ speler.name.split(' ')[0] }}
                                     <span v-if="speler.registration === 'declined'" class="text-warning">· afgemeld</span>
                                     <span v-else-if="speler.registration === 'attending'" class="text-primary">· aangemeld</span>
+                                    <span v-if="speler.loose && speler.cash_due" class="block text-xs text-muted-foreground">
+                                        {{ speler.amount }} contant te voldoen bij de training
+                                    </span>
+                                    <span v-else-if="speler.loose && speler.paid" class="block text-xs text-primary">betaald</span>
                                 </span>
                                 <button
-                                    v-if="speler.registration === 'declined'"
+                                    v-if="speler.loose"
+                                    type="button"
+                                    class="inline-flex min-h-11 shrink-0 items-center rounded-lg border border-border px-3 text-sm font-medium text-muted-foreground transition hover:border-warning hover:text-warning"
+                                    @click="schrijfUit(speler)"
+                                >
+                                    Afmelden
+                                </button>
+                                <button
+                                    v-else-if="speler.registration === 'declined'"
                                     type="button"
                                     class="inline-flex min-h-11 shrink-0 items-center rounded-lg border border-border px-3 text-sm font-medium transition hover:border-primary"
                                     @click="openDialoog(speler, 'attending')"
@@ -187,6 +273,14 @@ const verwijderen = () => {
                             </div>
                         </div>
 
+                        <p v-for="e in enrollments" :key="e.id" class="mt-2 text-sm">
+                            {{ e.name.split(' ')[0] }}
+                            <span :class="e.status === 'requested' ? 'text-warning' : 'text-muted-foreground'"
+                                >· {{ e.status_label.toLowerCase() }}</span
+                            >
+                            <span v-if="e.invited" class="text-primary"> · er is plek, schrijf nu in</span>
+                        </p>
+
                         <!-- Na afloop: wat de trainer heeft afgevinkt, per kind. -->
                         <p v-if="training.has_passed" class="mt-0.5 text-sm text-muted-foreground">
                             <template v-for="(speler, index) in players" :key="speler.id">
@@ -197,6 +291,35 @@ const verwijderen = () => {
                                 </span>
                             </template>
                         </p>
+                    </div>
+                </div>
+
+                <!-- Los inschrijven: voor wie, wat kost het, is er plek. -->
+                <div v-if="training.open" class="flex items-start gap-3 p-4">
+                    <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gold/15 text-gold">
+                        <CalendarPlus class="size-5" />
+                    </span>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-xs text-muted-foreground">Los inschrijven</p>
+                        <p class="font-medium">{{ training.audience_label }} · {{ training.age_label }}</p>
+                        <p class="tabular text-sm text-muted-foreground">
+                            {{ training.is_free ? 'Gratis' : training.price + ' per training' }}
+                            <template v-if="training.capacity !== null">
+                                · {{ training.spots_taken }} van {{ training.capacity }} plekken bezet<template v-if="training.is_full">
+                                    (vol)</template
+                                >
+                            </template>
+                            <template v-else> · onbeperkt aantal plekken</template>
+                            <template v-if="training.requires_approval"> · na goedkeuring</template>
+                        </p>
+                        <Link
+                            v-if="enrollUrl && training.is_open"
+                            :href="enrollUrl"
+                            class="mt-2 inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                        >
+                            <CalendarPlus class="size-4" />
+                            {{ training.is_full ? 'Op de wachtlijst' : 'Inschrijven' }}
+                        </Link>
                     </div>
                 </div>
 
@@ -266,6 +389,99 @@ const verwijderen = () => {
                 </form>
             </div>
 
+            <!-- Losse aanmeldingen (school): aanvragen en de wachtlijst. -->
+            <div v-if="can.record && training.open" class="mt-6 rounded-xl border border-border bg-card p-5 shadow-sm">
+                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <p class="font-medium">Aanmeldingen</p>
+                    <p class="tabular text-sm text-muted-foreground">
+                        <template v-if="training.capacity !== null">{{ training.spots_taken }} van {{ training.capacity }} plekken bezet</template>
+                        <template v-else>{{ training.spots_taken }} ingeschreven · onbeperkt</template>
+                    </p>
+                </div>
+                <p class="mt-1 text-xs text-muted-foreground">
+                    {{ training.audience_label }} · {{ training.age_label }} · {{ training.is_free ? 'gratis' : training.price }}
+                    <template v-if="training.requires_approval"> · goedkeuring nodig</template>
+                </p>
+
+                <!-- Aanvragen -->
+                <div v-if="aanvragen.length" class="mt-4">
+                    <p class="text-sm font-semibold text-warning">
+                        {{ aanvragen.length === 1 ? 'Eén aanvraag wacht' : aanvragen.length + ' aanvragen wachten' }}
+                    </p>
+                    <ul class="mt-2 space-y-2">
+                        <li v-for="e in aanvragen" :key="e.id" class="rounded-lg border border-warning/40 bg-warning/5 p-3">
+                            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-sm font-medium">{{ e.name }}</p>
+                                    <p class="text-xs text-muted-foreground">{{ e.position }} · aangevraagd op {{ e.since }}</p>
+                                </div>
+                                <div class="flex shrink-0 gap-2">
+                                    <button
+                                        type="button"
+                                        class="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                                        @click="keurGoed(e.id)"
+                                    >
+                                        <Check class="size-4" />
+                                        Goedkeuren
+                                    </button>
+                                    <button
+                                        type="button"
+                                        class="inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-sm font-medium text-muted-foreground transition hover:border-destructive hover:text-destructive"
+                                        @click="afwijzen = afwijzen === e.id ? null : e.id"
+                                    >
+                                        Afwijzen
+                                    </button>
+                                </div>
+                            </div>
+                            <form v-if="afwijzen === e.id" class="mt-3 flex flex-col gap-2 sm:flex-row" @submit.prevent="wijsAf(e.id)">
+                                <input
+                                    v-model="afwijsBericht"
+                                    type="text"
+                                    maxlength="300"
+                                    placeholder="Bericht aan de ouders, bijvoorbeeld: deze training is voor de selectie"
+                                    class="min-h-11 min-w-0 flex-1 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
+                                />
+                                <button
+                                    type="submit"
+                                    class="inline-flex min-h-11 items-center justify-center rounded-lg bg-destructive px-3 text-sm font-semibold text-destructive-foreground"
+                                >
+                                    Afwijzen en berichten
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Wachtlijst -->
+                <div v-if="wachtlijst.length" class="mt-4">
+                    <p class="text-sm font-semibold">Wachtlijst ({{ wachtlijst.length }})</p>
+                    <ul class="mt-2 divide-y divide-border">
+                        <li v-for="(e, i) in wachtlijst" :key="e.id" class="flex items-center gap-3 py-2">
+                            <span class="tabular w-5 shrink-0 text-xs text-muted-foreground">{{ i + 1 }}.</span>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-medium">{{ e.name }}</p>
+                                <p class="text-xs text-muted-foreground">
+                                    {{ e.position }} · sinds {{ e.since
+                                    }}<span v-if="e.invited" class="text-primary"> · heeft bericht dat er plek is</span>
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                class="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:text-destructive"
+                                :aria-label="e.name + ' van de wachtlijst halen'"
+                                @click="haalVanLijst(e)"
+                            >
+                                <X class="size-4" />
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+
+                <p v-if="!aanvragen.length && !wachtlijst.length" class="mt-3 text-sm text-muted-foreground">
+                    Geen aanvragen of wachtlijst. Wie los is ingeschreven staat hieronder bij de aanwezigheid.
+                </p>
+            </div>
+
             <!-- Aanwezigheid afvinken (trainer) -->
             <!-- Het anker is er zodat "Aanwezigheid" in het overzicht hier landt
                  en niet bovenaan een pagina waar je nog voor moet scrollen. -->
@@ -293,6 +509,29 @@ const verwijderen = () => {
                             </p>
                             <p v-if="speler.registration_note" class="mt-0.5 break-words text-xs italic text-muted-foreground">
                                 {{ speler.registration_note }}
+                            </p>
+                            <p v-if="speler.loose" class="mt-1 flex flex-wrap items-center gap-2 text-xs">
+                                <span class="rounded-full bg-gold/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold"
+                                    >los ingeschreven</span
+                                >
+                                <span v-if="speler.paid" class="text-primary">{{ speler.amount }} betaald</span>
+                                <button
+                                    v-else-if="speler.cash_due"
+                                    type="button"
+                                    class="inline-flex min-h-11 items-center gap-1 rounded-lg border border-warning/50 px-2 font-medium text-warning transition hover:bg-warning/10"
+                                    @click="contantOntvangen(speler)"
+                                >
+                                    <Banknote class="size-3.5" />
+                                    {{ speler.amount }} contant · ontvangen?
+                                </button>
+                                <button
+                                    v-else
+                                    type="button"
+                                    class="inline-flex min-h-11 items-center gap-1 rounded-lg border border-border px-2 font-medium text-muted-foreground transition hover:border-primary"
+                                    @click="haalVanLijst({ id: speler.enrollment_id!, name: speler.name } as Aanmelding)"
+                                >
+                                    Afmelden
+                                </button>
                             </p>
                         </div>
 

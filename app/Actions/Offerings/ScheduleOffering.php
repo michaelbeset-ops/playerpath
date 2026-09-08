@@ -2,6 +2,7 @@
 
 namespace App\Actions\Offerings;
 
+use App\Enums\ProductType;
 use App\Models\Group;
 use App\Models\Product;
 use App\Models\Training;
@@ -31,6 +32,34 @@ use Illuminate\Support\Facades\DB;
  */
 class ScheduleOffering
 {
+    /** Hoe ver een doorlopend ritme vooruit wordt ingepland. */
+    public const WEKEN_VOORUIT = 12;
+
+    /**
+     * Het rooster opnieuw leggen uit het bewaarde ritme (`products.schedule`).
+     *
+     * Voor de nachtelijke loop: een doorlopend aanbod schuift zo elke dag een
+     * dag verder vooruit, zonder dat iemand het formulier opent.
+     */
+    public function refresh(Product $product): int
+    {
+        $ritme = $product->schedule ?? [];
+
+        if (($ritme['weekdays'] ?? []) === [] && ($ritme['dates'] ?? []) === []) {
+            return 0;
+        }
+
+        $product->loadMissing('trainers');
+
+        return $this->handle(
+            $product,
+            weekdays: $ritme['weekdays'] ?? [],
+            dates: $ritme['dates'] ?? [],
+            startsAt: $ritme['starts_at'] ?? '18:00',
+            endsAt: $ritme['ends_at'] ?? '19:30',
+        );
+    }
+
     /**
      * @param  list<string>  $dates  losse dagen (kamp), als 'Y-m-d'
      * @param  list<int>  $weekdays  0 (zondag) t/m 6, voor een wekelijkse reeks
@@ -119,13 +148,31 @@ class ScheduleOffering
      */
     protected function weekly(Product $product, array $weekdays)
     {
-        if ($weekdays === [] || $product->starts_on === null || $product->ends_on === null) {
+        if ($weekdays === []) {
+            return collect();
+        }
+
+        // Een blok heeft een begin en een eind. Doorlopende training heeft
+        // dat niet: die begint vandaag (of op de startdatum) en wordt een
+        // vast aantal weken vooruit gelegd; de nachtelijke loop legt er
+        // telkens weer een week bij. Zo komen nieuwe trainingen vanzelf in de
+        // agenda van wie een abonnement heeft.
+        $doorlopend = $product->type === ProductType::Doorlopend;
+
+        if (! $doorlopend && ($product->starts_on === null || $product->ends_on === null)) {
             return collect();
         }
 
         $dagen = collect();
-        $dag = CarbonImmutable::parse($product->starts_on)->startOfDay();
-        $eind = CarbonImmutable::parse($product->ends_on)->endOfDay();
+        $dag = CarbonImmutable::parse($product->starts_on ?? now()->toDateString())->startOfDay();
+        $horizon = CarbonImmutable::now()->addWeeks(self::WEKEN_VOORUIT)->endOfDay();
+        $eind = $product->ends_on === null
+            ? $horizon
+            : CarbonImmutable::parse($product->ends_on)->endOfDay();
+
+        if ($doorlopend && $eind->gt($horizon)) {
+            $eind = $horizon;
+        }
 
         while ($dag <= $eind) {
             if (in_array($dag->dayOfWeek, $weekdays, strict: true)) {

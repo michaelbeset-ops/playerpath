@@ -50,6 +50,10 @@ const props = defineProps<{
         trainers: number[];
         group_id: number | null;
         trainings_count: number;
+        weekdays: number[];
+        dates: string[];
+        time_from: string;
+        time_to: string;
     } | null;
     types: Soort[];
     intervals: Record<string, string>;
@@ -118,10 +122,10 @@ const form = useForm({
     is_active: props.product?.is_active ?? true,
     trainers: props.product?.trainers ?? ([] as number[]),
     // Het rooster. Een blok herhaalt wekelijks; een kamp heeft losse dagen.
-    weekdays: [] as number[],
-    dates: [] as string[],
-    starts_at: '18:00',
-    ends_at: '19:30',
+    weekdays: (props.product?.weekdays ?? []) as number[],
+    dates: (props.product?.dates ?? []) as string[],
+    starts_at: props.product?.time_from ?? '18:00',
+    ends_at: props.product?.time_to ?? '19:30',
 });
 
 // Het soort bepaalt welke velden er staan. Een rittenkaart met een einddatum is
@@ -284,17 +288,21 @@ const veldKlassen = 'h-11 w-full rounded-lg border border-input bg-background px
                 </div>
 
                 <!-- Wanneer, en het rooster -->
-                <div v-if="soort?.has_period" class="space-y-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+                <div v-if="soort?.has_schedule" class="space-y-4 rounded-xl border border-border bg-card p-5 shadow-sm">
                     <p class="font-medium">Wanneer</p>
+                    <p v-if="!soort?.has_period" class="text-sm text-muted-foreground">
+                        Een vast ritme, bijvoorbeeld elke woensdag om 18:00. Wie dit abonnement afneemt komt vanzelf in de groep en staat op al deze
+                        trainingen; de app plant twaalf weken vooruit en legt er elke nacht een dag bij.
+                    </p>
 
                     <div class="grid gap-4 sm:grid-cols-2">
                         <div class="grid gap-2">
-                            <Label for="starts_on">Startdatum</Label>
+                            <Label for="starts_on">Startdatum <span v-if="!soort?.has_period" class="text-muted-foreground">(optioneel)</span></Label>
                             <input id="starts_on" v-model="form.starts_on" type="date" :class="veldKlassen" />
                             <InputError :message="form.errors.starts_on" />
                         </div>
                         <div class="grid gap-2">
-                            <Label for="ends_on">Einddatum</Label>
+                            <Label for="ends_on">Einddatum <span v-if="!soort?.has_period" class="text-muted-foreground">(optioneel)</span></Label>
                             <input id="ends_on" v-model="form.ends_on" type="date" :class="veldKlassen" />
                             <InputError :message="form.errors.ends_on" />
                         </div>

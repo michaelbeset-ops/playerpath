@@ -37,8 +37,11 @@ class VisibleTrainings
         // De groep van zijn kind, plus de privétrainingen die hij geboekt heeft.
         // Een privétraining heeft geen groep; zonder deze tweede tak zou een
         // ouder zijn eigen afspraak niet in de agenda zien staan.
+        // ... plus alles waar zijn kind los op is aangemeld (ook aangevraagd
+        // of op de wachtlijst: dat hoort hij te zien staan).
         return $query->where(fn (Builder $q) => $q
             ->whereHas('group.players', fn (Builder $players) => $players->whereIn('players.id', $playerIds))
-            ->orWhereHas('slot', fn (Builder $slot) => $slot->whereIn('player_id', $playerIds)));
+            ->orWhereHas('slot', fn (Builder $slot) => $slot->whereIn('player_id', $playerIds))
+            ->orWhereHas('enrollments', fn (Builder $e) => $e->whereIn('player_id', $playerIds)->active()));
     }
 }

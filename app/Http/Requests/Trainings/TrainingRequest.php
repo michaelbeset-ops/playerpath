@@ -2,8 +2,11 @@
 
 namespace App\Http\Requests\Trainings;
 
+use App\Enums\ProductAudience;
 use App\Models\Location;
 use App\Models\Training;
+use App\Support\Money\Money;
+use App\Support\PlayerCard\BadgeSettings;
 use App\Support\Tenancy\Tenancy;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
@@ -50,6 +53,17 @@ class TrainingRequest extends FormRequest
 
             // Alleen bij aanmaken: een reeks wekelijkse trainingen in één keer.
             'repeat_until' => ['nullable', 'date', 'after:date', 'before:'.now()->addYear()->toDateString()],
+
+            // Los inschrijven: wie, hoeveel, wat kost het, hoe betalen, goedkeuren.
+            'open_enrollment' => ['boolean'],
+            'age_categories' => ['nullable', 'array'],
+            'age_categories.*' => ['string', Rule::in(array_column(BadgeSettings::categories(), 'key'))],
+            'audience' => ['nullable', Rule::enum(ProductAudience::class)],
+            'capacity' => ['nullable', 'integer', 'min:1', 'max:500'],
+            'price' => ['nullable', 'string', 'regex:/^\d{1,5}([.,]\d{1,2})?$/'],
+            'payment_methods' => ['nullable', 'array'],
+            'payment_methods.*' => ['string', Rule::in(['online', 'cash'])],
+            'requires_approval' => ['boolean'],
         ];
     }
 
@@ -64,6 +78,11 @@ class TrainingRequest extends FormRequest
             'note' => 'De toelichting',
             'repeat_until' => 'De herhaaldatum',
             'trainers' => 'De trainers',
+            'age_categories' => 'De leeftijdscategorieën',
+            'audience' => 'De positie',
+            'capacity' => 'Het maximum aantal',
+            'price' => 'De prijs',
+            'payment_methods' => 'De betaalwijzen',
         ];
     }
 
@@ -75,6 +94,7 @@ class TrainingRequest extends FormRequest
             'repeat_until.after' => 'Herhalen tot moet na de eerste trainingsdatum liggen.',
             'repeat_until.before' => 'Plan maximaal een jaar vooruit.',
             'trainers.*.exists' => 'Een van de gekozen trainers hoort niet bij deze school.',
+            'price.regex' => 'Vul een bedrag in, bijvoorbeeld 7,50.',
         ];
     }
 
@@ -92,6 +112,43 @@ class TrainingRequest extends FormRequest
             'location_id' => $this->validated('location_id'),
             'location' => $this->locatienaam() ?? $this->validated('location'),
             'note' => $this->validated('note'),
+            ...$this->enrollmentData(),
+        ];
+    }
+
+    /**
+     * De inschrijfregels. Staat inschrijven uit, dan worden de regels niet
+     * bewaard: een training die dicht is heeft geen prijs en geen limiet.
+     *
+     * @return array<string, mixed>
+     */
+    public function enrollmentData(): array
+    {
+        $open = (bool) $this->validated('open_enrollment', false);
+
+        if (! $open) {
+            return [
+                'open_enrollment' => false,
+                'age_categories' => null,
+                'audience' => ProductAudience::All,
+                'capacity' => null,
+                'price_cents' => 0,
+                'payment_methods' => null,
+                'requires_approval' => false,
+            ];
+        }
+
+        $wijzen = array_values(array_unique($this->validated('payment_methods') ?? []));
+
+        return [
+            'open_enrollment' => true,
+            'age_categories' => array_values(array_unique($this->validated('age_categories') ?? [])) ?: null,
+            'audience' => $this->validated('audience') ?? ProductAudience::All->value,
+            'capacity' => $this->validated('capacity'),
+            'price_cents' => Money::toCents((string) ($this->validated('price') ?? '0')),
+            // Zonder keuze allebei: dat is wat de meeste scholen bedoelen.
+            'payment_methods' => $wijzen === [] ? null : $wijzen,
+            'requires_approval' => (bool) $this->validated('requires_approval', false),
         ];
     }
 

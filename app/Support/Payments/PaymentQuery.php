@@ -112,8 +112,10 @@ class PaymentQuery
         match ($tab) {
             'paid' => $query->where('status', PaymentStatus::Paid->value),
             'open' => $query->where('status', PaymentStatus::Open->value),
+            // Contant bij de training is geen achterstand; zie Payment::isCashAtTraining().
             'overdue' => $query->where('status', PaymentStatus::Open->value)
-                ->whereDate('due_on', '<', now()->toDateString()),
+                ->whereDate('due_on', '<', now()->toDateString())
+                ->whereNot(fn (Builder $q) => $q->whereNotNull('training_enrollment_id')->where('method', 'cash')),
             'planned' => $query->where('status', PaymentStatus::Open->value)
                 ->whereDate('due_on', '>', now()->toDateString()),
             default => null,
