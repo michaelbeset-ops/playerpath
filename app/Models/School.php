@@ -42,6 +42,9 @@ class School extends Model
             'birthday_greeting' => 'boolean',
             'rating_settings' => 'array',
             'enrollment_settings' => 'array',
+            // Niet in $fillable: de onboarding-stand gaat alleen via
+            // OnboardingState, want daar staat wat de sleutels betekenen.
+            'onboarding' => 'array',
         ];
     }
 

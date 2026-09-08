@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import PlatformLayout from '@/layouts/PlatformLayout.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { Eye, Pencil, Power, PowerOff, Trash2, Users } from 'lucide-vue-next';
+import { Check, Eye, Pencil, Power, PowerOff, Trash2, Users } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 const props = defineProps<{
@@ -25,6 +25,17 @@ const props = defineProps<{
     };
     owners: { id: number; name: string; email: string }[];
     features: { key: string; label: string; description: string; enabled: boolean }[];
+    onboarding: {
+        done: number;
+        total: number;
+        percentage: number;
+        steps: Record<string, boolean>;
+        labels: Record<string, string>;
+        checklistDismissed: boolean;
+        checklistCompleted: boolean;
+        tourSeen: boolean;
+        hasDemoData: boolean;
+    };
     package: string | null;
     packages: { value: string; label: string; description: string; price: string; features: string[] }[];
     deletes: { users: number; players: number; reports: number; trainings: number; payments: number; enrollments: number };
@@ -75,7 +86,9 @@ const wissel = () => {
     <Head :title="school.name" />
 
     <PlatformLayout>
-        <Link href="/beheer/scholen" class="text-sm text-muted-foreground underline underline-offset-4">Terug naar scholen</Link>
+        <Link href="/beheer/scholen" class="inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4">
+            Terug naar scholen
+        </Link>
 
         <div class="mt-2 flex flex-wrap items-start justify-between gap-3">
             <div class="min-w-0">
@@ -115,6 +128,45 @@ const wissel = () => {
                 </Button>
             </div>
         </div>
+
+        <!-- Hoe ver deze school is met opstarten. Hier zie je wie er vastloopt,
+             en dan is een telefoontje meer waard dan nog een e-mail. -->
+        <section class="mt-4 rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
+            <div class="flex flex-wrap items-baseline justify-between gap-2">
+                <p class="font-medium">Opstarten</p>
+                <p class="tabular text-sm text-muted-foreground">{{ onboarding.done }} van {{ onboarding.total }} stappen</p>
+            </div>
+
+            <div class="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary">
+                <div
+                    class="h-full rounded-full transition-all"
+                    :class="onboarding.percentage >= 75 ? 'bg-success' : onboarding.percentage >= 30 ? 'bg-warning' : 'bg-destructive'"
+                    :style="{ width: onboarding.percentage + '%' }"
+                ></div>
+            </div>
+
+            <ul class="mt-4 grid gap-2 sm:grid-cols-2">
+                <li v-for="(gedaan, sleutel) in onboarding.steps" :key="sleutel" class="flex items-center gap-2 text-sm">
+                    <span
+                        class="flex size-5 shrink-0 items-center justify-center rounded-full"
+                        :class="gedaan ? 'bg-primary text-primary-foreground' : 'border border-border'"
+                    >
+                        <Check v-if="gedaan" class="size-3" />
+                    </span>
+                    <span :class="gedaan ? 'text-muted-foreground line-through' : ''">{{ onboarding.labels[sleutel] }}</span>
+                </li>
+            </ul>
+
+            <!-- Wat de school zelf heeft weggeklikt. Verklaart waarom iemand
+                 ergens blijft hangen zonder dat er iets stuk is. -->
+            <p class="mt-4 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <span
+                    >Startlijst: {{ onboarding.checklistCompleted ? 'afgerond' : onboarding.checklistDismissed ? 'weggeklikt' : 'staat open' }}</span
+                >
+                <span>Rondleiding: {{ onboarding.tourSeen ? 'gezien' : 'nog niet' }}</span>
+                <span>Voorbeelddata: {{ onboarding.hasDemoData ? 'staat er nog' : 'opgeruimd' }}</span>
+            </p>
+        </section>
 
         <div class="mt-4 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
             <div class="rounded-xl border border-border bg-card p-4 shadow-sm">
@@ -164,7 +216,7 @@ const wissel = () => {
 
                         <button
                             type="button"
-                            class="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs font-medium hover:border-primary"
+                            class="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs font-medium hover:border-primary"
                             @click="bekijkAls(eigenaar.id)"
                         >
                             <Eye class="size-3.5" />

@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Actions\Onboarding\SeedDemoData;
 use App\Enums\Role;
 use App\Models\School;
 use App\Models\User;
@@ -78,8 +79,12 @@ class CreateSchool extends Command
 
         $eigenaar->assignRole(Role::Eigenaar->value);
 
+        // Een lege omgeving is de vijand: de eigenaar logt in op iets dat al
+        // werkt, en ruimt het met één knop op zodra hij echt begint.
+        app(SeedDemoData::class)->handle($school, $eigenaar);
+
         $this->newLine();
-        $this->info("School '{$school->name}' is aangemaakt.");
+        $this->info("School '{$school->name}' is aangemaakt, met voorbeelddata om mee te beginnen.");
         $this->line("Eigenaar: {$eigenaar->name} <{$eigenaar->email}>");
         $this->line('Deze eigenaar kan nu inloggen op '.config('app.url').'/login');
 

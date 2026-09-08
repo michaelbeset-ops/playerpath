@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Staff;
 
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
+use App\Models\Invitation;
 use App\Models\Player;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -40,6 +41,21 @@ class StaffController extends Controller
 
         return Inertia::render('staff/Index', [
             'trainers' => $trainers,
+            // Wie er is uitgenodigd maar nog niet binnen. Zonder dit lijstje
+            // weet een school na een bulkuitnodiging niet wie er nog moet.
+            'invitations' => Invitation::where('role', Role::Trainer->value)
+                ->pending()
+                ->orderByDesc('created_at')
+                ->get()
+                ->map(fn (Invitation $rij) => [
+                    'id' => $rij->id,
+                    'name' => $rij->name,
+                    'email' => $rij->email,
+                    'status' => $rij->status(),
+                    'expires_on' => $rij->expires_at->format('d-m-Y'),
+                    'sent_count' => $rij->sent_count,
+                ]),
+            'invitationDays' => (int) ($request->user()->school->invitation_valid_days ?: 14),
             // Accounts uitnodigen en verwijderen is werk van de eigenaar.
             'can' => ['manageAccounts' => $request->user()->isEigenaar()],
         ]);

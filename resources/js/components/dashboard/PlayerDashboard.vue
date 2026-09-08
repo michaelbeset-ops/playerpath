@@ -88,6 +88,14 @@ const voortgangHref = computed(() => '/players/' + props.player.id + '/progress'
                     <CardGlow :level="card.overall === null ? 'geen' : card.level.key">
                         <PlayerCardVisual :card="card" audience="gezin" :shareable="false" />
                     </CardGlow>
+
+                    <!-- Nog geen rapport: dan staat er een staalgrijze kaart
+                         zonder cijfers, en dat leest als "er is niets". Eén
+                         motiverende regel eronder zegt dat er iets komt en
+                         wanneer — dat is het verschil tussen leeg en beginnend. -->
+                    <p v-if="card.overall === null" class="mx-auto mt-5 max-w-xs text-center text-sm text-muted-foreground">
+                        Na je eerste training vult je trainer je rapport in, en verschijnt hier jouw kaart met je cijfers.
+                    </p>
                 </div>
 
                 <div class="mt-4 grid grid-cols-2 gap-2">

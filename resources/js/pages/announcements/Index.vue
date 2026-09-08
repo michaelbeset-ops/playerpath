@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import FlashMessage from '@/components/FlashMessage.vue';
+import DemoBadge from '@/components/onboarding/DemoBadge.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ const props = defineProps<{
         recipients_count: number;
         sent_at: string;
         from_cancellation: boolean;
+    is_demo?: boolean;
     }[];
     groups: { id: number; name: string; recipients: number }[];
     schoolRecipients: number;
@@ -120,6 +122,7 @@ const versturen = () =>
                             <p class="flex items-center gap-2 font-medium">
                                 <CalendarX2 v-if="bericht.from_cancellation" class="size-4 text-warning" />
                                 {{ bericht.title }}
+                                <DemoBadge v-if="bericht.is_demo" />
                             </p>
                             <span class="rounded-md bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
                                 {{ bericht.group ?? 'Hele school' }}

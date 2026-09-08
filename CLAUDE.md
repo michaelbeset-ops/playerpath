@@ -359,6 +359,7 @@ een donkere.
 | `ReportScore` | school | `report_id`, `category`, `score` (1-10) |
 | `Training` | school | `group_id`, `starts_at`, `ends_at`, `location` |
 | `Attendance` | school | `training_id`, `player_id`, `registration`, `status` |
+| `Invitation` | school | `name`, `email`, `role`, `token`, `player_ids?`, `expires_at`, `accepted_at?` |
 | `AvailabilityRule` | school | `user_id`, `weekday` (1-7), `daypart` — het gewone ritme van een trainer |
 | `AvailabilityException` | school | `user_id`, `starts_on`, `ends_on`, `daypart?`, `available`, `note` |
 
@@ -608,6 +609,127 @@ Drie afspraken die je niet moet omdraaien:
 Snelle acties volgen de policies, net als het menu: een trainer krijgt geen
 knop "Speler toevoegen" te zien. Het **financiële vak is van de eigenaar** en
 staat er bewust leeg bij tot fase 7 — geen voorbeeldcijfers.
+
+### Onboarding: van niets naar een draaiende school
+
+Een lege omgeving is de vijand. Wie voor het eerst inlogt en overal "nog niets"
+ziet staan, weet niet wat het product doet en gaat het ook niet uitzoeken. De
+onboarding bestaat daarom uit vier dingen die elkaar aanvullen: er staat meteen
+iets dat werkt, er is een korte wizard, er is een lijst met wat er nog moet, en
+er is één rondleiding van vijf stappen.
+
+`schools.onboarding` houdt bij hoe ver een school is (`Support\Onboarding\
+OnboardingState`). Zelfde afspraak als bij de functies en de rekenkern:
+standaarden in code, in de database alleen wat deze school daadwerkelijk deed.
+Wat je aan de database kunt vragen staat er níét in — of er spelers zijn, of er
+een rapport is — want dan heb je twee waarheden die uit elkaar lopen zodra
+iemand zijn enige speler verwijdert.
+
+#### Voorbeelddata
+
+`Actions\Onboarding\SeedDemoData` zet bij het aanmaken van een school vier
+spelers met elk drie rapporten neer, plus een groep, twee trainingen, een
+aanbod, een locatie en een bericht. `RemoveDemoData` haalt het er in één keer
+weer uit. Vier regels:
+
+- **Het zijn echte rijen in de echte tabellen**, met `is_demo` erop. Geen
+  demo-modus die elk scherm moet samenvoegen: de kaart wordt echt doorgerekend
+  en de agenda is echt de agenda, dus wat je ziet is wat het product doet.
+- **`is_demo` staat in geen enkel `$fillable`.** De seeder schrijft via
+  `forceFill`; zou de vlag mass-assignable zijn, dan kan een formulier een
+  echte speler als voorbeeld markeren en verdwijnt die bij het opruimen.
+- **Overal staat het label "voorbeeld"** (`DemoBadge`) en op elke pagina staat
+  de balk met de opruimknop (`DemoBanner`, alleen voor de eigenaar).
+  Voorbeelddata die je niet herkent en niet kunt weghalen is erger dan een leeg
+  scherm — dan staat er over een half jaar een verzonnen kind in een echt
+  ledenbestand.
+- **De rapporten lopen op in de tijd** (acht, vier en één week terug), zodat er
+  groei te zien is. Vier identieke rapporten geven een vlakke lijn, en dan lijkt
+  het product stuk. Er komt bewust **geen foto** bij: een gezicht van een kind
+  erbij verzinnen doe je niet in een product over kinderen.
+
+**De startchecklist telt voorbeelddata niet mee** (`Player::real()` en de andere
+`real()`-scopes). Anders is je school "af" zonder dat je één echte speler hebt
+toegevoegd, en heeft de lijst niets gezegd.
+
+#### De wizard heeft er een stap bij: "Je school"
+
+De intake — naam, logo, merkkleur, eerste locatie — is **stap 1 van de
+bestaande wizard** Inschrijven en betalen geworden, niet een tweede wizard
+ernaast. De andere gevraagde onderwerpen (aanbod, innen, kortingen, wachtlijst,
+toestemmingen) stonden daar al; een aparte intake zou betekenen dat er twee
+plekken zijn waar je hetzelfde instelt. `EnrollmentSettings::STAPPEN` telt
+daardoor zeven stappen, en die eerste stap slaat niets in die klasse op — hij
+schrijft naar de school zelf.
+
+**Overslaan mag, bij elke stap** (`enrollment-settings.skip`): elke vraag heeft
+een bruikbare standaard, en wie er nu geen antwoord op heeft moet verder kunnen
+in plaats van te stoppen. Bij de laatste stap telt overslaan als afronden.
+
+#### De startchecklist
+
+Zeven stappen (`Support\Dashboard\SetupChecklist`), elk met een knop naar de
+plek waar je hem afmaakt. Drie regels:
+
+- **Het eerste rapport is gemarkeerd** (`highlight`). Dat is het moment waarop
+  een lege kaart een spelerskaart wordt en een ouder voor het eerst iets ziet;
+  de rest is administratie eromheen.
+- **Af is af.** Eén felicitatie, dan `checklist_completed_at` en voorgoed weg.
+  Het scherm meldt dat zelf: zou de server het bij het laatste vinkje wegzetten,
+  dan zag niemand ooit dat hij klaar was.
+- **Wegklikken mag en is terug te halen.** Anders is de enige uitweg alle zeven
+  stappen doen, ook die je niet wilt.
+
+#### De rondleiding
+
+`AppTour`: vijf plekken, altijd overslaan, opnieuw te starten met de
+vraagtekenknop in de balk. Hij wijst echte elementen aan via `data-tour` —
+maar **alleen als ze zichtbaar zijn**. Op een telefoon zit het menu in een
+uitklap, dus staan die elementen wel in de pagina maar zie je ze niet; dan
+blijven de vijf kaarten staan zonder ring, want de tour vertelt waar de plekken
+zijn en dat klopt ook zonder pijl.
+
+#### Uitnodigen
+
+`invitations` met een token van 64 tekens, een eigen geldigheidsduur
+(`schools.invitation_valid_days`, standaard veertien dagen) en de kinderen die
+bij activatie gekoppeld worden. Dat ging via de wachtwoord-vergeten-route, en
+die kan die twee dingen niet.
+
+- **Bulk is geen luxe**: een school die overstapt heeft honderd ouders. Het
+  formulier neemt regels aan van de vorm `Naam <mail@x.nl>`, `Naam, mail@x.nl`
+  of een kaal adres — dat is wat mensen tóch al plakken.
+- **Een account ontstaat pas bij activatie.** Tot die tijd is er alleen een
+  uitnodiging; anders staat er een half ledenbestand met mensen die nooit hebben
+  ingelogd, en telt de school ze wel mee.
+- **Opnieuw versturen maakt een nieuw token**, en de oude link is dan dood.
+- **De mail komt van de school**, met haar logo en naam (`mail.uitnodiging`).
+  Een ouder heeft zijn kind bij Keepersschool Rob aangemeld en kent ons niet.
+- **Ouders worden uitgenodigd vanaf de pagina van het kind**, trainers vanaf
+  Personeel. Zo hangt er altijd een kind aan een ouderuitnodiging, en hoeft de
+  school na activatie niet alsnog met de hand te koppelen.
+
+#### Ouder en speler krijgen geen wizard en geen rondleiding
+
+Die moeten het meteen snappen; een tour is het verkeerde antwoord op een scherm
+dat niet duidelijk is. Wel **één vriendelijke regel bij het eerste bezoek**
+(`WelcomeNote`, onthouden in `users.intro_seen_at` — per gebruiker, want het
+gaat erover of déze persoon het al zag).
+
+De regel "leeg is weg" blijft gelden voor losse blokken, met één uitzondering:
+**is het hele gezinsdashboard leeg, dan staat er één regel die zegt wat er
+komt.** Dat is precies de eerste keer dat een ouder inlogt, en een scherm zonder
+iets is geen scherm. Bij de speler staat onder een kaart zonder cijfers dat zijn
+kaart na de eerste training verschijnt.
+
+#### Voortgang in het platformbeheer
+
+`Support\Platform\OnboardingProgress` rekent met dezelfde zeven stappen, en dus
+ook met dezelfde regel dat voorbeelddata niet meetelt — anders staat elke verse
+school op zeven van zeven en zie je nooit wie er hulp nodig heeft. In de
+schoollijst een balkje per school, op de detailpagina de stappen plus wat de
+school heeft weggeklikt of gezien. Let op: dat draait in de platformmodus, waar
+de scope openstaat, dus elke query begrenst zichzelf expliciet op `school_id`.
 
 ### Voortgang, meldingen en de kaart (fase 5)
 

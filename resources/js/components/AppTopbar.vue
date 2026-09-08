@@ -3,8 +3,8 @@ import AppLogo from '@/components/AppLogo.vue';
 import { useAppMode } from '@/composables/useAppMode';
 import { navIconen, navIcoon } from '@/lib/nav-icons';
 import { type NavGroup, type SharedData } from '@/types';
-import { Link, usePage } from '@inertiajs/vue3';
-import { Bell, ChevronDown, LogOut, Menu, Plus, X } from 'lucide-vue-next';
+import { Link, router, usePage } from '@inertiajs/vue3';
+import { Bell, ChevronDown, CircleHelp, LogOut, Menu, Plus, X } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 /**
@@ -32,6 +32,9 @@ const groepen = computed<NavGroup[]>(() =>
         href: groep.href,
         icon: navIcoon(groep.icon),
         badge: (groep as { badge?: number }).badge ?? 0,
+        // Waar de rondleiding naar wijst. Op de iconennaam en niet op de titel:
+        // een school die een menu-item hernoemt hoort de tour niet te breken.
+        tour: tourAnker(groep),
         items: (groep.items ?? []).map((item) => ({
             title: item.title,
             href: item.href,
@@ -59,6 +62,28 @@ const initialen = computed(() =>
         .join('')
         .toUpperCase(),
 );
+
+/**
+ * Welk anker van de rondleiding bij deze groep hoort.
+ *
+ * Een groep met één item wordt dat item (zie MainNavigation), dus de tour moet
+ * ook naar de items kunnen kijken. Vindt hij niets, dan krijgt de groep geen
+ * anker en slaat die stap zichzelf over.
+ */
+const TOUR_ANKERS = ['reports', 'calendar', 'players', 'enrollments', 'settings'];
+
+const tourAnker = (groep: { icon: string; href?: string | null; items?: { icon: string; href: string }[] }): string | undefined => {
+    const kandidaten = [groep.icon, ...(groep.items ?? []).map((item) => item.icon)];
+    const treffer = kandidaten.find((icoon) => TOUR_ANKERS.includes(icoon));
+
+    // "Klanten" heet in de tour clients; het icoon heet players.
+    return treffer === 'players' ? 'clients' : treffer;
+};
+
+const startRondleiding = () => {
+    sluit();
+    router.post('/onboarding/rondleiding/opnieuw');
+};
 
 const huidig = computed(() => page.url.split('?')[0]);
 
@@ -116,6 +141,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                     <Link
                         v-if="groep.href"
                         :href="groep.href"
+                        :data-tour="groep.tour"
                         class="min-h-11 rounded-lg px-3 py-2 text-sm font-medium transition"
                         :class="
                             isActief(groep) ? 'bg-foreground/10 text-foreground' : 'text-foreground/75 hover:bg-foreground/10 hover:text-foreground'
@@ -125,7 +151,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                         {{ groep.title }}
                     </Link>
 
-                    <div v-else class="relative">
+                    <div v-else class="relative" :data-tour="groep.tour">
                         <button
                             type="button"
                             class="flex min-h-11 items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition"
@@ -170,6 +196,20 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
 
             <!-- Rechts, alles op volle hoogte -->
             <div class="ml-auto flex h-full shrink-0 items-stretch">
+                <!-- De rondleiding opnieuw. Alleen voor wie de school bedient;
+                     een ouder krijgt er geen, dus een vraagteken zou hem naar
+                     iets wijzen dat niet bestaat. -->
+                <button
+                    v-if="page.props.onboarding?.canRestartTour"
+                    type="button"
+                    class="hidden items-center px-3 text-foreground/75 transition hover:bg-foreground/10 hover:text-foreground sm:flex"
+                    aria-label="Rondleiding opnieuw starten"
+                    title="Rondleiding opnieuw starten"
+                    @click="startRondleiding"
+                >
+                    <CircleHelp class="size-5" />
+                </button>
+
                 <Link
                     href="/notifications"
                     class="relative flex items-center px-3 text-foreground/75 transition hover:bg-foreground/10 hover:text-foreground"
@@ -279,6 +319,16 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
 
         <!-- Klein scherm: alles onder elkaar, geen uitklappen in uitklappen -->
         <nav v-if="mobiel" class="border-t border-border px-3 pb-3 lg:hidden" aria-label="Hoofdmenu">
+            <button
+                v-if="page.props.onboarding?.canRestartTour"
+                type="button"
+                class="mt-3 flex min-h-11 w-full items-center gap-3 rounded-lg px-3 text-sm text-foreground/75"
+                @click="startRondleiding"
+            >
+                <CircleHelp class="size-4 shrink-0 opacity-70" />
+                Rondleiding opnieuw
+            </button>
+
             <div v-for="groep in groepen" :key="groep.title" class="mt-3">
                 <Link
                     v-if="groep.href"

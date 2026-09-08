@@ -84,7 +84,18 @@ class ShopCatalogueTest extends TestCase
         $kamp->refresh();
         $this->assertNotNull($kamp->photo_path);
         Storage::disk('public')->assertExists($kamp->photo_path);
-        $this->assertStringNotContainsString((string) $kamp->id, basename($kamp->photo_path));
+        // De bestandsnaam is willekeurig en niet af te leiden uit het id: de
+        // foto van een kind hoort niet te raden te zijn aan de hand van een
+        // nummer in een URL. Zie Support\Media\ProfilePhoto.
+        //
+        // Toetsen op "bevat het id niet" was een muntworp: in veertig
+        // willekeurige alfanumerieke tekens zit bijna altijd wel ergens een "1".
+        // Wat de bedoeling wél toetst is de vorm van de naam.
+        $bestandsnaam = pathinfo($kamp->photo_path, PATHINFO_FILENAME);
+
+        $this->assertSame(40, strlen($bestandsnaam));
+        $this->assertMatchesRegularExpression('/^[A-Za-z0-9]{40}$/', $bestandsnaam);
+        $this->assertNotSame((string) $kamp->id, $bestandsnaam);
 
         // In de shop en op de inschrijfpagina staat hij erbij.
         $this->actingAs($this->ouder)->get('/shop')

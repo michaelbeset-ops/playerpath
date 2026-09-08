@@ -43,6 +43,7 @@ class AnnouncementController extends Controller
                     'group' => $bericht->group?->name,
                     'recipients_count' => $bericht->recipients_count,
                     'sent_at' => $bericht->created_at->format('d-m-Y H:i'),
+                    'is_demo' => $bericht->is_demo,
                     'from_cancellation' => $bericht->training_id !== null,
                 ]),
             'groups' => $groepen->map(fn (Group $groep) => [

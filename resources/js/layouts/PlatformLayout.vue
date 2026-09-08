@@ -21,7 +21,7 @@ const naam = computed(() => page.props.auth?.user?.name ?? '');
     <div class="min-h-svh bg-background">
         <header class="theme-donker sticky top-0 z-30 bg-background text-foreground">
             <div class="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3">
-                <Link href="/beheer/scholen" class="flex min-w-0 items-center gap-2.5">
+                <Link href="/beheer/scholen" class="flex min-h-11 min-w-0 items-center gap-2.5">
                     <AppLogoIcon class="size-6 shrink-0 rounded" />
                     <span class="truncate text-sm font-semibold">Platformbeheer</span>
                 </Link>
@@ -29,7 +29,7 @@ const naam = computed(() => page.props.auth?.user?.name ?? '');
                 <div class="flex shrink-0 items-center gap-1">
                     <Link
                         href="/beheer"
-                        class="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                        class="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
                     >
                         <LayoutGrid class="size-4" />
                         <span class="hidden sm:inline">Overzicht</span>
@@ -37,7 +37,7 @@ const naam = computed(() => page.props.auth?.user?.name ?? '');
 
                     <Link
                         href="/beheer/scholen"
-                        class="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                        class="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
                     >
                         <Building2 class="size-4" />
                         <span class="hidden sm:inline">Scholen</span>
@@ -45,7 +45,7 @@ const naam = computed(() => page.props.auth?.user?.name ?? '');
 
                     <Link
                         href="/beheer/logboek"
-                        class="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                        class="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm font-medium text-muted-foreground transition hover:bg-secondary hover:text-foreground"
                     >
                         <ScrollText class="size-4" />
                         <span class="hidden sm:inline">Logboek</span>
@@ -55,7 +55,7 @@ const naam = computed(() => page.props.auth?.user?.name ?? '');
                         href="/logout"
                         method="post"
                         as="button"
-                        class="inline-flex h-9 items-center gap-2 rounded-lg px-3 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                        class="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-muted-foreground transition hover:bg-secondary hover:text-foreground"
                     >
                         <LogOut class="size-4" />
                         <span class="hidden sm:inline">Uitloggen</span>

@@ -59,6 +59,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('instellingen/inschrijven', [EnrollmentSettingsController::class, 'index'])->name('enrollment-settings.index');
     Route::get('instellingen/inschrijven/stap/{stap}', [EnrollmentSettingsController::class, 'edit'])->whereNumber('stap')->name('enrollment-settings.edit');
     Route::patch('instellingen/inschrijven/stap/{stap}', [EnrollmentSettingsController::class, 'update'])->whereNumber('stap')->name('enrollment-settings.update');
+    // Overslaan mag: elke vraag heeft een bruikbare standaard.
+    Route::post('instellingen/inschrijven/stap/{stap}/overslaan', [EnrollmentSettingsController::class, 'skip'])->whereNumber('stap')->name('enrollment-settings.skip');
 
     // Welke mijlpalen gelden. Eigenaar en trainer.
     Route::get('mijlpalen', [BadgeSettingsController::class, 'edit'])->name('badges.edit');
@@ -97,4 +99,5 @@ require __DIR__.'/trainings.php';
 require __DIR__.'/billing.php';
 require __DIR__.'/enrollments.php';
 require __DIR__.'/settings.php';
+require __DIR__.'/onboarding.php';
 require __DIR__.'/platform.php';

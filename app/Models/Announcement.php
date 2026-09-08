@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToSchool;
 use Database\Factories\AnnouncementFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -30,6 +31,7 @@ class Announcement extends Model
     protected function casts(): array
     {
         return [
+            'is_demo' => 'boolean',
             'recipients_count' => 'integer',
         ];
     }
@@ -52,5 +54,22 @@ class Announcement extends Model
     public function isForWholeSchool(): bool
     {
         return $this->group_id === null;
+    }
+
+    /** Is dit een voorbeeldrij, neergezet bij het opstarten van de school? */
+    public function scopeDemo(Builder $query): Builder
+    {
+        return $query->where('is_demo', true);
+    }
+
+    /**
+     * Alleen wat de school zelf heeft ingevoerd.
+     *
+     * De startchecklist telt hiermee: anders is je school "af" zonder dat je
+     * ooit een echte speler hebt toegevoegd.
+     */
+    public function scopeReal(Builder $query): Builder
+    {
+        return $query->where('is_demo', false);
     }
 }

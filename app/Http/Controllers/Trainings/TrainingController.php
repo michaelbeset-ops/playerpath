@@ -37,6 +37,7 @@ class TrainingController extends Controller
         $vorm = fn (Training $training) => [
             'id' => $training->id,
             'group' => $training->label(),
+            'is_demo' => $training->is_demo,
             'group_id' => $training->group_id,
             'day' => $training->starts_at->format('Y-m-d'),
             'day_label' => $training->starts_at->translatedFormat('l j F'),
@@ -144,6 +145,7 @@ class TrainingController extends Controller
             'training' => [
                 'id' => $training->id,
                 'group' => $training->label(),
+                'is_demo' => $training->is_demo,
                 'group_id' => $training->group_id,
                 'date' => $training->starts_at->translatedFormat('l j F Y'),
                 'time' => $training->starts_at->format('H:i').' - '.$training->ends_at->format('H:i'),

@@ -28,6 +28,21 @@ const levelRand: Record<string, string> = {
 </script>
 
 <template>
+    <!-- Alles leeg: dat is precies de eerste keer dat een ouder inlogt. Losse
+         lege blokken laten we weg (dat is de regel), maar een scherm zonder
+         iets is geen scherm — dan staat er één regel die zegt wat er komt. -->
+    <div
+        v-if="!upcoming.length && !children.length && !offerings.length && !messages.length"
+        class="rounded-2xl border border-border bg-card p-6 text-center shadow-sm"
+    >
+        <CalendarDays class="mx-auto size-7 text-muted-foreground" />
+        <p class="mt-3 font-medium">Hier komt het te staan</p>
+        <p class="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+            Zodra je school je kind heeft ingedeeld, zie je hier wanneer de trainingen zijn, hoe het met hem gaat en wat er nog openstaat. Je hoeft
+            zelf niets in te stellen.
+        </p>
+    </div>
+
     <div class="space-y-6">
         <!-- 1. Binnenkort: wanneer moet je waar zijn. Het scherm opent hiermee. -->
         <section>

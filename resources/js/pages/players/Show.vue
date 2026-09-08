@@ -3,6 +3,7 @@ import Avatar from '@/components/Avatar.vue';
 import FlashMessage from '@/components/FlashMessage.vue';
 import GoalList, { type Doel } from '@/components/GoalList.vue';
 import InputError from '@/components/InputError.vue';
+import InviteForm, { type Uitnodiging } from '@/components/onboarding/InviteForm.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,6 +37,8 @@ const props = defineProps<{
     categories: Categorie[];
     groups: { id: number; name: string; age_category: string | null }[];
     guardians: { id: number; name: string; email: string; relationship: string | null }[];
+    invitations: Uitnodiging[];
+    invitationDays: number;
     reports: { id: number; reported_on: string; trainer: string | null; note: string | null }[];
     reportCount: number;
     purchases: {
@@ -64,7 +67,6 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: props.player.name, href: '/players/' + props.player.id },
 ];
 
-const nieuweOuder = useForm({ name: '', email: '', relationship: '' });
 const bestaandeOuder = useForm({ user_id: '', relationship: '' });
 
 const toonNieuweOuder = ref(false);
@@ -126,15 +128,6 @@ const stopDoel = (id: number) => {
 };
 
 const koppelBestaande = () => bestaandeOuder.post('/players/' + props.player.id + '/guardians', { preserveScroll: true });
-
-const nodigUit = () =>
-    nieuweOuder.post('/players/' + props.player.id + '/guardians/invite', {
-        preserveScroll: true,
-        onSuccess: () => {
-            nieuweOuder.reset();
-            toonNieuweOuder.value = false;
-        },
-    });
 
 const ontkoppel = (id: number) => router.delete('/players/' + props.player.id + '/guardians/' + id, { preserveScroll: true });
 
@@ -398,48 +391,27 @@ const verwijderen = () => {
                     </form>
 
                     <button
-                        v-if="!toonNieuweOuder"
+                        v-if="!toonNieuweOuder && !invitations.length"
                         type="button"
-                        class="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary underline underline-offset-4"
+                        class="mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-medium text-primary underline underline-offset-4"
                         @click="toonNieuweOuder = true"
                     >
                         <UserPlus class="size-4" />
                         Nieuwe ouder uitnodigen
                     </button>
 
-                    <!-- Nieuwe ouder uitnodigen -->
-                    <form v-else class="mt-4 space-y-4 rounded-lg border border-border p-4" @submit.prevent="nodigUit">
-                        <p class="text-sm font-medium">Nieuwe ouder uitnodigen</p>
-                        <p class="text-xs text-muted-foreground">
-                            De ouder krijgt een e-mail om zelf een wachtwoord te kiezen. Jij hoeft er dus geen te bedenken.
-                        </p>
-
-                        <div class="grid gap-4 sm:grid-cols-3">
-                            <div class="grid gap-2">
-                                <Label for="ouder_name">Naam</Label>
-                                <Input id="ouder_name" v-model="nieuweOuder.name" required />
-                                <InputError :message="nieuweOuder.errors.name" />
-                            </div>
-
-                            <div class="grid gap-2">
-                                <Label for="ouder_email">E-mailadres</Label>
-                                <Input id="ouder_email" v-model="nieuweOuder.email" type="email" required placeholder="naam@voorbeeld.nl" />
-                                <InputError :message="nieuweOuder.errors.email" />
-                            </div>
-
-                            <div class="grid gap-2">
-                                <Label for="ouder_relationship">Relatie</Label>
-                                <Input id="ouder_relationship" v-model="nieuweOuder.relationship" placeholder="moeder" />
-                            </div>
-                        </div>
-
-                        <div class="flex items-center gap-3">
-                            <Button type="submit" :disabled="nieuweOuder.processing">Uitnodigen</Button>
-                            <button type="button" class="text-sm text-muted-foreground underline underline-offset-4" @click="toonNieuweOuder = false">
-                                Annuleren
-                            </button>
-                        </div>
-                    </form>
+                    <!-- Uitnodigen: één ouder of allebei tegelijk. De ouder
+                         krijgt bij activatie meteen dit kind gekoppeld; zonder
+                         dat zou je erna alsnog met de hand moeten koppelen. -->
+                    <InviteForm
+                        v-if="toonNieuweOuder || invitations.length"
+                        class="mt-4"
+                        role="ouder"
+                        :invitations="invitations"
+                        :valid-days="invitationDays"
+                        :player-ids="[player.id]"
+                        :title="'Ouder van ' + player.first_name + ' uitnodigen'"
+                    />
                 </div>
             </div>
 

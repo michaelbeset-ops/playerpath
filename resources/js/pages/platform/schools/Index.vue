@@ -12,6 +12,8 @@ interface SchoolRij {
     players_count: number;
     trainers_count: number;
     users_count: number;
+    /** Percentage van het opstarten dat gedaan is; zie OnboardingProgress. */
+    onboarding: number;
     created_at: string | null;
 }
 
@@ -59,13 +61,13 @@ watch(filters, () => {
                     v-model="filters.search"
                     type="search"
                     placeholder="Zoek op naam of adres..."
-                    class="h-10 w-full rounded-lg border border-input bg-card py-2 pl-9 pr-3 text-base outline-none focus:border-primary sm:text-sm"
+                    class="h-11 w-full rounded-lg border border-input bg-card py-2 pl-9 pr-3 text-base outline-none focus:border-primary sm:text-sm"
                 />
             </div>
 
             <select
                 v-model="filters.status"
-                class="h-10 rounded-lg border border-input bg-card px-3 text-base outline-none focus:border-primary sm:text-sm"
+                class="h-11 rounded-lg border border-input bg-card px-3 text-base outline-none focus:border-primary sm:text-sm"
                 aria-label="Filter op status"
             >
                 <option value="">Alle scholen</option>
@@ -107,6 +109,19 @@ watch(filters, () => {
                     <span>
                         <span class="font-semibold">{{ school.trainers_count }}</span>
                         <span class="text-muted-foreground"> trainers</span>
+                    </span>
+
+                    <!-- Hoe ver ze zijn met opstarten. Een balkje en geen getal:
+                         je scant deze kolom om te zien wie er achterblijft. -->
+                    <span class="flex w-24 items-center gap-2" :title="school.onboarding + '% van het opstarten gedaan'">
+                        <span class="h-1.5 w-12 overflow-hidden rounded-full bg-secondary">
+                            <span
+                                class="block h-full rounded-full"
+                                :class="school.onboarding >= 75 ? 'bg-success' : school.onboarding >= 30 ? 'bg-warning' : 'bg-destructive'"
+                                :style="{ width: school.onboarding + '%' }"
+                            ></span>
+                        </span>
+                        <span class="text-xs text-muted-foreground">{{ school.onboarding }}%</span>
                     </span>
                 </div>
             </Link>

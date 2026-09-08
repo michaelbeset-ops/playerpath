@@ -383,7 +383,7 @@ class EnrollmentTest extends TestCase
         $this->instellen(['approval' => 'automatic', 'trial' => ['enabled' => true, 'amount_cents' => 0]]);
 
         // De proefles ontstaat uit de instellingen.
-        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/1', [
+        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/2', [
             'offering_types' => ['blok', 'proefles'], 'trial_enabled' => true, 'trial_amount' => '',
         ]);
 

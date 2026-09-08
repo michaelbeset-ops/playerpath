@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import AppTabbar from '@/components/AppTabbar.vue';
 import AppTopbar from '@/components/AppTopbar.vue';
+import AppTour from '@/components/onboarding/AppTour.vue';
+import DemoBanner from '@/components/onboarding/DemoBanner.vue';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import type { BreadcrumbItemType } from '@/types';
+import type { BreadcrumbItemType, SharedData } from '@/types';
+import { usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
 interface Props {
     breadcrumbs?: BreadcrumbItemType[];
@@ -11,6 +15,12 @@ interface Props {
 withDefaults(defineProps<Props>(), {
     breadcrumbs: () => [],
 });
+
+const page = usePage<SharedData>();
+
+// De balk boven de voorbeelddata hoort op elke pagina: het label bij een rij
+// zegt wát er nep is, deze balk zegt hoe je ervan af komt.
+const toonDemo = computed(() => page.props.onboarding?.demo === true);
 </script>
 
 <template>
@@ -38,9 +48,16 @@ withDefaults(defineProps<Props>(), {
         <!-- pb-[var(--pp-tabbar)]: buiten de app is die nul, dus dit doet daar
              niets. Als app houdt het de laatste knop van een pagina vrij van de
              tabbalk in plaats van eronder. -->
+        <div v-if="toonDemo" class="mx-auto w-full max-w-6xl px-4 pt-4">
+            <DemoBanner />
+        </div>
+
         <main class="min-w-0 flex-1 pb-[var(--pp-tabbar)]">
             <slot />
         </main>
+
+        <!-- De rondleiding. Staat in de schil omdat hij naar de balk wijst. -->
+        <AppTour />
 
         <!-- Het menu onderin, alleen als de app als app draait. -->
         <AppTabbar />

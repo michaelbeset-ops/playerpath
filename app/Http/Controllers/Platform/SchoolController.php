@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Platform;
 
+use App\Actions\Onboarding\SeedDemoData;
 use App\Actions\Platform\DeleteSchool;
 use App\Enums\Package;
 use App\Enums\Role;
@@ -11,7 +12,9 @@ use App\Models\User;
 use App\Support\Branding\BrandColor;
 use App\Support\Features\Features;
 use App\Support\Money\Money;
+use App\Support\Platform\OnboardingProgress;
 use App\Support\Platform\PlatformAudit;
+use App\Support\Tenancy\Tenancy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +37,7 @@ class SchoolController extends Controller
     public function __construct(
         protected Features $features,
         protected PlatformAudit $audit,
+        protected Tenancy $tenancy,
     ) {}
 
     public function index(Request $request): Response
@@ -59,7 +63,14 @@ class SchoolController extends Controller
             ->when($filters['status'] === 'inactive', fn ($q) => $q->where('is_active', false))
             ->orderBy('name')
             ->get()
-            ->map(fn (School $school) => $this->rij($school));
+            ->map(function (School $school) {
+                // Hoe ver deze school is met opstarten. In de lijst alleen het
+                // percentage: zo zie je in één blik wie er vastloopt.
+                $rij = $this->rij($school);
+                $rij['onboarding'] = app(OnboardingProgress::class)->for($school)['percentage'];
+
+                return $rij;
+            });
 
         return Inertia::render('platform/schools/Index', [
             'schools' => $scholen,
@@ -124,6 +135,12 @@ class SchoolController extends Controller
             return $school;
         });
 
+        // Voorbeelddata staat buiten de transactie: de school aanmaken mag
+        // nooit stuklopen op het neerzetten van een verzonnen speler. Hij zet
+        // de tenant, dus daarna moet die weer terug naar de platformmodus.
+        app(SeedDemoData::class)->handle($school);
+        $this->tenancy->enterPlatform();
+
         $this->audit->log('school.created', 'School aangemaakt', $school, [
             'slug' => $school->slug,
             'package' => $school->package,
@@ -155,6 +172,9 @@ class SchoolController extends Controller
                 ->orderBy('name')
                 ->get(['id', 'name', 'email'])
                 ->map(fn (User $user) => ['id' => $user->id, 'name' => $user->name, 'email' => $user->email]),
+            // Hoe ver deze school is met opstarten. Zo zie je wie er vastloopt
+            // en kun je bijspringen vóórdat ze afhaken.
+            'onboarding' => app(OnboardingProgress::class)->for($school),
             'features' => $this->features->describe($school),
             'package' => $school->package,
             'packages' => $this->pakketten(),

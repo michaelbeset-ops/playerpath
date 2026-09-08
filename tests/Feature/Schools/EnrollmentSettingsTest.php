@@ -69,19 +69,19 @@ class EnrollmentSettingsTest extends TestCase
                 ->component('enrollment-settings/Wizard')
                 ->where('step', 1)
                 ->where('completed', false)
-                ->count('steps', 6)
+                ->count('steps', 7)
             );
     }
 
     public function test_elke_stap_zet_meteen_een_instelling_en_de_laatste_rondt_af(): void
     {
         $this->actingAs($this->eigenaar)
-            ->patch('/instellingen/inschrijven/stap/1', [
+            ->patch('/instellingen/inschrijven/stap/2', [
                 'offering_types' => ['blok', 'kamp'],
                 'trial_enabled' => true,
                 'trial_amount' => '7,50',
             ])
-            ->assertRedirect('/instellingen/inschrijven/stap/2');
+            ->assertRedirect('/instellingen/inschrijven/stap/3');
 
         $instellingen = EnrollmentSettings::for($this->school->refresh());
 
@@ -95,14 +95,14 @@ class EnrollmentSettingsTest extends TestCase
         $this->assertSame(['blok', 'kamp'], array_keys(array_flip($this->school->enrollment_settings['offering_types'])));
         $this->assertArrayNotHasKey('notice_months', $this->school->enrollment_settings);
 
-        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/2', [
+        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/3', [
             'registration_fee_enabled' => true,
             'registration_fee_amount' => '25',
             'kit_enabled' => false,
             'kit_amount' => '',
-        ])->assertRedirect('/instellingen/inschrijven/stap/3');
+        ])->assertRedirect('/instellingen/inschrijven/stap/4');
 
-        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/3', [
+        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/4', [
             'default_payment_type' => 'installments',
             'installments' => 4,
             'installment_interval' => 'month',
@@ -111,23 +111,23 @@ class EnrollmentSettingsTest extends TestCase
             'approval' => 'automatic',
             'chargeback_fee_enabled' => true,
             'chargeback_fee_amount' => '7,50',
-        ])->assertRedirect('/instellingen/inschrijven/stap/4');
-
-        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/4', [
-            'free_until_days' => 7,
-            'retain_percent' => 25,
-            'absence' => 'makeup',
         ])->assertRedirect('/instellingen/inschrijven/stap/5');
 
         $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/5', [
+            'free_until_days' => 7,
+            'retain_percent' => 25,
+            'absence' => 'makeup',
+        ])->assertRedirect('/instellingen/inschrijven/stap/6');
+
+        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/6', [
             'family_enabled' => true, 'family_percent' => 10,
             'early_enabled' => false, 'early_percent' => 10, 'early_days_before' => 30,
             'volume_enabled' => false, 'volume_percent' => 10, 'volume_from_count' => 2,
             'code_enabled' => true,
             'stackable' => false,
-        ])->assertRedirect('/instellingen/inschrijven/stap/6');
+        ])->assertRedirect('/instellingen/inschrijven/stap/7');
 
-        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/6', [
+        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/7', [
             'waitlist' => true,
             'pay_on_placement' => true,
             'invitation_days' => 5,
@@ -161,7 +161,7 @@ class EnrollmentSettingsTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page->component('enrollment-settings/Index'));
 
-        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/4', [
+        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/5', [
             'free_until_days' => 14, 'retain_percent' => 50, 'absence' => 'none',
         ])->assertRedirect('/instellingen/inschrijven');
     }
@@ -175,12 +175,12 @@ class EnrollmentSettingsTest extends TestCase
             'development' => true,
         ];
 
-        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/6', $antwoorden('Eerste tekst.'));
-        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/6', $antwoorden('Eerste tekst.'));
+        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/7', $antwoorden('Eerste tekst.'));
+        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/7', $antwoorden('Eerste tekst.'));
 
         $this->assertSame(1, ConsentDocument::where('key', 'avg')->first()->version);
 
-        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/6', $antwoorden('Andere tekst.'));
+        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/7', $antwoorden('Andere tekst.'));
 
         $this->assertSame(2, ConsentDocument::where('key', 'avg')->first()->version);
     }
@@ -205,7 +205,7 @@ class EnrollmentSettingsTest extends TestCase
         $trainer->assignRole(Role::Trainer->value);
 
         $this->actingAs($trainer)->get('/instellingen/inschrijven')->assertForbidden();
-        $this->actingAs($trainer)->patch('/instellingen/inschrijven/stap/1', ['offering_types' => ['blok']])->assertForbidden();
+        $this->actingAs($trainer)->patch('/instellingen/inschrijven/stap/2', ['offering_types' => ['blok']])->assertForbidden();
 
         // Toestemmingsteksten van een andere school blijven onzichtbaar.
         $andere = School::factory()->create();
@@ -224,7 +224,7 @@ class EnrollmentSettingsTest extends TestCase
         $this->actingAs($this->eigenaar)
             ->get('/dashboard')
             ->assertInertia(fn ($page) => $page
-                ->where('checklist.steps.0.key', 'enrollment')
+                ->where('checklist.steps.0.key', 'school')
                 ->where('checklist.steps.0.done', false)
             );
 

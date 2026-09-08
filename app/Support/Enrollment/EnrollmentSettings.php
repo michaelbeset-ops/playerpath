@@ -26,8 +26,17 @@ use App\Models\School;
  */
 class EnrollmentSettings
 {
-    /** De stappen van de wizard, in volgorde. */
-    public const STAPPEN = ['aanbod', 'kosten', 'betalen', 'annuleren', 'kortingen', 'formulier'];
+    /**
+     * De stappen van de wizard, in volgorde.
+     *
+     * `school` staat er vooraan bij en slaat niets in deze klasse op: die stap
+     * zet de naam, het logo, de merkkleur en de eerste locatie, en die horen
+     * bij de school zelf en niet bij "hoe schrijf je in". Hij loopt wel mee in
+     * de wizard, want het is de eerste vraag die een nieuwe school hoort te
+     * krijgen — en een aparte intake-wizard ernaast zou betekenen dat er twee
+     * plekken zijn waar je hetzelfde instelt.
+     */
+    public const STAPPEN = ['school', 'aanbod', 'kosten', 'betalen', 'annuleren', 'kortingen', 'formulier'];
 
     /** @var array<string, mixed> */
     public const STANDAARD = [

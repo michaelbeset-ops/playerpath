@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Avatar from '@/components/Avatar.vue';
+import DemoBadge from '@/components/onboarding/DemoBadge.vue';
 import FlashMessage from '@/components/FlashMessage.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
@@ -22,6 +23,7 @@ interface SpelerRij {
     position: string;
     age: number | null;
     is_active: boolean;
+    is_demo?: boolean;
     overall_rating: number | null;
     groups: string[];
     has_login: boolean;
@@ -152,6 +154,7 @@ const klap = (id: number) => {
                             <span class="min-w-0 flex-1">
                                 <span class="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium">
                                     {{ speler.name }}
+                                    <DemoBadge v-if="speler.is_demo" />
                                     <KeyRound v-if="speler.has_login" class="size-3.5 shrink-0 text-muted-foreground" title="Heeft een eigen inlog" />
                                     <span
                                         v-if="!speler.is_active"

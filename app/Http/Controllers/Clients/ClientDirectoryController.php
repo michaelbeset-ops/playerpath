@@ -90,6 +90,7 @@ class ClientDirectoryController extends Controller
                 'position' => $player->position->label(),
                 'age' => $player->age,
                 'is_active' => $player->is_active,
+                'is_demo' => $player->is_demo,
                 'overall_rating' => $player->overall_rating,
                 'groups' => $player->groups->pluck('name')->all(),
                 // Heeft deze speler zelf een inlog, of loopt alles via de ouder?

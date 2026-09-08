@@ -12,12 +12,14 @@ import MyTrainingsWidget from '@/components/dashboard/MyTrainingsWidget.vue';
 import PlayerDashboard from '@/components/dashboard/PlayerDashboard.vue';
 import ReportPrompt, { type Herinnering } from '@/components/dashboard/ReportPrompt.vue';
 import TrainingsWidget from '@/components/dashboard/TrainingsWidget.vue';
+import SetupChecklist from '@/components/onboarding/SetupChecklist.vue';
+import WelcomeNote from '@/components/onboarding/WelcomeNote.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import type { FamilyAanbod, FamilyBericht, FamilyKind, FamilyTraining } from '@/types/family';
 import type { SpelerDashboardData } from '@/types/player-dashboard';
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import { CalendarDays, CalendarPlus, Check, ClipboardList, Euro, Star, UserPlus, Users } from 'lucide-vue-next';
+import { CalendarDays, CalendarPlus, ClipboardList, Euro, Star, UserPlus, Users } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 const props = defineProps<{
@@ -37,10 +39,11 @@ const props = defineProps<{
     /** De inhoud per widget. Null betekent: staat niet op dit dashboard. */
     widgets?: Record<string, any>;
     checklist?: {
-        steps: { key: string; title: string; body: string; href: string; action: string; done: boolean }[];
+        steps: { key: string; title: string; body: string; href: string; action: string; done: boolean; highlight?: boolean }[];
         done: number;
         total: number;
-        hasTrainer: boolean;
+        complete: boolean;
+        dismissed: boolean;
     } | null;
     can?: { managePlayers: boolean; manageGroups: boolean; planTrainings: boolean };
     /** Trainer zonder eigenaarsrol: andere kop, andere snelle acties. */
@@ -100,44 +103,10 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
 
                 <!-- Eigenaar en trainer: de school -->
                 <template v-if="view === 'school'">
-                    <!-- Drie stappen voor een nieuwe school. Verdwijnt zodra ze
-                     gedaan zijn en komt nooit terug. -->
-                    <div v-if="checklist" class="mt-5 rounded-xl border border-primary/30 bg-primary/5 p-5">
-                        <div class="flex flex-wrap items-baseline justify-between gap-2">
-                            <p class="font-medium">Nog even dit, dan draait je school</p>
-                            <p class="tabular text-xs text-muted-foreground">{{ checklist.done }} van {{ checklist.total }} gedaan</p>
-                        </div>
-
-                        <ol class="mt-4 space-y-2">
-                            <li
-                                v-for="stap in checklist.steps"
-                                :key="stap.key"
-                                class="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card p-3"
-                                :class="stap.done ? 'opacity-60' : ''"
-                            >
-                                <span
-                                    class="flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
-                                    :class="stap.done ? 'bg-primary text-primary-foreground' : 'border border-border text-muted-foreground'"
-                                >
-                                    <Check v-if="stap.done" class="size-3.5" />
-                                    <template v-else>{{ checklist.steps.indexOf(stap) + 1 }}</template>
-                                </span>
-
-                                <div class="min-w-0 flex-1">
-                                    <p class="text-sm font-medium" :class="stap.done ? 'line-through' : ''">{{ stap.title }}</p>
-                                    <p v-if="!stap.done" class="text-xs text-muted-foreground">{{ stap.body }}</p>
-                                </div>
-
-                                <Link
-                                    v-if="!stap.done"
-                                    :href="stap.href"
-                                    class="inline-flex h-9 shrink-0 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground"
-                                >
-                                    {{ stap.action }}
-                                </Link>
-                            </li>
-                        </ol>
-                    </div>
+                    <!-- De startlijst: wat er moet gebeuren voordat de school
+                         van jou is. Verdwijnt met een felicitatie zodra alles
+                         gedaan is, en is weg te klikken. -->
+                    <SetupChecklist v-if="checklist" class="mt-5" :data="checklist" />
 
                     <!--
                         De volgorde verschilt per schermmaat, en dat is geen
@@ -305,6 +274,16 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
                         <MobileSummary class="order-5 lg:hidden" :development="widgets?.development" :finance="widgets?.finance" />
                     </div>
                 </template>
+
+                <!-- Ouder en speler krijgen geen wizard en geen rondleiding: die
+                     moeten het meteen snappen. Wel één vriendelijke regel bij het
+                     eerste bezoek, die na sluiten niet terugkomt. -->
+                <WelcomeNote
+                    v-if="view === 'speler' || view === 'gezin'"
+                    class="mt-5"
+                    :role="view === 'speler' ? 'speler' : 'ouder'"
+                    :name="view === 'speler' ? (player?.first_name ?? null) : voornaam"
+                />
 
                 <!-- De speler zelf: mijn kaart, mijn voortgang, volgende training -->
                 <PlayerDashboard

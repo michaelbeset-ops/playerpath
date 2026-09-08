@@ -209,7 +209,7 @@ class DirectDebitPrepTest extends TestCase
 
     public function test_de_wizard_bewaart_het_herhaalschema(): void
     {
-        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/3', [
+        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/4', [
             'default_payment_type' => 'upfront', 'installments' => 3, 'installment_interval' => 'month',
             'auto_renew_block' => false, 'notice_months' => 1, 'approval' => 'manual',
             'chargeback_fee_enabled' => true, 'chargeback_fee_amount' => '7,50',

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import FlashMessage from '@/components/FlashMessage.vue';
+import DemoBadge from '@/components/onboarding/DemoBadge.vue';
 import GatewayNotice from '@/components/GatewayNotice.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
@@ -32,6 +33,7 @@ interface ProductRij {
     status: string;
     status_label: string;
     is_active: boolean;
+    is_demo?: boolean;
     group_id: number | null;
     subscriptions_count: number;
     purchases_count: number;
@@ -145,6 +147,7 @@ const leeftijd = (product: ProductRij) => {
                                 <div class="min-w-0 flex-1">
                                     <div class="flex flex-wrap items-center gap-2">
                                         <p class="font-medium">{{ product.name }}</p>
+                                        <DemoBadge v-if="product.is_demo" />
                                         <span
                                             class="rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
                                             :class="stand(product).klas"

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import FlashMessage from '@/components/FlashMessage.vue';
+import DemoBadge from '@/components/onboarding/DemoBadge.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
@@ -47,6 +48,7 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Groepen', href: '/groups' }];
 
                     <div class="min-w-0 flex-1">
                         <p class="flex flex-wrap items-center gap-2 font-medium">
+                            <DemoBadge v-if="groep.is_demo" />
                             {{ groep.name }}
                             <span v-if="!groep.is_active" class="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
                                 niet actief

@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import Avatar from '@/components/Avatar.vue';
 import FlashMessage from '@/components/FlashMessage.vue';
-import InputError from '@/components/InputError.vue';
+import InviteForm, { type Uitnodiging } from '@/components/onboarding/InviteForm.vue';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import { ClipboardList, Plus, Trash2 } from 'lucide-vue-next';
 import { ref } from 'vue';
 
@@ -22,6 +20,8 @@ defineProps<{
         reports_count: number;
     }[];
     can: { manageAccounts: boolean };
+    invitations: Uitnodiging[];
+    invitationDays: number;
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -30,17 +30,6 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const toonFormulier = ref(false);
-
-const form = useForm({ name: '', email: '' });
-
-const nodigUit = () =>
-    form.post('/staff/trainers', {
-        preserveScroll: true,
-        onSuccess: () => {
-            form.reset();
-            toonFormulier.value = false;
-        },
-    });
 
 const verwijder = (id: number, naam: string) => {
     if (confirm(`Het account van ${naam} verwijderen? Zijn rapporten blijven bewaard.`)) {
@@ -65,39 +54,20 @@ const verwijder = (id: number, naam: string) => {
                     {{ trainers.length === 1 ? 'medewerker' : 'medewerkers' }}
                 </p>
 
-                <Button v-if="can.manageAccounts && !toonFormulier" @click="toonFormulier = true">
+                <Button v-if="can.manageAccounts && !toonFormulier && !invitations.length" @click="toonFormulier = true">
                     <Plus class="mr-2 size-4" />
                     Trainer uitnodigen
                 </Button>
             </div>
 
-            <form v-if="toonFormulier" class="mt-3 space-y-4 rounded-xl border border-border bg-card p-5 shadow-sm" @submit.prevent="nodigUit">
-                <p class="text-sm font-medium">Nieuwe trainer uitnodigen</p>
-                <p class="text-xs text-muted-foreground">
-                    De trainer krijgt een e-mail om zelf een wachtwoord te kiezen. Jij hoeft er geen te bedenken.
-                </p>
-
-                <div class="grid gap-4 sm:grid-cols-2">
-                    <div class="grid gap-2">
-                        <Label for="trainer_name">Naam</Label>
-                        <Input id="trainer_name" v-model="form.name" required />
-                        <InputError :message="form.errors.name" />
-                    </div>
-
-                    <div class="grid gap-2">
-                        <Label for="trainer_email">E-mailadres</Label>
-                        <Input id="trainer_email" v-model="form.email" type="email" required placeholder="naam@voorbeeld.nl" />
-                        <InputError :message="form.errors.email" />
-                    </div>
-                </div>
-
-                <div class="flex items-center gap-3">
-                    <Button type="submit" :disabled="form.processing">Uitnodigen</Button>
-                    <button type="button" class="text-sm text-muted-foreground underline underline-offset-4" @click="toonFormulier = false">
-                        Annuleren
-                    </button>
-                </div>
-            </form>
+            <InviteForm
+                v-if="toonFormulier || invitations.length"
+                class="mt-3"
+                role="trainer"
+                :invitations="invitations"
+                :valid-days="invitationDays"
+                title="Trainers uitnodigen"
+            />
 
             <div v-if="trainers.length" class="mt-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
                 <div

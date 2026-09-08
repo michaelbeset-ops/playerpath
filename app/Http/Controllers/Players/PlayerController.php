@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Players\PlayerRequest;
 use App\Models\Goal;
 use App\Models\Group;
+use App\Models\Invitation;
 use App\Models\Player;
 use App\Models\Product;
 use App\Models\Purchase;
@@ -97,6 +98,23 @@ class PlayerController extends Controller
                 'email' => $guardian->email,
                 'relationship' => $guardian->pivot->relationship,
             ]),
+            // Uitnodigingen waar dit kind aan hangt en die nog niet gebruikt
+            // zijn. Zonder dit lijstje weet je na het uitnodigen niet of het
+            // gelukt is, en stuur je er nog een.
+            'invitations' => Invitation::pending()
+                ->where('role', Role::Ouder->value)
+                ->get()
+                ->filter(fn (Invitation $rij) => in_array($player->id, $rij->player_ids ?? [], true))
+                ->map(fn (Invitation $rij) => [
+                    'id' => $rij->id,
+                    'name' => $rij->name,
+                    'email' => $rij->email,
+                    'status' => $rij->status(),
+                    'expires_on' => $rij->expires_at->format('d-m-Y'),
+                    'sent_count' => $rij->sent_count,
+                ])
+                ->values(),
+            'invitationDays' => (int) ($player->school->invitation_valid_days ?: 14),
             'reports' => $player->reports()
                 ->newestFirst()
                 ->with('trainer')

@@ -25,6 +25,7 @@ class GroupController extends Controller
                 'name' => $group->name,
                 'age_category' => $group->age_category,
                 'is_active' => $group->is_active,
+                'is_demo' => $group->is_demo,
                 'players_count' => $group->players_count,
             ]);
 
@@ -60,6 +61,7 @@ class GroupController extends Controller
                 'name' => $group->name,
                 'age_category' => $group->age_category,
                 'is_active' => $group->is_active,
+                'is_demo' => $group->is_demo,
             ],
         ]);
     }

@@ -8,6 +8,7 @@ use App\Enums\OfferingStatus;
 use App\Enums\ProductType;
 use App\Http\Controllers\Controller;
 use App\Models\ConsentDocument;
+use App\Models\Location;
 use App\Models\Product;
 use App\Models\School;
 use App\Support\Enrollment\EnrollmentSettings;
@@ -15,6 +16,7 @@ use App\Support\Features\Features;
 use App\Support\Money\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -73,7 +75,30 @@ class EnrollmentSettingsController extends Controller
                 'label' => $type->label(),
                 'description' => $type->description(),
             ], array_values(array_filter(ProductType::cases(), fn (ProductType $t) => $t !== ProductType::Overig))),
+            // Voor stap één: wie ben je, en waar train je.
+            'school' => [
+                'name' => $school->name,
+                'brand_color' => $school->brand_color,
+                'logo' => $school->logo_path === null ? null : Storage::url($school->logo_path),
+                'locations' => Location::orderBy('name')->pluck('name')->all(),
+            ],
         ]);
+    }
+
+    /**
+     * Een stap overslaan.
+     *
+     * Overslaan mag: elke vraag heeft een bruikbare standaard, en wie er nu
+     * geen antwoord op heeft moet verder kunnen in plaats van te stoppen. Het
+     * scherm zegt erbij dat het later kan. Bij de laatste stap telt overslaan
+     * als afronden — anders blijft de wizard eeuwig "nog niet af".
+     */
+    public function skip(Request $request, int $stap): RedirectResponse
+    {
+        abort_unless($request->user()->isEigenaar(), 403);
+        abort_unless($stap >= 1 && $stap <= count(EnrollmentSettings::STAPPEN), 404);
+
+        return $this->volgende($request, $request->user()->school, $stap);
     }
 
     public function update(Request $request, int $stap): RedirectResponse
@@ -83,6 +108,14 @@ class EnrollmentSettingsController extends Controller
 
         $school = $request->user()->school;
         $sleutel = EnrollmentSettings::STAPPEN[$stap - 1];
+
+        // De eerste stap gaat over de school zelf en niet over inschrijven; hij
+        // schrijft rechtstreeks weg en heeft hier verder niets te bewaren.
+        if ($sleutel === 'school') {
+            $this->schoolgegevens($request, $school);
+
+            return $this->volgende($request, $school, $stap);
+        }
 
         $antwoorden = match ($sleutel) {
             'aanbod' => $this->aanbod($request),
@@ -388,6 +421,7 @@ class EnrollmentSettingsController extends Controller
     protected function stappen(): array
     {
         $titels = [
+            'school' => ['Je school', 'Naam, logo, je kleur en waar je traint'],
             'aanbod' => ['Aanbod', 'Wat je aanbiedt, en of er een proefles is'],
             'kosten' => ['Kosten erbij', 'Inschrijfgeld en kledingpakket'],
             'betalen' => ['Betalen', 'Vooraf, in termijnen of per maand; verlengen en opzeggen'],
@@ -402,5 +436,85 @@ class EnrollmentSettingsController extends Controller
             'title' => $titels[$key][0],
             'hint' => $titels[$key][1],
         ])->all();
+    }
+
+    /**
+     * Waar je na een stap heen gaat.
+     *
+     * Tijdens de eerste keer loop je door naar de volgende stap; wie later één
+     * instelling wijzigt komt terug op het overzicht. Eén plek, want de stap
+     * over de school heeft precies dezelfde regel.
+     */
+    protected function volgende(Request $request, School $school, int $stap): RedirectResponse
+    {
+        $laatste = $stap === count(EnrollmentSettings::STAPPEN);
+        $klaar = EnrollmentSettings::for($school->refresh())->isCompleted();
+
+        if ($laatste) {
+            EnrollmentSettings::complete($school);
+        }
+
+        if (! $klaar && ! $laatste) {
+            return redirect()->route('enrollment-settings.edit', ['stap' => $stap + 1]);
+        }
+
+        return redirect()->route('enrollment-settings.index')->with('status', 'Opgeslagen.');
+    }
+
+    /**
+     * Stap één: wie ben je.
+     *
+     * Naam, logo, merkkleur en de eerste locatie. Meer niet — de rest kan later
+     * in de instellingen, en elke vraag die je hier stelt is een vraag waarop
+     * iemand kan afhaken voordat hij het product heeft gezien.
+     *
+     * Het logo en de kleur gaan via dezelfde weg als het huisstijlscherm, zodat
+     * er niet twee manieren zijn om hetzelfde te zetten.
+     */
+    protected function schoolgegevens(Request $request, School $school): void
+    {
+        $data = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'brand_color' => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
+            'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'remove_logo' => ['boolean'],
+            'location' => ['nullable', 'string', 'max:255'],
+        ], [
+            'brand_color.regex' => 'Kies een kleur, bijvoorbeeld #12813D.',
+            'logo.image' => 'Kies een afbeelding (jpg, png of webp).',
+            'logo.max' => 'Het logo mag hooguit 4 MB zijn.',
+        ], [
+            'name' => 'De naam van je school',
+            'logo' => 'Het logo',
+            'location' => 'De locatie',
+        ]);
+
+        $school->update([
+            'name' => $data['name'],
+            'brand_color' => $data['brand_color'] ?? null,
+        ]);
+
+        if ($request->boolean('remove_logo') && $school->logo_path !== null) {
+            Storage::disk('public')->delete($school->logo_path);
+            $school->forceFill(['logo_path' => null])->save();
+        }
+
+        if ($request->hasFile('logo')) {
+            if ($school->logo_path !== null) {
+                Storage::disk('public')->delete($school->logo_path);
+            }
+
+            $school->forceFill([
+                'logo_path' => $request->file('logo')->store('logos', 'public'),
+            ])->save();
+        }
+
+        // Eén locatie is genoeg om te beginnen; de rest zet je op /locaties.
+        // Bestaat hij al, dan komt er geen tweede met dezelfde naam bij.
+        $naam = trim((string) ($data['location'] ?? ''));
+
+        if ($naam !== '' && Location::where('name', $naam)->doesntExist()) {
+            Location::create(['name' => $naam, 'is_active' => true]);
+        }
     }
 }

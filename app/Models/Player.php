@@ -34,6 +34,7 @@ class Player extends Model
     protected function casts(): array
     {
         return [
+            'is_demo' => 'boolean',
             'date_of_birth' => 'date',
             'position' => PlayerPosition::class,
             'is_active' => 'boolean',
@@ -188,5 +189,22 @@ class Player extends Model
     public function hasRating(): bool
     {
         return $this->overall_rating !== null;
+    }
+
+    /** Is dit een voorbeeldrij, neergezet bij het opstarten van de school? */
+    public function scopeDemo(Builder $query): Builder
+    {
+        return $query->where('is_demo', true);
+    }
+
+    /**
+     * Alleen wat de school zelf heeft ingevoerd.
+     *
+     * De startchecklist telt hiermee: anders is je school "af" zonder dat je
+     * ooit een echte speler hebt toegevoegd.
+     */
+    public function scopeReal(Builder $query): Builder
+    {
+        return $query->where('is_demo', false);
     }
 }

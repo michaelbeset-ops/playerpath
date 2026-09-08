@@ -25,6 +25,8 @@ export interface NavGroup {
     href: string | null;
     icon: LucideIcon;
     items: { title: string; href: string; icon: LucideIcon }[];
+    /** Anker voor de rondleiding; zie AppTour.vue. */
+    tour?: string;
 }
 
 export interface School {
@@ -54,6 +56,8 @@ export interface SharedData {
     /** De plusknop in de balk: wat je vanaf hier mag aanmaken. */
     quickAdd: { title: string; href: string; icon: string }[];
     unreadNotifications: number;
+    /** Hoe ver deze school is met opstarten; zie HandleInertiaRequests::onboarding(). */
+    onboarding?: { demo: boolean; tour: boolean; canRestartTour: boolean; intro: boolean } | null;
     /** Welke functies deze school heeft; zie App\Enums\Feature. */
     features: Record<string, boolean>;
     /** Gevuld zolang de platformbeheerder als iemand anders kijkt. */

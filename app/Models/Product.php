@@ -83,6 +83,7 @@ class Product extends Model
     protected function casts(): array
     {
         return [
+            'is_demo' => 'boolean',
             'type' => ProductType::class,
             'billing_type' => BillingType::class,
             'status' => OfferingStatus::class,
@@ -306,5 +307,22 @@ class Product extends Model
     public function vatCents(): int
     {
         return $this->amount_cents - $this->amountExclVatCents();
+    }
+
+    /** Is dit een voorbeeldrij, neergezet bij het opstarten van de school? */
+    public function scopeDemo(Builder $query): Builder
+    {
+        return $query->where('is_demo', true);
+    }
+
+    /**
+     * Alleen wat de school zelf heeft ingevoerd.
+     *
+     * De startchecklist telt hiermee: anders is je school "af" zonder dat je
+     * ooit een echte speler hebt toegevoegd.
+     */
+    public function scopeReal(Builder $query): Builder
+    {
+        return $query->where('is_demo', false);
     }
 }

@@ -3,12 +3,16 @@ import InputError from '@/components/InputError.vue';
 import ToggleSwitch from '@/components/ToggleSwitch.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ArrowLeft, ArrowRight, Check } from 'lucide-vue-next';
+import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { ArrowLeft, ArrowRight, Check, ImagePlus, Trash2 } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 /**
- * De wizard: hoe deze school inschrijft en int, in zes stappen.
+ * De wizard: van niets naar een draaiende school, in zeven stappen.
+ *
+ * Stap één gaat over de school zelf (naam, logo, kleur, locatie); de rest over
+ * inschrijven en innen. Bewust één wizard en geen aparte intake ernaast: dan
+ * zijn er twee plekken waar je hetzelfde instelt, en die lopen uit elkaar.
  *
  * Elke stap is één scherm met één onderwerp en één opslaan-knop. De eerste
  * keer loop je door; daarna opent het overzicht elke stap los. Het is
@@ -42,6 +46,7 @@ const props = defineProps<{
     consents: Toestemming[];
     development: boolean;
     offeringTypes: { value: string; label: string; description: string }[];
+    school: { name: string; brand_color: string | null; logo: string | null; locations: string[] };
 }>();
 
 const huidige = computed(() => props.steps[props.step - 1]);
@@ -59,63 +64,97 @@ const s = props.settings;
 const form = useForm(
     props.step === 1
         ? {
-              offering_types: [...(s.offering_types as string[])],
-              trial_enabled: s.trial.enabled as boolean,
-              trial_amount: s.trial.amount as string,
+              // Stap één gaat over de school zelf. Vier vragen, meer niet: elke
+              // vraag hier is er een waarop iemand kan afhaken vóórdat hij het
+              // product heeft gezien.
+              name: props.school.name,
+              brand_color: props.school.brand_color ?? '#12813D',
+              logo: null as File | null,
+              remove_logo: false as boolean,
+              location: '' as string,
           }
         : props.step === 2
           ? {
-                registration_fee_enabled: s.registration_fee.enabled as boolean,
-                registration_fee_amount: s.registration_fee.amount as string,
-                kit_enabled: s.kit.enabled as boolean,
-                kit_amount: s.kit.amount as string,
+                offering_types: [...(s.offering_types as string[])],
+                trial_enabled: s.trial.enabled as boolean,
+                trial_amount: s.trial.amount as string,
             }
           : props.step === 3
             ? {
-                  default_payment_type: s.default_payment.type as string,
-                  installments: s.default_payment.installments as number,
-                  installment_interval: s.default_payment.interval as string,
-                  auto_renew_block: s.auto_renew_block as boolean,
-                  notice_months: s.notice_months as number,
-                  approval: s.approval as string,
-                  chargeback_fee_enabled: s.chargeback_fee.enabled as boolean,
-                  chargeback_fee_amount: s.chargeback_fee.amount as string,
-                  dunning_days: s.dunning.text as string,
+                  registration_fee_enabled: s.registration_fee.enabled as boolean,
+                  registration_fee_amount: s.registration_fee.amount as string,
+                  kit_enabled: s.kit.enabled as boolean,
+                  kit_amount: s.kit.amount as string,
               }
             : props.step === 4
               ? {
-                    free_until_days: s.cancellation.free_until_days as number,
-                    retain_percent: s.cancellation.retain_percent as number,
-                    absence: s.absence as string,
+                    default_payment_type: s.default_payment.type as string,
+                    installments: s.default_payment.installments as number,
+                    installment_interval: s.default_payment.interval as string,
+                    auto_renew_block: s.auto_renew_block as boolean,
+                    notice_months: s.notice_months as number,
+                    approval: s.approval as string,
+                    chargeback_fee_enabled: s.chargeback_fee.enabled as boolean,
+                    chargeback_fee_amount: s.chargeback_fee.amount as string,
+                    dunning_days: s.dunning.text as string,
                 }
               : props.step === 5
                 ? {
-                      family_enabled: s.discounts.family.enabled as boolean,
-                      family_percent: s.discounts.family.percent as number,
-                      early_enabled: s.discounts.early.enabled as boolean,
-                      early_percent: s.discounts.early.percent as number,
-                      early_days_before: s.discounts.early.days_before as number,
-                      volume_enabled: s.discounts.volume.enabled as boolean,
-                      volume_percent: s.discounts.volume.percent as number,
-                      volume_from_count: s.discounts.volume.from_count as number,
-                      code_enabled: s.discounts.code.enabled as boolean,
-                      stackable: s.discounts.stackable as boolean,
+                      free_until_days: s.cancellation.free_until_days as number,
+                      retain_percent: s.cancellation.retain_percent as number,
+                      absence: s.absence as string,
                   }
-                : {
-                      waitlist: s.capacity.waitlist as boolean,
-                      pay_on_placement: s.capacity.pay_on_placement as boolean,
-                      invitation_days: s.capacity.invitation_days as number,
-                      fields: { ...(s.fields as Record<string, string>) },
-                      consents: Object.fromEntries(
-                          props.consents.map((c) => [c.key, { required: c.required, title: c.title, body: c.body }]),
-                      ) as Record<string, { required: boolean; title: string; body: string }>,
-                      development: props.development,
-                  },
+                : props.step === 6
+                  ? {
+                        family_enabled: s.discounts.family.enabled as boolean,
+                        family_percent: s.discounts.family.percent as number,
+                        early_enabled: s.discounts.early.enabled as boolean,
+                        early_percent: s.discounts.early.percent as number,
+                        early_days_before: s.discounts.early.days_before as number,
+                        volume_enabled: s.discounts.volume.enabled as boolean,
+                        volume_percent: s.discounts.volume.percent as number,
+                        volume_from_count: s.discounts.volume.from_count as number,
+                        code_enabled: s.discounts.code.enabled as boolean,
+                        stackable: s.discounts.stackable as boolean,
+                    }
+                  : {
+                        waitlist: s.capacity.waitlist as boolean,
+                        pay_on_placement: s.capacity.pay_on_placement as boolean,
+                        invitation_days: s.capacity.invitation_days as number,
+                        fields: { ...(s.fields as Record<string, string>) },
+                        consents: Object.fromEntries(
+                            props.consents.map((c) => [c.key, { required: c.required, title: c.title, body: c.body }]),
+                        ) as Record<string, { required: boolean; title: string; body: string }>,
+                        development: props.development,
+                    },
 );
 
 const f = form as any;
 
-const opslaan = () => form.patch('/instellingen/inschrijven/stap/' + props.step, { preserveScroll: true });
+const opslaan = () => {
+    // Stap één kan een logo meesturen, en een bestand gaat niet mee met PATCH.
+    // Inertia lost dat op met een POST plus _method; voor de server is er geen
+    // verschil, dus de route blijft één route.
+    if (props.step === 1) {
+        form.transform((data) => ({ ...data, _method: 'patch' })).post('/instellingen/inschrijven/stap/1', {
+            preserveScroll: true,
+            forceFormData: true,
+        });
+
+        return;
+    }
+
+    form.patch('/instellingen/inschrijven/stap/' + props.step, { preserveScroll: true });
+};
+
+/** Overslaan: elke vraag heeft een bruikbare standaard. */
+const overslaan = () => router.post('/instellingen/inschrijven/stap/' + props.step + '/overslaan', {}, { preserveScroll: true });
+
+const kiesLogo = (event: Event) => {
+    const bestand = (event.target as HTMLInputElement).files?.[0] ?? null;
+    f.logo = bestand;
+    f.remove_logo = false;
+};
 
 const wisselSoort = (waarde: string) => {
     const lijst = f.offering_types as string[];
@@ -176,7 +215,7 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
             <!-- Waar je bent. Zes bolletjes, de huidige groen, gedane met een vinkje. -->
             <div class="flex items-center justify-between gap-2">
                 <p class="text-sm text-muted-foreground">Stap {{ step }} van {{ steps.length }}</p>
-                <ol class="flex items-center gap-1.5">
+                <ol class="hidden items-center gap-1.5 sm:flex">
                     <li v-for="stap in steps" :key="stap.key">
                         <Link
                             :href="'/instellingen/inschrijven/stap/' + stap.number"
@@ -196,14 +235,115 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                         </Link>
                     </li>
                 </ol>
+
+                <!-- Op een telefoon een balk in plaats van zeven bolletjes: zeven
+                     tikvlakken van 44 pixels passen niet naast elkaar op 375, en
+                     de teller ernaast zegt al waar je bent. -->
+                <div class="h-1.5 w-24 overflow-hidden rounded-full bg-secondary sm:hidden">
+                    <div class="h-full rounded-full bg-primary transition-all" :style="{ width: (step / steps.length) * 100 + '%' }"></div>
+                </div>
             </div>
 
             <h1 class="mt-3 text-2xl font-semibold tracking-tight">{{ huidige.title }}</h1>
             <p class="mt-1 text-sm text-muted-foreground">{{ huidige.hint }}</p>
 
             <form id="wizard" class="mt-6 space-y-4" @submit.prevent="opslaan">
-                <!-- ================= 1. Aanbod ================= -->
+                <!-- ================= 1. Je school ================= -->
                 <template v-if="step === 1">
+                    <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
+                        <label for="naam" class="font-medium">Hoe heet je school?</label>
+                        <p class="mt-1 text-sm text-muted-foreground">Deze naam staat op je inschrijfpagina en boven elke e-mail aan ouders.</p>
+                        <input id="naam" v-model="f.name" type="text" :class="invoerKlasse" class="mt-3" />
+                        <InputError class="mt-2" :message="form.errors.name" />
+                    </section>
+
+                    <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
+                        <p class="font-medium">Je logo</p>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            Staat in de app en in de uitnodigingen die je verstuurt. Heb je er nog geen? Sla deze over.
+                        </p>
+
+                        <div class="mt-3 flex flex-wrap items-center gap-3">
+                            <span
+                                class="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background"
+                            >
+                                <img v-if="school.logo && !f.remove_logo" :src="school.logo" alt="" class="size-full object-contain p-1" />
+                                <ImagePlus v-else class="size-5 text-muted-foreground" />
+                            </span>
+
+                            <label
+                                class="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-border bg-background px-3 text-sm font-medium transition hover:border-primary"
+                            >
+                                <ImagePlus class="size-4" />
+                                {{ f.logo ? f.logo.name : 'Logo kiezen' }}
+                                <input type="file" accept="image/*" class="hidden" @change="kiesLogo" />
+                            </label>
+
+                            <button
+                                v-if="school.logo && !f.remove_logo"
+                                type="button"
+                                class="inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm text-muted-foreground transition hover:text-destructive"
+                                @click="((f.remove_logo = true), (f.logo = null))"
+                            >
+                                <Trash2 class="size-4" />
+                                Weghalen
+                            </button>
+                        </div>
+
+                        <InputError class="mt-2" :message="form.errors.logo" />
+                    </section>
+
+                    <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
+                        <label for="kleur" class="font-medium">Je kleur</label>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            De kleur van je knoppen. Statuskleuren en de spelerskaart blijven zoals ze zijn, zodat "waarschuwing" overal hetzelfde
+                            betekent.
+                        </p>
+
+                        <div class="mt-3 flex items-center gap-3">
+                            <input
+                                id="kleur"
+                                v-model="f.brand_color"
+                                type="color"
+                                class="size-11 shrink-0 cursor-pointer rounded-lg border border-input bg-background"
+                            />
+                            <input v-model="f.brand_color" type="text" :class="invoerKlasse" class="min-w-0 flex-1" placeholder="#12813D" />
+                        </div>
+
+                        <InputError class="mt-2" :message="form.errors.brand_color" />
+                    </section>
+
+                    <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
+                        <label for="locatie" class="font-medium">Waar train je?</label>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            Eén locatie is genoeg om te beginnen; de rest zet je later bij Mijn bedrijf → Locaties.
+                        </p>
+
+                        <input
+                            id="locatie"
+                            v-model="f.location"
+                            type="text"
+                            :class="invoerKlasse"
+                            class="mt-3"
+                            placeholder="Bijvoorbeeld: Sportpark De Vliert, veld 3"
+                        />
+
+                        <ul v-if="school.locations.length" class="mt-3 flex flex-wrap gap-2">
+                            <li
+                                v-for="naam in school.locations"
+                                :key="naam"
+                                class="rounded-full bg-secondary px-3 py-1 text-xs text-muted-foreground"
+                            >
+                                {{ naam }}
+                            </li>
+                        </ul>
+
+                        <InputError class="mt-2" :message="form.errors.location" />
+                    </section>
+                </template>
+
+                <!-- ================= 2. Aanbod ================= -->
+                <template v-if="step === 2">
                     <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
                         <p class="font-medium">Wat bied je aan?</p>
                         <p class="mt-1 text-sm text-muted-foreground">
@@ -254,8 +394,8 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                     </section>
                 </template>
 
-                <!-- ================= 2. Kosten erbij ================= -->
-                <template v-else-if="step === 2">
+                <!-- ================= 3. Kosten erbij ================= -->
+                <template v-else-if="step === 3">
                     <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
                         <ToggleSwitch
                             v-model="f.registration_fee_enabled"
@@ -295,8 +435,8 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                     </section>
                 </template>
 
-                <!-- ================= 3. Betalen ================= -->
-                <template v-else-if="step === 3">
+                <!-- ================= 4. Betalen ================= -->
+                <template v-else-if="step === 4">
                     <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
                         <p class="font-medium">Standaard betaalvorm</p>
                         <p class="mt-1 text-sm text-muted-foreground">Wordt vooringevuld bij nieuw aanbod. Per aanbod kun je ervan afwijken.</p>
@@ -413,8 +553,8 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                     </section>
                 </template>
 
-                <!-- ================= 4. Annuleren ================= -->
-                <template v-else-if="step === 4">
+                <!-- ================= 5. Annuleren ================= -->
+                <template v-else-if="step === 5">
                     <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
                         <p class="font-medium">Annuleren vóór de start</p>
                         <p class="mt-1 text-sm text-muted-foreground">Dit komt letterlijk op het inschrijfformulier te staan.</p>
@@ -457,8 +597,8 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                     </section>
                 </template>
 
-                <!-- ================= 5. Kortingen ================= -->
-                <template v-else-if="step === 5">
+                <!-- ================= 6. Kortingen ================= -->
+                <template v-else-if="step === 6">
                     <section class="rounded-xl border border-border bg-card px-5 py-1 shadow-sm">
                         <ToggleSwitch v-model="f.family_enabled" label="Gezinskorting" description="Voor een tweede kind uit hetzelfde gezin." />
                         <div v-if="f.family_enabled" class="mb-3 flex items-center gap-2 text-sm">
@@ -508,7 +648,7 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                     </section>
                 </template>
 
-                <!-- ================= 6. Formulier ================= -->
+                <!-- ================= 7. Formulier ================= -->
                 <template v-else>
                     <section class="divide-y divide-border rounded-xl border border-border bg-card px-5 shadow-sm">
                         <ToggleSwitch
@@ -557,7 +697,7 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                                         v-for="optie in veldStanden"
                                         :key="optie.value"
                                         type="button"
-                                        class="h-9 rounded-md text-xs font-medium transition"
+                                        class="min-h-11 rounded-md text-xs font-medium transition"
                                         :class="stand === optie.value ? 'bg-card shadow-sm' : 'text-muted-foreground hover:text-foreground'"
                                         :aria-pressed="stand === optie.value"
                                         @click="f.fields[veld] = optie.value"
@@ -649,6 +789,19 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                     Overzicht
                 </Link>
                 <span v-else></span>
+
+                <!-- Overslaan mag, en zegt erbij dat het later kan. Wie er nu
+                     geen antwoord op heeft moet verder kunnen in plaats van te
+                     stoppen; elke vraag heeft een bruikbare standaard. -->
+                <button
+                    v-if="!completed"
+                    type="button"
+                    class="ml-auto inline-flex min-h-11 shrink-0 items-center rounded-xl px-1 text-sm text-muted-foreground transition hover:text-foreground"
+                    title="Je kunt dit later in de instellingen aanvullen"
+                    @click="overslaan"
+                >
+                    Overslaan
+                </button>
 
                 <button
                     type="submit"

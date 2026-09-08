@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import FlashMessage from '@/components/FlashMessage.vue';
+import DemoBadge from '@/components/onboarding/DemoBadge.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
@@ -22,6 +23,7 @@ interface TrainingRij {
     is_mine: boolean;
     has_passed: boolean;
     cancelled: boolean;
+    is_demo?: boolean;
     recorded_count: number;
     present_count: number;
     expected_count: number;
@@ -230,6 +232,7 @@ const toonKlasse = (toon: 'goed' | 'aandacht' | 'rustig') =>
                                         >
                                             {{ training.group }}
                                         </Link>
+                                        <DemoBadge v-if="training.is_demo" />
                                         <span
                                             v-if="training.is_mine"
                                             class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary"
