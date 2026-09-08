@@ -35,6 +35,11 @@ const props = defineProps<{
         checklistCompleted: boolean;
         tourSeen: boolean;
         hasDemoData: boolean;
+        tourStep: number;
+        tourTotal: number;
+        wizardStep: number;
+        wizardTotal: number;
+        wizardCompleted: boolean;
     };
     package: string | null;
     packages: { value: string; label: string; description: string; price: string; features: string[] }[];
@@ -163,7 +168,14 @@ const wissel = () => {
                 <span
                     >Startlijst: {{ onboarding.checklistCompleted ? 'afgerond' : onboarding.checklistDismissed ? 'weggeklikt' : 'staat open' }}</span
                 >
-                <span>Rondleiding: {{ onboarding.tourSeen ? 'gezien' : 'nog niet' }}</span>
+                <span>
+                    Rondleiding:
+                    {{ onboarding.tourSeen ? 'gezien' : 'stap ' + (onboarding.tourStep + 1) + ' van ' + onboarding.tourTotal }}
+                </span>
+                <span>
+                    Wizard:
+                    {{ onboarding.wizardCompleted ? 'afgerond' : 'stap ' + onboarding.wizardStep + ' van ' + onboarding.wizardTotal }}
+                </span>
                 <span>Voorbeelddata: {{ onboarding.hasDemoData ? 'staat er nog' : 'opgeruimd' }}</span>
             </p>
         </section>

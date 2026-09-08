@@ -100,7 +100,7 @@ const kopieer = async () => {
                 De kaart is het pronkstuk en bewust donker: dit is de
                 speler/ouder-kant van het merk. Zie CLAUDE.md hoofdstuk 4.
             -->
-            <div class="theme-donker overflow-hidden rounded-3xl bg-background p-4 text-foreground sm:p-8">
+            <div class="theme-donker overflow-hidden rounded-3xl bg-background p-4 text-foreground sm:p-8" data-tour="player-card">
                 <CardGlow :level="vorigLevel ?? (player.overall_rating === null ? 'geen' : card.level.key)">
                     <PlayerCardVisual
                         :card="card"

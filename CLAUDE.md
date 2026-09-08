@@ -616,16 +616,19 @@ staat er bewust leeg bij tot fase 7 — geen voorbeeldcijfers.
 
 Een lege omgeving is de vijand. Wie voor het eerst inlogt en overal "nog niets"
 ziet staan, weet niet wat het product doet en gaat het ook niet uitzoeken. De
-onboarding bestaat daarom uit vier dingen die elkaar aanvullen: er staat meteen
-iets dat werkt, er is een korte wizard, er is een lijst met wat er nog moet, en
-er is één rondleiding van vijf stappen.
+onboarding bestaat daarom uit vier dingen die elkaar aanvullen, in deze
+volgorde: er staat meteen iets dat werkt (voorbeelddata), een rondleiding van
+veertien stappen door de echte app, dán de wizard waarin je je eigen school
+inricht, en daarna een lijst met wat er nog moet.
 
 `schools.onboarding` houdt bij hoe ver een school is (`Support\Onboarding\
 OnboardingState`). Zelfde afspraak als bij de functies en de rekenkern:
 standaarden in code, in de database alleen wat deze school daadwerkelijk deed.
 Wat je aan de database kunt vragen staat er níét in — of er spelers zijn, of er
 een rapport is — want dan heb je twee waarheden die uit elkaar lopen zodra
-iemand zijn enige speler verwijdert.
+iemand zijn enige speler verwijdert. Wél staat erin waar iemand gebleven was:
+`tour_step` en `wizard_step`, zodat wie halverwege wegloopt terugkomt waar hij
+was en niet opnieuw bij stap één.
 
 #### Voorbeelddata
 
@@ -654,24 +657,41 @@ weer uit. Vier regels:
 `real()`-scopes). Anders is je school "af" zonder dat je één echte speler hebt
 toegevoegd, en heeft de lijst niets gezegd.
 
-#### De wizard heeft er een stap bij: "Je school"
+**De voorbeelddata gaat vanzelf weg zodra de wizard is afgerond.** Op dat
+moment heeft de school haar eigen naam, groepen en aanbod, en dan staat een
+verzonnen kind alleen nog in de weg. De opruimknop blijft bestaan voor wie
+eerder wil.
 
-De intake — naam, logo, merkkleur, eerste locatie — is **stap 1 van de
-bestaande wizard** Inschrijven en betalen geworden, niet een tweede wizard
-ernaast. De andere gevraagde onderwerpen (aanbod, innen, kortingen, wachtlijst,
-toestemmingen) stonden daar al; een aparte intake zou betekenen dat er twee
-plekken zijn waar je hetzelfde instelt. `EnrollmentSettings::STAPPEN` telt
-daardoor zeven stappen, en die eerste stap slaat niets in die klasse op — hij
-schrijft naar de school zelf.
+#### De wizard: "Je school" vooraan, groepen en trainers achteraan
 
-**Overslaan mag, bij elke stap** (`enrollment-settings.skip`): elke vraag heeft
-een bruikbare standaard, en wie er nu geen antwoord op heeft moet verder kunnen
-in plaats van te stoppen. Bij de laatste stap telt overslaan als afronden.
+De intake — naam, adres van de inschrijfpagina (slug), contactgegevens, logo,
+merkkleur, eerste locatie — is **stap 1 van de bestaande wizard** Inschrijven
+en betalen geworden, niet een tweede wizard ernaast. De andere gevraagde
+onderwerpen (aanbod, innen, kortingen, wachtlijst, toestemmingen) stonden daar
+al; een aparte intake zou betekenen dat er twee plekken zijn waar je hetzelfde
+instelt. Achteraan staan **Groepen** (namen met leeftijdscategorie; wat er al
+is blijft staan) en **Trainers** (het gewone uitnodigingsformulier).
+`EnrollmentSettings::STAPPEN` telt daardoor **negen** stappen; stap 1, 8 en 9
+slaan niets in die klasse op, die schrijven naar de school, de groepen en de
+uitnodigingen zelf.
+
+- **Stap 1 laat zien wat je kiest**: het logo en de kleur staan meteen in een
+  nagebouwde balk met een knop. Opslaan en terugkomen om te kijken of het goed
+  staat is precies waar iemand afhaakt. De slug volgt de naam totdat je hem
+  zelf aanpast.
+- **Elke stap loopt via `volgende()`**, dat `wizard_step` bijhoudt; het
+  menu-item opent dan bij die stap. De laatste stap rondt af, ruimt de
+  voorbeelddata op en stuurt naar het dashboard, waar de checklist wacht.
+- **Overslaan mag, bij elke stap** (`enrollment-settings.skip`): elke vraag heeft
+  een bruikbare standaard, en wie er nu geen antwoord op heeft moet verder kunnen
+  in plaats van te stoppen. Bij de laatste stap telt overslaan als afronden.
 
 #### De startchecklist
 
-Zeven stappen (`Support\Dashboard\SetupChecklist`), elk met een knop naar de
-plek waar je hem afmaakt. Drie regels:
+Vijf stappen (`Support\Dashboard\SetupChecklist`) — eerste speler, eerste
+training, eerste rapport, ouder uitnodigen, eerste aanbod — elk met een knop
+naar de plek waar je hem afmaakt. Wat de wizard al regelt (school, groepen,
+trainers) staat er niet nog eens in. Drie regels:
 
 - **Het eerste rapport is gemarkeerd** (`highlight`). Dat is het moment waarop
   een lege kaart een spelerskaart wordt en een ouder voor het eerst iets ziet;
@@ -679,17 +699,36 @@ plek waar je hem afmaakt. Drie regels:
 - **Af is af.** Eén felicitatie, dan `checklist_completed_at` en voorgoed weg.
   Het scherm meldt dat zelf: zou de server het bij het laatste vinkje wegzetten,
   dan zag niemand ooit dat hij klaar was.
-- **Wegklikken mag en is terug te halen.** Anders is de enige uitweg alle zeven
+- **Wegklikken mag en is terug te halen.** Anders is de enige uitweg alle vijf
   stappen doen, ook die je niet wilt.
 
 #### De rondleiding
 
-`AppTour`: vijf plekken, altijd overslaan, opnieuw te starten met de
-vraagtekenknop in de balk. Hij wijst echte elementen aan via `data-tour` —
-maar **alleen als ze zichtbaar zijn**. Op een telefoon zit het menu in een
-uitklap, dus staan die elementen wel in de pagina maar zie je ze niet; dan
-blijven de vijf kaarten staan zonder ring, want de tour vertelt waar de plekken
-zijn en dat klopt ook zonder pijl.
+Veertien stappen door de echte app, alleen voor de eigenaar, vóór de wizard.
+De stappen komen **van de server** (`Support\Onboarding\OnboardingTour`,
+gedeeld als `onboarding.tourSteps`): elke stap heeft een adres en een anker
+(`data-tour="…"`), en de rondleiding navigeert er zelf naartoe. Op de server,
+omdat "een gevulde spelerskaart" het adres van een echte voorbeeldspeler is,
+en omdat de functies van de school bepalen welke stappen er zijn — staat
+Betalingen uit, dan is er geen stap Financiën.
+
+- **"Wat een ouder ziet" is een echt scherm**: `/onboarding/ouderweergave`
+  toont het gezinsdashboard met de voorbeeldspelers als kinderen. Een plaatje
+  ervan zou verouderen; dit is het scherm zelf.
+- **Waar je was staat op de server** (`tour_step`), zodat een eigenaar die
+  halverwege zijn telefoon wegstopt op zijn laptop verdergaat. Loop je tijdens
+  de tour zelf naar een andere pagina, dan staat er een klein kaartje om terug
+  te gaan naar de stap. In de browser houdt `sessionStorage` de stap ook vast,
+  omdat de opslag naar de server anders een race is met de navigatie.
+- **Het anker wordt een paar keer opnieuw gezocht** (zes keer, om de 300 ms):
+  na een navigatie is de pagina er eerder dan de component erop.
+- **Altijd overslaan**, en opnieuw te starten met de vraagtekenknop in de
+  balk. Het einde van de tour is het begin van de wizard: "Mijn school
+  inrichten" opent stap 1.
+
+Het platformbeheer (`Support\Platform\OnboardingProgress`) laat per school
+zien waar ze staan: welke stap van de rondleiding, welke stap van de wizard,
+en welke punten van de checklist.
 
 #### Uitnodigen
 

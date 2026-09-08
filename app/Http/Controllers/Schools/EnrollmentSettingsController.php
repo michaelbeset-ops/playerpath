@@ -2,18 +2,24 @@
 
 namespace App\Http\Controllers\Schools;
 
+use App\Actions\Onboarding\RemoveDemoData;
 use App\Enums\BillingType;
 use App\Enums\Feature;
 use App\Enums\OfferingStatus;
 use App\Enums\ProductType;
+use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\ConsentDocument;
+use App\Models\Group;
+use App\Models\Invitation;
 use App\Models\Location;
 use App\Models\Product;
 use App\Models\School;
 use App\Support\Enrollment\EnrollmentSettings;
 use App\Support\Features\Features;
 use App\Support\Money\Money;
+use App\Support\Onboarding\OnboardingState;
+use App\Support\Rating\AgeCategory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -44,7 +50,12 @@ class EnrollmentSettingsController extends Controller
         // Nog nooit doorlopen: dan begin je bij stap één, niet bij een
         // overzicht van standaarden waar je nog niets van hebt gezien.
         if (! $instellingen->isCompleted()) {
-            return $this->edit($request, 1);
+            // Waar je was, niet bij stap één: wie halverwege stopte hoort daar
+            // te kunnen hervatten.
+            // Vers lezen: de gebruiker draagt een school mee van vóór het opslaan.
+            $stap = min(count(EnrollmentSettings::STAPPEN), max(1, OnboardingState::for($school->fresh())->wizardStep() + 1));
+
+            return $this->edit($request, $stap);
         }
 
         return Inertia::render('enrollment-settings/Index', [
@@ -78,10 +89,26 @@ class EnrollmentSettingsController extends Controller
             // Voor stap één: wie ben je, en waar train je.
             'school' => [
                 'name' => $school->name,
+                'slug' => $school->slug,
+                'contact_name' => $school->contact_name,
+                'contact_email' => $school->contact_email,
+                'contact_phone' => $school->contact_phone,
                 'brand_color' => $school->brand_color,
                 'logo' => $school->logo_path === null ? null : Storage::url($school->logo_path),
                 'locations' => Location::orderBy('name')->pluck('name')->all(),
+                'domain' => config('app.domain'),
             ],
+            // Voor de groepenstap: wat er al is, en de gangbare categorieën.
+            'groups' => Group::query()->real()->orderBy('name')->get(['id', 'name', 'age_category'])->map(fn (Group $g) => [
+                'id' => $g->id, 'name' => $g->name, 'age_category' => $g->age_category,
+            ]),
+            'ageCategories' => array_map(fn (int $band) => 'Onder '.$band, AgeCategory::BANDEN),
+            // Voor de trainersstap: wie er al is uitgenodigd.
+            'invitations' => Invitation::where('role', Role::Trainer->value)->pending()->orderByDesc('created_at')->get()->map(fn (Invitation $rij) => [
+                'id' => $rij->id, 'name' => $rij->name, 'email' => $rij->email, 'status' => $rij->status(),
+                'expires_on' => $rij->expires_at->format('d-m-Y'), 'sent_count' => $rij->sent_count,
+            ]),
+            'invitationDays' => (int) ($school->invitation_valid_days ?: 14),
         ]);
     }
 
@@ -117,6 +144,18 @@ class EnrollmentSettingsController extends Controller
             return $this->volgende($request, $school, $stap);
         }
 
+        if ($sleutel === 'groepen') {
+            $this->groepen($request);
+
+            return $this->volgende($request, $school, $stap);
+        }
+
+        // Trainers uitnodigen gaat via het uitnodigingsformulier zelf
+        // (InvitationController); "verder" is hier hetzelfde als overslaan.
+        if ($sleutel === 'trainers') {
+            return $this->volgende($request, $school, $stap);
+        }
+
         $antwoorden = match ($sleutel) {
             'aanbod' => $this->aanbod($request),
             'kosten' => $this->kosten($request),
@@ -128,20 +167,7 @@ class EnrollmentSettingsController extends Controller
 
         EnrollmentSettings::save($school, $antwoorden);
 
-        $laatste = $stap === count(EnrollmentSettings::STAPPEN);
-        $wasKlaar = EnrollmentSettings::for($school->refresh())->isCompleted();
-
-        if ($laatste) {
-            EnrollmentSettings::complete($school);
-        }
-
-        // Tijdens de eerste keer loop je door naar de volgende stap; wie later
-        // één instelling wijzigt komt terug op het overzicht.
-        if (! $wasKlaar && ! $laatste) {
-            return redirect()->route('enrollment-settings.edit', ['stap' => $stap + 1]);
-        }
-
-        return redirect()->route('enrollment-settings.index')->with('status', 'Opgeslagen.');
+        return $this->volgende($request, $school, $stap);
     }
 
     /** @return array<string, mixed> */
@@ -428,6 +454,8 @@ class EnrollmentSettingsController extends Controller
             'annuleren' => ['Annuleren', 'Wat er terugkomt bij annuleren of ziekte'],
             'kortingen' => ['Kortingen', 'Gezin, vroegboek, volume en codes'],
             'formulier' => ['Formulier', 'Wachtlijst, verplichte velden, toestemmingen'],
+            'groepen' => ['Groepen', 'In welke groepen je traint, met leeftijdscategorie'],
+            'trainers' => ['Trainers', 'Wie er training geeft — ze krijgen een uitnodiging'],
         ];
 
         return collect(EnrollmentSettings::STAPPEN)->values()->map(fn (string $key, int $i) => [
@@ -450,15 +478,74 @@ class EnrollmentSettingsController extends Controller
         $laatste = $stap === count(EnrollmentSettings::STAPPEN);
         $klaar = EnrollmentSettings::for($school->refresh())->isCompleted();
 
-        if ($laatste) {
-            EnrollmentSettings::complete($school);
+        // Onthouden hoe ver je bent, zodat het menu-item weer opent waar je was.
+        if (! $klaar) {
+            OnboardingState::save($school, ['wizard_step' => max($stap, OnboardingState::for($school)->wizardStep())]);
         }
 
-        if (! $klaar && ! $laatste) {
+        if ($laatste && ! $klaar) {
+            EnrollmentSettings::complete($school);
+
+            // De school is ingericht: de voorbeelddata heeft zijn werk gedaan.
+            // Hij gaat hier vanzelf weg, zodat er geen verzonnen kind in het
+            // ledenbestand blijft staan naast de echte.
+            $opgeruimd = $this->ruimVoorbeeldOp($school);
+
+            return redirect()->route('dashboard')->with(
+                'status',
+                'Je school is ingericht.'.($opgeruimd ? ' De voorbeelddata is opgeruimd; wat je nu ziet is van jou.' : '')
+            );
+        }
+
+        if (! $klaar) {
             return redirect()->route('enrollment-settings.edit', ['stap' => $stap + 1]);
         }
 
         return redirect()->route('enrollment-settings.index')->with('status', 'Opgeslagen.');
+    }
+
+    /** De voorbeelddata weg zodra de school is ingericht. */
+    protected function ruimVoorbeeldOp(School $school): bool
+    {
+        if (! OnboardingState::for($school)->hasDemoData()) {
+            return false;
+        }
+
+        $actie = app(RemoveDemoData::class);
+        $actie->handle($school);
+        $actie->finish($school);
+
+        return true;
+    }
+
+    /**
+     * Stap acht: de groepen waarin je traint.
+     *
+     * Een naam en een leeftijdscategorie per regel. Bestaande groepen blijven
+     * staan; alleen wat er nog niet is komt erbij. Een tweede "Keepers O12"
+     * naast de eerste zou de agenda splitsen.
+     */
+    protected function groepen(Request $request): void
+    {
+        $data = $request->validate([
+            'groups' => ['present', 'array', 'max:30'],
+            'groups.*.name' => ['required', 'string', 'max:255'],
+            'groups.*.age_category' => ['nullable', 'string', 'max:255'],
+        ], [], ['groups.*.name' => 'De naam van de groep']);
+
+        foreach ($data['groups'] as $rij) {
+            $naam = trim($rij['name']);
+
+            if ($naam === '' || Group::where('name', $naam)->exists()) {
+                continue;
+            }
+
+            Group::create([
+                'name' => $naam,
+                'age_category' => $rij['age_category'] ?: null,
+                'is_active' => true,
+            ]);
+        }
     }
 
     /**
@@ -475,22 +562,40 @@ class EnrollmentSettingsController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
+            // De slug wordt het adres van de inschrijfpagina en het subdomein:
+            // alleen kleine letters, cijfers en streepjes, en uniek over het
+            // hele platform. Dezelfde regel als in het beheerscherm.
+            'slug' => [
+                'required', 'string', 'max:63', 'regex:/^[a-z0-9]+(-[a-z0-9]+)*$/',
+                Rule::unique('schools', 'slug')->ignore($school->id),
+            ],
+            'contact_name' => ['nullable', 'string', 'max:255'],
+            'contact_email' => ['nullable', 'email', 'max:255'],
+            'contact_phone' => ['nullable', 'string', 'max:40'],
             'brand_color' => ['nullable', 'string', 'regex:/^#[0-9a-fA-F]{6}$/'],
             'logo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'remove_logo' => ['boolean'],
             'location' => ['nullable', 'string', 'max:255'],
         ], [
+            'slug.regex' => 'Alleen kleine letters, cijfers en streepjes, bijvoorbeeld keepersschool-rob.',
+            'slug.unique' => 'Dit adres is al in gebruik door een andere school.',
             'brand_color.regex' => 'Kies een kleur, bijvoorbeeld #12813D.',
             'logo.image' => 'Kies een afbeelding (jpg, png of webp).',
             'logo.max' => 'Het logo mag hooguit 4 MB zijn.',
         ], [
             'name' => 'De naam van je school',
+            'slug' => 'Het adres',
+            'contact_email' => 'Het e-mailadres',
             'logo' => 'Het logo',
             'location' => 'De locatie',
         ]);
 
         $school->update([
             'name' => $data['name'],
+            'slug' => $data['slug'],
+            'contact_name' => $data['contact_name'] ?? null,
+            'contact_email' => $data['contact_email'] ?? null,
+            'contact_phone' => $data['contact_phone'] ?? null,
             'brand_color' => $data['brand_color'] ?? null,
         ]);
 

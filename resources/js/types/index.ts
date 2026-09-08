@@ -57,7 +57,14 @@ export interface SharedData {
     quickAdd: { title: string; href: string; icon: string }[];
     unreadNotifications: number;
     /** Hoe ver deze school is met opstarten; zie HandleInertiaRequests::onboarding(). */
-    onboarding?: { demo: boolean; tour: boolean; canRestartTour: boolean; intro: boolean } | null;
+    onboarding?: {
+        demo: boolean;
+        tour: boolean;
+        canRestartTour: boolean;
+        intro: boolean;
+        tourStep: number;
+        tourSteps: { key: string; url: string; anchor: string | null; title: string; body: string }[];
+    } | null;
     /** Welke functies deze school heeft; zie App\Enums\Feature. */
     features: Record<string, boolean>;
     /** Gevuld zolang de platformbeheerder als iemand anders kijkt. */

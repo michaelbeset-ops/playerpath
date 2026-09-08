@@ -86,7 +86,7 @@ const klap = (id: number) => {
     <Head :title="isTrainer ? 'Spelers' : 'Klanten'" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="mx-auto w-full max-w-4xl p-4">
+        <div class="mx-auto w-full max-w-4xl p-4" data-tour="clients">
             <FlashMessage />
 
             <h1 class="text-2xl font-semibold tracking-tight">{{ isTrainer ? 'Spelers' : 'Klanten' }}</h1>

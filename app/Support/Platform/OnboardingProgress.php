@@ -3,15 +3,16 @@
 namespace App\Support\Platform;
 
 use App\Enums\Role;
-use App\Models\Group;
 use App\Models\Invitation;
 use App\Models\Player;
+use App\Models\Product;
 use App\Models\Report;
 use App\Models\School;
 use App\Models\Training;
 use App\Models\User;
 use App\Support\Enrollment\EnrollmentSettings;
 use App\Support\Onboarding\OnboardingState;
+use App\Support\Onboarding\OnboardingTour;
 use App\Support\Tenancy\Tenancy;
 
 /**
@@ -33,7 +34,7 @@ use App\Support\Tenancy\Tenancy;
 class OnboardingProgress
 {
     /** In dezelfde volgorde als de checklist die de school zelf ziet. */
-    public const STAPPEN = ['school', 'player', 'group', 'training', 'report', 'trainer', 'guardian'];
+    public const STAPPEN = ['school', 'player', 'training', 'report', 'guardian', 'product'];
 
     public function __construct(protected Tenancy $tenancy) {}
 
@@ -45,11 +46,10 @@ class OnboardingProgress
         $gedaan = [
             'school' => EnrollmentSettings::for($school)->isCompleted(),
             'player' => $this->bestaat(Player::class, $school),
-            'group' => $this->bestaat(Group::class, $school),
             'training' => $this->bestaat(Training::class, $school),
             'report' => $this->bestaat(Report::class, $school),
-            'trainer' => $this->heeftRol($school, Role::Trainer),
             'guardian' => $this->heeftRol($school, Role::Ouder),
+            'product' => $this->bestaat(Product::class, $school),
         ];
 
         $stand = OnboardingState::for($school);
@@ -61,17 +61,23 @@ class OnboardingProgress
             'percentage' => (int) round($aantal / count(self::STAPPEN) * 100),
             'steps' => $gedaan,
             'labels' => [
-                'school' => 'Schoolgegevens',
+                'school' => 'Wizard afgerond',
                 'player' => 'Eerste speler',
-                'group' => 'Eerste groep',
                 'training' => 'Eerste training',
                 'report' => 'Eerste rapport',
-                'trainer' => 'Trainer uitgenodigd',
                 'guardian' => 'Ouder uitgenodigd',
+                'product' => 'Eerste aanbod',
             ],
             // Wat de school zelf heeft weggeklikt of gezien; verklaart waarom
             // iemand ergens blijft hangen.
             'checklistDismissed' => $stand->checklistDismissed(),
+            // Waar ze zijn in de rondleiding en de wizard: "stap 4 van 14" zegt
+            // meer dan "nog niet gezien".
+            'tourStep' => $stand->tourStep(),
+            'tourTotal' => count(app(OnboardingTour::class)->steps($school)),
+            'wizardStep' => $stand->wizardStep(),
+            'wizardTotal' => count(EnrollmentSettings::STAPPEN),
+            'wizardCompleted' => EnrollmentSettings::for($school)->isCompleted(),
             'checklistCompleted' => $stand->checklistCompleted(),
             'tourSeen' => $stand->tourSeen(),
             'hasDemoData' => $stand->hasDemoData(),

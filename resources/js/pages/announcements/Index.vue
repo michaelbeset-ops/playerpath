@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import FlashMessage from '@/components/FlashMessage.vue';
-import DemoBadge from '@/components/onboarding/DemoBadge.vue';
 import InputError from '@/components/InputError.vue';
+import DemoBadge from '@/components/onboarding/DemoBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,7 +21,7 @@ const props = defineProps<{
         recipients_count: number;
         sent_at: string;
         from_cancellation: boolean;
-    is_demo?: boolean;
+        is_demo?: boolean;
     }[];
     groups: { id: number; name: string; recipients: number }[];
     schoolRecipients: number;
@@ -52,7 +52,7 @@ const versturen = () =>
     <Head title="Mededelingen" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="p-4">
+        <div class="p-4" data-tour="announcements">
             <FlashMessage />
 
             <div class="flex items-center gap-3">

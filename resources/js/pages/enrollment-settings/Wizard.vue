@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import InputError from '@/components/InputError.vue';
+import InviteForm, { type Uitnodiging } from '@/components/onboarding/InviteForm.vue';
 import ToggleSwitch from '@/components/ToggleSwitch.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import { ArrowLeft, ArrowRight, Check, ImagePlus, Trash2 } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 
 /**
  * De wizard: van niets naar een draaiende school, in zeven stappen.
@@ -46,7 +47,21 @@ const props = defineProps<{
     consents: Toestemming[];
     development: boolean;
     offeringTypes: { value: string; label: string; description: string }[];
-    school: { name: string; brand_color: string | null; logo: string | null; locations: string[] };
+    school: {
+        name: string;
+        slug: string;
+        contact_name: string | null;
+        contact_email: string | null;
+        contact_phone: string | null;
+        brand_color: string | null;
+        logo: string | null;
+        locations: string[];
+        domain: string | null;
+    };
+    groups: { id: number; name: string; age_category: string | null }[];
+    ageCategories: string[];
+    invitations: Uitnodiging[];
+    invitationDays: number;
 }>();
 
 const huidige = computed(() => props.steps[props.step - 1]);
@@ -68,6 +83,10 @@ const form = useForm(
               // vraag hier is er een waarop iemand kan afhaken vóórdat hij het
               // product heeft gezien.
               name: props.school.name,
+              slug: props.school.slug,
+              contact_name: props.school.contact_name ?? '',
+              contact_email: props.school.contact_email ?? '',
+              contact_phone: props.school.contact_phone ?? '',
               brand_color: props.school.brand_color ?? '#12813D',
               logo: null as File | null,
               remove_logo: false as boolean,
@@ -117,16 +136,26 @@ const form = useForm(
                         code_enabled: s.discounts.code.enabled as boolean,
                         stackable: s.discounts.stackable as boolean,
                     }
-                  : {
-                        waitlist: s.capacity.waitlist as boolean,
-                        pay_on_placement: s.capacity.pay_on_placement as boolean,
-                        invitation_days: s.capacity.invitation_days as number,
-                        fields: { ...(s.fields as Record<string, string>) },
-                        consents: Object.fromEntries(
-                            props.consents.map((c) => [c.key, { required: c.required, title: c.title, body: c.body }]),
-                        ) as Record<string, { required: boolean; title: string; body: string }>,
-                        development: props.development,
-                    },
+                  : props.step === 8
+                    ? {
+                          // Wat er al is, plus een lege regel om mee te beginnen.
+                          groups: [
+                              ...props.groups.map((g) => ({ name: g.name, age_category: g.age_category ?? '' })),
+                              ...(props.groups.length ? [] : [{ name: '', age_category: '' }]),
+                          ] as { name: string; age_category: string }[],
+                      }
+                    : props.step === 9
+                      ? {}
+                      : {
+                            waitlist: s.capacity.waitlist as boolean,
+                            pay_on_placement: s.capacity.pay_on_placement as boolean,
+                            invitation_days: s.capacity.invitation_days as number,
+                            fields: { ...(s.fields as Record<string, string>) },
+                            consents: Object.fromEntries(
+                                props.consents.map((c) => [c.key, { required: c.required, title: c.title, body: c.body }]),
+                            ) as Record<string, { required: boolean; title: string; body: string }>,
+                            development: props.development,
+                        },
 );
 
 const f = form as any;
@@ -150,10 +179,35 @@ const opslaan = () => {
 /** Overslaan: elke vraag heeft een bruikbare standaard. */
 const overslaan = () => router.post('/instellingen/inschrijven/stap/' + props.step + '/overslaan', {}, { preserveScroll: true });
 
+// Live voorbeeld van het gekozen logo, nog vóór het is opgeslagen.
+const logoVoorbeeld = ref<string | null>(props.school.logo);
+
+const groepFout = (i: number) => (form.errors as Record<string, string | undefined>)['groups.' + i + '.name'];
+const voegGroepToe = () => (f.groups as { name: string; age_category: string }[]).push({ name: '', age_category: '' });
+const haalGroepWeg = (i: number) => (f.groups as unknown[]).splice(i, 1);
+
+/** Een adres uit de naam, zolang je hem nog niet zelf hebt aangepast. */
+const slugUitNaam = (naam: string) =>
+    naam
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
+const slugHandmatig = ref(props.school.slug !== slugUitNaam(props.school.name));
+
+const bijNaam = () => {
+    if (!slugHandmatig.value) {
+        f.slug = slugUitNaam(f.name);
+    }
+};
+
 const kiesLogo = (event: Event) => {
     const bestand = (event.target as HTMLInputElement).files?.[0] ?? null;
     f.logo = bestand;
     f.remove_logo = false;
+    logoVoorbeeld.value = bestand ? URL.createObjectURL(bestand) : null;
 };
 
 const wisselSoort = (waarde: string) => {
@@ -253,8 +307,47 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                     <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
                         <label for="naam" class="font-medium">Hoe heet je school?</label>
                         <p class="mt-1 text-sm text-muted-foreground">Deze naam staat op je inschrijfpagina en boven elke e-mail aan ouders.</p>
-                        <input id="naam" v-model="f.name" type="text" :class="invoerKlasse" class="mt-3" />
+                        <input id="naam" v-model="f.name" type="text" :class="invoerKlasse" class="mt-3" @input="bijNaam" />
                         <InputError class="mt-2" :message="form.errors.name" />
+
+                        <label for="slug" class="mt-4 block text-sm font-medium">Het adres van je inschrijfpagina</label>
+                        <p class="mt-1 text-xs text-muted-foreground">Alleen kleine letters, cijfers en streepjes. Dit wordt ook je subdomein.</p>
+                        <div class="mt-2 flex items-center gap-2">
+                            <span class="hidden shrink-0 text-sm text-muted-foreground sm:inline">/inschrijven/</span>
+                            <input
+                                id="slug"
+                                v-model="f.slug"
+                                type="text"
+                                :class="invoerKlasse"
+                                class="min-w-0 flex-1"
+                                @input="slugHandmatig = true"
+                            />
+                        </div>
+                        <p v-if="f.slug" class="mt-1 truncate text-xs text-muted-foreground">
+                            {{ school.domain ? 'https://' + f.slug + '.' + school.domain : '/inschrijven/' + f.slug }}
+                        </p>
+                        <InputError class="mt-2" :message="form.errors.slug" />
+                    </section>
+
+                    <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
+                        <p class="font-medium">Contactgegevens</p>
+                        <p class="mt-1 text-sm text-muted-foreground">Voor ouders die je willen bereiken, en voor ons als er iets is.</p>
+
+                        <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                            <div>
+                                <label for="contact_name" class="text-sm font-medium">Contactpersoon</label>
+                                <input id="contact_name" v-model="f.contact_name" type="text" :class="invoerKlasse" class="mt-1" />
+                            </div>
+                            <div>
+                                <label for="contact_phone" class="text-sm font-medium">Telefoon</label>
+                                <input id="contact_phone" v-model="f.contact_phone" type="tel" :class="invoerKlasse" class="mt-1" />
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label for="contact_email" class="text-sm font-medium">E-mailadres</label>
+                                <input id="contact_email" v-model="f.contact_email" type="email" :class="invoerKlasse" class="mt-1" />
+                                <InputError class="mt-2" :message="form.errors.contact_email" />
+                            </div>
+                        </div>
                     </section>
 
                     <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -267,7 +360,7 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                             <span
                                 class="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background"
                             >
-                                <img v-if="school.logo && !f.remove_logo" :src="school.logo" alt="" class="size-full object-contain p-1" />
+                                <img v-if="logoVoorbeeld && !f.remove_logo" :src="logoVoorbeeld" alt="" class="size-full object-contain p-1" />
                                 <ImagePlus v-else class="size-5 text-muted-foreground" />
                             </span>
 
@@ -280,10 +373,10 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                             </label>
 
                             <button
-                                v-if="school.logo && !f.remove_logo"
+                                v-if="logoVoorbeeld && !f.remove_logo"
                                 type="button"
                                 class="inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm text-muted-foreground transition hover:text-destructive"
-                                @click="((f.remove_logo = true), (f.logo = null))"
+                                @click="((f.remove_logo = true), (f.logo = null), (logoVoorbeeld = null))"
                             >
                                 <Trash2 class="size-4" />
                                 Weghalen
@@ -311,6 +404,36 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                         </div>
 
                         <InputError class="mt-2" :message="form.errors.brand_color" />
+
+                        <!-- Zo staat het straks in de app: de balk met je logo, en
+                             een knop in je kleur. Kijken is sneller dan opslaan en
+                             terugkomen. -->
+                        <div class="mt-4 overflow-hidden rounded-xl border border-border">
+                            <div class="theme-donker flex h-12 items-center gap-3 bg-[hsl(var(--topbar))] px-3 text-foreground">
+                                <img
+                                    v-if="logoVoorbeeld && !f.remove_logo"
+                                    :src="logoVoorbeeld"
+                                    alt=""
+                                    class="h-7 w-auto max-w-[8rem] object-contain"
+                                />
+                                <span v-else class="text-sm font-semibold">{{ f.name || 'Jouw school' }}</span>
+                                <span
+                                    class="ml-auto flex size-8 items-center justify-center rounded-md text-xs font-bold text-primary-foreground"
+                                    :style="{ backgroundColor: f.brand_color }"
+                                >
+                                    +
+                                </span>
+                            </div>
+                            <div class="flex items-center justify-between gap-3 bg-background p-3">
+                                <span class="text-sm text-muted-foreground">Voorbeeld</span>
+                                <span
+                                    class="inline-flex h-9 items-center rounded-lg px-3 text-sm font-semibold text-primary-foreground"
+                                    :style="{ backgroundColor: f.brand_color }"
+                                >
+                                    Rapport invullen
+                                </span>
+                            </div>
+                        </div>
                     </section>
 
                     <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -649,7 +772,7 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                 </template>
 
                 <!-- ================= 7. Formulier ================= -->
-                <template v-else>
+                <template v-else-if="step === 7">
                     <section class="divide-y divide-border rounded-xl border border-border bg-card px-5 shadow-sm">
                         <ToggleSwitch
                             v-model="f.waitlist"
@@ -766,6 +889,65 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                         />
                     </section>
                 </template>
+                <!-- ================= 8. Groepen ================= -->
+                <template v-else-if="step === 8">
+                    <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
+                        <p class="font-medium">In welke groepen train je?</p>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            Een groep is waar je op plant en afvinkt. Een speler mag in meerdere groepen zitten; indelen doe je straks per speler.
+                        </p>
+
+                        <div class="mt-4 space-y-2">
+                            <div v-for="(groep, i) in f.groups" :key="i" class="flex flex-col gap-2 sm:flex-row">
+                                <input
+                                    v-model="groep.name"
+                                    type="text"
+                                    :class="invoerKlasse"
+                                    class="min-w-0 sm:flex-1"
+                                    placeholder="Bijvoorbeeld: Keepers O12"
+                                    :aria-label="'Naam van groep ' + (i + 1)"
+                                />
+                                <div class="flex gap-2">
+                                    <select
+                                        v-model="groep.age_category"
+                                        :class="invoerKlasse"
+                                        class="min-w-0 flex-1 sm:w-40"
+                                        :aria-label="'Leeftijd van groep ' + (i + 1)"
+                                    >
+                                        <option value="">Leeftijd (optioneel)</option>
+                                        <option v-for="cat in ageCategories" :key="cat" :value="cat">{{ cat }}</option>
+                                    </select>
+                                    <button
+                                        type="button"
+                                        class="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:text-destructive"
+                                        :aria-label="'Groep ' + (i + 1) + ' weghalen'"
+                                        @click="haalGroepWeg(i)"
+                                    >
+                                        <Trash2 class="size-4" />
+                                    </button>
+                                </div>
+                                <InputError :message="groepFout(i)" />
+                            </div>
+                        </div>
+
+                        <button
+                            type="button"
+                            class="mt-3 inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-background px-3 text-sm font-medium transition hover:border-primary"
+                            @click="voegGroepToe"
+                        >
+                            + Nog een groep
+                        </button>
+                    </section>
+                </template>
+
+                <!-- ================= 9. Trainers ================= -->
+                <template v-else-if="step === 9">
+                    <InviteForm role="trainer" :invitations="invitations" :valid-days="invitationDays" title="Wie geeft er training?" />
+
+                    <p class="text-xs text-muted-foreground">
+                        Geef je alleen zelf training? Dan sla je dit over. Uitnodigen kan altijd later, bij Mijn bedrijf â†’ Personeel.
+                    </p>
+                </template>
             </form>
         </div>
 
@@ -811,7 +993,7 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                 >
                     <template v-if="completed || laatste">
                         <Check class="size-4" />
-                        {{ laatste && !completed ? 'Afronden' : 'Opslaan' }}
+                        {{ laatste && !completed ? 'Afronden en naar mijn dashboard' : 'Opslaan' }}
                     </template>
                     <template v-else>
                         Opslaan en verder

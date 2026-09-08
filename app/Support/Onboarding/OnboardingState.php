@@ -33,6 +33,12 @@ class OnboardingState
         // Wanneer de rondleiding is afgerond of overgeslagen. Opnieuw starten
         // kan altijd, via de vraagtekenknop in de balk.
         'tour_seen_at' => null,
+        // Bij welke stap iemand was: de rondleiding loopt over veertien
+        // schermen, en wie halverwege wegklikt hoort daar te kunnen hervatten.
+        'tour_step' => 0,
+        // De hoogste wizardstap die is opgeslagen of overgeslagen, zodat het
+        // menu-item weer opent waar je was.
+        'wizard_step' => 0,
         // Wanneer de voorbeelddata is neergezet, en wanneer hij is opgeruimd.
         'demo_seeded_at' => null,
         'demo_removed_at' => null,
@@ -94,6 +100,16 @@ class OnboardingState
     public function tourSeen(): bool
     {
         return $this->has('tour_seen_at');
+    }
+
+    public function tourStep(): int
+    {
+        return (int) ($this->get('tour_step') ?? 0);
+    }
+
+    public function wizardStep(): int
+    {
+        return (int) ($this->get('wizard_step') ?? 0);
     }
 
     /** Is de voorbeelddata neergezet en nog niet opgeruimd? */

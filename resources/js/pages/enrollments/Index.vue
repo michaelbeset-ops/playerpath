@@ -118,7 +118,7 @@ const detailLabels: Record<string, string> = { kledingmaat: 'Kledingmaat', nivea
     <Head title="Inschrijvingen" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="mx-auto w-full max-w-3xl p-4">
+        <div class="mx-auto w-full max-w-3xl p-4" data-tour="enrollments">
             <FlashMessage />
 
             <div class="flex flex-wrap items-start justify-between gap-4">

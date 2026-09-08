@@ -6,6 +6,7 @@ use App\Enums\Feature;
 use App\Enums\ProductType;
 use App\Enums\Role;
 use App\Models\ConsentDocument;
+use App\Models\Group;
 use App\Models\School;
 use App\Models\User;
 use App\Support\Enrollment\EnrollmentSettings;
@@ -69,7 +70,7 @@ class EnrollmentSettingsTest extends TestCase
                 ->component('enrollment-settings/Wizard')
                 ->where('step', 1)
                 ->where('completed', false)
-                ->count('steps', 7)
+                ->count('steps', 9)
             );
     }
 
@@ -134,7 +135,20 @@ class EnrollmentSettingsTest extends TestCase
             'fields' => ['kledingmaat' => 'required', 'positie' => 'required', 'niveau' => 'off', 'medisch' => 'optional'],
             'consents' => $this->toestemmingen(['avg' => true, 'beeldrecht' => true, 'gedragsregels' => false, 'medisch' => false]),
             'development' => false,
-        ])->assertRedirect('/instellingen/inschrijven');
+        ])->assertRedirect('/instellingen/inschrijven/stap/8');
+
+        // Stap acht: groepen. Stap negen: trainers uitnodigen, en dat rondt af
+        // — naar het dashboard, want daar staat de startlijst.
+        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/8', [
+            'groups' => [['name' => 'Keepers O12', 'age_category' => 'Onder 12'], ['name' => 'Veld O14', 'age_category' => '']],
+        ])->assertRedirect('/instellingen/inschrijven/stap/9');
+
+        app(Tenancy::class)->set($this->school);
+        $this->assertSame(2, Group::count());
+        $this->assertSame('Onder 12', Group::where('name', 'Keepers O12')->value('age_category'));
+
+        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/9', [])
+            ->assertRedirect('/dashboard');
 
         $instellingen = EnrollmentSettings::for($this->school->refresh());
 
@@ -219,22 +233,23 @@ class EnrollmentSettingsTest extends TestCase
         $this->assertSame('Privacy (AVG)', ConsentDocument::allForSchool()[0]['title']);
     }
 
-    public function test_de_wizard_is_de_eerste_stap_van_de_checklist(): void
+    /**
+     * De wizard is de weg ernaartoe; de startlijst begint pas daarna, met de
+     * praktische dingen. Het menu-item opent waar je was gebleven.
+     */
+    public function test_het_menu_item_opent_waar_je_was_gebleven(): void
     {
+        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/2', [
+            'offering_types' => ['blok'], 'trial_enabled' => false, 'trial_amount' => '',
+        ]);
+
+        $this->actingAs($this->eigenaar)
+            ->get('/instellingen/inschrijven')
+            ->assertInertia(fn ($page) => $page->component('enrollment-settings/Wizard')->where('step', 3));
+
         $this->actingAs($this->eigenaar)
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page
-                ->where('checklist.steps.0.key', 'school')
-                ->where('checklist.steps.0.done', false)
-            );
-
-        EnrollmentSettings::complete($this->school);
-
-        // Elke echte request laadt de gebruiker vers; in de test hangt er nog
-        // een school van vóór het afronden aan.
-        $this->actingAs($this->eigenaar->fresh())
-            ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('checklist.steps.0.done', true));
+            ->assertInertia(fn ($page) => $page->where('checklist.steps.0.key', 'player'));
     }
 
     /**

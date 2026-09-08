@@ -66,12 +66,13 @@ const kleuren: Record<string, { rand: string; vlak: string; tekst: string }> = {
         v-if="!items.length"
         class="flex items-center gap-2 rounded-2xl border border-success/30 bg-success/5 px-4 py-3 text-sm text-success"
         aria-label="Vraagt om aandacht"
+        data-tour="attention"
     >
         <CheckCircle2 class="size-4 shrink-0" />
         Alles loopt — niks te doen.
     </p>
 
-    <section v-else class="rounded-2xl border border-warning/30 bg-warning/5 p-3 sm:p-5" aria-label="Vraagt om aandacht">
+    <section v-else class="rounded-2xl border border-warning/30 bg-warning/5 p-3 sm:p-5" aria-label="Vraagt om aandacht" data-tour="attention">
         <div class="flex items-start justify-between gap-3">
             <p class="flex min-w-0 items-center gap-2 font-medium">
                 <AlertTriangle class="size-4 shrink-0 text-warning" />

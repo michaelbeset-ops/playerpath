@@ -302,7 +302,7 @@ const laatLos = () => clearTimeout(timer);
         scherm is de duurste plek die er is. In bewerkmodus gaat de balk wél
         naar boven — dan is hij het onderwerp, en "Klaar" moet je kunnen vinden.
     -->
-    <div class="flex flex-col">
+    <div class="flex flex-col" data-tour="dashboard">
         <div class="flex flex-wrap items-center justify-between gap-2" :class="bewerken ? 'order-1' : 'order-2 lg:order-1'">
             <p class="text-xs text-muted-foreground">
                 <template v-if="bewerken">

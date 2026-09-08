@@ -43,7 +43,7 @@ const levelRand: Record<string, string> = {
         </p>
     </div>
 
-    <div class="space-y-6">
+    <div class="space-y-6" data-tour="family">
         <!-- 1. Binnenkort: wanneer moet je waar zijn. Het scherm opent hiermee. -->
         <section>
             <div class="flex flex-wrap items-center justify-between gap-2">

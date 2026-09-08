@@ -5,12 +5,11 @@ namespace Tests\Feature\Dashboard;
 use App\Enums\PlayerPosition;
 use App\Enums\ReportCategory;
 use App\Enums\Role;
-use App\Models\Group;
 use App\Models\Player;
+use App\Models\Product;
 use App\Models\School;
 use App\Models\Training;
 use App\Models\User;
-use App\Support\Enrollment\EnrollmentSettings;
 use App\Support\Tenancy\Tenancy;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -143,20 +142,19 @@ class AccountabilityTest extends TestCase
 
     public function test_de_checklist_verdwijnt_zodra_de_school_draait(): void
     {
-        // Verse school: zeven stappen open. De trainer-stap staat al op gedaan
-        // zodra er een trainer is, en die is er in deze opzet.
+        // Verse school: vijf praktische stappen open. Wat in de wizard zit
+        // (schoolgegevens, groepen, trainers) staat hier niet nog eens.
         $this->actingAs($this->eigenaar)
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->has('checklist.steps', 7)->where('checklist.done', 1));
+            ->assertInertia(fn ($page) => $page->has('checklist.steps', 5)->where('checklist.done', 0));
 
-        EnrollmentSettings::complete($this->school);
         $speler = Player::factory()->for($this->school)->keeper()->create();
-        Group::factory()->for($this->school)->create();
         Training::factory()->for($this->school)->create();
+        Product::factory()->for($this->school)->create();
 
         $this->actingAs($this->eigenaar->fresh())
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('checklist.done', 5));
+            ->assertInertia(fn ($page) => $page->where('checklist.done', 3));
 
         $this->rapporteer($speler, 7);
         $this->ouder();
@@ -165,7 +163,7 @@ class AccountabilityTest extends TestCase
         // gaat het blok voorgoed weg.
         $this->actingAs($this->eigenaar->fresh())
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('checklist.complete', true)->where('checklist.done', 7));
+            ->assertInertia(fn ($page) => $page->where('checklist.complete', true)->where('checklist.done', 5));
 
         $this->actingAs($this->eigenaar->fresh())->post('/onboarding/startlijst/klaar');
 

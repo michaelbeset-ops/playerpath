@@ -48,6 +48,8 @@ const props = defineProps<{
     can?: { managePlayers: boolean; manageGroups: boolean; planTrainings: boolean };
     /** Trainer zonder eigenaarsrol: andere kop, andere snelle acties. */
     isTrainerOnly?: boolean;
+    /** De eigenaar kijkt naar het ouderscherm, met de voorbeeldspelers als kinderen. */
+    preview?: boolean;
 
     // --- Ouder en speler ---
     /** De kinderen van deze ouder, compact; de kaart zit één tik verderop. */
@@ -278,8 +280,24 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
                 <!-- Ouder en speler krijgen geen wizard en geen rondleiding: die
                      moeten het meteen snappen. Wel één vriendelijke regel bij het
                      eerste bezoek, die na sluiten niet terugkomt. -->
+                <!-- De eigenaar kijkt mee met een ouder. Zeg dat erbij, anders
+                     denkt hij dat zijn eigen dashboard ineens anders is. -->
+                <div v-if="preview" class="mt-5 rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm">
+                    <p class="font-medium">Zo ziet een ouder het</p>
+                    <p class="text-xs text-muted-foreground">
+                        Dit is het dashboard van een ouder, met de voorbeeldspelers als kinderen. Geen instellingen, niets in te vullen: wanneer is de
+                        training, hoe gaat het met mijn kind, wat staat er open.
+                    </p>
+                    <Link
+                        href="/dashboard"
+                        class="mt-2 inline-flex min-h-11 items-center text-xs font-medium text-primary underline underline-offset-4"
+                    >
+                        Terug naar mijn dashboard
+                    </Link>
+                </div>
+
                 <WelcomeNote
-                    v-if="view === 'speler' || view === 'gezin'"
+                    v-if="!preview && (view === 'speler' || view === 'gezin')"
                     class="mt-5"
                     :role="view === 'speler' ? 'speler' : 'ouder'"
                     :name="view === 'speler' ? (player?.first_name ?? null) : voornaam"

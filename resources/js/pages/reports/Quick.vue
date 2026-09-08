@@ -161,7 +161,7 @@ const sla = () => {
     <Head :title="'Rapport - ' + player.name" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <form class="mx-auto w-full max-w-3xl p-4 pb-36" @submit.prevent="opslaan">
+        <form class="mx-auto w-full max-w-3xl p-4 pb-36" data-tour="quick-report" @submit.prevent="opslaan">
             <!-- Waar ben ik: welke training, en hoe ver ben ik -->
             <div class="flex items-center justify-between gap-3">
                 <p class="min-w-0 truncate text-xs text-muted-foreground first-letter:uppercase">{{ training.group }} &middot; {{ training.date }}</p>

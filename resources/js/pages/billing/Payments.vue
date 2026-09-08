@@ -123,7 +123,7 @@ const zetMethode = (betaling: Betaling, method: string) =>
     <Head title="Betalingen" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="mx-auto w-full max-w-5xl p-4">
+        <div class="mx-auto w-full max-w-5xl p-4" data-tour="payments">
             <FlashMessage />
             <GatewayNotice :gateway="gateway" />
 

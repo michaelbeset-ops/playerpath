@@ -42,7 +42,7 @@ const verwijder = (id: number, naam: string) => {
     <Head title="Personeel" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="mx-auto w-full max-w-4xl p-4">
+        <div class="mx-auto w-full max-w-4xl p-4" data-tour="business">
             <FlashMessage />
 
             <h1 class="text-2xl font-semibold tracking-tight">Personeel</h1>

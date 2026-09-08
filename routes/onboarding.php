@@ -17,6 +17,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('onboarding/startlijst/klaar', [OnboardingController::class, 'completeChecklist'])->name('onboarding.checklist.complete');
     Route::post('onboarding/rondleiding/klaar', [OnboardingController::class, 'finishTour'])->name('onboarding.tour.finish');
     Route::post('onboarding/rondleiding/opnieuw', [OnboardingController::class, 'restartTour'])->name('onboarding.tour.restart');
+    Route::post('onboarding/rondleiding/stap', [OnboardingController::class, 'tourStep'])->name('onboarding.tour.step');
+    // Het ouderscherm zoals een ouder het ziet, voor de eigenaar.
+    Route::get('onboarding/ouderweergave', [OnboardingController::class, 'parentPreview'])->name('onboarding.parent-preview');
     Route::post('onboarding/welkom/gezien', [OnboardingController::class, 'dismissIntro'])->name('onboarding.intro.dismiss');
     Route::delete('onboarding/voorbeelddata', [OnboardingController::class, 'removeDemo'])->name('onboarding.demo.destroy');
 });

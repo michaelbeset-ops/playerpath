@@ -3,13 +3,12 @@
 namespace App\Support\Dashboard;
 
 use App\Enums\Role;
-use App\Models\Group;
 use App\Models\Invitation;
 use App\Models\Player;
+use App\Models\Product;
 use App\Models\Report;
 use App\Models\Training;
 use App\Models\User;
-use App\Support\Enrollment\EnrollmentSettings;
 use App\Support\Onboarding\OnboardingState;
 use App\Support\Tenancy\Tenancy;
 
@@ -73,7 +72,7 @@ class SetupChecklist
     }
 
     /**
-     * De zeven stappen, in de volgorde waarin je ze doet.
+     * De vijf praktische stappen die na de wizard overblijven.
      *
      * @return list<array<string, mixed>>
      */
@@ -81,28 +80,12 @@ class SetupChecklist
     {
         return [
             [
-                'key' => 'school',
-                'title' => 'Vul je schoolgegevens aan',
-                'body' => 'Naam, logo, je kleur en waar je traint. Daarna weten ouders bij wie ze zich inschrijven.',
-                'href' => '/instellingen/inschrijven/stap/1',
-                'action' => 'Invullen',
-                'done' => EnrollmentSettings::for($school)->isCompleted(),
-            ],
-            [
                 'key' => 'player',
                 'title' => 'Voeg je eerste speler toe',
                 'body' => 'Zonder spelers valt er niets te plannen en niets te beoordelen.',
                 'href' => '/players/create',
                 'action' => 'Speler toevoegen',
                 'done' => Player::query()->real()->exists(),
-            ],
-            [
-                'key' => 'group',
-                'title' => 'Maak een groep aan',
-                'body' => 'Een groep is waar je op plant en afvinkt. Een speler mag in meerdere groepen zitten.',
-                'href' => '/groups/create',
-                'action' => 'Groep aanmaken',
-                'done' => Group::query()->real()->exists(),
             ],
             [
                 'key' => 'training',
@@ -123,20 +106,20 @@ class SetupChecklist
                 'done' => Report::query()->real()->exists(),
             ],
             [
-                'key' => 'trainer',
-                'title' => 'Nodig een trainer uit',
-                'body' => 'Hij krijgt een e-mail met jouw naam erboven en kiest zelf een wachtwoord.',
-                'href' => '/staff',
-                'action' => 'Trainer uitnodigen',
-                'done' => $this->uitgenodigd(Role::Trainer),
-            ],
-            [
                 'key' => 'guardian',
                 'title' => 'Nodig een ouder uit',
                 'body' => 'Vanaf dat moment ziet een ouder de kaart van zijn kind. Dat is wat je verkoopt.',
                 'href' => '/clients',
                 'action' => 'Ouder uitnodigen',
                 'done' => $this->uitgenodigd(Role::Ouder),
+            ],
+            [
+                'key' => 'product',
+                'title' => 'Maak je eerste aanbod aan',
+                'body' => 'Een blok, een abonnement of een kamp. Daarmee kunnen ouders zich online inschrijven.',
+                'href' => '/aanbod',
+                'action' => 'Aanbod aanmaken',
+                'done' => Product::query()->real()->exists(),
             ],
         ];
     }

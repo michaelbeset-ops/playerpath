@@ -7,6 +7,7 @@ use App\Support\Features\Features;
 use App\Support\Navigation\MainNavigation;
 use App\Support\Navigation\QuickActions;
 use App\Support\Onboarding\OnboardingState;
+use App\Support\Onboarding\OnboardingTour;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -114,16 +115,22 @@ class HandleInertiaRequests extends Middleware
             return null;
         }
 
-        $stand = OnboardingState::for(app(Tenancy::class)->school() ?? $gebruiker->school);
+        $school = app(Tenancy::class)->school() ?? $gebruiker->school;
+        $stand = OnboardingState::for($school);
         $werktVoorDeSchool = $gebruiker->isEigenaar() || $gebruiker->isTrainer();
+        $tour = $gebruiker->isEigenaar() && ! $stand->tourSeen();
 
         return [
+            // De stappen gaan alleen mee zolang de rondleiding loopt: veertien
+            // stukjes tekst op elke request is verspilling zodra hij gezien is.
+            'tourSteps' => $tour ? app(OnboardingTour::class)->steps($school) : [],
+            'tourStep' => $stand->tourStep(),
             // De balk "dit is voorbeelddata" is van de eigenaar: alleen hij kan
             // hem opruimen, en een trainer schrikt van een knop die dat doet.
             'demo' => $gebruiker->isEigenaar() && $stand->hasDemoData(),
-            // De rondleiding is voor wie de school bedient. Een ouder krijgt er
-            // geen: die moet het meteen snappen.
-            'tour' => $werktVoorDeSchool && ! $stand->tourSeen(),
+            // De rondleiding is voor de eigenaar: hij loopt langs zijn hele
+            // bedrijf. Een ouder krijgt er geen; die moet het meteen snappen.
+            'tour' => $tour,
             'canRestartTour' => $werktVoorDeSchool,
             // Het welkomstregeltje van een ouder of speler; één keer.
             'intro' => ! $werktVoorDeSchool && $gebruiker->intro_seen_at === null,

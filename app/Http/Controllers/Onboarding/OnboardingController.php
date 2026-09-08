@@ -4,9 +4,13 @@ namespace App\Http\Controllers\Onboarding;
 
 use App\Actions\Onboarding\RemoveDemoData;
 use App\Http\Controllers\Controller;
+use App\Models\Player;
+use App\Support\Dashboard\FamilyDashboard;
 use App\Support\Onboarding\OnboardingState;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
 
 /**
  * De knoppen van het opstarten: wegklikken, terughalen, opruimen.
@@ -66,9 +70,54 @@ class OnboardingController extends Controller
     {
         abort_unless($request->user()->isEigenaar() || $request->user()->isTrainer(), 403);
 
-        OnboardingState::clear($request->user()->school, 'tour_seen_at');
+        OnboardingState::save($request->user()->school, ['tour_seen_at' => null, 'tour_step' => 0]);
 
         return redirect()->route('dashboard');
+    }
+
+    /**
+     * Onthouden waar iemand in de rondleiding is.
+     *
+     * De rondleiding loopt over veertien schermen. Wie halverwege de telefoon
+     * wegstopt hoort bij stap acht te kunnen hervatten, niet bij stap één.
+     */
+    public function tourStep(Request $request): RedirectResponse
+    {
+        abort_unless($request->user()->isEigenaar() || $request->user()->isTrainer(), 403);
+
+        $data = $request->validate(['step' => ['required', 'integer', 'min:0', 'max:50']]);
+
+        OnboardingState::save($request->user()->school, ['tour_step' => (int) $data['step']]);
+
+        return back();
+    }
+
+    /**
+     * Wat een ouder ziet — voor de eigenaar.
+     *
+     * Dit is zijn verkoopargument, en hij kan het nergens anders zien: hij is
+     * geen ouder. Dus tekenen we het gezinsdashboard voor hem, met de
+     * voorbeeldspelers als "zijn kinderen". Dezelfde componenten en dezelfde
+     * rekenklassen als het echte ouderscherm, zodat het niet kan afwijken.
+     */
+    public function parentPreview(Request $request, FamilyDashboard $family): Response
+    {
+        abort_unless($request->user()->isEigenaar(), 403);
+
+        $kinderen = Player::query()->demo()->orderBy('first_name')->limit(2)->pluck('id')->all();
+
+        if ($kinderen === []) {
+            $kinderen = Player::query()->active()->whereNotNull('overall_rating')->orderBy('first_name')->limit(2)->pluck('id')->all();
+        }
+
+        return Inertia::render('Dashboard', [
+            'view' => 'gezin',
+            'preview' => true,
+            'children' => $family->children($kinderen),
+            'upcoming' => $family->upcomingTrainings($request->user(), $kinderen),
+            'offerings' => $family->openOfferings($request->user()),
+            'messages' => $family->messages($request->user()),
+        ]);
     }
 
     /**

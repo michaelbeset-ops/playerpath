@@ -179,7 +179,7 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
     <Head title="Kalender" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="mx-auto w-full max-w-6xl p-3 sm:p-4">
+        <div class="mx-auto w-full max-w-6xl p-3 sm:p-4" data-tour="calendar">
             <!-- Kop: navigeren en schakelen, alles binnen duimbereik -->
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div class="flex min-w-0 items-center gap-1">
