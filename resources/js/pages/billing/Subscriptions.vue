@@ -29,7 +29,7 @@ const props = defineProps<{
     subscriptions: Abonnement[];
     gateway: { connected: boolean; name: string; message: string };
     playersWithoutSubscription: { id: number; name: string }[];
-    plans: { id: number; name: string; amount: string; interval: string }[];
+    products: { id: number; name: string; amount: string; interval: string | null }[];
     methods: Record<string, string>;
     statuses: Record<string, string>;
 }>();
@@ -113,7 +113,7 @@ const kleurVoor = (status: string) =>
                             class="min-h-11 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
                         >
                             <option value="">Kies een tarief...</option>
-                            <option v-for="plan in plans" :key="plan.id" :value="plan.id">
+                            <option v-for="plan in products" :key="plan.id" :value="plan.id">
                                 {{ plan.name }} — {{ plan.amount }} {{ plan.interval.toLowerCase() }}
                             </option>
                         </select>

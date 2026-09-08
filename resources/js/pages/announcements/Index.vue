@@ -8,8 +8,8 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/vue3';
-import { CalendarX2, Megaphone, Users } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { CalendarX2, ChevronDown, Megaphone, Users } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 
 const props = defineProps<{
     announcements: {
@@ -30,6 +30,16 @@ const props = defineProps<{
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Mededelingen', href: '/announcements' }];
 
 const form = useForm({ title: '', body: '', group_id: '' as string | number });
+
+// Welke berichten uitgeklapt staan. Standaard geen: de lijst is een register,
+// geen leesscherm.
+const open = ref<number[]>([]);
+const isOpen = (id: number) => open.value.includes(id);
+const wissel = (id: number) => {
+    const i = open.value.indexOf(id);
+    if (i === -1) open.value.push(id);
+    else open.value.splice(i, 1);
+};
 
 // Hardop laten zien hoeveel mensen je aanschrijft: dat voorkomt een bericht
 // dat per ongeluk naar de hele school gaat in plaats van naar één groep.
@@ -117,24 +127,41 @@ const versturen = () =>
                 <p class="font-medium">Verstuurd</p>
 
                 <div v-if="announcements.length" class="mt-3 space-y-3">
-                    <div v-for="bericht in announcements" :key="bericht.id" class="rounded-lg border border-border p-4">
-                        <div class="flex flex-wrap items-start justify-between gap-2">
-                            <p class="flex items-center gap-2 font-medium">
-                                <CalendarX2 v-if="bericht.from_cancellation" class="size-4 text-warning" />
-                                {{ bericht.title }}
-                                <DemoBadge v-if="bericht.is_demo" />
-                            </p>
-                            <span class="rounded-md bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
-                                {{ bericht.group ?? 'Hele school' }}
+                    <!-- Per bericht alleen de kop: titel, datum en voor wie. De
+                         tekst zelf klapt uit; twintig berichten voluit is een
+                         lap tekst waar je doorheen moet scrollen om er één te
+                         vinden. -->
+                    <div v-for="bericht in announcements" :key="bericht.id" class="rounded-lg border border-border">
+                        <button
+                            type="button"
+                            class="flex w-full items-start gap-3 p-4 text-left transition hover:bg-secondary/40"
+                            :aria-expanded="isOpen(bericht.id)"
+                            @click="wissel(bericht.id)"
+                        >
+                            <span class="min-w-0 flex-1">
+                                <span class="flex flex-wrap items-center gap-2 font-medium">
+                                    <CalendarX2 v-if="bericht.from_cancellation" class="size-4 shrink-0 text-warning" />
+                                    <span class="min-w-0 break-words">{{ bericht.title }}</span>
+                                    <DemoBadge v-if="bericht.is_demo" />
+                                </span>
+                                <span class="tabular mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                                    <span>{{ bericht.sent_at }}</span>
+                                    <span class="rounded-md bg-secondary px-2 py-0.5">{{ bericht.group ?? 'Hele school' }}</span>
+                                </span>
                             </span>
+                            <ChevronDown
+                                class="mt-1 size-4 shrink-0 text-muted-foreground transition"
+                                :class="isOpen(bericht.id) ? 'rotate-180' : ''"
+                            />
+                        </button>
+
+                        <div v-if="isOpen(bericht.id)" class="border-t border-border px-4 pb-4 pt-3">
+                            <p class="whitespace-pre-line text-sm">{{ bericht.body }}</p>
+                            <p class="tabular mt-3 text-xs text-muted-foreground">
+                                Verstuurd door {{ bericht.author ?? 'onbekend' }} aan {{ bericht.recipients_count }}
+                                {{ bericht.recipients_count === 1 ? 'ontvanger' : 'ontvangers' }}
+                            </p>
                         </div>
-
-                        <p class="mt-2 whitespace-pre-line text-sm text-muted-foreground">{{ bericht.body }}</p>
-
-                        <p class="tabular mt-2 text-xs text-muted-foreground">
-                            {{ bericht.sent_at }} · {{ bericht.author ?? 'Onbekend' }} · {{ bericht.recipients_count }}
-                            {{ bericht.recipients_count === 1 ? 'ontvanger' : 'ontvangers' }}
-                        </p>
                     </div>
                 </div>
 

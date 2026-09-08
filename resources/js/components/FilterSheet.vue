@@ -28,8 +28,10 @@ withDefaults(
         description?: string;
         /** Op een groot scherm ook inline tekenen. Uit als de pagina daar zelf iets neerzet. */
         inline?: boolean;
+        /** Wat er op de knop staat; standaard "Filters". */
+        label?: string;
     }>(),
-    { inline: true },
+    { inline: true, label: 'Filters' },
 );
 
 const open = ref(false);
@@ -47,11 +49,11 @@ const open = ref(false);
             type="button"
             class="relative inline-flex min-h-11 items-center gap-2 rounded-lg border bg-card px-3 text-sm font-medium shadow-sm transition"
             :class="count > 0 ? 'border-primary text-primary' : 'border-border text-foreground hover:border-primary'"
-            :aria-label="count > 0 ? 'Filters, ' + count + ' actief' : 'Filters'"
+            :aria-label="count > 0 ? label + ', ' + count + ' actief' : label"
             @click="open = true"
         >
             <SlidersHorizontal class="size-4" aria-hidden="true" />
-            Filters
+            {{ label }}
             <span
                 v-if="count > 0"
                 class="tabular inline-flex size-5 items-center justify-center rounded-full bg-primary text-[11px] font-bold text-primary-foreground"
