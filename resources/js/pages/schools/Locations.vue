@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/vue3';
-import { MapPin, Pencil, Plus, X } from 'lucide-vue-next';
+import { MapPin, Pencil, Plus } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 interface Locatie {
@@ -53,7 +53,7 @@ const slaOp = () =>
         onSuccess: () => (bewerkId.value = null),
     });
 
-const veld = 'h-11 w-full rounded-lg border border-input bg-background px-3 text-base outline-none focus:border-primary sm:h-10 sm:text-sm';
+const veld = 'h-11 w-full rounded-lg border border-input bg-background px-3 text-base outline-none focus:border-primary sm:text-sm';
 </script>
 
 <template>
@@ -91,7 +91,7 @@ const veld = 'h-11 w-full rounded-lg border border-input bg-background px-3 text
                     <InputError :message="nieuw.errors.note" />
                 </div>
 
-                <Button type="submit" class="h-11 w-full sm:h-10 sm:w-auto" :disabled="nieuw.processing">
+                <Button type="submit" class="h-11 w-full sm:w-auto" :disabled="nieuw.processing">
                     <Plus class="mr-2 size-4" />
                     Toevoegen
                 </Button>
@@ -160,7 +160,7 @@ const veld = 'h-11 w-full rounded-lg border border-input bg-background px-3 text
                         <button
                             v-if="canManage"
                             type="button"
-                            class="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                            class="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-foreground"
                             :aria-label="locatie.name + ' bewerken'"
                             @click="openBewerken(locatie)"
                         >

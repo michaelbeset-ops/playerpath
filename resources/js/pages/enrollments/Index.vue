@@ -129,7 +129,7 @@ const detailLabels: Record<string, string> = { kledingmaat: 'Kledingmaat', nivea
 
                 <button
                     type="button"
-                    class="inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-medium shadow-sm transition hover:border-primary"
+                    class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-medium shadow-sm transition hover:border-primary"
                     @click="kopieer"
                 >
                     <Check v-if="gekopieerd" class="size-4 text-primary" />
@@ -146,7 +146,7 @@ const detailLabels: Record<string, string> = { kledingmaat: 'Kledingmaat', nivea
                     v-for="t in tabs"
                     :key="t.key"
                     type="button"
-                    class="flex h-10 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-medium transition"
+                    class="flex min-h-11 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-medium transition"
                     :class="
                         tab === t.key
                             ? 'border-primary bg-primary/10 text-primary'
@@ -189,13 +189,16 @@ const detailLabels: Record<string, string> = { kledingmaat: 'Kledingmaat', nivea
                         <p>
                             {{ i.guardian_name }}<span v-if="i.relationship" class="text-muted-foreground"> ({{ i.relationship }})</span>
                         </p>
-                        <a :href="'mailto:' + i.guardian_email" class="flex items-center gap-1.5 text-muted-foreground hover:text-foreground">
+                        <a
+                            :href="'mailto:' + i.guardian_email"
+                            class="flex min-h-11 items-center gap-1.5 text-muted-foreground hover:text-foreground"
+                        >
                             <Mail class="size-3.5" />{{ i.guardian_email }}
                         </a>
                         <a
                             v-if="i.guardian_phone"
                             :href="'tel:' + i.guardian_phone"
-                            class="flex items-center gap-1.5 text-muted-foreground hover:text-foreground"
+                            class="flex min-h-11 items-center gap-1.5 text-muted-foreground hover:text-foreground"
                         >
                             <Phone class="size-3.5" />{{ i.guardian_phone }}
                         </a>
@@ -224,7 +227,7 @@ const detailLabels: Record<string, string> = { kledingmaat: 'Kledingmaat', nivea
                         <button
                             v-if="i.can_approve"
                             type="button"
-                            class="inline-flex h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
+                            class="inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
                             @click="keurGoed(i)"
                         >
                             <Check class="size-4" />
@@ -233,7 +236,7 @@ const detailLabels: Record<string, string> = { kledingmaat: 'Kledingmaat', nivea
                         <Link
                             v-if="i.first_payment_id"
                             :href="'/payments?tab=open'"
-                            class="inline-flex h-10 items-center gap-2 rounded-lg border border-border px-4 text-sm font-medium hover:border-primary"
+                            class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-4 text-sm font-medium hover:border-primary"
                         >
                             <CreditCard class="size-4" />
                             Betaling markeren
@@ -242,7 +245,7 @@ const detailLabels: Record<string, string> = { kledingmaat: 'Kledingmaat', nivea
                             v-if="i.first_payment_id"
                             :href="'/enrollments/' + i.id + '/betaallink'"
                             target="_blank"
-                            class="inline-flex h-10 items-center gap-2 rounded-lg border border-border px-4 text-sm font-medium hover:border-primary"
+                            class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-4 text-sm font-medium hover:border-primary"
                         >
                             <Link2 class="size-4" />
                             Betaallink
@@ -250,14 +253,14 @@ const detailLabels: Record<string, string> = { kledingmaat: 'Kledingmaat', nivea
                         <Link
                             v-if="i.player_id"
                             :href="'/players/' + i.player_id"
-                            class="inline-flex h-10 items-center rounded-lg border border-border px-4 text-sm font-medium hover:border-primary"
+                            class="inline-flex min-h-11 items-center rounded-lg border border-border px-4 text-sm font-medium hover:border-primary"
                         >
                             Naar de speler
                         </Link>
                         <button
                             v-if="i.can_cancel"
                             type="button"
-                            class="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm text-muted-foreground hover:text-destructive"
+                            class="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-muted-foreground hover:text-destructive"
                             @click="annuleer(i)"
                         >
                             <X class="size-4" />
@@ -266,7 +269,7 @@ const detailLabels: Record<string, string> = { kledingmaat: 'Kledingmaat', nivea
                         <button
                             v-if="i.can_decline"
                             type="button"
-                            class="inline-flex h-10 items-center gap-2 rounded-lg px-3 text-sm text-muted-foreground hover:text-destructive"
+                            class="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-muted-foreground hover:text-destructive"
                             @click="wijsAf(i)"
                         >
                             <X class="size-4" />

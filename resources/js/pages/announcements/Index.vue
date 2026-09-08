@@ -74,7 +74,7 @@ const versturen = () =>
                         <select
                             id="group_id"
                             v-model="form.group_id"
-                            class="h-10 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
+                            class="min-h-11 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
                         >
                             <option value="">Iedereen in de school</option>
                             <option v-for="groep in groups" :key="groep.id" :value="groep.id">{{ groep.name }}</option>
@@ -91,7 +91,7 @@ const versturen = () =>
                         rows="4"
                         maxlength="2000"
                         required
-                        class="rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                        class="min-h-11 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
                         placeholder="Het veld staat onder water. Volgende week gaan we weer normaal door."
                     ></textarea>
                     <InputError :message="form.errors.body" />
@@ -129,8 +129,8 @@ const versturen = () =>
                         <p class="mt-2 whitespace-pre-line text-sm text-muted-foreground">{{ bericht.body }}</p>
 
                         <p class="tabular mt-2 text-xs text-muted-foreground">
-                            {{ bericht.sent_at }} · {{ bericht.author ?? 'Onbekend' }} ·
-                            {{ bericht.recipients_count }} {{ bericht.recipients_count === 1 ? 'ontvanger' : 'ontvangers' }}
+                            {{ bericht.sent_at }} · {{ bericht.author ?? 'Onbekend' }} · {{ bericht.recipients_count }}
+                            {{ bericht.recipients_count === 1 ? 'ontvanger' : 'ontvangers' }}
                         </p>
                     </div>
                 </div>

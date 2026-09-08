@@ -74,8 +74,7 @@ const klap = (id: number) => {
 
             <h1 class="text-2xl font-semibold tracking-tight">Klanten</h1>
             <p class="mt-1 text-sm text-muted-foreground">
-                <span class="tabular">{{ counts.players }}</span> actieve
-                {{ counts.players === 1 ? 'speler' : 'spelers' }} en
+                <span class="tabular">{{ counts.players }}</span> actieve {{ counts.players === 1 ? 'speler' : 'spelers' }} en
                 <span class="tabular">{{ counts.guardians }}</span>
                 {{ counts.guardians === 1 ? 'ouder' : 'ouders' }}. Klap een speler uit om te zien wie je belt.
             </p>
@@ -89,7 +88,7 @@ const klap = (id: number) => {
                 <Link
                     v-if="can.managePlayers"
                     href="/players/create"
-                    class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                    class="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
                 >
                     <Plus class="size-4" />
                     Speler toevoegen
@@ -103,21 +102,30 @@ const klap = (id: number) => {
                         v-model="filters.search"
                         type="search"
                         placeholder="Zoek op speler of ouder..."
-                        class="w-full rounded-lg border border-input bg-card py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
+                        class="min-h-11 w-full rounded-lg border border-input bg-card py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
                     />
                 </div>
 
-                <select v-model="filters.position" class="min-w-0 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary">
+                <select
+                    v-model="filters.position"
+                    class="min-h-11 min-w-0 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary"
+                >
                     <option value="">Alle posities</option>
                     <option v-for="(label, waarde) in positions" :key="waarde" :value="waarde">{{ label }}</option>
                 </select>
 
-                <select v-model="filters.group" class="min-w-0 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary">
+                <select
+                    v-model="filters.group"
+                    class="min-h-11 min-w-0 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary"
+                >
                     <option :value="null">Alle groepen</option>
                     <option v-for="groep in groups" :key="groep.id" :value="groep.id">{{ groep.name }}</option>
                 </select>
 
-                <select v-model="filters.status" class="col-span-2 min-w-0 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary lg:col-span-1">
+                <select
+                    v-model="filters.status"
+                    class="col-span-2 min-h-11 min-w-0 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary lg:col-span-1"
+                >
                     <option value="active">Actieve spelers</option>
                     <option value="inactive">Niet-actieve spelers</option>
                     <option value="all">Alle spelers</option>
@@ -144,11 +152,7 @@ const klap = (id: number) => {
                             <span class="min-w-0 flex-1">
                                 <span class="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium">
                                     {{ speler.name }}
-                                    <KeyRound
-                                        v-if="speler.has_login"
-                                        class="size-3.5 shrink-0 text-muted-foreground"
-                                        title="Heeft een eigen inlog"
-                                    />
+                                    <KeyRound v-if="speler.has_login" class="size-3.5 shrink-0 text-muted-foreground" title="Heeft een eigen inlog" />
                                     <span
                                         v-if="!speler.is_active"
                                         class="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
@@ -172,7 +176,7 @@ const klap = (id: number) => {
 
                         <button
                             type="button"
-                            class="flex h-9 shrink-0 items-center gap-1 rounded-lg border border-border px-2 text-xs font-medium transition hover:border-primary"
+                            class="flex min-h-11 shrink-0 items-center gap-1 rounded-lg border border-border px-2 text-xs font-medium transition hover:border-primary"
                             :class="speler.guardians.length ? 'text-foreground' : 'text-muted-foreground'"
                             :aria-expanded="uitgeklapt.includes(speler.id)"
                             :aria-label="'Ouders van ' + speler.name"

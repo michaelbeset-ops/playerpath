@@ -46,7 +46,9 @@ const url = (overzicht: Overzicht, format: 'csv' | 'xlsx') => {
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-3xl p-4">
             <h1 class="text-2xl font-semibold tracking-tight">Overzichten</h1>
-            <p class="mt-1 text-sm text-muted-foreground">Download je gegevens als Excel of CSV, bijvoorbeeld voor je boekhouder of een teamoverleg.</p>
+            <p class="mt-1 text-sm text-muted-foreground">
+                Download je gegevens als Excel of CSV, bijvoorbeeld voor je boekhouder of een teamoverleg.
+            </p>
 
             <!-- Periode: geldt voor de overzichten met een datum -->
             <div class="mt-6 rounded-xl border border-border bg-card p-4 shadow-sm">
@@ -86,14 +88,14 @@ const url = (overzicht: Overzicht, format: 'csv' | 'xlsx') => {
                     <div class="mt-4 grid grid-cols-2 gap-2">
                         <a
                             :href="url(overzicht, 'xlsx')"
-                            class="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
                         >
                             <FileSpreadsheet class="size-4" />
                             Excel
                         </a>
                         <a
                             :href="url(overzicht, 'csv')"
-                            class="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-medium shadow-sm transition hover:border-primary"
+                            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium shadow-sm transition hover:border-primary"
                         >
                             <FileText class="size-4" />
                             CSV
@@ -103,8 +105,8 @@ const url = (overzicht: Overzicht, format: 'csv' | 'xlsx') => {
             </div>
 
             <p class="mt-6 text-xs text-muted-foreground">
-                Het financiële overzicht bevat in Excel vier tabbladen; als CSV krijg je alleen de betalingen. Zodra Mollie is
-                aangesloten komen de echte incassogegevens hier automatisch in.
+                Het financiële overzicht bevat in Excel vier tabbladen; als CSV krijg je alleen de betalingen. Zodra Mollie is aangesloten komen de
+                echte incassogegevens hier automatisch in.
             </p>
         </div>
     </AppLayout>

@@ -533,6 +533,46 @@ en daar kan niemand iets mee. Verder geldt: "spelers zonder rapport" staat in he
 aandacht-blok en niet meer als los blok; "groepen" is als kerncijfer geschrapt
 omdat het nooit verandert.
 
+#### Op een telefoon staat er minder
+
+Een eigenaar pakt zijn telefoon om in tien seconden te zien hoe het ervoor
+staat en of er iets moet gebeuren; de analyse doet hij op zijn laptop. Het
+mobiele dashboard toont dus alleen wat op dat moment telt, en past binnen twee
+schermlengtes.
+
+- **`DashboardWidget::onMobile()` is de enige lijst**, net als `ownerOnly()` en
+  `feature()`. Er is bewust geen aparte mobiele indeling: dat zou een tweede
+  plek zijn waar een nieuwe widget vergeten kan worden. Wat op `false` staat
+  verdwijnt niet — het staat op het grote scherm.
+- **De volgorde verschilt, de inhoud niet.** Op een laptop staan de snelle
+  acties bovenaan (je ziet het hele scherm toch, en je opent het om iets te
+  doen); op een telefoon staat het aandacht-blok daarboven, want daar zie je
+  maar één ding tegelijk en is "moet er iets gebeuren?" de eerste vraag. Dat is
+  één flexkolom met order-klassen, geen tweede dashboard.
+- **Wat eraf gaat laat een spoor achter** (`MobileSummary`): het
+  ontwikkelingsvak wordt één regel met de dekking van de rapporten, het
+  financiële vak één regel met wat er openstaat. Een wegwijzer, geen
+  samenvatting — en een regel zonder inhoud verdwijnt.
+- **Hooguit twee snelle acties**; de rest zit onder de plusknop in de balk, waar
+  hij toch al stond. Vier knoppen duwen de cijfers een half scherm omlaag.
+- **`mobileCompact()` zegt wat er naast elkaar past.** Twee kerncijfers naast
+  elkaar; alles met een lijst erin over de volle breedte, want de helft van 375
+  pixels kapt elke naam af.
+- **Verjaardagen staan er niet op.** Aardig om te weten is geen reden om op je
+  telefoon te scrollen.
+
+**De bewerkmodus is op een telefoon een lijst, geen raster.** Twaalf kolommen op
+375 pixels zijn geen kolommen: daar gaat het over volgorde en over aan of uit,
+met pijltjes in plaats van slepen — slepen in een lijst waarin je tegelijk wilt
+scrollen is een gok, een pijl van 44 pixels niet. In die lijst staat álles, ook
+wat op een telefoon niet getoond wordt, met "alleen groot scherm" erbij; anders
+kun je iets dat je daar niet ziet ook nergens weghalen. De breedtes van het
+grote scherm blijven staan.
+
+**Buiten de bewerkmodus staat "Indeling aanpassen" op een telefoon onderaan.**
+Het is iets wat je één keer doet, en de bovenste regel van dat scherm is de
+duurste plek die er is.
+
 #### Groei komt uit de rapporten, niet uit de kaart
 
 `players.overall_rating` is een momentopname zonder historie: het zegt hoe een

@@ -117,7 +117,7 @@ const opslaan = () =>
                                 <input
                                     type="color"
                                     :value="proefKleur ?? '#1BB85E'"
-                                    class="size-10 cursor-pointer rounded-lg border border-input bg-background"
+                                    class="size-11 cursor-pointer rounded-lg border border-input bg-background"
                                     @input="form.brand_color = ($event.target as HTMLInputElement).value"
                                 />
                                 <Input id="brand_color" v-model="form.brand_color" placeholder="#1BB85E" class="w-36" />
@@ -127,7 +127,7 @@ const opslaan = () =>
                         <div class="grid gap-2">
                             <Label>Zo ziet een knop eruit</Label>
                             <span
-                                class="inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium"
+                                class="inline-flex min-h-11 items-center rounded-lg px-4 text-sm font-medium"
                                 :style="proefKleur ? { backgroundColor: proefKleur, color: '#fff' } : {}"
                                 :class="proefKleur ? '' : 'bg-primary text-primary-foreground'"
                             >
@@ -138,7 +138,7 @@ const opslaan = () =>
                         <button
                             v-if="form.brand_color"
                             type="button"
-                            class="h-10 text-sm text-muted-foreground underline underline-offset-4"
+                            class="inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4"
                             @click="form.brand_color = ''"
                         >
                             Terug naar PlayerPath-groen

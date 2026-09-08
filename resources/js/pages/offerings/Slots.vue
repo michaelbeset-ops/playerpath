@@ -188,7 +188,7 @@ const geboekt = computed(() => props.slots.filter((s) => s.player_id).length);
                     <InputError :message="form.errors.location_id" />
                 </div>
 
-                <Button type="submit" class="h-11 w-full sm:h-10 sm:w-auto" :disabled="form.processing">
+                <Button type="submit" class="h-11 w-full sm:w-auto" :disabled="form.processing">
                     <Plus class="mr-2 size-4" />
                     Moment toevoegen
                 </Button>

@@ -30,13 +30,11 @@ const bewerken = computed(() => props.training !== null);
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     { title: 'Trainingen', href: '/trainings' },
-    bewerken.value
-        ? { title: 'Bewerken', href: '/trainings/' + props.training!.id + '/edit' }
-        : { title: 'Inplannen', href: '/trainings/create' },
+    bewerken.value ? { title: 'Bewerken', href: '/trainings/' + props.training!.id + '/edit' } : { title: 'Inplannen', href: '/trainings/create' },
 ]);
 
 const form = useForm({
-    group_id: props.training?.group_id ?? (props.groups[0]?.id ?? ''),
+    group_id: props.training?.group_id ?? props.groups[0]?.id ?? '',
     date: props.training?.date ?? '',
     starts_at: props.training?.starts_at ?? '18:00',
     ends_at: props.training?.ends_at ?? '19:30',
@@ -82,7 +80,7 @@ const opslaan = () => {
                     <select
                         id="group_id"
                         v-model="form.group_id"
-                        class="h-10 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
+                        class="min-h-11 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
                     >
                         <option v-for="groep in groups" :key="groep.id" :value="groep.id">
                             {{ groep.name }}<span v-if="groep.age_category"> ({{ groep.age_category }})</span>

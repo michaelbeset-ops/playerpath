@@ -162,7 +162,7 @@ const zetMethode = (betaling: Betaling, method: string) =>
                     v-for="(label, waarde) in tabs"
                     :key="waarde"
                     type="button"
-                    class="shrink-0 rounded-lg px-3 py-2 text-sm font-medium transition"
+                    class="min-h-11 shrink-0 rounded-lg px-3 py-2 text-sm font-medium transition"
                     :class="filters.tab === waarde ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
                     @click="filters.tab = waarde"
                 >
@@ -178,15 +178,21 @@ const zetMethode = (betaling: Betaling, method: string) =>
                         v-model="filters.search"
                         type="search"
                         placeholder="Zoek op speler of omschrijving..."
-                        class="w-full rounded-lg border border-input bg-card py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
+                        class="min-h-11 w-full rounded-lg border border-input bg-card py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
                     />
                 </div>
 
-                <select v-model="filters.period" class="rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary">
+                <select
+                    v-model="filters.period"
+                    class="min-h-11 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary"
+                >
                     <option v-for="(label, waarde) in periods" :key="waarde" :value="waarde">{{ label }}</option>
                 </select>
 
-                <select v-model="filters.method" class="rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary">
+                <select
+                    v-model="filters.method"
+                    class="min-h-11 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary"
+                >
                     <option value="">Alle methodes</option>
                     <option v-for="(label, waarde) in methods" :key="waarde" :value="waarde">{{ label }}</option>
                 </select>
@@ -195,7 +201,7 @@ const zetMethode = (betaling: Betaling, method: string) =>
                      aanbod, niet over een maand. -->
                 <select
                     v-model="filters.product"
-                    class="col-span-full rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary sm:col-span-1"
+                    class="col-span-full min-h-11 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary sm:col-span-1"
                 >
                     <option :value="null">Al het aanbod</option>
                     <option v-for="product in products" :key="product.id" :value="product.id">{{ product.name }}</option>
@@ -260,7 +266,7 @@ const zetMethode = (betaling: Betaling, method: string) =>
 
                                 <button
                                     type="button"
-                                    class="flex size-9 shrink-0 items-center justify-center rounded-lg border transition"
+                                    class="flex size-11 shrink-0 items-center justify-center rounded-lg border transition"
                                     :class="
                                         open.includes(betaling.id)
                                             ? 'border-primary text-primary'
@@ -284,7 +290,7 @@ const zetMethode = (betaling: Betaling, method: string) =>
                                     Status
                                     <select
                                         :value="betaling.status"
-                                        class="h-9 rounded-lg border border-input bg-background px-2 text-sm text-foreground outline-none focus:border-primary"
+                                        class="h-11 rounded-lg border border-input bg-background px-2 text-sm text-foreground outline-none focus:border-primary"
                                         @change="zetStatus(betaling, ($event.target as HTMLSelectElement).value)"
                                     >
                                         <option v-for="(label, waarde) in statuses" :key="waarde" :value="waarde">{{ label }}</option>
@@ -297,7 +303,7 @@ const zetMethode = (betaling: Betaling, method: string) =>
                                     Hoe binnengekomen
                                     <select
                                         :value="betaling.method_value ?? ''"
-                                        class="h-9 rounded-lg border border-input bg-background px-2 text-sm text-foreground outline-none focus:border-primary"
+                                        class="h-11 rounded-lg border border-input bg-background px-2 text-sm text-foreground outline-none focus:border-primary"
                                         @change="zetMethode(betaling, ($event.target as HTMLSelectElement).value)"
                                     >
                                         <option value="" disabled>Kies een methode</option>

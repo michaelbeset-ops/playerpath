@@ -64,14 +64,24 @@ class SubscriptionController extends Controller
                 ->orderBy('first_name')
                 ->get()
                 ->map(fn (Player $speler) => ['id' => $speler->id, 'name' => $speler->full_name]),
-            'products' => Product::where('is_active', true)
+            // Alleen aanbod dat écht als abonnement loopt.
+            //
+            // Op `is_active` filteren liet ook een kamp of een rittenkaart in
+            // deze lijst komen, en die hebben geen interval: het scherm liep
+            // stuk op `interval->label()` van null. Erger dan de fout is wat
+            // eronder zat — je kon een kamp als abonnement kiezen, en dan
+            // brengt een blok van één week elke maand een rekening voort.
+            // `recurring()` is dezelfde grens die de administratie gebruikt.
+            'products' => Product::query()
+                ->active()
+                ->recurring()
                 ->orderBy('name')
                 ->get()
                 ->map(fn (Product $product) => [
                     'id' => $product->id,
                     'name' => $product->name,
                     'amount' => Money::format($product->amount_cents),
-                    'interval' => $product->interval->label(),
+                    'interval' => $product->interval?->label(),
                 ]),
             'methods' => PaymentMethod::options(),
             'statuses' => SubscriptionStatus::options(),

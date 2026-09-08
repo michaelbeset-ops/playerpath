@@ -202,7 +202,7 @@ const leeftijd = (product: ProductRij) => {
                                     <Link
                                         v-if="product.type === 'privetraining'"
                                         :href="'/aanbod/' + product.id + '/momenten'"
-                                        class="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                                        class="flex size-11 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-foreground"
                                         :aria-label="'Momenten van ' + product.name"
                                     >
                                         <Clock class="size-4" />
@@ -210,14 +210,14 @@ const leeftijd = (product: ProductRij) => {
                                     <Link
                                         v-else
                                         :href="'/aanbod/' + product.id + '/deelnemers'"
-                                        class="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                                        class="flex size-11 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-foreground"
                                         :aria-label="'Deelnemers van ' + product.name"
                                     >
                                         <Users class="size-4" />
                                     </Link>
                                     <Link
                                         :href="'/aanbod/' + product.id + '/edit'"
-                                        class="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                                        class="flex size-11 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-foreground"
                                         :aria-label="product.name + ' bewerken'"
                                     >
                                         <Pencil class="size-4" />

@@ -121,7 +121,7 @@ const opslaan = () => {
                         <select
                             id="position"
                             v-model="form.position"
-                            class="h-10 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
+                            class="min-h-11 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
                         >
                             <option v-for="(label, waarde) in positions" :key="waarde" :value="waarde">{{ label }}</option>
                         </select>

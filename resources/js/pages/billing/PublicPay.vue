@@ -52,9 +52,7 @@ const betaal = () => form.post(props.payUrl);
                         <CheckCircle2 class="size-6 text-primary" />
                         <p class="font-semibold">Deze betaling is voldaan</p>
                     </div>
-                    <p class="mt-2 text-sm text-muted-foreground">
-                        Je hoeft niets meer te doen. Bedankt!
-                    </p>
+                    <p class="mt-2 text-sm text-muted-foreground">Je hoeft niets meer te doen. Bedankt!</p>
                 </template>
 
                 <template v-else>
@@ -78,9 +76,7 @@ const betaal = () => form.post(props.payUrl);
                 </template>
             </div>
 
-            <p class="mt-4 text-center text-xs text-muted-foreground">
-                Je betaalt via de betaalprovider van de school. Deze link is persoonlijk.
-            </p>
+            <p class="mt-4 text-center text-xs text-muted-foreground">Je betaalt via de betaalprovider van de school. Deze link is persoonlijk.</p>
         </div>
     </div>
 </template>

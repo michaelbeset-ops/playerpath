@@ -64,11 +64,7 @@ onUnmounted(() => window.removeEventListener('beforeinstallprompt', onBeforeInst
             <p class="text-xs text-muted-foreground">Dan opent hij als een app, zonder adresbalk.</p>
         </div>
 
-        <button
-            type="button"
-            class="h-9 shrink-0 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground"
-            @click="installeer"
-        >
+        <button type="button" class="h-9 shrink-0 rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground" @click="installeer">
             Installeren
         </button>
         <button type="button" class="shrink-0 text-muted-foreground hover:text-foreground" aria-label="Niet installeren" @click="sluit">

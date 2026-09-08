@@ -116,7 +116,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                     <Link
                         v-if="groep.href"
                         :href="groep.href"
-                        class="rounded-lg px-3 py-2 text-sm font-medium transition"
+                        class="min-h-11 rounded-lg px-3 py-2 text-sm font-medium transition"
                         :class="
                             isActief(groep) ? 'bg-foreground/10 text-foreground' : 'text-foreground/75 hover:bg-foreground/10 hover:text-foreground'
                         "
@@ -128,7 +128,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                     <div v-else class="relative">
                         <button
                             type="button"
-                            class="flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition"
+                            class="flex min-h-11 items-center gap-1 rounded-lg px-3 py-2 text-sm font-medium transition"
                             :class="
                                 isActief(groep) || open === groep.title
                                     ? 'bg-foreground/10 text-foreground'

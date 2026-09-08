@@ -17,9 +17,7 @@ const bewerken = computed(() => props.group !== null);
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     { title: 'Groepen', href: '/groups' },
-    bewerken.value
-        ? { title: props.group!.name, href: '/groups/' + props.group!.id + '/edit' }
-        : { title: 'Nieuwe groep', href: '/groups/create' },
+    bewerken.value ? { title: props.group!.name, href: '/groups/' + props.group!.id + '/edit' } : { title: 'Nieuwe groep', href: '/groups/create' },
 ]);
 
 const form = useForm({
@@ -62,9 +60,7 @@ const verwijderen = () => {
                 <div class="grid gap-2">
                     <Label for="age_category">Leeftijdscategorie <span class="text-muted-foreground">(optioneel)</span></Label>
                     <Input id="age_category" v-model="form.age_category" placeholder="Onder 12" />
-                    <p class="text-xs text-muted-foreground">
-                        De categorie hoort bij de groep, niet bij de speler — die heeft een geboortedatum.
-                    </p>
+                    <p class="text-xs text-muted-foreground">De categorie hoort bij de groep, niet bij de speler — die heeft een geboortedatum.</p>
                     <InputError :message="form.errors.age_category" />
                 </div>
 
@@ -79,9 +75,7 @@ const verwijderen = () => {
                         {{ bewerken ? 'Wijzigingen opslaan' : 'Groep aanmaken' }}
                     </Button>
 
-                    <Link href="/groups" class="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground">
-                        Annuleren
-                    </Link>
+                    <Link href="/groups" class="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"> Annuleren </Link>
                 </div>
             </form>
 

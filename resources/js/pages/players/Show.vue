@@ -280,7 +280,7 @@ const verwijderen = () => {
                             <select
                                 id="goal_category"
                                 v-model="doelForm.category"
-                                class="h-10 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
+                                class="min-h-11 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
                             >
                                 <option v-for="c in goalCategories" :key="c.value" :value="c.value">{{ c.label }}</option>
                             </select>
@@ -379,7 +379,7 @@ const verwijderen = () => {
                             <select
                                 id="user_id"
                                 v-model="bestaandeOuder.user_id"
-                                class="h-10 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
+                                class="min-h-11 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
                             >
                                 <option value="">Kies een ouder...</option>
                                 <option v-for="ouder in linkableGuardians" :key="ouder.id" :value="ouder.id">
@@ -553,7 +553,7 @@ const verwijderen = () => {
                         <button
                             v-if="can.manage && aankoop.status === 'active'"
                             type="button"
-                            class="shrink-0 rounded-lg p-2 text-muted-foreground transition hover:bg-secondary hover:text-destructive"
+                            class="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-destructive"
                             :aria-label="aankoop.name + ' intrekken'"
                             @click="trekIn(aankoop.id, aankoop.name)"
                         >

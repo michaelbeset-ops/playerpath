@@ -184,7 +184,7 @@ const btwTarieven = [
     { waarde: 0, label: '0% — vrijgesteld' },
 ];
 
-const veldKlassen = 'h-11 w-full rounded-lg border border-input bg-background px-3 text-base outline-none focus:border-primary sm:h-10 sm:text-sm';
+const veldKlassen = 'h-11 w-full rounded-lg border border-input bg-background px-3 text-base outline-none focus:border-primary sm:text-sm';
 </script>
 
 <template>

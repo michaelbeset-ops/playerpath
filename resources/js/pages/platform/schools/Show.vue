@@ -95,7 +95,7 @@ const wissel = () => {
             <div class="flex flex-wrap gap-2">
                 <Link
                     :href="'/beheer/scholen/' + school.id + '/bewerken'"
-                    class="inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium shadow-sm transition hover:border-primary"
+                    class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium shadow-sm transition hover:border-primary"
                 >
                     <Pencil class="size-4" />
                     Bewerken
@@ -103,7 +103,7 @@ const wissel = () => {
 
                 <Link
                     :href="'/beheer/scholen/' + school.id + '/gebruikers'"
-                    class="inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium shadow-sm transition hover:border-primary"
+                    class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium shadow-sm transition hover:border-primary"
                 >
                     <Users class="size-4" />
                     Gebruikers

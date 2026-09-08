@@ -135,6 +135,52 @@ enum DashboardWidget: string
     }
 
     /**
+     * Hoort dit onderdeel op een telefoon?
+     *
+     * Een eigenaar pakt zijn telefoon om in tien seconden te zien hoe het
+     * ervoor staat en of er iets moet gebeuren; de analyse doet hij op zijn
+     * laptop. Alles wat alleen informatie geeft zonder tot een handeling te
+     * leiden hoort daar dus niet op dat kleine scherm — niet omdat het
+     * onbelangrijk is, maar omdat het de twee dingen wegdrukt die dat wel zijn.
+     *
+     * Wat hier op `false` staat verdwijnt niet: het staat op het grote scherm,
+     * en waar het echt gemist wordt staat er op mobiel één regel voor in de
+     * plaats (de dekking van de rapporten, de link naar Financiën).
+     *
+     * Dit is bewust een eigenschap van de widget en geen tweede lijst. Zou de
+     * mobiele indeling apart worden bijgehouden, dan is er een tweede plek waar
+     * een nieuwe widget vergeten kan worden.
+     */
+    public function onMobile(): bool
+    {
+        return match ($this) {
+            // "Hoeveel spelers heb ik" en "wat kwam er binnen" — de twee
+            // cijfers waar een eigenaar op stuurt.
+            self::KpiPlayers, self::KpiRevenue => true,
+            // "Wat staat er te gebeuren", en voor wie zelf traint: zijn werk.
+            self::Trainings, self::MyTrainings, self::MyPlayers => true,
+            default => false,
+        };
+    }
+
+    /**
+     * Past dit onderdeel op een telefoon naast een ander?
+     *
+     * Een kerncijfer is een label en een getal; dat over de volle breedte van
+     * een telefoon uitsmeren levert een kaart op die voor negentig procent leeg
+     * is, en dan past er nog maar één ding tegelijk op je scherm. Twee naast
+     * elkaar is even leesbaar en scheelt een halve schermlengte.
+     *
+     * Alles met een lijst erin (trainingen, spelers) blijft over de volle
+     * breedte: op 375 pixels is de helft daarvan 170 pixels, en dan wordt elke
+     * naam afgekapt.
+     */
+    public function mobileCompact(): bool
+    {
+        return in_array($this, [self::KpiPlayers, self::KpiRating, self::KpiReports, self::KpiRevenue], true);
+    }
+
+    /**
      * Alleen voor wie zelf voor de groep staat.
      *
      * Een eigenaar die niet traint heeft niets aan "mijn spelers"; hij kan de

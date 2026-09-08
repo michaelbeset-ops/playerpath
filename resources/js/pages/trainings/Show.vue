@@ -171,7 +171,7 @@ const verwijderen = () => {
                                 <button
                                     v-if="speler.registration === 'declined'"
                                     type="button"
-                                    class="inline-flex h-10 shrink-0 items-center rounded-lg border border-border px-3 text-sm font-medium transition hover:border-primary"
+                                    class="inline-flex min-h-11 shrink-0 items-center rounded-lg border border-border px-3 text-sm font-medium transition hover:border-primary"
                                     @click="openDialoog(speler, 'attending')"
                                 >
                                     Weer aanmelden
@@ -179,7 +179,7 @@ const verwijderen = () => {
                                 <button
                                     v-else
                                     type="button"
-                                    class="inline-flex h-10 shrink-0 items-center rounded-lg border border-border px-3 text-sm font-medium text-muted-foreground transition hover:border-warning hover:text-warning"
+                                    class="inline-flex min-h-11 shrink-0 items-center rounded-lg border border-border px-3 text-sm font-medium text-muted-foreground transition hover:border-warning hover:text-warning"
                                     @click="openDialoog(speler, 'declined')"
                                 >
                                     Afmelden

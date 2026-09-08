@@ -29,7 +29,7 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Groepen', href: '/groups' }];
                 <Link
                     v-if="canManage"
                     href="/groups/create"
-                    class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                    class="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
                 >
                     <Plus class="size-4" />
                     Groep toevoegen
@@ -37,11 +37,7 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Groepen', href: '/groups' }];
             </div>
 
             <div v-if="groups.length" class="mt-6 space-y-2">
-                <div
-                    v-for="groep in groups"
-                    :key="groep.id"
-                    class="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm"
-                >
+                <div v-for="groep in groups" :key="groep.id" class="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
                     <span
                         class="flex size-10 shrink-0 items-center justify-center rounded-lg"
                         :class="groep.players_count ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground/70'"
@@ -50,7 +46,7 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Groepen', href: '/groups' }];
                     </span>
 
                     <div class="min-w-0 flex-1">
-                        <p class="flex items-center gap-2 truncate font-medium">
+                        <p class="flex flex-wrap items-center gap-2 font-medium">
                             {{ groep.name }}
                             <span v-if="!groep.is_active" class="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
                                 niet actief
@@ -66,7 +62,7 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Groepen', href: '/groups' }];
                     <Link
                         v-if="canManage"
                         :href="'/groups/' + groep.id + '/edit'"
-                        class="rounded-lg p-2 text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                        class="flex size-11 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-foreground"
                         :aria-label="groep.name + ' bewerken'"
                     >
                         <Pencil class="size-4" />

@@ -71,7 +71,9 @@ const dagen = computed(() => {
                     <p class="mt-1 text-sm text-muted-foreground">Waar jij bij staat, eerstvolgende bovenaan.</p>
                 </div>
 
-                <Link href="/trainings" class="inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4">Hele rooster</Link>
+                <Link href="/trainings" class="inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4"
+                    >Hele rooster</Link
+                >
             </div>
 
             <div v-if="dagen.length" class="mt-6 space-y-6">

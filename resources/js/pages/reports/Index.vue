@@ -73,7 +73,7 @@ const gefilterd = computed(() => {
                 v-model="zoek"
                 type="search"
                 placeholder="Zoek een speler..."
-                class="mt-4 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                class="mt-4 min-h-11 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
             />
 
             <div v-if="gefilterd.length" class="mt-4 space-y-2">

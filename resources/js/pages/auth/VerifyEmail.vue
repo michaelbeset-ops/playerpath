@@ -17,7 +17,10 @@ const submit = () => {
 </script>
 
 <template>
-    <AuthLayout title="Bevestig je e-mailadres" description="We hebben je een e-mail gestuurd met een link. Klik daarop om je e-mailadres te bevestigen.">
+    <AuthLayout
+        title="Bevestig je e-mailadres"
+        description="We hebben je een e-mail gestuurd met een link. Klik daarop om je e-mailadres te bevestigen."
+    >
         <Head title="E-mailadres bevestigen" />
 
         <div v-if="status === 'verification-link-sent'" class="mb-4 text-center text-sm font-medium text-primary">

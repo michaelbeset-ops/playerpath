@@ -79,7 +79,11 @@ const opslaan = () => form.patch('/mijlpalen', { preserveScroll: true });
                 <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
                     <div class="flex flex-wrap items-baseline justify-between gap-2">
                         <p class="font-medium">Voor alle spelers</p>
-                        <button type="button" class="text-xs text-muted-foreground underline underline-offset-4" @click="herstel">
+                        <button
+                            type="button"
+                            class="inline-flex min-h-11 items-center text-xs text-muted-foreground underline underline-offset-4"
+                            @click="herstel"
+                        >
                             Terug naar de standaard
                         </button>
                     </div>
@@ -121,7 +125,7 @@ const opslaan = () => form.patch('/mijlpalen', { preserveScroll: true });
                             v-for="c in categories"
                             :key="c.key"
                             type="button"
-                            class="rounded-full border px-3 py-1.5 text-sm transition"
+                            class="inline-flex min-h-11 items-center rounded-full border px-3 text-sm transition"
                             :class="gekozenCategorie === c.key ? 'border-primary bg-primary/10 font-medium text-primary' : 'border-border'"
                             @click="gekozenCategorie = c.key"
                         >

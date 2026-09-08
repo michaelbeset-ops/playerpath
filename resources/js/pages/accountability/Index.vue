@@ -52,7 +52,10 @@ const afdrukken = () => window.print();
             </div>
 
             <!-- Periode kiezen -->
-            <form class="mt-4 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4 shadow-sm print:hidden" @submit.prevent="toon">
+            <form
+                class="mt-4 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-4 shadow-sm print:hidden"
+                @submit.prevent="toon"
+            >
                 <div class="grid gap-2">
                     <Label for="from">Van</Label>
                     <Input id="from" v-model="periode.from" type="date" class="w-44" />
@@ -64,7 +67,7 @@ const afdrukken = () => window.print();
                 <Button type="submit" variant="secondary">Toon periode</Button>
                 <button
                     type="button"
-                    class="inline-flex h-10 items-center rounded-lg border border-border px-3 text-sm font-medium hover:border-primary"
+                    class="inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-sm font-medium hover:border-primary"
                     @click="afdrukken"
                 >
                     <Printer class="mr-2 size-4" />
@@ -144,20 +147,17 @@ const afdrukken = () => window.print();
                         <p class="text-sm text-muted-foreground">
                             <template v-if="report.development.measured > 0">
                                 gemiddelde ontwikkeling op de kaart, gemeten over {{ report.development.measured }}
-                                {{ report.development.measured === 1 ? 'speler' : 'spelers' }} met minstens twee rapporten.
-                                Daarvan gingen er {{ report.development.improved }} vooruit.
+                                {{ report.development.measured === 1 ? 'speler' : 'spelers' }} met minstens twee rapporten. Daarvan gingen er
+                                {{ report.development.improved }} vooruit.
                             </template>
-                            <template v-else>
-                                Nog niet te meten: ontwikkeling vraagt minstens twee rapporten per speler in deze periode.
-                            </template>
+                            <template v-else> Nog niet te meten: ontwikkeling vraagt minstens twee rapporten per speler in deze periode. </template>
                         </p>
                     </div>
                 </div>
 
                 <p class="mt-6 border-t border-border pt-4 text-xs text-muted-foreground">
-                    Alle cijfers gaan over de school als geheel. Er staan geen gegevens van individuele kinderen in en er wordt nergens
-                    tussen spelers vergeleken. Opkomst telt alleen trainingen die een trainer daadwerkelijk heeft afgevinkt; niet-afgevinkt
-                    is geen afwezigheid.
+                    Alle cijfers gaan over de school als geheel. Er staan geen gegevens van individuele kinderen in en er wordt nergens tussen spelers
+                    vergeleken. Opkomst telt alleen trainingen die een trainer daadwerkelijk heeft afgevinkt; niet-afgevinkt is geen afwezigheid.
                 </p>
             </div>
         </div>

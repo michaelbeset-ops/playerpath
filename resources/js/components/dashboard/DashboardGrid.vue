@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { router } from '@inertiajs/vue3';
 import { GridItem, GridLayout } from 'grid-layout-plus';
-import { Check, GripVertical, LayoutGrid, Plus, RotateCcw, X } from 'lucide-vue-next';
+import { Check, ChevronDown, ChevronUp, GripVertical, LayoutGrid, Plus, RotateCcw, X } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 /**
@@ -18,10 +18,18 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
  *    "mijn indeling" hoort te betekenen.
  * 2. **Annuleren zet echt terug.** De uitgangssituatie wordt bij het openen
  *    gekopieerd, dus wie halverwege van gedachten verandert raakt niets kwijt.
- * 3. **Op een telefoon is het één kolom.** Een raster van twaalf kolommen op
- *    375 pixels is geen raster; daar gaat het alleen over volgorde en over wat
- *    er wel en niet staat. Wat je op een telefoon versleept verandert dus
- *    alleen de volgorde — de breedtes van je grote scherm blijven staan.
+ * 3. **Op een telefoon is er geen raster.** Twaalf kolommen op 375 pixels zijn
+ *    geen kolommen. Daar is het een gewone lijst onder elkaar, met de hoogte
+ *    van de inhoud zelf in plaats van rijen van veertig pixels — en dus geen
+ *    gaten waar een onderdeel staat dat op een telefoon niet meedoet.
+ * 4. **Bewerken gaat daar over volgorde en over aan of uit**, met pijltjes in
+ *    plaats van slepen. Slepen in een lijst waarin je tegelijk wilt scrollen is
+ *    op een telefoon een gok; een pijl van 44 pixels is dat niet. De breedtes
+ *    van je grote scherm blijven staan, anders is je laptopindeling weg zodra
+ *    je hem op je telefoon aanraakt.
+ * 5. **In bewerkmodus staat álles in de lijst**, ook wat op een telefoon niet
+ *    getoond wordt, met "alleen groot scherm" erbij. Anders kun je iets dat je
+ *    daar niet ziet ook nergens meer weghalen.
  */
 export interface Plek {
     key: string;
@@ -29,6 +37,10 @@ export interface Plek {
     height: number;
     x: number;
     y: number;
+    /** Staat dit onderdeel ook op een telefoon? Bepaald door de server. */
+    mobile: boolean;
+    /** Past het daar naast een ander, of neemt het de volle breedte? */
+    compact: boolean;
 }
 
 export interface Beschikbaar {
@@ -38,6 +50,8 @@ export interface Beschikbaar {
     icon: string;
     sizes: number[];
     height: number;
+    mobile: boolean;
+    compact: boolean;
 }
 
 const props = defineProps<{
@@ -85,6 +99,55 @@ const kolommen = computed(() => (smal.value ? 1 : KOLOMMEN));
 
 /** De volgorde van boven naar beneden, dan van links naar rechts. */
 const opVolgorde = computed(() => [...plekken.value].sort((a, b) => a.y - b.y || a.x - b.x));
+
+/**
+ * Wat er op een telefoon daadwerkelijk getekend wordt.
+ *
+ * In bewerkmodus staat álles in de lijst — ook wat hier normaal niet meedoet —
+ * want anders kun je die onderdelen op je telefoon nergens meer weghalen of
+ * verplaatsen.
+ */
+const mobieleVolgorde = computed(() => (bewerken.value ? opVolgorde.value : opVolgorde.value.filter((plek) => plek.mobile)));
+
+/**
+ * Dezelfde volgorde, maar gebundeld in rijen.
+ *
+ * Twee kerncijfers achter elkaar komen naast elkaar te staan; al het andere
+ * krijgt een eigen rij. Zo blijft de volgorde die je hebt ingesteld leidend en
+ * hoeft er geen tweede indeling voor telefoons bij te komen.
+ */
+const mobieleRijen = computed(() => {
+    const rijen: Plek[][] = [];
+
+    for (const plek of mobieleVolgorde.value) {
+        const laatste = rijen[rijen.length - 1];
+
+        if (plek.compact && laatste?.length === 1 && laatste[0].compact) {
+            laatste.push(plek);
+        } else {
+            rijen.push([plek]);
+        }
+    }
+
+    return rijen;
+});
+
+/** Eén plek omhoog of omlaag in de lijst; alleen op een telefoon. */
+const verplaats = (key: string, richting: -1 | 1) => {
+    const rijen = [...opVolgorde.value];
+    const index = rijen.findIndex((plek) => plek.key === key);
+    const doel = index + richting;
+
+    if (index === -1 || doel < 0 || doel >= rijen.length) {
+        return;
+    }
+
+    [rijen[index], rijen[doel]] = [rijen[doel], rijen[index]];
+
+    // y opnieuw nummeren, zodat de volgorde vastligt in plaats van in de
+    // toevallige oude waarden.
+    plekken.value = rijen.map((plek, positie) => ({ ...plek, y: positie }));
+};
 
 /** Wat de library nodig heeft. Op smal scherm: één kolom, alles even breed. */
 const rooster = computed(() =>
@@ -148,14 +211,7 @@ const sluitAf = () => {
  */
 const bewaar = () => {
     const rijen = smal.value
-        ? werkRooster.value
-              .slice()
-              .sort((a, b) => a.y - b.y)
-              .map((rij, index) => {
-                  const bestaand = plekken.value.find((p) => p.key === rij.i)!;
-
-                  return { key: rij.i, x: bestaand.x, y: index, w: bestaand.size };
-              })
+        ? opVolgorde.value.map((plek, index) => ({ key: plek.key, x: plek.x, y: index, w: plek.size }))
         : werkRooster.value.map((rij) => ({ key: rij.i, x: rij.x, y: rij.y, w: rij.w }));
 
     bezig.value = true;
@@ -193,7 +249,10 @@ const voegToe = (widget: Beschikbaar) => {
     // je eigen indeling kwijt door één klik.
     const onderkant = plekken.value.reduce((laag, plek) => Math.max(laag, plek.y + plek.height), 0);
 
-    plekken.value = [...plekken.value, { key: widget.key, size: widget.sizes[0], height: widget.height, x: 0, y: onderkant }];
+    plekken.value = [
+        ...plekken.value,
+        { key: widget.key, size: widget.sizes[0], height: widget.height, x: 0, y: onderkant, mobile: widget.mobile, compact: widget.compact },
+    ];
 
     toonKiezer.value = false;
 };
@@ -237,11 +296,17 @@ const laatLos = () => clearTimeout(timer);
 </script>
 
 <template>
-    <div>
-        <div class="flex flex-wrap items-center justify-between gap-2">
+    <!--
+        Op een telefoon staat "Indeling aanpassen" onderaan, niet boven de
+        cijfers: het is iets wat je één keer doet, en de bovenste regel van dat
+        scherm is de duurste plek die er is. In bewerkmodus gaat de balk wél
+        naar boven — dan is hij het onderwerp, en "Klaar" moet je kunnen vinden.
+    -->
+    <div class="flex flex-col">
+        <div class="flex flex-wrap items-center justify-between gap-2" :class="bewerken ? 'order-1' : 'order-2 lg:order-1'">
             <p class="text-xs text-muted-foreground">
                 <template v-if="bewerken">
-                    <template v-if="smal">Sleep om de volgorde te veranderen.</template>
+                    <template v-if="smal">Zet de onderdelen in de volgorde die jij wilt, of haal ze weg.</template>
                     <template v-else>Sleep de widgets naar hun plek. Klik op de maat om hem breder of smaller te maken.</template>
                 </template>
             </p>
@@ -299,7 +364,7 @@ const laatLos = () => clearTimeout(timer);
         </div>
 
         <!-- Wat je erbij kunt zetten. Alleen wat er nog niet staat. -->
-        <div v-if="bewerken && toonKiezer" class="mt-3 rounded-xl border border-border bg-card p-4 shadow-sm">
+        <div v-if="bewerken && toonKiezer" class="order-1 mt-3 rounded-xl border border-border bg-card p-4 shadow-sm">
             <p class="text-sm font-medium">Widget toevoegen</p>
 
             <div class="mt-3 grid gap-2 sm:grid-cols-2">
@@ -314,14 +379,74 @@ const laatLos = () => clearTimeout(timer);
                     <span class="min-w-0">
                         <span class="block text-sm font-medium">{{ widget.label }}</span>
                         <span class="block text-xs text-muted-foreground">{{ widget.description }}</span>
+                        <span v-if="!widget.mobile" class="mt-0.5 block text-[11px] text-muted-foreground/70">Alleen op een groot scherm</span>
                     </span>
                 </button>
             </div>
         </div>
 
+        <!-- ================= TELEFOON: een lijst, geen raster ================= -->
+        <div v-if="smal" class="mt-2" :class="bewerken ? 'order-2' : 'order-1 lg:order-2'">
+            <!-- Bewerken: volgorde en aan/uit. Geen slepen — zie de uitleg boven. -->
+            <ul v-if="bewerken" class="space-y-2">
+                <li
+                    v-for="(plek, index) in mobieleVolgorde"
+                    :key="plek.key"
+                    class="flex items-center gap-1 rounded-xl border border-border bg-card p-2 shadow-sm"
+                >
+                    <span class="min-w-0 flex-1 px-1">
+                        <span class="block truncate text-sm font-medium">{{ labelVan(plek.key) }}</span>
+                        <span v-if="!plek.mobile" class="block text-[11px] text-muted-foreground">Alleen op een groot scherm</span>
+                    </span>
+
+                    <button
+                        type="button"
+                        class="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition enabled:hover:bg-secondary disabled:opacity-30"
+                        :disabled="index === 0"
+                        :aria-label="labelVan(plek.key) + ' omhoog'"
+                        @click="verplaats(plek.key, -1)"
+                    >
+                        <ChevronUp class="size-5" />
+                    </button>
+
+                    <button
+                        type="button"
+                        class="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition enabled:hover:bg-secondary disabled:opacity-30"
+                        :disabled="index === mobieleVolgorde.length - 1"
+                        :aria-label="labelVan(plek.key) + ' omlaag'"
+                        @click="verplaats(plek.key, 1)"
+                    >
+                        <ChevronDown class="size-5" />
+                    </button>
+
+                    <button
+                        type="button"
+                        class="flex size-11 shrink-0 items-center justify-center rounded-lg text-destructive transition hover:bg-destructive/10"
+                        :aria-label="labelVan(plek.key) + ' weghalen'"
+                        @click="verwijder(plek.key)"
+                    >
+                        <X class="size-5" />
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Gewoon kijken: de onderdelen onder elkaar, op de hoogte van hun
+                 eigen inhoud. Vaste rijen van veertig pixels lieten hier gaten
+                 vallen bij alles wat op een telefoon korter is. -->
+            <div v-else class="space-y-3">
+                <div v-for="(rij, index) in mobieleRijen" :key="index" :class="rij.length > 1 ? 'grid grid-cols-2 gap-3' : ''">
+                    <div v-for="plek in rij" :key="plek.key" class="min-w-0">
+                        <slot :name="plek.key" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= GROOT SCHERM: het raster ================= -->
         <GridLayout
+            v-else
             v-model:layout="werkRooster"
-            class="pp-raster mt-2"
+            class="pp-raster order-2 mt-2"
             :class="bewerken ? 'pp-bewerken' : ''"
             :col-num="kolommen"
             :row-height="40"
@@ -381,7 +506,7 @@ const laatLos = () => clearTimeout(timer);
 
         <p
             v-if="bewerken && !plekken.length"
-            class="rounded-xl border border-dashed border-border bg-card/50 p-8 text-center text-sm text-muted-foreground"
+            class="order-3 rounded-xl border border-dashed border-border bg-card/50 p-8 text-center text-sm text-muted-foreground"
         >
             Je dashboard is leeg. Voeg een widget toe of zet de standaardindeling terug.
         </p>

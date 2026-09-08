@@ -109,9 +109,13 @@ const verwijder = (id: number, naam: string) => {
                     <Avatar :name="trainer.name" :photo="trainer.photo" size="size-11" />
 
                     <div class="min-w-0 flex-1">
-                        <p class="flex items-center gap-2 truncate font-medium">
-                            {{ trainer.name }}
-                            <span v-if="trainer.is_owner" class="rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                        <!-- truncate op de flexrij zelf kapte het label "eigenaar"
+                             af tot een streepje: de naam is een los tekstknooppunt
+                             en krimpt niet, dus het pilletje ernaast kreeg de
+                             klappen. Nu krimpt de naam en blijft het label heel. -->
+                        <p class="flex flex-wrap items-center gap-2 font-medium">
+                            <span class="min-w-0">{{ trainer.name }}</span>
+                            <span v-if="trainer.is_owner" class="shrink-0 rounded bg-secondary px-1.5 py-0.5 text-[10px] text-muted-foreground">
                                 eigenaar
                             </span>
                         </p>
@@ -128,7 +132,7 @@ const verwijder = (id: number, naam: string) => {
                     <button
                         v-if="can.manageAccounts && !trainer.is_owner"
                         type="button"
-                        class="shrink-0 rounded-lg p-2 text-muted-foreground transition hover:bg-secondary hover:text-destructive"
+                        class="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-destructive"
                         :aria-label="'Account van ' + trainer.name + ' verwijderen'"
                         @click="verwijder(trainer.id, trainer.name)"
                     >

@@ -507,7 +507,7 @@ const invoer = 'h-11 w-full rounded-lg border border-input bg-background px-3 te
                                 v-for="bestaand in config.guardian.children"
                                 :key="bestaand.id"
                                 type="button"
-                                class="rounded-full border px-3 py-1.5 text-sm transition"
+                                class="inline-flex min-h-11 items-center rounded-full border px-3 text-sm transition"
                                 :class="kind.player_id === bestaand.id ? 'border-primary bg-primary/10 font-medium text-primary' : 'border-border'"
                                 @click="kiesBestaand(kind, kind.player_id === bestaand.id ? null : bestaand)"
                             >
@@ -515,7 +515,7 @@ const invoer = 'h-11 w-full rounded-lg border border-input bg-background px-3 te
                             </button>
                             <button
                                 type="button"
-                                class="rounded-full border px-3 py-1.5 text-sm transition"
+                                class="inline-flex min-h-11 items-center rounded-full border px-3 text-sm transition"
                                 :class="kind.player_id === null ? 'border-primary bg-primary/10 font-medium text-primary' : 'border-border'"
                                 @click="kiesBestaand(kind, null)"
                             >

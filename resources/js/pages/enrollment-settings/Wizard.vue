@@ -604,7 +604,7 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                                             v-model="f.consents[doc.key].body"
                                             rows="3"
                                             maxlength="5000"
-                                            class="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                                            class="mt-1 min-h-11 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
                                         ></textarea>
                                     </div>
                                     <InputError

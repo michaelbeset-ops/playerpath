@@ -71,7 +71,7 @@ const leegmaken = () => {
                 <Link
                     v-if="canManage"
                     href="/players/create"
-                    class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                    class="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
                 >
                     <Plus class="size-4" />
                     Speler toevoegen
@@ -79,28 +79,37 @@ const leegmaken = () => {
             </div>
 
             <!-- Filters -->
-            <div class="mt-6 grid gap-3 grid-cols-2 lg:grid-cols-4">
+            <div class="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
                 <div class="relative">
                     <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <input
                         v-model="filters.search"
                         type="search"
                         placeholder="Zoek op naam..."
-                        class="w-full rounded-lg border border-input bg-card py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
+                        class="min-h-11 w-full rounded-lg border border-input bg-card py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
                     />
                 </div>
 
-                <select v-model="filters.position" class="rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary">
+                <select
+                    v-model="filters.position"
+                    class="min-h-11 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary"
+                >
                     <option value="">Alle posities</option>
                     <option v-for="(label, waarde) in positions" :key="waarde" :value="waarde">{{ label }}</option>
                 </select>
 
-                <select v-model="filters.group" class="rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary">
+                <select
+                    v-model="filters.group"
+                    class="min-h-11 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary"
+                >
                     <option :value="null">Alle groepen</option>
                     <option v-for="groep in groups" :key="groep.id" :value="groep.id">{{ groep.name }}</option>
                 </select>
 
-                <select v-model="filters.status" class="rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary">
+                <select
+                    v-model="filters.status"
+                    class="min-h-11 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary"
+                >
                     <option value="active">Actieve spelers</option>
                     <option value="inactive">Niet-actieve spelers</option>
                     <option value="all">Alle spelers</option>

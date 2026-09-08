@@ -84,7 +84,7 @@ class WidgetRegistry
      * dat achterlaat worden niet opgevuld — dat zou betekenen dat het scherm
      * van een trainer er anders uitziet dan hij het heeft neergezet.
      *
-     * @return list<array{key: string, size: int, height: int, x: int, y: int}>
+     * @return list<array{key: string, size: int, height: int, x: int, y: int, mobile: bool, compact: bool}>
      */
     public function layoutFor(User $user): array
     {
@@ -105,6 +105,11 @@ class WidgetRegistry
             'height' => $rij['widget']->height(),
             'x' => $rij['x'],
             'y' => $rij['y'],
+            // Of dit onderdeel op een telefoon staat. Het scherm bepaalt niet
+            // zelf wat er weg mag; dat staat bij de widget, op één plek.
+            'mobile' => $rij['widget']->onMobile(),
+            // Twee naast elkaar op een telefoon, of over de volle breedte.
+            'compact' => $rij['widget']->mobileCompact(),
         ], $zichtbaar));
     }
 
@@ -144,6 +149,10 @@ class WidgetRegistry
             'icon' => $widget->icon(),
             'sizes' => $widget->sizes(),
             'height' => $widget->height(),
+            // Zodat de kiezer erbij kan zetten dat iets alleen op een groot
+            // scherm staat, in plaats van dat je hem toevoegt en niets ziet.
+            'mobile' => $widget->onMobile(),
+            'compact' => $widget->mobileCompact(),
         ], array_filter(
             DashboardWidget::cases(),
             fn (DashboardWidget $widget) => $this->available($user, $widget),

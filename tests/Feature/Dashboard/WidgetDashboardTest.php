@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Dashboard;
 
+use App\Enums\DashboardWidget;
 use App\Enums\Feature;
 use App\Enums\PaymentStatus;
 use App\Enums\PlayerPosition;
@@ -316,6 +317,40 @@ class WidgetDashboardTest extends TestCase
                 // Elk cijfer op precies één plek.
                 $this->assertArrayNotHasKey('revenueThisMonth', $widgets['finance']);
             });
+    }
+
+    /**
+     * Een eigenaar pakt zijn telefoon om te zien hoe het ervoor staat en of er
+     * iets moet gebeuren; de analyse doet hij op zijn laptop. Op een klein
+     * scherm blijven dus de twee cijfers waar hij op stuurt en wat er staat te
+     * gebeuren — de rest staat er wel, maar alleen op een groot scherm.
+     */
+    public function test_op_een_telefoon_blijven_alleen_de_onderdelen_die_ertoe_doen(): void
+    {
+        $this->actingAs($this->eigenaar)
+            ->get('/dashboard')
+            ->assertInertia(fn ($page) => $page->where('layout', function ($layout) {
+                $mobiel = collect($layout)->where('mobile', true)->pluck('key')->all();
+
+                $this->assertSame(['kpi_players', 'kpi_revenue', 'trainings'], $mobiel);
+
+                // Wat eraf gaat verdwijnt niet: het staat er nog, met de vlag uit.
+                $desktop = collect($layout)->where('mobile', false)->pluck('key')->all();
+                $this->assertContains('development', $desktop);
+                $this->assertContains('finance', $desktop);
+                $this->assertContains('birthdays', $desktop);
+
+                return true;
+            }));
+    }
+
+    /** Twee kerncijfers naast elkaar; een lijst neemt de volle breedte. */
+    public function test_alleen_kerncijfers_staan_op_een_telefoon_naast_elkaar(): void
+    {
+        $this->assertTrue(DashboardWidget::KpiPlayers->mobileCompact());
+        $this->assertTrue(DashboardWidget::KpiRevenue->mobileCompact());
+        $this->assertFalse(DashboardWidget::Trainings->mobileCompact());
+        $this->assertFalse(DashboardWidget::Development->mobileCompact());
     }
 
     public function test_de_registry_biedt_alleen_aan_wat_je_mag_zien(): void

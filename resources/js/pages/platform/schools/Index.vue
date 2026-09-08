@@ -45,7 +45,7 @@ watch(filters, () => {
 
             <Link
                 href="/beheer/scholen/nieuw"
-                class="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                class="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
             >
                 <Plus class="size-4" />
                 Nieuwe school

@@ -68,10 +68,7 @@ const kleuren = computed(() => {
                 </p>
             </div>
 
-            <span
-                class="flex size-8 shrink-0 items-center justify-center rounded-lg transition sm:size-10"
-                :class="kleuren.icoon"
-            >
+            <span class="flex size-8 shrink-0 items-center justify-center rounded-lg transition sm:size-10" :class="kleuren.icoon">
                 <component :is="icon" class="size-4 sm:size-5" />
             </span>
         </div>

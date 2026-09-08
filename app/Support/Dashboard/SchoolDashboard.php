@@ -166,15 +166,21 @@ class SchoolDashboard
     public function upcomingTrainings(int $limit = 5): array
     {
         return Training::upcoming()
-            ->with('group')
+            ->with(['group', 'trainers'])
             ->limit($limit)
             ->get()
             ->map(fn (Training $training) => [
                 'id' => $training->id,
                 'group' => $training->label(),
                 'date' => $training->starts_at->translatedFormat('l j F'),
+                'day' => $training->starts_at->translatedFormat('D j M'),
                 'time' => $training->starts_at->format('H:i'),
                 'location' => $training->location,
+                // "Wie staat erbij" is op een telefoon de vraag ná "wanneer":
+                // is er niemand, dan is dat precies wat je wilt zien.
+                'trainers' => $training->trainers->pluck('name')->all(),
+                'isToday' => $training->starts_at->isToday(),
+                'cancelled' => $training->isCancelled(),
             ])
             ->all();
     }

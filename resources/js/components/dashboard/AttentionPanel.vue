@@ -71,7 +71,7 @@ const kleuren: Record<string, { rand: string; vlak: string; tekst: string }> = {
         Alles loopt — niks te doen.
     </p>
 
-    <section v-else class="rounded-2xl border border-warning/30 bg-warning/5 p-4 sm:p-5" aria-label="Vraagt om aandacht">
+    <section v-else class="rounded-2xl border border-warning/30 bg-warning/5 p-3 sm:p-5" aria-label="Vraagt om aandacht">
         <div class="flex items-start justify-between gap-3">
             <p class="flex min-w-0 items-center gap-2 font-medium">
                 <AlertTriangle class="size-4 shrink-0 text-warning" />
@@ -83,7 +83,7 @@ const kleuren: Record<string, { rand: string; vlak: string; tekst: string }> = {
             <button
                 v-if="signature"
                 type="button"
-                class="-my-2.5 -mr-2 flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-card hover:text-foreground"
+                class="-my-2.5 flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-card hover:text-foreground"
                 aria-label="Aandacht-blok wegklikken tot er iets verandert"
                 title="Gezien. Komt terug zodra er iets verandert."
                 @click="wegklikken"
@@ -92,20 +92,22 @@ const kleuren: Record<string, { rand: string; vlak: string; tekst: string }> = {
             </button>
         </div>
 
-        <div class="mt-3 space-y-2">
+        <div class="mt-2 space-y-2">
             <div
                 v-for="item in items"
                 :key="item.key"
-                class="flex flex-col gap-3 rounded-xl border bg-card p-3 sm:flex-row sm:items-center sm:gap-4"
+                class="flex flex-col gap-2 rounded-xl border bg-card p-3 sm:flex-row sm:items-center sm:gap-4"
                 :class="kleuren[item.tone].rand"
             >
-                <span class="flex size-9 shrink-0 items-center justify-center rounded-lg" :class="kleuren[item.tone].vlak">
-                    <component :is="iconen[item.icon] ?? AlertTriangle" class="size-4" />
-                </span>
+                <div class="flex min-w-0 flex-1 items-start gap-3">
+                    <span class="flex size-9 shrink-0 items-center justify-center rounded-lg" :class="kleuren[item.tone].vlak">
+                        <component :is="iconen[item.icon] ?? AlertTriangle" class="size-4" />
+                    </span>
 
-                <div class="min-w-0 flex-1">
-                    <p class="text-sm font-medium" :class="kleuren[item.tone].tekst">{{ item.title }}</p>
-                    <p class="text-xs text-muted-foreground">{{ item.body }}</p>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm font-medium" :class="kleuren[item.tone].tekst">{{ item.title }}</p>
+                        <p class="text-xs text-muted-foreground">{{ item.body }}</p>
+                    </div>
                 </div>
 
                 <Link

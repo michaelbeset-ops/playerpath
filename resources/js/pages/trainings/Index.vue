@@ -89,7 +89,7 @@ const wisFilters = () => {
 const gefilterd = computed(() => groep.value !== '' || trainer.value !== '');
 
 const selectKlassen =
-    'h-10 min-w-0 rounded-lg border border-border bg-card px-3 text-sm shadow-sm transition focus:border-primary focus:outline-none';
+    'min-h-11 min-w-0 rounded-lg border border-border bg-card px-3 text-sm shadow-sm transition focus:border-primary focus:outline-none';
 
 /**
  * Wat er van de aanwezigheid te zeggen valt.
@@ -141,7 +141,7 @@ const toonKlasse = (toon: 'goed' | 'aandacht' | 'rustig') =>
                 <Link
                     v-if="canManage"
                     href="/trainings/create"
-                    class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                    class="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
                 >
                     <Plus class="size-4" />
                     Training inplannen
@@ -152,7 +152,7 @@ const toonKlasse = (toon: 'goed' | 'aandacht' | 'rustig') =>
             <div class="mt-6 inline-flex rounded-lg border border-border bg-card p-1 shadow-sm">
                 <button
                     type="button"
-                    class="h-10 rounded-md px-4 text-sm font-medium transition"
+                    class="min-h-11 rounded-md px-4 text-sm font-medium transition"
                     :class="tab === 'upcoming' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
                     @click="tab = 'upcoming'"
                 >
@@ -160,7 +160,7 @@ const toonKlasse = (toon: 'goed' | 'aandacht' | 'rustig') =>
                 </button>
                 <button
                     type="button"
-                    class="h-10 rounded-md px-4 text-sm font-medium transition"
+                    class="min-h-11 rounded-md px-4 text-sm font-medium transition"
                     :class="tab === 'past' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'"
                     @click="tab = 'past'"
                 >
@@ -185,7 +185,7 @@ const toonKlasse = (toon: 'goed' | 'aandacht' | 'rustig') =>
                 <button
                     v-if="gefilterd"
                     type="button"
-                    class="inline-flex h-10 items-center gap-1 rounded-lg px-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
+                    class="inline-flex min-h-11 items-center gap-1 rounded-lg px-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
                     @click="wisFilters"
                 >
                     <X class="size-4" />
@@ -225,7 +225,7 @@ const toonKlasse = (toon: 'goed' | 'aandacht' | 'rustig') =>
                                     <div class="flex flex-wrap items-center gap-2">
                                         <Link
                                             :href="'/trainings/' + training.id"
-                                            class="font-medium hover:text-primary"
+                                            class="inline-flex min-h-11 items-center font-medium hover:text-primary"
                                             :class="training.cancelled ? 'line-through' : ''"
                                         >
                                             {{ training.group }}

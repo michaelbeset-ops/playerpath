@@ -18,13 +18,13 @@ const opnieuw = () => window.location.reload();
                 Geen verbinding
             </p>
             <p class="mt-2 text-sm text-muted-foreground">
-                We laten met opzet niets uit het geheugen zien: gegevens van spelers en betalingen horen altijd vers van de server te komen.
-                Zodra je weer bereik hebt, werkt alles gewoon.
+                We laten met opzet niets uit het geheugen zien: gegevens van spelers en betalingen horen altijd vers van de server te komen. Zodra je
+                weer bereik hebt, werkt alles gewoon.
             </p>
 
             <button
                 type="button"
-                class="mt-6 inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground"
+                class="mt-6 inline-flex min-h-11 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground"
                 @click="opnieuw"
             >
                 Opnieuw proberen

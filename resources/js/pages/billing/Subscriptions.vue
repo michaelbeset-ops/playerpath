@@ -96,7 +96,7 @@ const kleurVoor = (status: string) =>
                         <select
                             id="player_id"
                             v-model="form.player_id"
-                            class="h-10 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
+                            class="min-h-11 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
                         >
                             <option value="">Kies een speler...</option>
                             <option v-for="speler in playersWithoutSubscription" :key="speler.id" :value="speler.id">{{ speler.name }}</option>
@@ -110,7 +110,7 @@ const kleurVoor = (status: string) =>
                         <select
                             id="product_id"
                             v-model="form.product_id"
-                            class="h-10 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
+                            class="min-h-11 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
                         >
                             <option value="">Kies een tarief...</option>
                             <option v-for="plan in plans" :key="plan.id" :value="plan.id">
@@ -125,7 +125,7 @@ const kleurVoor = (status: string) =>
                         <select
                             id="payment_method"
                             v-model="form.payment_method"
-                            class="h-10 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
+                            class="min-h-11 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
                         >
                             <option v-for="(label, waarde) in methods" :key="waarde" :value="waarde">{{ label }}</option>
                         </select>
@@ -143,7 +143,7 @@ const kleurVoor = (status: string) =>
                         <select
                             id="installments"
                             v-model.number="form.installments"
-                            class="h-10 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
+                            class="min-h-11 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
                         >
                             <option :value="1">In één keer</option>
                             <option v-for="n in 11" :key="n + 1" :value="n + 1">{{ n + 1 }} termijnen</option>
