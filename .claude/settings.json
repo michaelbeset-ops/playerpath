@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Read",
+      "Edit",
+      "Write",
+      "Glob",
+      "Grep",
+      "Bash(*)",
+      "PowerShell(*)"
+    ],
+    "deny": [
+      "Bash(git push --force*)",
+      "PowerShell(git push --force*)"
+    ]
+  }
+}

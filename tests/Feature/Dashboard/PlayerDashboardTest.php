@@ -69,7 +69,12 @@ class PlayerDashboardTest extends TestCase
                 ->where('player.first_name', 'Sem')
                 ->where('card.name', 'Sem de Vries')
                 ->where('nextTraining.label', 'Keepers')
+                ->count('upcoming', 1)
                 ->where('hasEnoughData', false)
+                // Mijlpalen en de deel-link horen bij zijn kaart; delen staat
+                // uit totdat een ouder of de school het aanzet.
+                ->has('badges')
+                ->where('share.url', null)
                 // Geen inschrijf- of betaalblokken: dat is van de ouders.
                 ->missing('offerings')
                 ->missing('todo')

@@ -41,6 +41,8 @@ class PlayerDashboard
     {
         $voortgang = $this->progress->for($speler);
         $doelen = $this->goals->forPlayer($speler);
+        $mijlpalen = $this->badges->for($speler, $this->progress);
+        $trainingen = $this->family->upcomingTrainings($user, [$speler->id]);
 
         return [
             'player' => [
@@ -60,9 +62,18 @@ class PlayerDashboard
             'nextStep' => $this->nextStep->for($speler, $doelen),
             // De eerstvolgende badge die nog niet binnen is: iets om naartoe
             // te werken, naast het level.
-            'nextBadge' => collect($this->badges->for($speler, $this->progress))
-                ->first(fn (array $badge) => ! $badge['earned']),
-            'nextTraining' => $this->family->upcomingTrainings($user, [$speler->id], limiet: 1)[0] ?? null,
+            'nextBadge' => collect($mijlpalen)->first(fn (array $badge) => ! $badge['earned']),
+            'nextTraining' => $trainingen[0] ?? null,
+            'upcoming' => $trainingen,
+            // Alle mijlpalen die voor hem gelden: wat binnen is en wat nog
+            // komt. De volgende staat apart bij het level; hier het geheel.
+            'badges' => $mijlpalen,
+            // Delen zet een ouder of de school aan, niet het kind zelf (zie
+            // PlayerPolicy::share). Staat de link aan, dan mag hij hem wél
+            // doorsturen: het is zijn kaart.
+            'share' => [
+                'url' => $speler->isShared() ? route('players.shared', $speler->share_token) : null,
+            ],
         ];
     }
 }

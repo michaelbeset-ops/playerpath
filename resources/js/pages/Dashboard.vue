@@ -68,6 +68,8 @@ const props = defineProps<{
     nextStep?: SpelerDashboardData['nextStep'];
     nextBadge?: SpelerDashboardData['nextBadge'];
     nextTraining?: SpelerDashboardData['nextTraining'];
+    badges?: SpelerDashboardData['badges'];
+    share?: SpelerDashboardData['share'];
 }>();
 
 const page = usePage<SharedData>();
@@ -303,9 +305,12 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
                     :name="view === 'speler' ? (player?.first_name ?? null) : voornaam"
                 />
 
-                <!-- De speler zelf: mijn kaart, mijn voortgang, volgende training -->
+                <!-- De speler zelf: mijn kaart, mijn voortgang, volgende training.
+                     Bewust een eigen v-if en geen v-else aan de welkomstregel:
+                     zo hing dit blok aan een regel die je kunt wegklikken, en
+                     zag een speler bij zijn eerste bezoek alleen die regel. -->
                 <PlayerDashboard
-                    v-else-if="view === 'speler' && card && player && quarter && categories"
+                    v-if="view === 'speler' && card && player && quarter && categories"
                     class="mt-6"
                     :player="player"
                     :card="card"
@@ -315,11 +320,16 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
                     :next-step="nextStep ?? null"
                     :next-badge="nextBadge ?? null"
                     :next-training="nextTraining ?? null"
+                    :upcoming="upcoming ?? []"
+                    :badges="badges ?? []"
+                    :share="share ?? null"
                 />
 
-                <!-- Ouder: praktisch bovenaan, de kaart één tik verderop -->
+                <!-- Ouder: praktisch bovenaan, de kaart één tik verderop. Alleen
+                     voor de gezinsweergave: als terugval stond dit ook onder het
+                     dashboard van de eigenaar en de trainer. -->
                 <FamilyDashboard
-                    v-else
+                    v-else-if="view === 'gezin'"
                     class="mt-6"
                     :children="children ?? []"
                     :upcoming="upcoming ?? []"

@@ -3,8 +3,22 @@ import CardGlow from '@/components/CardGlow.vue';
 import PlayerCardVisual from '@/components/PlayerCardVisual.vue';
 import type { SpelerDashboardData, SpelerTrend } from '@/types/player-dashboard';
 import { Link } from '@inertiajs/vue3';
-import { ArrowUpRight, Award, CalendarDays, ChevronRight, MapPin, Minus, Sparkles, Target, TrendingDown, TrendingUp } from 'lucide-vue-next';
-import { computed } from 'vue';
+import {
+    ArrowUpRight,
+    Award,
+    CalendarDays,
+    Check,
+    ChevronRight,
+    Lock,
+    MapPin,
+    Medal,
+    Minus,
+    Sparkles,
+    Target,
+    TrendingDown,
+    TrendingUp,
+} from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 
 /**
  * Het dashboard van een speler: mijn kaart, hoe ga ik vooruit, wanneer is de
@@ -73,6 +87,38 @@ const trendIcoon = (trend: SpelerTrend | null) => {
 const deltaTekst = (delta: number | null) => (delta === null ? '' : delta > 0 ? `+${delta}` : `${delta}`);
 
 const kaartHref = computed(() => '/players/' + props.player.id + '/card');
+
+/*
+ * Delen. Of de kaart gedeeld wordt beslist een ouder of de school (zie
+ * PlayerPolicy::share); een kind zet dat niet zelf aan. Staat de link aan,
+ * dan mag het hem wél doorsturen — het is zijn kaart. Staat hij uit, dan
+ * zegt de knop wie hem kan aanzetten in plaats van te zwijgen.
+ */
+const deelMelding = ref<string | null>(null);
+
+const deel = async () => {
+    const url = props.share?.url ?? null;
+
+    if (!url) {
+        deelMelding.value = 'Delen staat nog uit. Vraag je ouders of je trainer om je kaart te delen.';
+        return;
+    }
+
+    try {
+        if (navigator.share) {
+            await navigator.share({ title: 'Mijn spelerskaart', url });
+            return;
+        }
+
+        await navigator.clipboard.writeText(url);
+        deelMelding.value = 'Link gekopieerd. Plak hem in een berichtje.';
+    } catch {
+        deelMelding.value = null;
+    }
+};
+
+const behaald = computed(() => props.badges.filter((b) => b.earned));
+const nogTeHalen = computed(() => props.badges.filter((b) => !b.earned));
 const voortgangHref = computed(() => '/players/' + props.player.id + '/progress');
 </script>
 
@@ -86,7 +132,7 @@ const voortgangHref = computed(() => '/players/' + props.player.id + '/progress'
             <section>
                 <div class="theme-donker overflow-hidden rounded-3xl bg-background p-4 text-foreground sm:p-8">
                     <CardGlow :level="card.overall === null ? 'geen' : card.level.key">
-                        <PlayerCardVisual :card="card" audience="gezin" :shareable="false" />
+                        <PlayerCardVisual :card="card" audience="gezin" :shareable="card.overall !== null" @share="deel" />
                     </CardGlow>
 
                     <!-- Nog geen rapport: dan staat er een staalgrijze kaart
@@ -95,6 +141,10 @@ const voortgangHref = computed(() => '/players/' + props.player.id + '/progress'
                          wanneer — dat is het verschil tussen leeg en beginnend. -->
                     <p v-if="card.overall === null" class="mx-auto mt-5 max-w-xs text-center text-sm text-muted-foreground">
                         Na je eerste training vult je trainer je rapport in, en verschijnt hier jouw kaart met je cijfers.
+                    </p>
+
+                    <p v-if="deelMelding" class="mx-auto mt-4 max-w-xs text-center text-sm text-muted-foreground" role="status">
+                        {{ deelMelding }}
                     </p>
                 </div>
 
@@ -218,45 +268,88 @@ const voortgangHref = computed(() => '/players/' + props.player.id + '/progress'
                 </div>
             </section>
 
-            <!-- 4. Wanneer is de volgende training. -->
+            <!-- 4. Mijlpalen: wat binnen is, en wat er nog te halen valt. -->
+            <section v-if="badges.length">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <h2 class="font-semibold">Mijn mijlpalen</h2>
+                    <span class="tabular text-xs text-muted-foreground">{{ behaald.length }} van {{ badges.length }}</span>
+                </div>
+
+                <ul class="mt-3 grid grid-cols-2 gap-2">
+                    <li
+                        v-for="badge in [...behaald, ...nogTeHalen]"
+                        :key="badge.key"
+                        class="flex min-w-0 items-start gap-2 rounded-xl border p-3"
+                        :class="badge.earned ? 'border-gold/40 bg-card' : 'border-dashed border-border bg-card/50'"
+                    >
+                        <span
+                            class="flex size-8 shrink-0 items-center justify-center rounded-full"
+                            :class="badge.earned ? 'bg-gold/15 text-gold' : 'bg-secondary text-muted-foreground'"
+                        >
+                            <Medal v-if="badge.earned" class="size-4" />
+                            <Lock v-else class="size-3.5" />
+                        </span>
+                        <span class="min-w-0">
+                            <span class="block break-words text-sm font-medium leading-tight" :class="badge.earned ? '' : 'text-muted-foreground'">
+                                {{ badge.label }}
+                            </span>
+                            <span class="mt-0.5 block break-words text-xs leading-tight text-muted-foreground">{{ badge.description }}</span>
+                        </span>
+                        <Check v-if="badge.earned" class="ml-auto size-4 shrink-0 text-gold" aria-label="Behaald" />
+                    </li>
+                </ul>
+            </section>
+
+            <!-- 5. Wanneer moet ik waar zijn: de eerstvolgende trainingen. -->
             <section>
-                <h2 class="font-semibold">Volgende training</h2>
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <h2 class="font-semibold">Komende trainingen</h2>
+                    <Link href="/trainings" class="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4">
+                        Bekijk meer
+                    </Link>
+                </div>
 
-                <Link
-                    v-if="nextTraining"
-                    :href="'/trainings/' + nextTraining.id"
-                    class="mt-3 flex min-w-0 items-start gap-3 rounded-2xl border bg-card p-4 transition hover:border-primary"
-                    :class="nextTraining.is_today ? 'border-primary/50' : 'border-border'"
-                >
-                    <span class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
-                        <CalendarDays class="size-5" />
-                    </span>
+                <div v-if="upcoming.length" class="mt-3 space-y-2">
+                    <Link
+                        v-for="nextTraining in upcoming"
+                        :key="nextTraining.id"
+                        :href="'/trainings/' + nextTraining.id"
+                        class="flex min-w-0 items-start gap-3 rounded-2xl border bg-card p-4 transition hover:border-primary"
+                        :class="nextTraining.is_today ? 'border-primary/50' : 'border-border'"
+                    >
+                        <span class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                            <CalendarDays class="size-5" />
+                        </span>
 
-                    <span class="min-w-0 flex-1">
-                        <span class="flex flex-wrap items-center gap-2">
-                            <span class="font-semibold" :class="nextTraining.cancelled ? 'line-through' : ''">{{ nextTraining.label }}</span>
-                            <span
-                                v-if="nextTraining.is_today"
-                                class="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground"
-                            >
-                                vandaag
+                        <span class="min-w-0 flex-1">
+                            <span class="flex flex-wrap items-center gap-2">
+                                <span class="font-semibold" :class="nextTraining.cancelled ? 'line-through' : ''">{{ nextTraining.label }}</span>
+                                <span
+                                    v-if="nextTraining.is_today"
+                                    class="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground"
+                                >
+                                    vandaag
+                                </span>
+                                <span
+                                    v-if="nextTraining.cancelled"
+                                    class="rounded-full bg-warning/20 px-2 py-0.5 text-[10px] font-semibold text-warning"
+                                >
+                                    gaat niet door
+                                </span>
                             </span>
-                            <span v-if="nextTraining.cancelled" class="rounded-full bg-warning/20 px-2 py-0.5 text-[10px] font-semibold text-warning">
-                                gaat niet door
+                            <span class="tabular mt-0.5 block text-sm first-letter:uppercase">{{ nextTraining.date }} · {{ nextTraining.time }}</span>
+                            <span v-if="nextTraining.location" class="mt-1 flex items-start gap-1.5 text-xs text-muted-foreground">
+                                <MapPin class="mt-0.5 size-3.5 shrink-0" />
+                                <span>{{ nextTraining.location }}</span>
                             </span>
                         </span>
-                        <span class="tabular mt-0.5 block text-sm first-letter:uppercase">{{ nextTraining.date }} · {{ nextTraining.time }}</span>
-                        <span v-if="nextTraining.location" class="mt-1 flex items-start gap-1.5 text-xs text-muted-foreground">
-                            <MapPin class="mt-0.5 size-3.5 shrink-0" />
-                            <span>{{ nextTraining.location }}</span>
-                        </span>
-                    </span>
 
-                    <ChevronRight class="mt-1 size-4 shrink-0 text-muted-foreground" />
-                </Link>
+                        <ChevronRight class="mt-1 size-4 shrink-0 text-muted-foreground" />
+                    </Link>
+                </div>
 
                 <p v-else class="mt-3 rounded-2xl border border-dashed border-border p-5 text-center text-sm text-muted-foreground">
-                    Er staat nog geen training gepland.
+                    Er staat nog geen training gepland. Zodra je school er een inplant, staat hij hier.
                 </p>
             </section>
         </div>

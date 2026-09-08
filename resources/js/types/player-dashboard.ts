@@ -47,4 +47,10 @@ export interface SpelerDashboardData {
     nextStep: SpelerVolgendeStap | null;
     nextBadge: SpelerBadge | null;
     nextTraining: FamilyTraining | null;
+    /** De eerstvolgende trainingen, hooguit drie. */
+    upcoming: FamilyTraining[];
+    /** De mijlpalen die voor deze speler gelden, behaald of nog niet. */
+    badges: SpelerBadge[];
+    /** De deel-link, als een ouder of de school die heeft aangezet. */
+    share: { url: string | null } | null;
 }
