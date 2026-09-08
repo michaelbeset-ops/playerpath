@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppTabbar from '@/components/AppTabbar.vue';
 import AppTopbar from '@/components/AppTopbar.vue';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import type { BreadcrumbItemType } from '@/types';
@@ -34,8 +35,14 @@ withDefaults(defineProps<Props>(), {
             </div>
         </div>
 
-        <main class="min-w-0 flex-1">
+        <!-- pb-[var(--pp-tabbar)]: buiten de app is die nul, dus dit doet daar
+             niets. Als app houdt het de laatste knop van een pagina vrij van de
+             tabbalk in plaats van eronder. -->
+        <main class="min-w-0 flex-1 pb-[var(--pp-tabbar)]">
             <slot />
         </main>
+
+        <!-- Het menu onderin, alleen als de app als app draait. -->
+        <AppTabbar />
     </div>
 </template>

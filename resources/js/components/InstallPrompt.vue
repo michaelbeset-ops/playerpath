@@ -53,7 +53,7 @@ onUnmounted(() => window.removeEventListener('beforeinstallprompt', onBeforeInst
 <template>
     <div
         v-if="zichtbaar"
-        class="fixed inset-x-3 bottom-3 z-50 flex items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-lg sm:left-auto sm:w-96"
+        class="fixed inset-x-3 bottom-[calc(var(--pp-tabbar)+0.75rem)] z-50 flex items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-lg sm:left-auto sm:w-96"
     >
         <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Download class="size-4" />

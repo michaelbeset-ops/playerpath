@@ -186,3 +186,31 @@
         min-width: 0;
     }
 }
+
+/*
+ * De tabbalk onderin, als de app als app draait.
+ *
+ * In een browsertabblad staat de knoppenbalk van de browser al onderaan het
+ * scherm; er nog een balk boven zetten levert twee rijen knoppen op die op
+ * elkaar lijken. Als geïnstalleerde app is die onderrand juist leeg, en dat is
+ * het enige stuk scherm dat je staand, met één hand, met je duim bereikt.
+ *
+ * `--pp-tabbar` is de hoogte die de rest van de app moet ontwijken: de balk
+ * zelf, plus de veilige zone van een telefoon met een home-streepje. Buiten de
+ * app en op een breed scherm is hij nul, zodat elke `bottom-[var(--pp-tabbar)]`
+ * daar gewoon `bottom: 0` betekent en er niets verspringt.
+ *
+ * Het staat als variabele en niet als vast getal omdat er meer vaste balken
+ * onderin zitten — opslaan bij een rapport, opslaan bij je beschikbaarheid —
+ * en die horen bóven de tabbalk te blijven staan in plaats van eronder te
+ * verdwijnen.
+ */
+:root {
+    --pp-tabbar: 0px;
+}
+
+@media (max-width: 1023.98px) {
+    html.pp-app {
+        --pp-tabbar: calc(3.5rem + env(safe-area-inset-bottom, 0px));
+    }
+}

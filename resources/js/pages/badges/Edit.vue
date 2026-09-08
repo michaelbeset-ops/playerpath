@@ -170,7 +170,7 @@ const opslaan = () => form.patch('/mijlpalen', { preserveScroll: true });
             </form>
         </div>
 
-        <div class="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur">
+        <div class="fixed inset-x-0 bottom-[var(--pp-tabbar)] z-30 border-t border-border bg-card/95 backdrop-blur">
             <div class="mx-auto flex w-full max-w-2xl items-center justify-end p-4">
                 <button
                     type="submit"

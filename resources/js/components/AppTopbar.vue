@@ -1,46 +1,19 @@
 <script setup lang="ts">
 import AppLogo from '@/components/AppLogo.vue';
+import { useAppMode } from '@/composables/useAppMode';
+import { navIconen, navIcoon } from '@/lib/nav-icons';
 import { type NavGroup, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';
-import {
-    Award,
-    Bell,
-    Building2,
-    Cake,
-    CalendarDays,
-    CalendarCheck,
-    CalendarRange,
-    ChevronDown,
-    ClipboardList,
-    Contact,
-    CreditCard,
-    FileCheck2,
-    FileDown,
-    Inbox,
-    LayoutGrid,
-    LogOut,
-    MapPin,
-    Megaphone,
-    Menu,
-    Palette,
-    Plus,
-    Receipt,
-    Settings,
-    Tag,
-    UserCog,
-    Users,
-    UsersRound,
-    X,
-} from 'lucide-vue-next';
-import { computed, onBeforeUnmount, onMounted, ref, watch, type Component } from 'vue';
+import { Bell, ChevronDown, LogOut, Menu, Plus, X } from 'lucide-vue-next';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 /**
  * De menubalk bovenin.
  *
  * Welke items er staan bepaalt de server (MainNavigation en QuickActions), op
- * basis van de policies. Hier vertalen we alleen de iconennaam naar een
- * component, zodat het menu nooit een item kan tonen dat je toch niet mag
- * openen.
+ * basis van de policies. Hier wordt alleen de iconennaam vertaald naar een
+ * component (via lib/nav-icons, gedeeld met de tabbalk onderin), zodat het menu
+ * nooit een item kan tonen dat je toch niet mag openen.
  *
  * De balk is donkerblauw en de werkvloer eronder licht. Dat is geen sier: het
  * scheidt "waar ben ik in de app" van "waar werk ik aan", en het is dezelfde
@@ -50,30 +23,6 @@ import { computed, onBeforeUnmount, onMounted, ref, watch, type Component } from
  * Die zoek je op positie en niet op vorm, dus ze horen altijd op dezelfde plek
  * te staan, ook als de balk verder leegloopt bij een ouder.
  */
-const iconen: Record<string, Component> = {
-    dashboard: LayoutGrid,
-    players: Users,
-    guardians: Contact,
-    groups: UsersRound,
-    trainings: CalendarDays,
-    calendar: CalendarRange,
-    reports: ClipboardList,
-    subscriptions: Receipt,
-    payments: CreditCard,
-    products: Tag,
-    exports: FileDown,
-    enrollments: Inbox,
-    branding: Palette,
-    accountability: FileCheck2,
-    badges: Award,
-    announcements: Megaphone,
-    birthdays: Cake,
-    business: Building2,
-    staff: UserCog,
-    locations: MapPin,
-    availability: CalendarCheck,
-    settings: Settings,
-};
 
 const page = usePage<SharedData>();
 
@@ -81,16 +30,20 @@ const groepen = computed<NavGroup[]>(() =>
     (page.props.nav ?? []).map((groep) => ({
         title: groep.title,
         href: groep.href,
-        icon: iconen[groep.icon] ?? LayoutGrid,
+        icon: navIcoon(groep.icon),
         badge: (groep as { badge?: number }).badge ?? 0,
         items: (groep.items ?? []).map((item) => ({
             title: item.title,
             href: item.href,
-            icon: iconen[item.icon] ?? LayoutGrid,
+            icon: navIcoon(item.icon),
             badge: (item as { badge?: number }).badge ?? 0,
         })),
     })),
 );
+
+// Draait dit als app? Dan staat het menu in de tabbalk onderin, en is de
+// hamburger hierboven een tweede weg naar hetzelfde — die laten we weg.
+const { isApp } = useAppMode();
 
 const acties = computed(() => page.props.quickAdd ?? []);
 const ongelezen = computed(() => page.props.unreadNotifications ?? 0);
@@ -256,7 +209,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                             class="flex items-center gap-3 px-3 py-2.5 text-sm transition hover:bg-foreground/10"
                             @click="sluit"
                         >
-                            <component :is="iconen[actie.icon] ?? Plus" class="size-4 shrink-0 opacity-70" />
+                            <component :is="navIconen[actie.icon] ?? Plus" class="size-4 shrink-0 opacity-70" />
                             {{ actie.title }}
                         </Link>
                     </div>
@@ -312,6 +265,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                 </div>
 
                 <button
+                    v-if="!isApp"
                     type="button"
                     class="flex items-center px-3 text-foreground/75 transition hover:bg-foreground/10 hover:text-foreground lg:hidden"
                     :aria-expanded="mobiel"

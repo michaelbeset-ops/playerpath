@@ -311,7 +311,7 @@ const sla = () => {
             </p>
 
             <!-- Vaste balk onderaan: één grote knop, binnen duimbereik -->
-            <div class="fixed inset-x-0 bottom-0 border-t border-border bg-card/95 backdrop-blur">
+            <div class="fixed inset-x-0 bottom-[var(--pp-tabbar)] border-t border-border bg-card/95 backdrop-blur">
                 <div class="mx-auto flex w-full max-w-3xl items-center gap-2 p-3 sm:p-4">
                     <button
                         type="button"

@@ -190,7 +190,7 @@ const opslaan = () => form.post('/players/' + props.player.id + '/reports');
             </div>
 
             <!-- Vaste balk onderaan: opslaan is altijd binnen duimbereik -->
-            <div class="fixed inset-x-0 bottom-0 border-t border-border bg-card/95 backdrop-blur">
+            <div class="fixed inset-x-0 bottom-[var(--pp-tabbar)] border-t border-border bg-card/95 backdrop-blur">
                 <div class="mx-auto flex w-full max-w-3xl items-center justify-between gap-4 p-4">
                     <p class="tabular text-sm text-muted-foreground">{{ ingevuld }} van {{ categories.length }} ingevuld</p>
                     <Button type="submit" size="lg" :disabled="form.processing || !compleet">

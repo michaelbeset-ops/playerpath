@@ -45,6 +45,22 @@
             </style>
         @endif
 
+        {{-- Draait dit als geïnstalleerde app? Dan staat het menu onderin, waar
+             je duim is, in plaats van bovenaan.
+
+             Dit moet vóór het eerste beeld gebeuren en dus hier, niet in Vue:
+             anders zie je bij het openen van de app een fractie van een seconde
+             de verkeerde balk staan en springt de pagina daarna. De klasse is
+             het enige wat dit blokje doet; useAppMode.ts leest hem terug. --}}
+        <script>
+            (function () {
+                var q = function (m) { return window.matchMedia && window.matchMedia(m).matches; };
+                if (q('(display-mode: standalone)') || q('(display-mode: minimal-ui)') || q('(display-mode: fullscreen)') || window.navigator.standalone === true) {
+                    document.documentElement.classList.add('pp-app');
+                }
+            })();
+        </script>
+
         @inertiaHead
     </head>
     <body class="bg-background font-sans text-foreground antialiased">

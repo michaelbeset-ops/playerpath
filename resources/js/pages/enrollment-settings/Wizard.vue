@@ -630,7 +630,7 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
         </div>
 
         <!-- Vaste balk onderaan, binnen duimbereik. -->
-        <div class="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur">
+        <div class="fixed inset-x-0 bottom-[var(--pp-tabbar)] z-30 border-t border-border bg-card/95 backdrop-blur">
             <div class="mx-auto flex w-full max-w-2xl items-center justify-between gap-3 p-4">
                 <Link
                     v-if="step > 1"
