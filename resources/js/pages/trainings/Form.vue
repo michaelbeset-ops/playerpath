@@ -120,7 +120,7 @@ const opslaan = () => {
                             v-for="trainer in availableTrainers"
                             :key="trainer.id"
                             type="button"
-                            class="rounded-lg border px-3 py-2 text-sm transition"
+                            class="min-h-11 rounded-lg border px-3 py-2 text-sm transition"
                             :class="
                                 form.trainers.includes(trainer.id)
                                     ? 'border-primary bg-primary/10 font-medium text-primary'
@@ -193,7 +193,10 @@ const opslaan = () => {
                         {{ bewerken ? 'Wijzigingen opslaan' : 'Inplannen' }}
                     </Button>
 
-                    <Link href="/trainings" class="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground">
+                    <Link
+                        href="/trainings"
+                        class="inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                    >
                         Annuleren
                     </Link>
                 </div>

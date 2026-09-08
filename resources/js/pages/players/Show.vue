@@ -184,7 +184,7 @@ const verwijderen = () => {
                 <div class="flex flex-wrap items-center gap-2">
                     <Link
                         :href="'/players/' + player.id + '/card'"
-                        class="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition hover:border-primary"
+                        class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition hover:border-primary"
                     >
                         <IdCard class="size-4" />
                         Spelerskaart
@@ -193,7 +193,7 @@ const verwijderen = () => {
                     <Link
                         v-if="can.report"
                         :href="'/players/' + player.id + '/reports/create'"
-                        class="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                        class="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
                     >
                         <ClipboardList class="size-4" />
                         Rapport invullen
@@ -202,7 +202,7 @@ const verwijderen = () => {
                     <Link
                         v-if="can.manage"
                         :href="'/players/' + player.id + '/edit'"
-                        class="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition hover:border-primary"
+                        class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition hover:border-primary"
                     >
                         <Pencil class="size-4" />
                         Bewerken
@@ -262,7 +262,7 @@ const verwijderen = () => {
                     <Link
                         v-if="can.manage"
                         :href="'/players/' + player.id + '/edit'"
-                        class="mt-4 inline-block text-sm font-medium text-primary underline underline-offset-4"
+                        class="mt-4 inline-block inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4"
                     >
                         Groepen aanpassen
                     </Link>
@@ -423,7 +423,7 @@ const verwijderen = () => {
                         <button
                             v-if="can.manage"
                             type="button"
-                            class="rounded-lg p-2 text-muted-foreground transition hover:bg-secondary hover:text-destructive"
+                            class="inline-flex min-h-11 items-center rounded-lg p-2 text-muted-foreground transition hover:bg-secondary hover:text-destructive"
                             :aria-label="'Koppeling met ' + ouder.name + ' verwijderen'"
                             @click="ontkoppel(ouder.id)"
                         >
@@ -595,7 +595,7 @@ const verwijderen = () => {
                         <button
                             v-if="can.manage && aankoop.status === 'active'"
                             type="button"
-                            class="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-destructive"
+                            class="flex size-11 min-h-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-destructive"
                             :aria-label="aankoop.name + ' intrekken'"
                             @click="trekIn(aankoop.id, aankoop.name)"
                         >
@@ -617,7 +617,7 @@ const verwijderen = () => {
                 </p>
                 <a
                     :href="'/players/' + player.id + '/gegevens'"
-                    class="mt-4 inline-flex h-9 items-center rounded-lg border border-border px-3 text-sm font-medium hover:border-primary"
+                    class="mt-4 inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-sm font-medium hover:border-primary sm:h-9 sm:min-h-0"
                 >
                     <FileDown class="mr-2 size-4" />
                     Gegevens downloaden

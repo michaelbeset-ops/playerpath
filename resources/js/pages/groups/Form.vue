@@ -75,7 +75,12 @@ const verwijderen = () => {
                         {{ bewerken ? 'Wijzigingen opslaan' : 'Groep aanmaken' }}
                     </Button>
 
-                    <Link href="/groups" class="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"> Annuleren </Link>
+                    <Link
+                        href="/groups"
+                        class="inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                    >
+                        Annuleren
+                    </Link>
                 </div>
             </form>
 

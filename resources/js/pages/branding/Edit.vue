@@ -95,7 +95,7 @@ const opslaan = () =>
                         <button
                             v-if="voorbeeld"
                             type="button"
-                            class="text-sm text-muted-foreground underline underline-offset-4 hover:text-destructive"
+                            class="inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4 hover:text-destructive"
                             @click="verwijderLogo"
                         >
                             Logo verwijderen

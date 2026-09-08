@@ -138,7 +138,7 @@ const kopieer = async () => {
             <div class="mt-4 flex flex-wrap items-center gap-3">
                 <Link
                     :href="'/players/' + player.id + '/progress'"
-                    class="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold shadow-sm transition hover:border-primary"
+                    class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold shadow-sm transition hover:border-primary"
                 >
                     <TrendingUp class="size-4" />
                     Bekijk de voortgang
@@ -147,7 +147,7 @@ const kopieer = async () => {
                 <Link
                     v-if="canReport"
                     :href="'/players/' + player.id + '/reports/create'"
-                    class="inline-flex items-center rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                    class="inline-flex min-h-11 items-center rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
                 >
                     Nieuw rapport invullen
                 </Link>
@@ -200,12 +200,12 @@ const kopieer = async () => {
                         <input
                             :value="share.url"
                             readonly
-                            class="min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-xs text-muted-foreground"
+                            class="min-h-11 min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-xs text-muted-foreground"
                             @focus="($event.target as HTMLInputElement).select()"
                         />
                         <button
                             type="button"
-                            class="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition hover:border-primary"
+                            class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition hover:border-primary"
                             @click="kopieer"
                         >
                             <Check v-if="gekopieerd" class="size-4 text-primary" />
@@ -214,7 +214,11 @@ const kopieer = async () => {
                         </button>
                     </div>
 
-                    <button type="button" class="mt-3 text-sm font-medium text-destructive underline underline-offset-4" @click="deelUit">
+                    <button
+                        type="button"
+                        class="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-destructive underline underline-offset-4"
+                        @click="deelUit"
+                    >
                         Delen stoppen
                     </button>
                 </template>

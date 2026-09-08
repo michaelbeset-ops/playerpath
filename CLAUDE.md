@@ -737,9 +737,11 @@ en welke punten van de checklist.
 bij activatie gekoppeld worden. Dat ging via de wachtwoord-vergeten-route, en
 die kan die twee dingen niet.
 
-- **Bulk is geen luxe**: een school die overstapt heeft honderd ouders. Het
-  formulier neemt regels aan van de vorm `Naam <mail@x.nl>`, `Naam, mail@x.nl`
-  of een kaal adres — dat is wat mensen tóch al plakken.
+- **Het gewone geval is één persoon**: naam, e-mailadres, versturen. Bulk is
+  daarnaast geen luxe — een school die overstapt heeft honderd ouders — maar
+  zit achter "Meer opties": het formulier neemt daar regels aan van de vorm
+  `Naam <mail@x.nl>`, `Naam, mail@x.nl` of een kaal adres, wat mensen tóch al
+  plakken. De relatie (moeder, vader) staat er ook achter.
 - **Een account ontstaat pas bij activatie.** Tot die tijd is er alleen een
   uitnodiging; anders staat er een half ledenbestand met mensen die nooit hebben
   ingelogd, en telt de school ze wel mee.
@@ -788,6 +790,16 @@ Een lijst van negen was te lang, en een kaart met acht "nog te behalen" leest
 als een verlanglijst. De tijdlijn op de voortgangspagina toont standaard de
 laatste vier momenten, de rest achter "Meer weergeven".
 
+**Eigen mijlpalen** typt de school zelf (naam en omschrijving, ook in
+`rating_settings['badges']['custom']`). Die zijn nergens uit af te leiden, dus
+een trainer kent ze **met de hand toe** op de pagina van de speler
+(`player_badges`, `PlayerBadgeController`; de poort is `createReport`). Elke
+eigen mijlpaal krijgt bij het opslaan een vaste sleutel `eigen_…` die bij
+hernoemen blijft, anders raakt een kind zijn badge kwijt als de school een
+tikfout verbetert. Ze staan op de kaart, het spelerdashboard en in de tijdlijn
+naast de afgeleide mijlpalen; de standaardmijlpalen zijn niet met de hand te
+zetten.
+
 **Tijdlijn en mijlpalen worden afgeleid**, niet opgeslagen. Er is geen
 gebeurtenissen-tabel die uit de pas kan lopen met de werkelijkheid, en een
 nieuwe badge kost één regel in `PlayerBadges`. Ook de **level-momenten** komen
@@ -826,6 +838,12 @@ nooit alsnog een e-mail oplevert. Lokaal draai je `php artisan queue:work`.
 **Het dashboard verschilt per rol.** Eigenaar en trainer zien de school; ouder
 en speler hun eigen kind. Eén gedeeld dashboard toonde een ouder schoolbrede
 cijfers en knoppen die hij niet mocht gebruiken.
+
+**Elke weergave in `Dashboard.vue` heeft een eigen `v-if` op `view`.** De
+ouder- en spelerweergave hingen ooit als `v-else` aan de welkomstregel: bij
+het eerste bezoek zag een ouder alleen die regel, en bij de eigenaar viel het
+gezinsblok als terugval onder zijn widgets. De server stuurt per rol alleen de
+props van die rol; de Vue-kant mag daar geen terugval bij verzinnen.
 
 #### Het ouder-dashboard
 
@@ -1808,6 +1826,9 @@ erger dan geen.
   formuleren.
 - **Trainers mogen ook mededelingen sturen**, niet alleen de eigenaar. Een
   afgelasting komt van wie om zeven uur naar het veld kijkt.
+- **Verstuurde berichten staan ingeklapt**: titel, datum en ontvangergroep;
+  de tekst klapt per bericht uit. Twintig berichten voluit is een lap tekst
+  waar je doorheen moet scrollen om er één te vinden.
 - **Meldingsvoorkeuren gelden alleen voor mail** (`users.notification_preferences`,
   zie `User::wantsEmail()`). In-app meldingen zijn niet uit te zetten: anders
   mist iemand een afgelasting en heeft de school geen enkele manier meer om hem
@@ -1932,6 +1953,27 @@ Daarna nog een tweede ronde op een echte telefoon:
 **Tikvlakken zijn minstens 44 pixels hoog**, ook tekstlinks als "Bekijk meer"
 of "Details": `inline-flex min-h-11 items-center` zonder dat de tekst groter
 wordt. Een link van twintig pixels hoog mis je met een duim.
+
+**Filters staan op een telefoon achter één knop** (`components/FilterSheet.vue`):
+een knop met een teller voor het aantal actieve filters, en een paneel van
+onderen met alle keuzes. Op een groot scherm tekent hetzelfde component de
+keuzes gewoon inline (`sm:contents`), met dezelfde v-models — één plek, geen
+tweede formulier dat kan gaan afwijken. Het zoekveld blijft altijd in beeld.
+Een weergavekeuze (lijst of raster) telt niet mee in het bolletje: dat is geen
+filter. Zo werken de agenda, Klanten, Betalingen en de verantwoording.
+
+**Elk scherm dat geen hoofdtabblad is heeft linksboven een weg terug.** Dat
+regelt de schil (`AppTopbarLayout`): op een telefoon één knop naar de kruimel
+ervoor, en als een pagina maar één kruimel heeft terwijl het adres niet in het
+menu staat (de kaart, de meldingen achter het belletje) een stap terug in de
+geschiedenis. Geef een subscherm daarom een pad van twee kruimels; dat is
+tegelijk het broodkruimelpad op een groot scherm.
+
+**De bevestiging na opslaan is een melding onderin** (`FlashToast` in de
+schil, gevoed door `flash.status`). Hij stond bovenaan de pagina, maar de knop
+Opslaan staat onderaan en op een telefoon zie je de bovenkant dan niet. Elke
+controller die iets opslaat geeft `->with('status', …)` mee; `FlashMessage`
+op de pagina's tekent niets meer.
 
 **Meet het zelf na een layoutwijziging** in plaats van te kijken:
 `document.documentElement.scrollWidth` hoort gelijk te zijn aan

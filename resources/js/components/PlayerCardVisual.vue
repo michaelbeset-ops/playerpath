@@ -154,7 +154,7 @@ const upgradeTekst = computed(() => {
 
                     <div v-else class="pp-silhouet">
                         <UserRound class="pp-silhouet-icoon" aria-hidden="true" />
-                        <Link v-if="photoHref" :href="photoHref" class="pp-foto-knop">
+                        <Link v-if="photoHref" :href="photoHref" class="pp-foto-knop inline-flex min-h-11 items-center">
                             <Camera class="size-3.5" />
                             Foto toevoegen
                         </Link>

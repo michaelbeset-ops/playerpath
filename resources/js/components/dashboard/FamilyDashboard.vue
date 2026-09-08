@@ -155,14 +155,14 @@ const levelRand: Record<string, string> = {
                     <div class="mt-3 flex flex-wrap gap-2">
                         <Link
                             :href="'/players/' + kind.id + '/card'"
-                            class="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-border text-sm font-medium transition hover:border-primary"
+                            class="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border text-sm font-medium transition hover:border-primary"
                         >
                             <IdCard class="size-4" />
                             Spelerskaart
                         </Link>
                         <Link
                             :href="'/players/' + kind.id + '/progress'"
-                            class="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-border text-sm font-medium transition hover:border-primary"
+                            class="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-border text-sm font-medium transition hover:border-primary"
                         >
                             <ArrowUpRight class="size-4" />
                             Voortgang

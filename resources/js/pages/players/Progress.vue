@@ -139,7 +139,7 @@ const tijdlijnZichtbaar = computed(() => (tijdlijnUit.value ? props.timeline : p
 
                 <Link
                     :href="'/players/' + player.id + '/card'"
-                    class="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition hover:border-primary"
+                    class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition hover:border-primary"
                 >
                     <IdCard class="size-4" />
                     Terug naar de kaart
@@ -223,7 +223,7 @@ const tijdlijnZichtbaar = computed(() => (tijdlijnUit.value ? props.timeline : p
 
                     <button
                         type="button"
-                        class="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-lg border border-border px-3 py-2 text-sm font-medium transition hover:border-primary"
+                        class="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 self-start rounded-lg border border-border px-3 py-2 text-sm font-medium transition hover:border-primary"
                         @click="uitlegOpen = true"
                     >
                         <CircleHelp class="size-4" />
@@ -426,7 +426,7 @@ const tijdlijnZichtbaar = computed(() => (tijdlijnUit.value ? props.timeline : p
                 <button
                     v-if="timeline.length > TIJDLIJN_KORT"
                     type="button"
-                    class="mt-3 inline-flex h-10 w-full items-center justify-center rounded-lg border border-border text-sm font-medium transition hover:border-primary"
+                    class="mt-3 inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-border text-sm font-medium transition hover:border-primary"
                     @click="tijdlijnUit = !tijdlijnUit"
                 >
                     {{ tijdlijnUit ? 'Minder weergeven' : 'Meer weergeven (' + (timeline.length - TIJDLIJN_KORT) + ')' }}
@@ -438,7 +438,7 @@ const tijdlijnZichtbaar = computed(() => (tijdlijnUit.value ? props.timeline : p
             <div v-if="canReport" class="mt-4">
                 <Link
                     :href="'/players/' + player.id + '/reports/create'"
-                    class="inline-flex items-center rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                    class="inline-flex min-h-11 items-center rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
                 >
                     Nieuw rapport invullen
                 </Link>

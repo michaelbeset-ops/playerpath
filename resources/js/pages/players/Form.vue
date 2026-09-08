@@ -141,7 +141,7 @@ const opslaan = () => {
                             v-for="groep in availableGroups"
                             :key="groep.id"
                             type="button"
-                            class="rounded-lg border px-3 py-2 text-sm transition"
+                            class="min-h-11 rounded-lg border px-3 py-2 text-sm transition"
                             :class="
                                 form.groups.includes(groep.id)
                                     ? 'border-primary bg-primary/10 font-medium text-primary'
@@ -180,7 +180,7 @@ const opslaan = () => {
 
                 <Link
                     :href="bewerken ? '/players/' + player!.id : '/players'"
-                    class="text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                    class="inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
                 >
                     Annuleren
                 </Link>

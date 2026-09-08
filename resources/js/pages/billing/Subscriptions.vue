@@ -194,7 +194,7 @@ const kleurVoor = (status: string) =>
 
                         <select
                             :value="abonnement.status"
-                            class="shrink-0 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                            class="min-h-11 shrink-0 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
                             :aria-label="'Status van het abonnement van ' + (abonnement.player ?? 'onbekend')"
                             @change="zetStatus(abonnement, ($event.target as HTMLSelectElement).value)"
                         >

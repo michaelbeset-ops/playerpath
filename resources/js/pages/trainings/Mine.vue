@@ -102,7 +102,7 @@ const dagen = computed(() => {
                             </div>
 
                             <div class="min-w-0 flex-1">
-                                <p class="flex flex-wrap items-center gap-2 truncate font-medium">
+                                <p class="flex flex-wrap items-center gap-2 break-words font-medium">
                                     {{ training.group }}
                                     <span
                                         v-if="training.cancelled"
@@ -111,7 +111,7 @@ const dagen = computed(() => {
                                         afgezegd
                                     </span>
                                 </p>
-                                <p class="tabular truncate text-xs text-muted-foreground">
+                                <p class="tabular break-words text-xs text-muted-foreground">
                                     {{ training.time }}
                                     <span v-if="training.location" class="inline-flex items-center gap-1">
                                         &middot; <MapPin class="size-3" />{{ training.location }}
