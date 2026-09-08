@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import Avatar from '@/components/Avatar.vue';
+import FilterSheet from '@/components/FilterSheet.vue';
 import FlashMessage from '@/components/FlashMessage.vue';
 import DemoBadge from '@/components/onboarding/DemoBadge.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ChevronDown, KeyRound, Mail, Plus, Search, Users } from 'lucide-vue-next';
-import { reactive, ref, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 
 interface OuderRij {
     id: number;
@@ -57,6 +58,12 @@ const beoordeling = (dagen: number | null) => {
 
     return { tekst, kleur: dagen <= props.staleAfterDays ? 'text-success' : 'text-warning' };
 };
+
+// Wat er in het bolletje op de filterknop staat: alles wat afwijkt van
+// "alle actieve spelers". Zoeken telt niet mee: dat zie je in het veld zelf.
+const actieveFilters = computed(() => (filters.position !== '' ? 1 : 0) + (filters.group !== null ? 1 : 0) + (filters.status !== 'active' ? 1 : 0));
+
+const keuzeKlasse = 'mt-1.5 min-h-11 w-full min-w-0 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary';
 
 const filters = reactive({ ...props.filters });
 
@@ -112,8 +119,10 @@ const klap = (id: number) => {
                 </Link>
             </div>
 
-            <div class="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <div class="relative col-span-2 lg:col-span-1">
+            <!-- Zoeken staat altijd in beeld; de keuzelijsten zitten op een
+                 telefoon achter één knop met een teller. -->
+            <div class="mt-3 flex gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-4">
+                <div class="relative min-w-0 flex-1 sm:col-span-2 lg:col-span-1">
                     <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <input
                         v-model="filters.search"
@@ -123,30 +132,32 @@ const klap = (id: number) => {
                     />
                 </div>
 
-                <select
-                    v-model="filters.position"
-                    class="min-h-11 min-w-0 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary"
-                >
-                    <option value="">Alle posities</option>
-                    <option v-for="(label, waarde) in positions" :key="waarde" :value="waarde">{{ label }}</option>
-                </select>
+                <FilterSheet :count="actieveFilters" :title="isTrainer ? 'Spelers' : 'Klanten'">
+                    <label class="block min-w-0">
+                        <span class="text-xs font-medium text-muted-foreground sm:sr-only">Positie</span>
+                        <select v-model="filters.position" :class="keuzeKlasse" class="sm:mt-0">
+                            <option value="">Alle posities</option>
+                            <option v-for="(label, waarde) in positions" :key="waarde" :value="waarde">{{ label }}</option>
+                        </select>
+                    </label>
 
-                <select
-                    v-model="filters.group"
-                    class="min-h-11 min-w-0 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary"
-                >
-                    <option :value="null">Alle groepen</option>
-                    <option v-for="groep in groups" :key="groep.id" :value="groep.id">{{ groep.name }}</option>
-                </select>
+                    <label class="block min-w-0">
+                        <span class="text-xs font-medium text-muted-foreground sm:sr-only">Groep</span>
+                        <select v-model="filters.group" :class="keuzeKlasse" class="sm:mt-0">
+                            <option :value="null">Alle groepen</option>
+                            <option v-for="groep in groups" :key="groep.id" :value="groep.id">{{ groep.name }}</option>
+                        </select>
+                    </label>
 
-                <select
-                    v-model="filters.status"
-                    class="col-span-2 min-h-11 min-w-0 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary lg:col-span-1"
-                >
-                    <option value="active">Actieve spelers</option>
-                    <option value="inactive">Niet-actieve spelers</option>
-                    <option value="all">Alle spelers</option>
-                </select>
+                    <label class="block min-w-0 sm:col-span-2 lg:col-span-1">
+                        <span class="text-xs font-medium text-muted-foreground sm:sr-only">Status</span>
+                        <select v-model="filters.status" :class="keuzeKlasse" class="sm:mt-0">
+                            <option value="active">Actieve spelers</option>
+                            <option value="inactive">Niet-actieve spelers</option>
+                            <option value="all">Alle spelers</option>
+                        </select>
+                    </label>
+                </FilterSheet>
             </div>
 
             <div v-if="players.length" class="mt-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm">

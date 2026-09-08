@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Trainings;
 
 use App\Http\Controllers\Controller;
+use App\Models\Group;
+use App\Models\Location;
 use App\Models\Training;
 use App\Models\User;
 use App\Support\Trainings\VisibleTrainings;
@@ -67,6 +69,28 @@ class CalendarController extends Controller
             $query->forTrainer($user);
         }
 
+        // Groep, trainer en locatie: alleen voor wie het hele rooster ziet.
+        // Voor een ouder is er niets te kiezen — hij ziet al alleen zijn kind.
+        // Een vreemd id levert gewoon niets op: de global scope filtert de
+        // query zelf al op de school.
+        $filters = [
+            'group' => $canChooseScope ? ($request->integer('group') ?: null) : null,
+            'trainer' => $canChooseScope ? ($request->integer('trainer') ?: null) : null,
+            'location' => $canChooseScope ? ($request->integer('location') ?: null) : null,
+        ];
+
+        if ($filters['group']) {
+            $query->where('group_id', $filters['group']);
+        }
+
+        if ($filters['trainer']) {
+            $query->whereHas('trainers', fn ($q) => $q->where('users.id', $filters['trainer']));
+        }
+
+        if ($filters['location']) {
+            $query->where('location_id', $filters['location']);
+        }
+
         $trainingen = $query
             ->orderBy('starts_at')
             ->get()
@@ -102,6 +126,14 @@ class CalendarController extends Controller
                 : ucfirst($datum->translatedFormat('F Y')),
             'trainings' => $trainingen,
             'canManage' => $user->can('create', Training::class),
+            'filters' => $filters,
+            // De keuzes voor het filterpaneel. Alleen wat er is: een lege
+            // keuzelijst is een vraag zonder antwoord.
+            'groups' => $canChooseScope ? Group::visibleTo($user)->where('is_active', true)->orderBy('name')->get(['id', 'name']) : [],
+            'trainers' => $canChooseScope
+                ? User::ofCurrentSchool()->role(['trainer', 'eigenaar'])->orderBy('name')->get(['id', 'name'])
+                : [],
+            'locations' => $canChooseScope ? Location::where('is_active', true)->orderBy('name')->get(['id', 'name']) : [],
         ]);
     }
 

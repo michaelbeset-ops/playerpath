@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import FilterSheet from '@/components/FilterSheet.vue';
 import FlashMessage from '@/components/FlashMessage.vue';
 import GatewayNotice from '@/components/GatewayNotice.vue';
 import StatCard from '@/components/StatCard.vue';
@@ -51,6 +52,15 @@ const props = defineProps<{
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Betalingen', href: '/payments' }];
 
 const filters = reactive({ ...props.filters });
+
+// Wat er in het bolletje op de filterknop staat: alles wat afwijkt van de
+// standaard (deze maand, alle methodes, al het aanbod). Het tabblad en het
+// zoekveld tellen niet mee; die zie je al.
+const actieveFilters = computed(
+    () => (filters.period !== 'this_month' ? 1 : 0) + (filters.method !== '' ? 1 : 0) + (filters.product !== null ? 1 : 0),
+);
+
+const keuzeKlasse = 'mt-1.5 min-h-11 w-full min-w-0 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary';
 
 let wachten: ReturnType<typeof setTimeout> | undefined;
 
@@ -170,9 +180,10 @@ const zetMethode = (betaling: Betaling, method: string) =>
                 </button>
             </div>
 
-            <!-- Filters -->
-            <div class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <div class="relative">
+            <!-- Filters. Zoeken staat altijd in beeld; periode, methode en
+                 aanbod zitten op een telefoon achter één knop met een teller. -->
+            <div class="mt-3 flex gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-4">
+                <div class="relative min-w-0 flex-1 sm:col-span-1">
                     <Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                     <input
                         v-model="filters.search"
@@ -182,30 +193,32 @@ const zetMethode = (betaling: Betaling, method: string) =>
                     />
                 </div>
 
-                <select
-                    v-model="filters.period"
-                    class="min-h-11 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary"
-                >
-                    <option v-for="(label, waarde) in periods" :key="waarde" :value="waarde">{{ label }}</option>
-                </select>
+                <FilterSheet :count="actieveFilters" title="Betalingen">
+                    <label class="block min-w-0">
+                        <span class="text-xs font-medium text-muted-foreground sm:sr-only">Periode</span>
+                        <select v-model="filters.period" :class="keuzeKlasse" class="sm:mt-0">
+                            <option v-for="(label, waarde) in periods" :key="waarde" :value="waarde">{{ label }}</option>
+                        </select>
+                    </label>
 
-                <select
-                    v-model="filters.method"
-                    class="min-h-11 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary"
-                >
-                    <option value="">Alle methodes</option>
-                    <option v-for="(label, waarde) in methods" :key="waarde" :value="waarde">{{ label }}</option>
-                </select>
+                    <label class="block min-w-0">
+                        <span class="text-xs font-medium text-muted-foreground sm:sr-only">Betaalmethode</span>
+                        <select v-model="filters.method" :class="keuzeKlasse" class="sm:mt-0">
+                            <option value="">Alle methodes</option>
+                            <option v-for="(label, waarde) in methods" :key="waarde" :value="waarde">{{ label }}</option>
+                        </select>
+                    </label>
 
-                <!-- "Wie heeft het zomerkamp al betaald?" is een vraag over een
-                     aanbod, niet over een maand. -->
-                <select
-                    v-model="filters.product"
-                    class="col-span-full min-h-11 rounded-lg border border-input bg-card px-3 py-2 text-sm outline-none focus:border-primary sm:col-span-1"
-                >
-                    <option :value="null">Al het aanbod</option>
-                    <option v-for="product in products" :key="product.id" :value="product.id">{{ product.name }}</option>
-                </select>
+                    <!-- "Wie heeft het zomerkamp al betaald?" is een vraag over een
+                         aanbod, niet over een maand. -->
+                    <label class="block min-w-0">
+                        <span class="text-xs font-medium text-muted-foreground sm:sr-only">Aanbod</span>
+                        <select v-model="filters.product" :class="keuzeKlasse" class="sm:mt-0">
+                            <option :value="null">Al het aanbod</option>
+                            <option v-for="product in products" :key="product.id" :value="product.id">{{ product.name }}</option>
+                        </select>
+                    </label>
+                </FilterSheet>
             </div>
 
             <!-- De totaalregel telt precies de rijen die eronder staan. Ex btw

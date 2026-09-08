@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import FilterSheet from '@/components/FilterSheet.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { CalendarDays, ChevronLeft, ChevronRight, LayoutGrid, List, MapPin, Plus, UserCog } from 'lucide-vue-next';
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
 
 interface Training {
     id: number;
@@ -28,6 +29,11 @@ const props = defineProps<{
     title: string;
     trainings: Training[];
     canManage: boolean;
+    /** Groep, trainer en locatie; alleen gevuld voor wie het hele rooster ziet. */
+    filters: { group: number | null; trainer: number | null; location: number | null };
+    groups: { id: number; name: string }[];
+    trainers: { id: number; name: string }[];
+    locations: { id: number; name: string }[];
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Kalender', href: '/calendar' }];
@@ -141,8 +147,51 @@ const geselecteerdeTrainingen = computed(() => perDag.value[geselecteerd.value] 
 
 // --- Navigatie ---
 
+// Groep, trainer en locatie reizen met elke navigatie mee; anders ben je je
+// filter kwijt zodra je een maand verder bladert.
+const filters = reactive({ ...props.filters });
+
 const ga = (view: 'month' | 'week', date: string, scope?: 'all' | 'mine') =>
-    router.get('/calendar', { view, date, scope: scope ?? props.scope }, { preserveScroll: true });
+    router.get(
+        '/calendar',
+        {
+            view,
+            date,
+            scope: scope ?? props.scope,
+            group: filters.group ?? '',
+            trainer: filters.trainer ?? '',
+            location: filters.location ?? '',
+        },
+        // De staat blijft, zodat het filterpaneel op een telefoon open blijft
+        // terwijl de trainingen eronder verversen.
+        { preserveScroll: true, preserveState: true },
+    );
+
+watch(filters, () => ga(props.view, props.date));
+
+// Wat er in het bolletje op de filterknop staat: alles wat afwijkt van
+// "alle trainingen". De weergave telt niet mee; dat is geen filter.
+const actieveFilters = computed(
+    () => (props.canChooseScope && props.scope === 'mine' ? 1 : 0) + [filters.group, filters.trainer, filters.location].filter(Boolean).length,
+);
+
+// Op een telefoon is de weergave één keuze uit drie: lijst, maandraster of week.
+const modus = computed<'lijst' | 'raster' | 'week'>(() => (props.view === 'week' ? 'week' : weergave.value));
+
+const kiesModus = (keuze: 'lijst' | 'raster' | 'week') => {
+    if (keuze === 'week') {
+        wisselWeergave('week');
+        return;
+    }
+
+    kiesWeergave(keuze);
+
+    if (props.view !== 'month') {
+        wisselWeergave('month');
+    }
+};
+
+const keuzeKlasse = 'min-h-11 w-full rounded-lg border border-input bg-card px-3 text-sm outline-none focus:border-primary';
 
 const vorige = () => {
     const d = parse(props.date);
@@ -180,9 +229,13 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-6xl p-3 sm:p-4" data-tour="calendar">
-            <!-- Kop: navigeren en schakelen, alles binnen duimbereik -->
-            <div class="flex flex-wrap items-center justify-between gap-3">
-                <div class="flex min-w-0 items-center gap-1">
+            <!-- Kop. Op een telefoon: de titel met de filterknop en het plusje
+                 op één regel, en daaronder bladeren. Vier losse knoppenrijen
+                 onder elkaar was te rommelig; alles wat kiest zit nu achter één
+                 knop met een teller. Op een groot scherm staat het gewoon in
+                 beeld. -->
+            <div class="flex flex-wrap items-center gap-3">
+                <div class="order-2 flex w-full min-w-0 items-center gap-1 sm:order-1 sm:w-auto">
                     <button
                         type="button"
                         class="flex size-11 items-center justify-center rounded-lg border border-border bg-card shadow-sm transition hover:border-primary"
@@ -208,12 +261,12 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                     </button>
                 </div>
 
-                <h1 class="order-first w-full min-w-0 text-xl font-semibold tracking-tight sm:order-none sm:w-auto sm:text-2xl">
+                <h1 class="order-1 min-w-0 flex-1 text-xl font-semibold tracking-tight sm:order-2 sm:flex-none sm:text-2xl">
                     {{ title }}
                 </h1>
 
-                <div class="flex items-center gap-2">
-                    <div class="inline-flex rounded-lg border border-border bg-card p-1 shadow-sm">
+                <div class="order-1 flex items-center gap-2 sm:order-3 sm:ml-auto">
+                    <div class="hidden rounded-lg border border-border bg-card p-1 shadow-sm sm:inline-flex">
                         <button
                             type="button"
                             class="min-h-11 rounded-md px-3 text-sm font-medium transition"
@@ -232,6 +285,77 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                         </button>
                     </div>
 
+                    <FilterSheet :count="actieveFilters" title="Agenda" :inline="false">
+                        <template #mobile>
+                            <div>
+                                <p class="text-xs font-medium text-muted-foreground">Weergave</p>
+                                <div class="mt-1.5 grid grid-cols-3 rounded-lg border border-border bg-card p-1 shadow-sm">
+                                    <button
+                                        v-for="keuze in [
+                                            { key: 'lijst', label: 'Lijst', icon: List },
+                                            { key: 'raster', label: 'Maand', icon: LayoutGrid },
+                                            { key: 'week', label: 'Week', icon: CalendarDays },
+                                        ]"
+                                        :key="keuze.key"
+                                        type="button"
+                                        class="flex min-h-11 items-center justify-center gap-1.5 rounded-md text-sm font-medium transition"
+                                        :class="modus === keuze.key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'"
+                                        @click="kiesModus(keuze.key as 'lijst' | 'raster' | 'week')"
+                                    >
+                                        <component :is="keuze.icon" class="size-4" />
+                                        {{ keuze.label }}
+                                    </button>
+                                </div>
+                            </div>
+                        </template>
+
+                        <div v-if="canChooseScope">
+                            <p class="text-xs font-medium text-muted-foreground">Wiens trainingen</p>
+                            <div class="mt-1.5 grid grid-cols-2 rounded-lg border border-border bg-card p-1 shadow-sm">
+                                <button
+                                    type="button"
+                                    class="min-h-11 rounded-md text-sm font-medium transition"
+                                    :class="scope === 'all' ? 'bg-secondary text-foreground' : 'text-muted-foreground'"
+                                    @click="kiesBereik('all')"
+                                >
+                                    Alle trainingen
+                                </button>
+                                <button
+                                    type="button"
+                                    class="min-h-11 rounded-md text-sm font-medium transition"
+                                    :class="scope === 'mine' ? 'bg-secondary text-foreground' : 'text-muted-foreground'"
+                                    @click="kiesBereik('mine')"
+                                >
+                                    Mijn trainingen
+                                </button>
+                            </div>
+                        </div>
+
+                        <template v-if="canChooseScope">
+                            <label class="block">
+                                <span class="text-xs font-medium text-muted-foreground">Groep</span>
+                                <select v-model="filters.group" :class="keuzeKlasse" class="mt-1.5">
+                                    <option :value="null">Alle groepen</option>
+                                    <option v-for="groep in groups" :key="groep.id" :value="groep.id">{{ groep.name }}</option>
+                                </select>
+                            </label>
+                            <label class="block">
+                                <span class="text-xs font-medium text-muted-foreground">Trainer</span>
+                                <select v-model="filters.trainer" :class="keuzeKlasse" class="mt-1.5">
+                                    <option :value="null">Alle trainers</option>
+                                    <option v-for="trainer in trainers" :key="trainer.id" :value="trainer.id">{{ trainer.name }}</option>
+                                </select>
+                            </label>
+                            <label class="block">
+                                <span class="text-xs font-medium text-muted-foreground">Locatie</span>
+                                <select v-model="filters.location" :class="keuzeKlasse" class="mt-1.5">
+                                    <option :value="null">Alle locaties</option>
+                                    <option v-for="locatie in locations" :key="locatie.id" :value="locatie.id">{{ locatie.name }}</option>
+                                </select>
+                            </label>
+                        </template>
+                    </FilterSheet>
+
                     <Link
                         v-if="canManage"
                         href="/trainings/create"
@@ -243,9 +367,9 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                 </div>
             </div>
 
-            <!-- Wiens trainingen, en hoe getekend -->
-            <div v-if="canChooseScope || view === 'month'" class="mt-3 flex flex-wrap items-center justify-between gap-2">
-                <div v-if="canChooseScope" class="inline-flex rounded-lg border border-border bg-card p-1 shadow-sm">
+            <!-- Groot scherm: wiens trainingen, en de filters, gewoon in beeld. -->
+            <div v-if="canChooseScope" class="mt-3 hidden flex-wrap items-center gap-2 sm:flex">
+                <div class="inline-flex rounded-lg border border-border bg-card p-1 shadow-sm">
                     <button
                         type="button"
                         class="min-h-11 rounded-md px-3 text-sm font-medium transition"
@@ -263,29 +387,19 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                         Mijn trainingen
                     </button>
                 </div>
-                <span v-else></span>
 
-                <!-- Alleen smal: daar is de lijst de standaard en het raster de optie. -->
-                <div v-if="view === 'month'" class="inline-flex rounded-lg border border-border bg-card p-1 shadow-sm sm:hidden">
-                    <button
-                        type="button"
-                        class="flex min-h-11 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition"
-                        :class="weergave === 'lijst' ? 'bg-secondary text-foreground' : 'text-muted-foreground'"
-                        @click="kiesWeergave('lijst')"
-                    >
-                        <List class="size-4" />
-                        Lijst
-                    </button>
-                    <button
-                        type="button"
-                        class="flex min-h-11 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition"
-                        :class="weergave === 'raster' ? 'bg-secondary text-foreground' : 'text-muted-foreground'"
-                        @click="kiesWeergave('raster')"
-                    >
-                        <LayoutGrid class="size-4" />
-                        Maand
-                    </button>
-                </div>
+                <select v-model="filters.group" :class="keuzeKlasse" class="!w-auto min-w-36" aria-label="Groep">
+                    <option :value="null">Alle groepen</option>
+                    <option v-for="groep in groups" :key="groep.id" :value="groep.id">{{ groep.name }}</option>
+                </select>
+                <select v-model="filters.trainer" :class="keuzeKlasse" class="!w-auto min-w-36" aria-label="Trainer">
+                    <option :value="null">Alle trainers</option>
+                    <option v-for="trainer in trainers" :key="trainer.id" :value="trainer.id">{{ trainer.name }}</option>
+                </select>
+                <select v-model="filters.location" :class="keuzeKlasse" class="!w-auto min-w-36" aria-label="Locatie">
+                    <option :value="null">Alle locaties</option>
+                    <option v-for="locatie in locations" :key="locatie.id" :value="locatie.id">{{ locatie.name }}</option>
+                </select>
             </div>
 
             <!-- ================= MAANDRASTER ================= -->
