@@ -61,19 +61,20 @@ class WidgetRegistry
     /**
      * De standaardindeling van een trainer.
      *
-     * Zijn trainingen en zijn spelers naast elkaar, met daaronder de cijfers
-     * die over zijn eigen werk gaan. Geld en schoolbrede cijfers staan er niet:
-     * die krijgt hij ook niet aangeboden.
+     * Zijn trainingen en de verjaardagen van zijn spelers. Geld en schoolbrede
+     * cijfers staan er niet: die krijgt hij ook niet aangeboden.
      *
      * @return list<array{widget: DashboardWidget, x: int, y: int, w: int}>
      */
     public function trainerLayout(): array
     {
+        // Waar moet ik zijn, en wie is er jarig. Zijn spelers staan als
+        // eigen scherm in het menu; wie ze ook op zijn dashboard wil kan de
+        // widget erbij zetten. Geen kerncijfers: dat is het bedrijf, niet zijn
+        // werk.
         return [
             ['widget' => DashboardWidget::MyTrainings, 'x' => 0, 'y' => 0, 'w' => 6],
-            ['widget' => DashboardWidget::MyPlayers, 'x' => 6, 'y' => 0, 'w' => 6],
-            ['widget' => DashboardWidget::KpiReports, 'x' => 0, 'y' => 8, 'w' => 6],
-            ['widget' => DashboardWidget::KpiRating, 'x' => 6, 'y' => 8, 'w' => 6],
+            ['widget' => DashboardWidget::Birthdays, 'x' => 6, 'y' => 0, 'w' => 6],
         ];
     }
 
@@ -107,7 +108,7 @@ class WidgetRegistry
             'y' => $rij['y'],
             // Of dit onderdeel op een telefoon staat. Het scherm bepaalt niet
             // zelf wat er weg mag; dat staat bij de widget, op één plek.
-            'mobile' => $rij['widget']->onMobile(),
+            'mobile' => $this->onMobile($user, $rij['widget']),
             // Twee naast elkaar op een telefoon, of over de volle breedte.
             'compact' => $rij['widget']->mobileCompact(),
         ], $zichtbaar));
@@ -151,7 +152,7 @@ class WidgetRegistry
             'height' => $widget->height(),
             // Zodat de kiezer erbij kan zetten dat iets alleen op een groot
             // scherm staat, in plaats van dat je hem toevoegt en niets ziet.
-            'mobile' => $widget->onMobile(),
+            'mobile' => $this->onMobile($user, $widget),
             'compact' => $widget->mobileCompact(),
         ], array_filter(
             DashboardWidget::cases(),
@@ -191,6 +192,23 @@ class WidgetRegistry
         }
 
         return $schoon;
+    }
+
+    /**
+     * Hoort deze widget op een telefoon — voor déze gebruiker?
+     *
+     * Verjaardagen staan bij de eigenaar niet op zijn telefoon (aardig om te
+     * weten is geen reden om te scrollen), maar bij een trainer wel: die
+     * feliciteert het kind zelf langs de lijn, en dat is precies waar hij zijn
+     * telefoon pakt.
+     */
+    protected function onMobile(User $user, DashboardWidget $widget): bool
+    {
+        if ($widget === DashboardWidget::Birthdays && $user->isTrainer() && ! $user->isEigenaar()) {
+            return true;
+        }
+
+        return $widget->onMobile();
     }
 
     protected function available(User $user, DashboardWidget $widget): bool

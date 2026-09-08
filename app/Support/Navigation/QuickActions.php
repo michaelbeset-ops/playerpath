@@ -39,7 +39,9 @@ class QuickActions
             ['title' => 'Training inplannen', 'href' => '/trainings/create', 'icon' => 'trainings', 'allowed' => $user->can('create', Training::class)],
             ['title' => 'Speler toevoegen', 'href' => '/players/create', 'icon' => 'players', 'allowed' => $user->can('create', Player::class)],
             ['title' => 'Groep toevoegen', 'href' => '/groups/create', 'icon' => 'groups', 'allowed' => $user->can('create', Group::class)],
-            ['title' => 'Mededeling sturen', 'href' => '/announcements', 'icon' => 'announcements', 'allowed' => $user->can('create', Announcement::class), 'feature' => Feature::Mededelingen],
+            // Het berichtenoverzicht is schoolbreed en dus van de eigenaar; een
+            // trainer stuurt een afgelasting vanaf de training zelf.
+            ['title' => 'Mededeling sturen', 'href' => '/announcements', 'icon' => 'announcements', 'allowed' => $user->can('viewAny', Announcement::class), 'feature' => Feature::Mededelingen],
             ['title' => 'Betaling vastleggen', 'href' => '/payments', 'icon' => 'payments', 'allowed' => $user->can('viewAny', Payment::class), 'feature' => Feature::Betalingen],
         ];
 

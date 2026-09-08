@@ -17,6 +17,7 @@ class GroupController extends Controller
         $this->authorize('viewAny', Group::class);
 
         $groups = Group::query()
+            ->visibleTo($request->user())
             ->withCount('players')
             ->orderBy('name')
             ->get()

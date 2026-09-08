@@ -17,9 +17,14 @@ use App\Models\User;
  */
 class AnnouncementPolicy
 {
+    /**
+     * Het overzicht van alle berichten is schoolbreed, en dus van de eigenaar.
+     * Versturen (create) mag een trainer wél: een afgelasting komt van wie om
+     * zeven uur naar het veld kijkt.
+     */
     public function viewAny(User $user): bool
     {
-        return $user->isEigenaar() || $user->isTrainer();
+        return $user->isEigenaar();
     }
 
     public function view(User $user, Announcement $announcement): bool
@@ -29,7 +34,7 @@ class AnnouncementPolicy
 
     public function create(User $user): bool
     {
-        return $this->viewAny($user);
+        return $user->isEigenaar() || $user->isTrainer();
     }
 
     /**

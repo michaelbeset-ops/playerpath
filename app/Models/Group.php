@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToSchool;
+use App\Support\Trainers\TrainerScope;
 use Database\Factories\GroupFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -70,5 +71,16 @@ class Group extends Model
     public function scopeReal(Builder $query): Builder
     {
         return $query->where('is_demo', false);
+    }
+
+    /**
+     * Wat deze gebruiker hiervan mag zien.
+     *
+     * Voor een trainer zijn dat zijn eigen groepen (zie TrainerScope); voor de
+     * eigenaar alles. Eén regel in elke lijst, zodat "mijn" overal hetzelfde is.
+     */
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        return app(TrainerScope::class)->groups($query, $user);
     }
 }

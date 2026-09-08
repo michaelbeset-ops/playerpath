@@ -36,6 +36,7 @@ class ReportController extends Controller
 
         $players = Player::query()
             ->active()
+            ->visibleTo($request->user())
             ->when($groep > 0, fn ($q) => $q->whereHas('groups', fn ($g) => $g->whereKey($groep)))
             ->orderBy('first_name')
             ->get()
@@ -132,6 +133,7 @@ class ReportController extends Controller
     {
         $volgende = Player::query()
             ->active()
+            ->visibleTo($request->user())
             ->whereKeyNot($huidige->id)
             ->whereDoesntHave('reports', fn ($query) => $query->whereDate('reported_on', now()->toDateString()))
             ->orderBy('first_name')

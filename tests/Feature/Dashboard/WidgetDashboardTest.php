@@ -104,7 +104,8 @@ class WidgetDashboardTest extends TestCase
             ->assertInertia(fn ($page) => $page->where('layout', function ($layout) {
                 $sleutels = $this->widgetKeys($layout);
 
-                $this->assertSame(['my_trainings', 'my_players', 'kpi_reports', 'kpi_rating'], $sleutels);
+                $this->assertSame(['my_trainings', 'birthdays'], $sleutels);
+                $this->assertNotContains('kpi_players', $sleutels);
                 $this->assertNotContains('kpi_revenue', $sleutels);
                 $this->assertNotContains('finance', $sleutels);
 

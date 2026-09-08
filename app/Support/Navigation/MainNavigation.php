@@ -64,6 +64,14 @@ class MainNavigation
      */
     protected function groups(User $user): array
     {
+        // Een trainer is personeel en ziet zijn eigen werk. Zijn menu is klein:
+        // trainingen, spelers, rapporten, verjaardagen — en zijn eigen account.
+        // Geen Klanten, Financiën of Mijn bedrijf: dat is het bedrijf, en de
+        // routes erachter weigeren hem sowieso (zie de policies).
+        if ($user->isTrainer() && ! $user->isEigenaar()) {
+            return $this->trainerGroups($user);
+        }
+
         return [
             [
                 'title' => 'Dashboard', 'icon' => 'dashboard', 'href' => '/dashboard', 'allowed' => true, 'items' => [],
@@ -91,7 +99,7 @@ class MainNavigation
             [
                 'title' => 'Ontwikkeling', 'icon' => 'reports', 'items' => [
                     ['title' => 'Rapporten', 'href' => '/reports', 'icon' => 'reports', 'allowed' => $user->can('viewAny', Report::class), 'feature' => Feature::Ontwikkeling],
-                    ['title' => 'Mijlpalen', 'href' => '/mijlpalen', 'icon' => 'badges', 'allowed' => $user->isEigenaar() || $user->isTrainer(), 'feature' => Feature::Ontwikkeling],
+                    ['title' => 'Mijlpalen', 'href' => '/mijlpalen', 'icon' => 'badges', 'allowed' => $user->isEigenaar(), 'feature' => Feature::Ontwikkeling],
                 ],
             ],
             [
@@ -116,7 +124,7 @@ class MainNavigation
             [
                 // Alles wat over de school zelf gaat en niet over een klant.
                 'title' => 'Mijn bedrijf', 'icon' => 'business', 'items' => [
-                    ['title' => 'Personeel', 'href' => '/staff', 'icon' => 'staff', 'allowed' => $user->can('viewAny', Player::class)],
+                    ['title' => 'Personeel', 'href' => '/staff', 'icon' => 'staff', 'allowed' => $user->isEigenaar()],
                     // Je eigen beschikbaarheid vul je in; het overzicht van het
                     // hele team is van de eigenaar, die er zijn planning op maakt.
                     ['title' => 'Mijn beschikbaarheid', 'href' => '/beschikbaarheid', 'icon' => 'availability', 'allowed' => $user->can('viewAny', AvailabilityException::class)],
@@ -200,5 +208,46 @@ class MainNavigation
     {
         return ($item['allowed'] ?? false)
             && (! isset($item['feature']) || $this->features->enabled($item['feature']));
+    }
+
+    /**
+     * Het menu van een trainer.
+     *
+     * Vijf dingen. "Spelers" wijst naar het klantenoverzicht, dat voor hem al
+     * tot zijn eigen spelers is begrensd (TrainerScope); de naam is anders
+     * omdat een trainer geen klanten heeft, hij heeft spelers.
+     *
+     * @return list<array<string, mixed>>
+     */
+    protected function trainerGroups(User $user): array
+    {
+        return [
+            [
+                'title' => 'Dashboard', 'icon' => 'dashboard', 'href' => '/dashboard', 'allowed' => true, 'items' => [],
+            ],
+            [
+                'title' => 'Trainingen', 'icon' => 'trainings', 'items' => [
+                    ['title' => 'Mijn trainingen', 'href' => '/trainings/mijn', 'icon' => 'trainings', 'allowed' => true],
+                    ['title' => 'Kalender', 'href' => '/calendar', 'icon' => 'calendar', 'allowed' => $user->can('viewAny', Training::class), 'feature' => Feature::Kalender],
+                    ['title' => 'Rooster', 'href' => '/trainings', 'icon' => 'trainings', 'allowed' => $user->can('viewAny', Training::class)],
+                ],
+            ],
+            [
+                'title' => 'Spelers', 'icon' => 'players', 'href' => '/clients', 'allowed' => $user->can('viewAny', Player::class), 'items' => [],
+            ],
+            [
+                'title' => 'Rapporten', 'icon' => 'reports', 'href' => '/reports', 'allowed' => $user->can('viewAny', Report::class), 'feature' => Feature::Ontwikkeling, 'items' => [],
+            ],
+            [
+                'title' => 'Verjaardagen', 'icon' => 'birthdays', 'href' => '/verjaardagen', 'allowed' => true, 'items' => [],
+            ],
+            [
+                // Wat over hemzelf gaat, niet over de school.
+                'title' => 'Mijn account', 'icon' => 'settings', 'items' => [
+                    ['title' => 'Mijn beschikbaarheid', 'href' => '/beschikbaarheid', 'icon' => 'availability', 'allowed' => $user->can('viewAny', AvailabilityException::class)],
+                    ['title' => 'Instellingen', 'href' => '/settings/profile', 'icon' => 'settings', 'allowed' => true],
+                ],
+            ],
+        ];
     }
 }

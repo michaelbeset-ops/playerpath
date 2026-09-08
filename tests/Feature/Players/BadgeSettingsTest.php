@@ -86,14 +86,15 @@ class BadgeSettingsTest extends TestCase
         $this->actingAs($this->eigenaar)->patch('/mijlpalen', ['default' => []])->assertSessionHasErrors('default');
     }
 
-    public function test_een_trainer_mag_ook_maar_een_ouder_niet(): void
+    /** Welke mijlpalen gelden is een schoolbrede instelling: van de eigenaar. */
+    public function test_een_trainer_en_een_ouder_mogen_niet(): void
     {
         $trainer = User::factory()->for($this->school)->create();
         $trainer->assignRole(Role::Trainer->value);
         $ouder = User::factory()->for($this->school)->create();
         $ouder->assignRole(Role::Ouder->value);
 
-        $this->actingAs($trainer)->get('/mijlpalen')->assertOk();
+        $this->actingAs($trainer)->get('/mijlpalen')->assertForbidden();
         $this->actingAs($ouder)->get('/mijlpalen')->assertForbidden();
     }
 }

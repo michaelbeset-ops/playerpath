@@ -74,13 +74,15 @@ class DashboardLayoutTest extends TestCase
                 ['key' => 'finance', 'x' => 0, 'y' => 0, 'w' => 4],
                 ['key' => 'kpi_revenue', 'x' => 4, 'y' => 0, 'w' => 3],
                 ['key' => 'kpi_players', 'x' => 0, 'y' => 0, 'w' => 3],
+                ['key' => 'my_trainings', 'x' => 0, 'y' => 3, 'w' => 6],
             ]])
             ->assertRedirect();
 
         $bewaard = collect($this->trainer->fresh()->dashboard_layout['widgets'])->pluck('key');
 
-        // Het formulier omzeilen helpt niet.
-        $this->assertSame(['kpi_players'], $bewaard->all());
+        // Het formulier omzeilen helpt niet: geld én schoolbrede cijfers vallen
+        // eruit, alleen zijn eigen werk blijft staan.
+        $this->assertSame(['my_trainings'], $bewaard->all());
     }
 
     public function test_een_onbekende_widget_wordt_geweigerd(): void

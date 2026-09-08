@@ -241,14 +241,25 @@ class AnnouncementTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_het_menu_toont_mededelingen_aan_staf_maar_niet_aan_ouders(): void
+    /**
+     * Het berichtenoverzicht is schoolbreed en dus van de eigenaar. Een trainer
+     * stuurt een afgelasting vanaf de training zelf; het overzicht en het menu-
+     * item krijgt hij niet.
+     */
+    public function test_het_menu_toont_mededelingen_aan_de_eigenaar_maar_niet_aan_trainer_of_ouder(): void
     {
         $ouder = $this->gebruiker(Role::Ouder);
         Player::factory()->for($this->school)->create()->guardians()->attach($ouder->id);
 
-        $this->actingAs($this->trainer)
+        $this->actingAs($this->eigenaar)
             ->get('/dashboard')
             ->assertInertia(fn ($page) => $page->where('nav', fn ($nav) => in_array('/announcements', $this->navHrefs($nav), true)));
+
+        $this->actingAs($this->trainer)
+            ->get('/dashboard')
+            ->assertInertia(fn ($page) => $page->where('nav', fn ($nav) => ! in_array('/announcements', $this->navHrefs($nav), true)));
+
+        $this->actingAs($this->trainer)->get('/announcements')->assertForbidden();
 
         $this->actingAs($ouder)
             ->get('/dashboard')

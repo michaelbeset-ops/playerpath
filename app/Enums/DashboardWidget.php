@@ -128,10 +128,21 @@ enum DashboardWidget: string
         };
     }
 
-    /** Geld is van de eigenaar; een trainer krijgt het niet eens aangeboden. */
+    /**
+     * Van de eigenaar; een trainer krijgt het niet eens aangeboden.
+     *
+     * Niet alleen geld: ook de schoolbrede cijfers en het ontwikkelingsoverzicht.
+     * Een trainer is personeel en ziet zijn eigen werk — hoeveel spelers de
+     * school heeft en wat het gemiddelde is, is informatie over het bedrijf.
+     * Wat een trainer overhoudt: zijn trainingen, zijn spelers, en de
+     * verjaardagen van zijn spelers.
+     */
     public function ownerOnly(): bool
     {
-        return in_array($this, [self::KpiRevenue, self::Finance], true);
+        return in_array($this, [
+            self::KpiPlayers, self::KpiRating, self::KpiReports, self::KpiRevenue,
+            self::Development, self::Finance, self::Trainings,
+        ], true);
     }
 
     /**

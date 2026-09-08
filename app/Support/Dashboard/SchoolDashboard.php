@@ -11,6 +11,7 @@ use App\Models\Group;
 use App\Models\Player;
 use App\Models\Report;
 use App\Models\Training;
+use App\Models\User;
 use Illuminate\Support\Carbon;
 
 /**
@@ -58,13 +59,15 @@ class SchoolDashboard
      *
      * @return list<array<string, mixed>>
      */
-    public function birthdays(int $days = 30, int $limit = 8): array
+    public function birthdays(int $days = 30, int $limit = 8, ?User $for = null): array
     {
         $vandaag = now()->startOfDay();
         $tot = $vandaag->copy()->addDays($days);
 
         return Player::active()
             ->whereNotNull('date_of_birth')
+            // Voor een trainer alleen zijn eigen spelers; zie TrainerScope.
+            ->when($for !== null, fn ($q) => $q->visibleTo($for))
             ->get()
             ->map(function (Player $speler) use ($vandaag) {
                 // De eerstvolgende verjaardag: dit jaar, of anders volgend jaar.

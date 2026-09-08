@@ -20,7 +20,7 @@ class BadgeSettingsController extends Controller
 {
     public function edit(Request $request): Response
     {
-        abort_unless($request->user()->isEigenaar() || $request->user()->isTrainer(), 403);
+        abort_unless($request->user()->isEigenaar(), 403);
 
         $instellingen = BadgeSettings::for($request->user()->school);
 
@@ -35,7 +35,7 @@ class BadgeSettingsController extends Controller
 
     public function update(Request $request): RedirectResponse
     {
-        abort_unless($request->user()->isEigenaar() || $request->user()->isTrainer(), 403);
+        abort_unless($request->user()->isEigenaar(), 403);
 
         $bekend = array_column(PlayerBadges::catalogue(), 'key');
         $categorieen = array_column(BadgeSettings::categories(), 'key');

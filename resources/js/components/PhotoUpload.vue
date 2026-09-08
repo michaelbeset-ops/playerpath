@@ -82,7 +82,7 @@ const verwijder = () => {
             <div class="flex flex-wrap items-center gap-2">
                 <button
                     type="button"
-                    class="inline-flex h-9 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-medium transition hover:border-primary disabled:opacity-60"
+                    class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-medium transition hover:border-primary disabled:opacity-60"
                     :disabled="form.processing"
                     @click="invoer?.click()"
                 >
@@ -93,7 +93,7 @@ const verwijder = () => {
                 <button
                     v-if="photo"
                     type="button"
-                    class="inline-flex h-9 items-center gap-2 rounded-lg px-2 text-sm text-muted-foreground transition hover:text-destructive"
+                    class="inline-flex min-h-11 items-center gap-2 rounded-lg px-2 text-sm text-muted-foreground transition hover:text-destructive"
                     @click="verwijder"
                 >
                     <Trash2 class="size-4" />

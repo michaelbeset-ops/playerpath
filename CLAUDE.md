@@ -199,7 +199,7 @@ vijfde staat er juist boven:
 
 
 - `eigenaar` — beheert de school, ziet alles binnen de eigen school
-- `trainer` — vult rapporten in, ziet zijn groepen
+- `trainer` — vult rapporten in, ziet **alleen zijn eigen groepen en spelers** (zie "Het trainer-account")
 - `ouder` — ziet alleen de kaart/voortgang van het eigen kind
 - `speler` — ziet alleen de eigen kaart
 
@@ -406,9 +406,11 @@ ouders eronder, en trainers staan onder Mijn bedrijf → Personeel (`/staff`).
 Ouders koppel je op de pagina van een speler, omdat een ouder zonder kind niets
 betekent.
 
-Een **training** heeft nul of meer **trainers** (`training_user`). Dat is
-**informatief**: het bepaalt niet wie er bij mag. Elke trainer ziet het hele
-rooster en kan overal afvinken, want anders loopt invallen en ruilen vast.
+Een **training** heeft nul of meer **trainers** (`training_user`). Elke trainer
+ziet het hele rooster, zodat invallen en ruilen niet vastloopt — maar de
+koppeling is sinds het trainer-account óók de bron van "zijn groepen en
+spelers" (`TrainerScope`). Wie invalt wordt aan die training gekoppeld en hoort
+er vanaf dat moment bij.
 
 **Rapporten overleven hun trainer.** `reports.trainer_id` is nullable met
 `nullOnDelete`; een trainer verwijderen laat zijn rapporten staan. Die historie
@@ -1223,11 +1225,42 @@ dan staat er van alles waar hij niets mee kan.
   een 403; de beheeromgeving een 404. Dat lag al vast in de policies — het menu
   is er de cosmetische kant van.
 
-**Wat een trainer wél schoolbreed ziet — het hele rooster, alle spelers, alle
-rapporten — is een bewuste keuze en geen omissie** (zie 3.4 en "Trainingen en
-aanwezigheid"): invallen en ruilen loopt anders vast, en "de trainer mag alles
-zien maar niets wijzigen" is de regel. "Mijn" is dus overal een filter op de
-weergave, nooit de grens van wat mag.
+#### Een trainer ziet alleen zijn eigen werk
+
+Dit is de tweede versie van deze regel, en hij draait de eerste om. Eerst zag
+een trainer het hele ledenbestand ("alles zien, niets wijzigen"); de eigenaar
+wilde dat een trainer als personeel alleen zijn eigen groepen en spelers ziet,
+en dat is nu de regel. **Server-side**, niet alleen in het menu.
+
+`Support\Trainers\TrainerScope` is de enige plek die zegt wat "zijn" is: de
+groepen van de trainingen waar hij aan gekoppeld is, en de spelers daarin. Er is
+bewust geen koppeling trainer↔groep — de planning weet al wie er stond, en een
+invaller hoort er vanaf het moment van koppelen bij zonder tweede administratie.
+`Player::visibleTo()` en `Group::visibleTo()` zetten die grens in elke lijst;
+`PlayerPolicy::view/createReport` en `GroupPolicy::view` zetten hem op elke URL.
+
+**Eén uitzondering, bewust:** is een trainer nérgens aan gekoppeld, dan is de
+hele school van hem. Koppelen is bij veel scholen niet gebruikelijk, en een
+trainer die na het inloggen nul spelers ziet denkt dat het product stuk is.
+Zodra de school hem ergens aan koppelt, sluit de scope vanzelf.
+
+Wat daarbij hoort:
+
+- **Het rooster blijft schoolbreed zichtbaar** (kalender met de toggle Mijn /
+  Alle): invallen en ruilen moet kunnen zien wat er staat. Afvinken en
+  beoordelen kan hij alleen bij zijn eigen spelers.
+- **Zijn menu is klein**: Trainingen, Spelers, Rapporten, Verjaardagen, Mijn
+  account. Geen Klanten, Financiën, Mededelingen of Mijn bedrijf. "Spelers" is
+  hetzelfde scherm als Klanten, begrensd en zonder ouders — die horen bij de
+  klantrelatie en gaan ook niet onzichtbaar in de JSON mee.
+- **Personeel, Locaties, Mijlpalen en het berichtenoverzicht zijn van de
+  eigenaar.** Een afgelasting versturen mag de trainer nog (`create` op
+  `Announcement`): dat komt van wie om zeven uur naar het veld kijkt.
+- **Zijn dashboard**: de rapport-herinnering, drie eerstvolgende trainingen met
+  afvinken en rapporten erbij, en de verjaardagen van zijn spelers (weg als er
+  geen zijn). Geen kerncijfers — `DashboardWidget::ownerOnly()` dekt nu ook de
+  schoolbrede cijfers. `/verjaardagen` is de "Bekijk meer" erachter, voor hem
+  begrensd op zijn spelers.
 
 ### De snelle invulflow
 

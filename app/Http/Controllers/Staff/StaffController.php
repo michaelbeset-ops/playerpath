@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Staff;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Invitation;
-use App\Models\Player;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -21,7 +20,8 @@ class StaffController extends Controller
 {
     public function index(Request $request): Response
     {
-        $this->authorize('viewAny', Player::class);
+        // Personeel hoort bij Mijn bedrijf, en dat is van de eigenaar.
+        abort_unless($request->user()->isEigenaar(), 403);
 
         $trainers = User::ofCurrentSchool()
             ->role([Role::Trainer->value, Role::Eigenaar->value])

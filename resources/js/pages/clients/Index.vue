@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import Avatar from '@/components/Avatar.vue';
-import DemoBadge from '@/components/onboarding/DemoBadge.vue';
 import FlashMessage from '@/components/FlashMessage.vue';
+import DemoBadge from '@/components/onboarding/DemoBadge.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
@@ -25,6 +25,7 @@ interface SpelerRij {
     is_active: boolean;
     is_demo?: boolean;
     overall_rating: number | null;
+    days_since_report: number | null;
     groups: string[];
     has_login: boolean;
     email: string | null;
@@ -39,9 +40,23 @@ const props = defineProps<{
     filters: { search: string; position: string; group: number | null; status: string };
     positions: Record<string, string>;
     groups: { id: number; name: string }[];
+    /** Trainer zonder eigenaarsrol: dan heet dit Spelers en staan de ouders er niet bij. */
+    isTrainer: boolean;
+    staleAfterDays: number;
 }>();
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Klanten', href: '/clients' }];
+const breadcrumbs: BreadcrumbItem[] = [{ title: props.isTrainer ? 'Spelers' : 'Klanten', href: '/clients' }];
+
+// Recent beoordeeld is groen, langer dan dertig dagen (of nooit) oranje.
+const beoordeling = (dagen: number | null) => {
+    if (dagen === null) {
+        return { tekst: 'nog geen rapport', kleur: 'text-warning' };
+    }
+
+    const tekst = dagen === 0 ? 'vandaag beoordeeld' : dagen === 1 ? 'gisteren beoordeeld' : dagen + ' dagen geleden';
+
+    return { tekst, kleur: dagen <= props.staleAfterDays ? 'text-success' : 'text-warning' };
+};
 
 const filters = reactive({ ...props.filters });
 
@@ -68,13 +83,13 @@ const klap = (id: number) => {
 </script>
 
 <template>
-    <Head title="Klanten" />
+    <Head :title="isTrainer ? 'Spelers' : 'Klanten'" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-4xl p-4">
             <FlashMessage />
 
-            <h1 class="text-2xl font-semibold tracking-tight">Klanten</h1>
+            <h1 class="text-2xl font-semibold tracking-tight">{{ isTrainer ? 'Spelers' : 'Klanten' }}</h1>
             <p class="mt-1 text-sm text-muted-foreground">
                 <span class="tabular">{{ counts.players }}</span> actieve {{ counts.players === 1 ? 'speler' : 'spelers' }} en
                 <span class="tabular">{{ counts.guardians }}</span>
@@ -174,10 +189,25 @@ const klap = (id: number) => {
                                     <template v-if="speler.groups.length"> &middot; {{ speler.groups.join(', ') }}</template>
                                     <template v-else> &middot; nog geen groep</template>
                                 </span>
+                                <!-- Wanneer voor het laatst beoordeeld: groen is recent,
+                                     oranje vraagt aandacht. Dezelfde dertig dagen als overal. -->
+                                <span v-if="isTrainer" class="mt-0.5 block text-xs font-medium" :class="beoordeling(speler.days_since_report).kleur">
+                                    {{ beoordeling(speler.days_since_report).tekst }}
+                                </span>
+                            </span>
+
+                            <!-- Op een telefoon staat het cijfer rechts, op een groot
+                                 scherm links naast het medaillon. -->
+                            <span
+                                class="tabular flex size-11 shrink-0 items-center justify-center rounded-lg text-base font-bold sm:hidden"
+                                :class="speler.overall_rating ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground'"
+                            >
+                                {{ speler.overall_rating ?? '—' }}
                             </span>
                         </Link>
 
                         <button
+                            v-if="!isTrainer"
                             type="button"
                             class="flex min-h-11 shrink-0 items-center gap-1 rounded-lg border border-border px-2 text-xs font-medium transition hover:border-primary"
                             :class="speler.guardians.length ? 'text-foreground' : 'text-muted-foreground'"

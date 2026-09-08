@@ -2,7 +2,6 @@
 
 namespace App\Support\Dashboard;
 
-use App\Models\Group;
 use App\Models\Player;
 use App\Models\Training;
 use App\Models\User;
@@ -19,14 +18,9 @@ use Illuminate\Support\Collection;
  *
  * Twee afspraken die je niet moet omdraaien:
  *
- * - **"Mijn groepen" leidt af uit de trainingen waar hij aan gekoppeld is.**
- *   Er is bewust geen koppeling trainer↔groep: een trainer valt in, ruilt en
- *   draait mee. De trainingen weten wie er stond, en dat is het eerlijkste
- *   antwoord op "wie zijn mijn spelers".
- * - **Is hij nergens gekoppeld, dan is de hele school van hem.** Koppelen is
- *   informatief en veel scholen doen het niet (zie `Training::scopeForTrainer`).
- *   Zou dit strikt filteren, dan is het dashboard van elke trainer bij die
- *   scholen leeg, en dat is erger dan een lijst die iets te lang is.
+ * - **Wat "mijn spelers" zijn staat op één plek**: `TrainerScope`. Dezelfde
+ *   grens als de policies en de lijsten, zodat het dashboard nooit een speler
+ *   toont die de trainer ergens anders niet mag openen.
  */
 class TrainerDashboard
 {
@@ -38,7 +32,7 @@ class TrainerDashboard
      *
      * @return list<array<string, mixed>>
      */
-    public function trainings(User $user, int $limiet = 5): array
+    public function trainings(User $user, int $limiet = 3): array
     {
         return Training::query()
             ->with(['group', 'trainers'])
@@ -123,29 +117,12 @@ class TrainerDashboard
      */
     protected function eigenSpelers(User $user): Collection
     {
-        $groepen = $this->groupIds($user);
-
         return Player::query()
             ->active()
             ->withMax('reports', 'reported_on')
-            ->when($groepen !== [], fn ($q) => $q->whereHas('groups', fn ($g) => $g->whereIn('groups.id', $groepen)))
+            // Dezelfde grens als de policies en de lijsten: zie TrainerScope.
+            ->visibleTo($user)
             ->orderBy('first_name')
             ->get();
-    }
-
-    /**
-     * De groepen waar deze trainer aan gekoppelde trainingen heeft.
-     *
-     * Leeg betekent "nergens gekoppeld", en dan is de hele school van hem; zie
-     * de uitleg bovenaan.
-     *
-     * @return list<int>
-     */
-    public function groupIds(User $user): array
-    {
-        return Group::query()
-            ->whereHas('trainings.trainers', fn ($q) => $q->whereKey($user->id))
-            ->pluck('id')
-            ->all();
     }
 }

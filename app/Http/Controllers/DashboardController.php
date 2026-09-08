@@ -143,7 +143,7 @@ class DashboardController extends Controller
                     ? $this->financieel($trends['revenue'] ?? [], $toont(DashboardWidget::KpiRevenue))
                     : null,
                 'trainings' => $toont(DashboardWidget::Trainings) ? $this->dashboard->upcomingTrainings(3) : null,
-                'birthdays' => $toont(DashboardWidget::Birthdays) ? $this->dashboard->birthdays(limit: 4) : null,
+                'birthdays' => $toont(DashboardWidget::Birthdays) ? $this->dashboard->birthdays(limit: 3, for: $user) : null,
                 // Van de trainer. Alleen berekend als ze er ook staan; een
                 // eigenaar die niet traint kost dit dus geen enkele query.
                 'my_trainings' => $toont(DashboardWidget::MyTrainings) ? $this->trainer->trainings($user) : null,

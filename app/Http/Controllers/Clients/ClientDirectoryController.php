@@ -10,7 +10,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Group;
 use App\Models\Player;
 use App\Models\User;
+use App\Support\Dashboard\SchoolDashboard;
 use App\Support\Features\Features;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -54,9 +56,16 @@ class ClientDirectoryController extends Controller
         // Zonder de betaallaag is "betaling openstaand" een status die nergens
         // vandaan komt; dan wordt hij ook niet berekend.
         $betalingen = $this->features->enabled(Feature::Betalingen);
+        $trainer = $request->user()->isTrainer() && ! $request->user()->isEigenaar();
 
         $players = Player::query()
+            // Een trainer ziet zijn eigen spelers; de eigenaar alles.
+            ->visibleTo($request->user())
             ->with(['groups', 'user', 'guardians'])
+            // Wanneer voor het laatst beoordeeld: dat is de vraag waarmee een
+            // trainer deze lijst opent. Dezelfde grens van dertig dagen als
+            // overal, zodat "te lang geleden" één ding betekent.
+            ->withMax('reports', 'reported_on')
             ->when($betalingen, fn ($q) => $q->withCount([
                 // Te laat, niet "openstaand": een rekening die volgende maand
                 // vervalt vraagt nergens om en zou de hele lijst oranje maken.
@@ -92,12 +101,17 @@ class ClientDirectoryController extends Controller
                 'is_active' => $player->is_active,
                 'is_demo' => $player->is_demo,
                 'overall_rating' => $player->overall_rating,
+                'days_since_report' => $player->reports_max_reported_on === null
+                    ? null
+                    : (int) CarbonImmutable::parse($player->reports_max_reported_on)->startOfDay()->diffInDays(now()->startOfDay()),
                 'groups' => $player->groups->pluck('name')->all(),
                 // Heeft deze speler zelf een inlog, of loopt alles via de ouder?
                 'has_login' => $player->user_id !== null,
                 'email' => $player->user?->email,
                 'has_overdue_payment' => $betalingen && $player->overdue_count > 0,
-                'guardians' => $player->guardians->map(fn (User $ouder) => [
+                // De ouders horen bij de klantrelatie, niet bij het trainen. Een
+                // trainer krijgt ze niet mee — ook niet onzichtbaar in de JSON.
+                'guardians' => $trainer ? collect() : $player->guardians->map(fn (User $ouder) => [
                     'id' => $ouder->id,
                     'name' => $ouder->name,
                     'photo' => $ouder->photo_url,
@@ -108,6 +122,10 @@ class ClientDirectoryController extends Controller
 
         return Inertia::render('clients/Index', [
             'players' => $players,
+            // Een trainer heeft geen klanten, hij heeft spelers. Zelfde scherm,
+            // ander woord — en zonder ouders uitklapbaar eronder.
+            'isTrainer' => $trainer,
+            'staleAfterDays' => SchoolDashboard::AANDACHT_NA_DAGEN,
             'filters' => $filters,
             'positions' => PlayerPosition::options(),
             'groups' => Group::orderBy('name')->get(['id', 'name']),

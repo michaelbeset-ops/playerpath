@@ -9,6 +9,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Players\BadgeSettingsController;
+use App\Http\Controllers\Players\BirthdayController;
 use App\Http\Controllers\Players\PlayerDataController;
 use App\Http\Controllers\Pwa\ManifestController;
 use App\Http\Controllers\Schools\EnrollmentSettingsController;
@@ -62,7 +63,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Overslaan mag: elke vraag heeft een bruikbare standaard.
     Route::post('instellingen/inschrijven/stap/{stap}/overslaan', [EnrollmentSettingsController::class, 'skip'])->whereNumber('stap')->name('enrollment-settings.skip');
 
-    // Welke mijlpalen gelden. Eigenaar en trainer.
+    // De aankomende verjaardagen van je spelers. Voor een trainer alleen de zijne.
+    Route::get('verjaardagen', BirthdayController::class)->name('birthdays.index');
+
+    // Welke mijlpalen gelden. Alleen de eigenaar.
     Route::get('mijlpalen', [BadgeSettingsController::class, 'edit'])->name('badges.edit');
     Route::patch('mijlpalen', [BadgeSettingsController::class, 'update'])->name('badges.update');
 

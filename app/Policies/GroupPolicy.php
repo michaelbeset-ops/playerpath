@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Group;
 use App\Models\User;
+use App\Support\Trainers\TrainerScope;
 
 class GroupPolicy
 {
@@ -14,8 +15,13 @@ class GroupPolicy
 
     public function view(User $user, Group $group): bool
     {
-        return $user->belongsToSameSchool($group)
-            && ($user->isEigenaar() || $user->isTrainer());
+        if (! $user->belongsToSameSchool($group)) {
+            return false;
+        }
+
+        // Een trainer ziet de groepen waar hij voor staat; zie TrainerScope.
+        return $user->isEigenaar()
+            || ($user->isTrainer() && app(TrainerScope::class)->ownsGroup($user, $group));
     }
 
     public function create(User $user): bool

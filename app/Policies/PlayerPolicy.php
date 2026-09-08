@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Player;
 use App\Models\User;
+use App\Support\Trainers\TrainerScope;
 
 /**
  * Wie mag wat met een speler.
@@ -31,8 +32,13 @@ class PlayerPolicy
             return false;
         }
 
-        if ($user->isEigenaar() || $user->isTrainer()) {
+        if ($user->isEigenaar()) {
             return true;
+        }
+
+        // Een trainer ziet zijn eigen spelers; zie TrainerScope voor wat dat is.
+        if ($user->isTrainer()) {
+            return app(TrainerScope::class)->ownsPlayer($user, $player);
         }
 
         if ($user->isOuder()) {
@@ -81,10 +87,22 @@ class PlayerPolicy
         return $user->isOuder() && $user->children()->whereKey($player->getKey())->exists();
     }
 
-    /** Rapporten schrijven doet de trainer (fase 2). */
+    /**
+     * Rapporten schrijven doet de trainer (fase 2) — over zijn eigen spelers.
+     *
+     * Invallen bij een andere groep kan: de eigenaar koppelt hem aan die
+     * training, en vanaf dat moment horen die spelers bij hem.
+     */
     public function createReport(User $user, Player $player): bool
     {
-        return $user->belongsToSameSchool($player)
-            && ($user->isTrainer() || $user->isEigenaar());
+        if (! $user->belongsToSameSchool($player)) {
+            return false;
+        }
+
+        if ($user->isEigenaar()) {
+            return true;
+        }
+
+        return $user->isTrainer() && app(TrainerScope::class)->ownsPlayer($user, $player);
     }
 }

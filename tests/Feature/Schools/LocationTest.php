@@ -156,13 +156,15 @@ class LocationTest extends TestCase
             );
     }
 
-    public function test_een_trainer_kiest_wel_een_locatie_maar_beheert_ze_niet(): void
+    public function test_een_trainer_kiest_een_locatie_in_het_formulier_maar_beheert_ze_niet(): void
     {
         $trainer = User::factory()->for($this->school)->create();
         $trainer->assignRole(Role::Trainer->value);
 
-        // Hij plant trainingen in en moet dus kunnen kiezen.
-        $this->actingAs($trainer)->get('/locaties')->assertOk();
+        // Kiezen doet hij in het inplanformulier; het beheerscherm hoort bij
+        // Mijn bedrijf en dat is van de eigenaar.
+        $this->actingAs($trainer)->get('/locaties')->assertForbidden();
+        $this->actingAs($trainer)->get('/trainings/create')->assertOk();
 
         $this->actingAs($trainer)
             ->post('/locaties', ['name' => 'Eigen veldje', 'is_active' => true])
