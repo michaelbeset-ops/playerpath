@@ -21,7 +21,10 @@ interface Melding {
 
 const props = defineProps<{ notifications: Melding[] }>();
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Meldingen', href: '/notifications' }];
+const breadcrumbs: BreadcrumbItem[] = [
+    { title: 'Dashboard', href: '/dashboard' },
+    { title: 'Meldingen', href: '/notifications' },
+];
 
 const ongelezen = computed(() => props.notifications.filter((m) => !m.read).length);
 

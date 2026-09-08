@@ -33,7 +33,18 @@ const props = defineProps<{
 
 // Bewust alleen de speler zelf: een kruimel naar /reports zou voor een ouder
 // een dode link zijn.
-const breadcrumbs: BreadcrumbItem[] = [{ title: props.player.name, href: '/players/' + props.player.id + '/card' }];
+// Wie voor de school werkt komt hier via de speler; een ouder of het kind
+// zelf via het dashboard. Het pad zegt waar je terugkomt.
+const breadcrumbs: BreadcrumbItem[] = props.canReport
+    ? [
+          { title: 'Spelers', href: '/clients' },
+          { title: props.player.name, href: '/players/' + props.player.id },
+          { title: 'Spelerskaart', href: '/players/' + props.player.id + '/card' },
+      ]
+    : [
+          { title: 'Dashboard', href: '/dashboard' },
+          { title: props.player.name, href: '/players/' + props.player.id + '/card' },
+      ];
 
 const behaald = computed(() => props.badges.filter((b) => b.earned));
 const nogTeGaan = computed(() => props.badges.filter((b) => !b.earned));

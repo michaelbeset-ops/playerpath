@@ -49,6 +49,24 @@ class CalendarTest extends TestCase
         ]);
     }
 
+    /** Groep, trainer en locatie zijn filters op het rooster, niet op wie het mag zien. */
+    public function test_de_agenda_filtert_op_groep(): void
+    {
+        $andere = Group::factory()->for($this->school)->create(['name' => 'Veldspelers']);
+        $this->training('2026-09-15');
+        $start = now()->parse('2026-09-16')->setTime(18, 0);
+        Training::factory()->for($this->school)->for($andere)->create(['starts_at' => $start, 'ends_at' => $start->copy()->addHour()]);
+
+        $this->actingAs($this->trainer)
+            ->get('/calendar?view=month&date=2026-09-10&group='.$andere->id)
+            ->assertInertia(fn ($page) => $page
+                ->count('trainings', 1)
+                ->where('trainings.0.group', 'Veldspelers')
+                ->where('filters.group', $andere->id)
+                ->has('groups', 2)
+            );
+    }
+
     public function test_de_maandweergave_bevat_de_trainingen_van_die_maand_met_trainer_en_locatie(): void
     {
         $training = $this->training('2026-09-15');
