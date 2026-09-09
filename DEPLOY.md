@@ -39,11 +39,29 @@ Elke school krijgt een eigen adres (`keepersschool-rob.playerpath.nl`). Dat
 vraagt twee dingen:
 
 1. Een **wildcard-DNS-record**: `*.playerpath.nl` → het IP van de server.
-2. Een **wildcard-certificaat**. In Forge: Let's Encrypt met DNS-validatie
-   (Cloudflare of een andere ondersteunde DNS-provider). Een gewoon certificaat
-   per subdomein werkt niet, want er komen steeds nieuwe scholen bij.
+2. Een **wildcard-certificaat**. In Forge: Let's Encrypt met DNS-validatie. Een
+   gewoon certificaat per subdomein werkt niet, want er komen steeds nieuwe
+   scholen bij, en die kun je niet één voor één aanvragen.
 
 Zet in de Nginx-site de servernaam op `playerpath.nl *.playerpath.nl`.
+
+**De DNS staat bij Cloudflare, het domein bij Vimexx.** Die splitsing is geen
+omweg maar de kern: Let's Encrypt geeft een wildcard alleen af via een
+DNS-challenge, en Forge moet daarvoor zelf een record kunnen wegschrijven. Bij
+een registrar zonder koppeling kan dat niet. Alleen de **nameservers** verhuizen;
+de registratie blijft waar hij is.
+
+1. Cloudflare (gratis) → Add a site → `playerpath.nl`.
+2. **Loop de gescande records na vóór je de nameservers omzet.** Staat er
+   e-mail op dit domein, dan moeten die MX- en TXT-records mee — anders valt je
+   mail stil op het moment dat de verhuizing doorkomt.
+3. Nameservers bij Vimexx vervangen door die van Cloudflare.
+4. Twee A-records, allebei naar het IP van de server: `@` en `*`.
+5. **Zet het proxy-wolkje op grijs (DNS only).** Met de proxy aan termineert
+   Cloudflare zelf het SSL en loopt de uitgifte via Forge in de war. Aanzetten
+   kan later alsnog.
+6. API-token in Cloudflare (template *Edit zone DNS*, beperkt tot dit domein);
+   die vult Forge in bij Let's Encrypt → DNS-validatie.
 
 > Het subdomein bepaalt alleen het logo, de naam en de kleur. Welke gegevens
 > iemand ziet hangt uitsluitend af van zijn account. Dat is een harde regel —
