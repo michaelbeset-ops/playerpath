@@ -35,33 +35,48 @@ Op de server:
 
 ## 2. Domein en certificaat
 
-Elke school krijgt een eigen adres (`keepersschool-rob.playerpath.nl`). Dat
-vraagt twee dingen:
+### Begin zonder subdomeinen
+
+Eén A-record bij je registrar (`@` → het IP van de server), servernaam
+`playerpath.nl`, en een gewoon Let's Encrypt-certificaat uit Forge. Klaar.
+
+**Laat `APP_DOMAIN` dan leeg.** `Branding::fromHost()` leidt zonder die
+instelling bewust géén school uit het adres af; de huisstijl komt dan uit het
+ingelogde account, en dat werkt overal in de app. Een school bereikt haar
+aanmeldpagina op `playerpath.nl/inschrijven/{slug}`.
+
+Wat je zo mist is precies één ding: de **inlogpagina** draagt het merk van
+PlayerPath in plaats van dat van de school, want zonder ingelogde gebruiker valt
+er niets af te leiden. Dat is de prijs, en voor een eerste school is die laag.
+
+### Later: een eigen adres per school
+
+Wil een school `keepersschool-rob.playerpath.nl`, dan vraagt dat twee dingen:
 
 1. Een **wildcard-DNS-record**: `*.playerpath.nl` → het IP van de server.
-2. Een **wildcard-certificaat**. In Forge: Let's Encrypt met DNS-validatie. Een
-   gewoon certificaat per subdomein werkt niet, want er komen steeds nieuwe
-   scholen bij, en die kun je niet één voor één aanvragen.
+2. Een **wildcard-certificaat** — Let's Encrypt geeft dat alleen af via een
+   DNS-challenge, en Forge moet daarvoor zelf een record kunnen wegschrijven.
+   Een certificaat per subdomein aanvragen werkt niet: er komen steeds nieuwe
+   scholen bij.
 
-Zet in de Nginx-site de servernaam op `playerpath.nl *.playerpath.nl`.
-
-**De DNS staat bij Cloudflare, het domein bij Vimexx.** Die splitsing is geen
-omweg maar de kern: Let's Encrypt geeft een wildcard alleen af via een
-DNS-challenge, en Forge moet daarvoor zelf een record kunnen wegschrijven. Bij
-een registrar zonder koppeling kan dat niet. Alleen de **nameservers** verhuizen;
-de registratie blijft waar hij is.
+Dat tweede punt is de enige reden dat de DNS bij een provider moet staan die
+Forge kan aansturen (Cloudflare bijvoorbeeld). Verhuis dan alleen de
+**nameservers**; de registratie blijft waar hij is.
 
 1. Cloudflare (gratis) → Add a site → `playerpath.nl`.
 2. **Loop de gescande records na vóór je de nameservers omzet.** Staat er
-   e-mail op dit domein, dan moeten die MX- en TXT-records mee — anders valt je
+   e-mail op dit domein, dan moeten de MX- en TXT-records mee — anders valt je
    mail stil op het moment dat de verhuizing doorkomt.
-3. Nameservers bij Vimexx vervangen door die van Cloudflare.
-4. Twee A-records, allebei naar het IP van de server: `@` en `*`.
-5. **Zet het proxy-wolkje op grijs (DNS only).** Met de proxy aan termineert
-   Cloudflare zelf het SSL en loopt de uitgifte via Forge in de war. Aanzetten
-   kan later alsnog.
+3. Nameservers bij de registrar vervangen door die van Cloudflare.
+4. Twee A-records naar het IP van de server: `@` en `*`.
+5. **Proxy-wolkje op grijs (DNS only).** Met de proxy aan termineert Cloudflare
+   zelf het SSL en loopt de uitgifte via Forge in de war.
 6. API-token in Cloudflare (template *Edit zone DNS*, beperkt tot dit domein);
    die vult Forge in bij Let's Encrypt → DNS-validatie.
+7. Servernaam in Nginx op `playerpath.nl *.playerpath.nl`, en pas dan
+   `APP_DOMAIN=playerpath.nl` invullen.
+
+Er verandert geen regel code: het is een instelling en een ander certificaat.
 
 > Het subdomein bepaalt alleen het logo, de naam en de kleur. Welke gegevens
 > iemand ziet hangt uitsluitend af van zijn account. Dat is een harde regel —
