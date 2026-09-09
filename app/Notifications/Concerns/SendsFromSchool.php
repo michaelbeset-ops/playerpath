@@ -32,20 +32,7 @@ trait SendsFromSchool
 {
     protected function schoolMail(object $notifiable): MailMessage
     {
-        $school = $this->schoolFor($notifiable);
-
-        $bericht = new MailMessage;
-        $bericht->viewData['merk'] = MailBrand::describe($school);
-
-        if ($school !== null) {
-            $bericht->from(config('mail.from.address'), $school->name);
-
-            if (filled($school->contact_email)) {
-                $bericht->replyTo($school->contact_email, $school->name);
-            }
-        }
-
-        return $bericht;
+        return MailBrand::apply(new MailMessage, $this->schoolFor($notifiable));
     }
 
     protected function schoolFor(object $notifiable): ?School

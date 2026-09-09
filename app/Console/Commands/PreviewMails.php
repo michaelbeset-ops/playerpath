@@ -22,6 +22,8 @@ use App\Models\TrainingEnrollment;
 use App\Models\User;
 use App\Notifications;
 use App\Support\Tenancy\Tenancy;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Console\Command;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -216,6 +218,10 @@ class PreviewMails extends Command
             'maandelijkse-update' => fn () => [new Notifications\MaandelijkseUpdate($w['speler'], $this->digest()), $ouder],
             'nieuwe-mededeling' => fn () => [new Notifications\NieuweMededeling($w['mededeling']), $ouder],
             'verjaardag' => fn () => [new Notifications\Verjaardag($w['speler'], 12), $ouder],
+            // Deze twee komen uit Laravel zelf, maar horen er net zo goed bij:
+            // wachtwoord vergeten is de eerste mail die een schooleigenaar ziet.
+            'wachtwoord-vergeten' => fn () => [new ResetPassword('voorbeeld-token'), $ouder],
+            'email-bevestigen' => fn () => [new VerifyEmail, $ouder],
         ];
     }
 

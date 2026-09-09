@@ -3,9 +3,14 @@
 namespace App\Providers;
 
 use App\Actions\Fortify\ResetUserPassword;
+use App\Support\Mail\MailBrand;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
@@ -24,6 +29,8 @@ class FortifyServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
+
+        $this->authMails();
 
         Fortify::loginView(fn () => Inertia::render('auth/Login', [
             'canResetPassword' => true,
@@ -55,5 +62,55 @@ class FortifyServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('two-factor', fn (Request $request) => Limit::perMinute(5)->by($request->session()->get('login.id')));
+    }
+
+    /**
+     * De twee mails die niet van ons zijn: wachtwoord vergeten en e-mailadres
+     * bevestigen.
+     *
+     * Ze komen uit Laravel zelf en gaan dus niet langs `SendsFromSchool`. Zonder
+     * dit blok draagt precies de eerste mail die een schooleigenaar krijgt de
+     * naam PlayerPath — hij zet zijn wachtwoord immers via wachtwoord-vergeten
+     * (zie DEPLOY.md), en een ouder komt hier terecht zodra hij zijn wachtwoord
+     * kwijt is. Dan ken je de afzender niet, en dan kom je je account niet meer
+     * in.
+     *
+     * De teksten stonden als losse woorden in lang/nl.json ("Hallo!",
+     * "Wachtwoord opnieuw instellen"). Hier staan ze als hele zinnen, met de
+     * kop die zegt wat er te doen is in plaats van een begroeting.
+     */
+    protected function authMails(): void
+    {
+        ResetPassword::toMailUsing(function (object $notifiable, string $token) {
+            $minuten = config('auth.passwords.'.config('auth.defaults.passwords').'.expire', 60);
+
+            return MailBrand::apply(new MailMessage, $notifiable->school ?? null)
+                ->subject('Kies een nieuw wachtwoord')
+                ->greeting('Kies een nieuw wachtwoord')
+                ->line('Je hebt gevraagd om je wachtwoord opnieuw in te stellen. Klik hieronder om een nieuw wachtwoord te kiezen.')
+                ->action('Nieuw wachtwoord kiezen', url(route('password.reset', [
+                    'token' => $token,
+                    'email' => $notifiable->getEmailForPasswordReset(),
+                ], absolute: false)))
+                ->line("Deze link is {$minuten} minuten geldig.")
+                ->line('Heb je hier niet om gevraagd? Dan hoef je niets te doen; je wachtwoord blijft zoals het was.')
+                ->salutation('Met vriendelijke groet, '.($notifiable->school?->name ?? config('app.name')));
+        });
+
+        VerifyEmail::toMailUsing(function (object $notifiable) {
+            $url = URL::temporarySignedRoute(
+                'verification.verify',
+                now()->addMinutes((int) config('auth.verification.expire', 60)),
+                ['id' => $notifiable->getKey(), 'hash' => sha1($notifiable->getEmailForVerification())],
+            );
+
+            return MailBrand::apply(new MailMessage, $notifiable->school ?? null)
+                ->subject('Bevestig je e-mailadres')
+                ->greeting('Bevestig je e-mailadres')
+                ->line('Nog één klik en je account is klaar voor gebruik.')
+                ->action('E-mailadres bevestigen', $url)
+                ->line('Heb je geen account aangemaakt? Dan hoef je niets te doen.')
+                ->salutation('Met vriendelijke groet, '.($notifiable->school?->name ?? config('app.name')));
+        });
     }
 }

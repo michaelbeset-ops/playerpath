@@ -16,6 +16,8 @@ use App\Notifications\BetalingHerinnering;
 use App\Notifications\InschrijvingOntvangen;
 use App\Support\Tenancy\Tenancy;
 use Database\Seeders\RoleSeeder;
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -115,6 +117,32 @@ class MailShellTest extends TestCase
         $this->assertStringContainsString('/betalen/'.$rekening->id, (string) $mail->actionUrl);
         // Het inloggen staat als zin ná de knop, niet als tweede knop ervoor.
         $this->assertStringContainsString('Er is ook een account voor je aangemaakt', implode(' ', $mail->outroLines));
+    }
+
+    /**
+     * Wachtwoord vergeten en e-mailadres bevestigen komen uit Laravel zelf en
+     * gaan dus niet langs SendsFromSchool. Juist die eerste mail moet de school
+     * dragen: een schooleigenaar zet zijn wachtwoord via wachtwoord-vergeten,
+     * en een ouder die zijn wachtwoord kwijt is komt hier terecht.
+     */
+    public function test_de_mails_van_laravel_dragen_de_school_ook(): void
+    {
+        $reset = (new ResetPassword('een-token'))->toMail($this->ouder);
+
+        $this->assertSame('Keepersschool Rob', $reset->from[1]);
+        $this->assertSame('Kies een nieuw wachtwoord', $reset->subject);
+        $this->assertStringContainsString('/reset-password/een-token', (string) $reset->actionUrl);
+
+        $html = (string) $reset->render();
+        $this->assertStringContainsString('Keepersschool Rob', $html);
+        $this->assertStringContainsString('#1D4ED8', $html);
+        $this->assertStringNotContainsString('Hallo!', $html);
+
+        $verify = (new VerifyEmail)->toMail($this->ouder);
+
+        $this->assertSame('Keepersschool Rob', $verify->from[1]);
+        $this->assertSame('Bevestig je e-mailadres', $verify->subject);
+        $this->assertStringContainsString('Keepersschool Rob', (string) $verify->render());
     }
 
     /** @param  array<string, mixed>  $velden */

@@ -4,6 +4,7 @@ namespace App\Support\Mail;
 
 use App\Models\School;
 use App\Support\Branding\BrandColor;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\Storage;
 
 /**
@@ -29,6 +30,35 @@ final class MailBrand
 {
     /** Het groen van PlayerPath op de lichte kant; diep genoeg voor witte tekst. */
     public const STANDAARD_KLEUR = '#12813D';
+
+    /**
+     * De school op een mail zetten: afzendernaam, antwoordadres en huisstijl.
+     *
+     * Dit is de enige plek waar dat gebeurt. Notificaties komen er via
+     * SendsFromSchool langs; de mails van Laravel zelf (wachtwoord vergeten,
+     * e-mailadres bevestigen) zijn geen notificatieklasse van ons en worden in
+     * FortifyServiceProvider met de hand hierlangs gestuurd. Zou dat niet
+     * gebeuren, dan draagt precies de eerste mail die een schooleigenaar
+     * krijgt de naam PlayerPath.
+     */
+    public static function apply(MailMessage $bericht, ?School $school): MailMessage
+    {
+        $bericht->viewData['merk'] = self::describe($school);
+
+        if ($school === null) {
+            return $bericht;
+        }
+
+        // Alleen de afzendernaam; het adres blijft van het platform, want daar
+        // staan de SPF- en DKIM-records op.
+        $bericht->from(config('mail.from.address'), $school->name);
+
+        if (filled($school->contact_email)) {
+            $bericht->replyTo($school->contact_email, $school->name);
+        }
+
+        return $bericht;
+    }
 
     /**
      * @return array<string, mixed>
