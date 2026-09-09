@@ -91,10 +91,15 @@ De afzendernaam van elke mail is de school; het afzenderadres blijft van het
 platform. Een eigen afzenderadres per school kan pas als die school haar eigen
 DNS-records aanlevert.
 
-**Controleer de mail vóór de eerste school.** `php artisan mail:preview` op de
-server rendert alle 22 mails; kijk of het logo en de merkkleur van de school
-kloppen, en stuur er daarna één echt naar jezelf via `school:create` +
-wachtwoord-vergeten.
+**Controleer de mail vóór de eerste school.** De vormgeving bekijk je **lokaal**
+met `php artisan mail:preview` — dat is een ontwikkelhulpmiddel en werkt niet op
+de server, want het bouwt zijn voorbeeldwereld met factories en die hangen aan
+`fakerphp/faker` uit `require-dev`.
+
+Op de server test je het echte pad: maak een school met `school:create`, vraag
+een wachtwoord aan via wachtwoord-vergeten, en kijk of die mail aankomt, niet in
+de spam belandt, en de naam van de school draagt. Dat is meteen de test van
+Brevo, van je DNS-records én van de queue-worker in één keer.
 
 ## 4. Deploy-script (Forge)
 

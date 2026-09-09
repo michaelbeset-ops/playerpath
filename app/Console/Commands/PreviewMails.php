@@ -22,6 +22,7 @@ use App\Models\TrainingEnrollment;
 use App\Models\User;
 use App\Notifications;
 use App\Support\Tenancy\Tenancy;
+use Faker\Factory;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Console\Command;
@@ -51,6 +52,18 @@ class PreviewMails extends Command
 
     public function handle(Tenancy $tenancy): int
     {
+        // Dit is een ontwikkelhulpmiddel: het bouwt zijn voorbeeldwereld met
+        // factories, en die hangen aan fakerphp/faker uit require-dev. Op een
+        // productieserver draait composer met --no-dev, dus daar bestaat dat
+        // pakket niet. Liever deze zin dan een fatale fout waar je op de
+        // verkeerde plek naar gaat zoeken.
+        if (! class_exists(Factory::class)) {
+            $this->components->error('mail:preview is een ontwikkelhulpmiddel en werkt niet op productie: fakerphp/faker zit in require-dev.');
+            $this->line('  Draai het lokaal, of bekijk een echte mail door hem naar jezelf te sturen.');
+
+            return self::FAILURE;
+        }
+
         $map = $this->option('dir') ?: storage_path('app/mail-preview');
         File::ensureDirectoryExists($map);
         File::cleanDirectory($map);
