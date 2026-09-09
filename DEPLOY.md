@@ -22,6 +22,20 @@ staat, is de omgeving niet klaar voor een echte school.
 is ruim voldoende voor de eerste scholen; het is een Laravel-app met een paar
 honderd gebruikers, geen videoplatform.
 
+**Of helemaal geen eigen server.** Draait er al een Forge-server met andere
+sites, dan kan PlayerPath daar als extra site bij — dat kost niets extra en
+scheelt een plan-upgrade. Wat je dan wél regelt:
+
+- **PHP 8.4 erbij installeren** (Server → PHP) en per site instellen; de andere
+  sites blijven op hun eigen versie staan.
+- **Eigen Redis-databases** (`REDIS_DB`, `REDIS_CACHE_DB`). De sleutelprefix is
+  al uniek per app, dus botsen doet het niet, maar met eigen databases kan
+  `cache:clear` nooit de app van een ander raken.
+- **Weten dat je buren deelt.** De queue-worker is een blijvend PHP-proces, en
+  een piek bij PlayerPath merkt de site ernaast. Voor de eerste scholen is dat
+  prima; groeit het, dan verhuis je naar een eigen server — dat is een site
+  aanmaken en de DNS omzetten, geen verbouwing.
+
 Waarom Hetzner: de gegevens van kinderen blijven binnen de EU, en dat is bij de
 AVG geen detail. Kies bij Forge dus ook een **EU-regio** voor de database en
 voor eventuele object storage.
