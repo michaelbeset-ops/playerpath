@@ -113,4 +113,23 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Markdown Mail Settings
+    |--------------------------------------------------------------------------
+    |
+    | Het eigen thema staat in resources/views/vendor/mail/html/themes. De
+    | merkkleur van een school komt daar niet in — die verschilt per mail en
+    | gaat inline mee via App\Support\Mail\MailBrand.
+    |
+    */
+
+    'markdown' => [
+        'theme' => env('MAIL_THEME', 'playerpath'),
+
+        'paths' => [
+            resource_path('views/vendor/mail'),
+        ],
+    ],
+
 ];

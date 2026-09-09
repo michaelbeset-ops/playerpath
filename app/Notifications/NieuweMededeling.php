@@ -43,7 +43,7 @@ class NieuweMededeling extends Notification implements ShouldQueue
         }
 
         return $bericht
-            ->action('Bekijk in PlayerPath', route('notifications.index'))
+            ->action('Openen in de app', route('notifications.index'))
             ->salutation($this->schoolSalutation($notifiable));
     }
 

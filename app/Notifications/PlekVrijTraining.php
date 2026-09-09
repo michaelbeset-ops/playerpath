@@ -33,7 +33,7 @@ class PlekVrijTraining extends Notification implements ShouldQueue
 
         return $this->schoolMail($notifiable)
             ->subject("Er is plek voor {$this->player->first_name} bij {$this->training->label()}")
-            ->greeting('Hallo')
+            ->greeting("Er is plek voor {$this->player->first_name}")
             ->line("{$this->player->first_name} stond op de wachtlijst voor {$this->training->label()} op {$wanneer}, en er is een plek vrijgekomen.")
             ->line('Wil je die plek? Schrijf dan nu in; de eerste die dat doet heeft hem.')
             ->action('Nu inschrijven', route('trainings.enroll.show', $this->training))

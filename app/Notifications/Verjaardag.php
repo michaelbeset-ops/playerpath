@@ -45,9 +45,10 @@ class Verjaardag extends Notification implements ShouldQueue
 
         return $this->schoolMail($notifiable)
             ->subject("Gefeliciteerd, {$naam}!")
-            ->greeting('Hoi!')
+            ->greeting("Gefeliciteerd, {$naam}!")
             ->line($this->bericht ?: "{$naam} is vandaag {$this->leeftijd} geworden. Van harte gefeliciteerd namens de hele school!")
-            ->line('Tot op de training.');
+            ->line('Tot op de training.')
+            ->salutation($this->schoolSalutation($notifiable));
     }
 
     /** @return array<string, mixed> */

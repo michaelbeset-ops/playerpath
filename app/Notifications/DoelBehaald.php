@@ -30,8 +30,8 @@ class DoelBehaald extends Notification implements ShouldQueue
     {
         return $this->schoolMail($notifiable)
             ->subject("{$this->player->first_name} heeft een doel gehaald!")
-            ->greeting('Goed nieuws!')
-            ->line("{$this->player->first_name} heeft het doel **{$this->goal->describe()}** gehaald.")
+            ->greeting("{$this->player->first_name} heeft een doel gehaald")
+            ->line("Het doel **{$this->goal->describe()}** is gehaald.")
             ->line('Dat staat nu als mijlpaal op de spelerskaart.')
             ->action('Bekijk de spelerskaart', route('players.card', $this->player))
             ->salutation($this->schoolSalutation($notifiable));

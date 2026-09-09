@@ -36,9 +36,9 @@ class BetalingMislukt extends Notification implements ShouldQueue
 
         $bericht = $this->schoolMail($notifiable)
             ->subject(($laatste ? 'Laatste herinnering: ' : 'Herinnering: ')."betaling van {$bedrag} is niet gelukt")
-            ->greeting('Hallo')
+            ->greeting('De betaling is niet gelukt')
             ->line("De betaling van **{$bedrag}** voor {$this->payment->description} is niet gelukt ({$this->payment->status->label()}).")
-            ->line('Je kunt hem opnieuw doen via de knop hieronder.');
+            ->line('Je kunt hem hieronder opnieuw doen; dat kost een halve minuut.');
 
         if ($laatste) {
             $bericht->line('Dit is de laatste herinnering. Blijft de betaling uit, dan neemt de school contact met je op.');

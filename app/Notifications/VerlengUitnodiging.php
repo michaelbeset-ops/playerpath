@@ -33,8 +33,8 @@ class VerlengUitnodiging extends Notification implements ShouldQueue
 
         return $this->schoolMail($notifiable)
             ->subject("{$aanbod?->name} loopt af. Gaat {$this->enrollment->first_name} door?")
-            ->greeting('Hallo')
-            ->line("{$aanbod?->name} van {$this->enrollment->first_name} loopt op {$einde} af.")
+            ->greeting("Gaat {$this->enrollment->first_name} door?")
+            ->line("{$aanbod?->name} loopt op {$einde} af.")
             ->line('Wil je doorgaan? Meld dan opnieuw aan; je plek is niet automatisch verlengd.')
             ->action('Opnieuw aanmelden', route('enroll.show', $this->enrollment->school))
             ->salutation($this->schoolSalutation($notifiable));

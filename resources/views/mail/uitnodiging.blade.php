@@ -1,19 +1,13 @@
 {{--
-    De uitnodigingsmail.
+    De uitnodigingsmail: de eerste keer dat iemand deze school in zijn inbox
+    ziet. Drie dingen en verder niets — van wie hij komt, wat je eraan hebt,
+    en één knop.
 
-    Bewust een eigen sjabloon en niet de standaard: deze mail moet er in de
-    inbox uitzien alsof hij van de school komt, met haar logo en haar naam
-    bovenaan. Alle andere mail draagt alleen de afzendernaam van de school;
-    hier is het de eerste keer dat iemand ons ziet, en dan telt het meest of hij
-    de afzender herkent.
+    Het logo staat niet meer hier maar in de gedeelde mailschil (zie
+    resources/views/vendor/mail); anders stond het er bij deze ene mail twee
+    keer, en zou een merkwijziging op twee plekken moeten gebeuren.
 --}}
-@component('mail::message')
-@if ($logo)
-<p style="text-align: center; margin-bottom: 24px;">
-<img src="{{ $logo }}" alt="{{ $school->name }}" style="max-height: 64px; max-width: 220px;">
-</p>
-@endif
-
+<x-mail::message :merk="$merk" :preheader="$school->name.' nodigt je uit voor je eigen account.'">
 # Hallo {{ $naam }}
 
 @if ($isOuder)
@@ -27,16 +21,16 @@ Klik hieronder om je account te activeren en een wachtwoord te kiezen.
 Klik hieronder om je account te activeren en een wachtwoord te kiezen.
 @endif
 
-@component('mail::button', ['url' => $url])
+<x-mail::button :url="$url" :merk="$merk">
 Account activeren
-@endcomponent
+</x-mail::button>
 
 Deze uitnodiging is geldig tot {{ $verlooptOp }}. Werkt de knop niet meer, vraag {{ $school->name }} dan om een nieuwe.
 
 Met vriendelijke groet,<br>
 {{ $school->name }}
 
-@slot('subcopy')
-Werkt de knop niet? Kopieer dan deze link naar je browser: {{ $url }}
-@endslot
-@endcomponent
+<x-slot:subcopy>
+Werkt de knop niet? Kopieer dan deze link naar je browser: <span class="break-all">{{ $url }}</span>
+</x-slot:subcopy>
+</x-mail::message>

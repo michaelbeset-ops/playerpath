@@ -32,8 +32,8 @@ class UitnodigingVerlopen extends Notification implements ShouldQueue
 
         return $this->schoolMail($notifiable)
             ->subject("De plek voor {$this->enrollment->first_name} bij {$aanbod} is vervallen")
-            ->greeting('Hallo')
-            ->line("We hadden een plek voor {$this->enrollment->first_name} bij {$aanbod}, maar de betaallink is verlopen. De plek is naar de volgende op de wachtlijst gegaan.")
+            ->greeting("De plek voor {$this->enrollment->first_name} is vervallen")
+            ->line("We hadden een plek bij {$aanbod}, maar de betaallink is verlopen. De plek is naar de volgende op de wachtlijst gegaan.")
             ->line('Wil je alsnog meedoen? Meld je dan opnieuw aan, of neem contact op met de school.')
             ->action('Opnieuw aanmelden', route('enroll.show', $this->enrollment->school))
             ->salutation($this->schoolSalutation($notifiable));

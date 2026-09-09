@@ -46,8 +46,8 @@ class TrainingAanmeldingBeoordeeld extends Notification implements ShouldQueue
         if (! $this->approved) {
             $mail = $this->schoolMail($notifiable)
                 ->subject("De aanmelding van {$kind->first_name} is niet doorgegaan")
-                ->greeting('Hallo')
-                ->line("De aanmelding van {$kind->first_name} voor {$training->label()} op {$wanneer} is afgewezen.");
+                ->greeting("De aanmelding van {$kind->first_name} is afgewezen")
+                ->line("Het ging om {$training->label()} op {$wanneer}.");
 
             if ($this->message) {
                 $mail->line('De school schrijft: '.$this->message);
@@ -58,8 +58,8 @@ class TrainingAanmeldingBeoordeeld extends Notification implements ShouldQueue
 
         $mail = $this->schoolMail($notifiable)
             ->subject("{$kind->first_name} is ingeschreven voor {$training->label()}")
-            ->greeting('Hallo')
-            ->line("Goed nieuws: {$kind->first_name} doet mee aan {$training->label()} op {$wanneer}.");
+            ->greeting("{$kind->first_name} doet mee")
+            ->line("{$training->label()} is op {$wanneer}.");
 
         if ($this->enrollment->status->value === 'waitlisted') {
             return $mail

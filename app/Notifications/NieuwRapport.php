@@ -44,8 +44,8 @@ class NieuwRapport extends Notification implements ShouldQueue
 
         $bericht = $this->schoolMail($notifiable)
             ->subject("Nieuw rapport voor {$naam}")
-            ->greeting('Hallo!')
-            ->line("De trainer heeft een nieuw rapport ingevuld voor {$naam}.");
+            ->greeting("Nieuw rapport voor {$naam}")
+            ->line('De trainer heeft na de training zijn beoordeling ingevuld.');
 
         if ($this->overallRating !== null) {
             $bericht->line("De spelerskaart staat nu op **{$this->overallRating}**.");
@@ -57,7 +57,7 @@ class NieuwRapport extends Notification implements ShouldQueue
 
         return $bericht
             ->action('Bekijk de spelerskaart', route('players.card', $this->player))
-            ->line('Je krijgt deze e-mail omdat je gekoppeld bent aan deze speler.')
+            ->line('Je krijgt deze mail omdat je aan deze speler gekoppeld bent. In je account stel je in welke mail je wilt ontvangen.')
             ->salutation($this->schoolSalutation($notifiable));
     }
 

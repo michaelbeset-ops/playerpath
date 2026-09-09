@@ -34,15 +34,14 @@ class BetalingHerinnering extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $bericht = $this->schoolMail($notifiable)
-            ->subject('Herinnering: openstaande betaling')
-            ->greeting('Hallo')
-            ->line("Er staat nog een betaling van **{$this->bedrag()}** open.")
-            ->line("Het gaat om: {$this->payment->description}.")
-            ->line("De vervaldatum was {$this->payment->due_on->format('d-m-Y')}, {$this->dagenTeLaat} dagen geleden.");
+            ->subject("Herinnering: {$this->bedrag()} staat nog open")
+            ->greeting('Er staat nog een betaling open')
+            ->line("Het gaat om **{$this->bedrag()}** voor {$this->payment->description}.")
+            ->line("De vervaldatum was {$this->payment->due_on->translatedFormat('j F Y')}, {$this->dagenTeLaat} dagen geleden.");
 
         return $bericht
-            ->action('Bekijk je betalingen', route('billing.index'))
-            ->line('Heb je al betaald? Dan kun je deze mail negeren.')
+            ->action('Naar je betalingen', route('billing.index'))
+            ->line('Heb je al betaald? Dan kun je deze mail negeren; het kan een paar dagen duren voordat een overboeking is verwerkt.')
             ->salutation($this->schoolSalutation($notifiable));
     }
 

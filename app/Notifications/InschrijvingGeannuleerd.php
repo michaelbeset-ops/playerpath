@@ -36,8 +36,8 @@ class InschrijvingGeannuleerd extends Notification implements ShouldQueue
         if ($this->forSchool) {
             $bericht = $this->schoolMail($notifiable)
                 ->subject("Annulering: {$kind} voor {$aanbod}")
-                ->greeting('Hallo')
-                ->line("{$this->enrollment->guardian_name} heeft de inschrijving van {$kind} voor {$aanbod} geannuleerd.");
+                ->greeting("{$kind} is afgemeld voor {$aanbod}")
+                ->line("{$this->enrollment->guardian_name} heeft de inschrijving geannuleerd.");
 
             if ($this->enrollment->cancellation_reason) {
                 $bericht->line('Reden: '.$this->enrollment->cancellation_reason);
@@ -53,8 +53,8 @@ class InschrijvingGeannuleerd extends Notification implements ShouldQueue
 
         return $this->schoolMail($notifiable)
             ->subject("De inschrijving van {$kind} is geannuleerd")
-            ->greeting('Hallo')
-            ->line("De inschrijving van {$kind} voor {$aanbod} is geannuleerd.")
+            ->greeting("De inschrijving van {$kind} is geannuleerd")
+            ->line("Het ging om {$aanbod}. We hebben de annulering verwerkt.")
             ->line($restitutie > 0
                 ? 'Je krijgt **'.Money::format($restitutie).'** terug. De school regelt dat met je.'
                 : 'Er komt volgens de voorwaarden van de school niets terug.')

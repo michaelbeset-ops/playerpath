@@ -29,11 +29,11 @@ class BetalingOntvangen extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         return $this->schoolMail($notifiable)
-            ->subject('Betaling ontvangen')
-            ->greeting('Bedankt!')
-            ->line("We hebben je betaling van **{$this->bedrag()}** ontvangen.")
-            ->line("Het gaat om: {$this->payment->description}.")
-            ->action('Bekijk je betalingen', route('billing.index'))
+            ->subject("Betaling van {$this->bedrag()} ontvangen")
+            ->greeting('Je betaling is binnen')
+            ->line("Bedankt — we hebben **{$this->bedrag()}** ontvangen voor {$this->payment->description}.")
+            ->line('Je hoeft verder niets te doen.')
+            ->action('Naar je betalingen', route('billing.index'))
             ->salutation($this->schoolSalutation($notifiable));
     }
 

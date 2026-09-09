@@ -1,0 +1,339 @@
+/*
+    De huisstijl van PlayerPath, maar dan voor een inbox.
+
+    Een mailprogramma is geen browser: geen flexbox, geen custom properties,
+    geen webfonts waar je op kunt rekenen. Alles hier is dus tabel-opmaak met
+    inline-baar CSS, en de enige dingen die in een <style> blijven staan zijn
+    de media queries (die kun je niet inlinen).
+
+    De kleuren zijn de lichte kant uit CLAUDE.md hoofdstuk 4: gebroken wit als
+    werkvloer, witte kaart met rand én schaduw, marineblauwe tekst. De
+    merkkleur van de school komt er per mail inline overheen (zie
+    Support\Mail\MailBrand) — die kan niet in dit bestand staan, want dit
+    bestand is voor alle scholen hetzelfde.
+*/
+
+/* Basis */
+
+body {
+    background-color: #f1f3f6;
+    color: #0f172a;
+    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: none;
+    margin: 0;
+    padding: 0;
+    width: 100% !important;
+}
+
+p,
+ul,
+ol,
+blockquote {
+    line-height: 1.6;
+}
+
+a {
+    color: #12813d;
+}
+
+a img {
+    border: none;
+}
+
+/* Typografie */
+
+h1 {
+    color: #0f172a;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-top: 0;
+    margin-bottom: 16px;
+    text-align: left;
+}
+
+h2 {
+    color: #0f172a;
+    font-size: 17px;
+    font-weight: 700;
+    margin-top: 24px;
+    margin-bottom: 8px;
+    text-align: left;
+}
+
+h3 {
+    color: #0f172a;
+    font-size: 15px;
+    font-weight: 700;
+    margin-top: 20px;
+    margin-bottom: 6px;
+    text-align: left;
+}
+
+p {
+    color: #334155;
+    font-size: 16px;
+    line-height: 1.6;
+    margin-top: 0;
+    margin-bottom: 16px;
+    text-align: left;
+}
+
+p.sub {
+    font-size: 13px;
+    color: #5a677d;
+}
+
+img {
+    max-width: 100%;
+}
+
+strong {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+/* Opmaak */
+
+.wrapper {
+    background-color: #f1f3f6;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+}
+
+.content {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+}
+
+/* Kop */
+
+.header {
+    padding: 28px 0 20px;
+    text-align: center;
+}
+
+.header a {
+    color: #0f172a;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+}
+
+.header img.logo {
+    max-height: 56px;
+    max-width: 200px;
+    width: auto;
+}
+
+/* Voorbeeldregel: de school-eigen mail is soms een voorbeeld. */
+
+.preheader {
+    color: transparent;
+    display: none;
+    height: 0;
+    max-height: 0;
+    max-width: 0;
+    opacity: 0;
+    overflow: hidden;
+    mso-hide: all;
+    visibility: hidden;
+    width: 0;
+}
+
+/* Voet */
+
+.footer {
+    margin: 0 auto;
+    padding: 0;
+    text-align: center;
+    width: 570px;
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 570px;
+}
+
+.footer p,
+.footer a {
+    color: #5a677d;
+    font-size: 12px;
+    line-height: 1.6;
+    text-align: center;
+}
+
+.footer a {
+    color: #5a677d;
+}
+
+/* Body */
+
+.body {
+    background-color: #f1f3f6;
+    border-bottom: 1px solid #f1f3f6;
+    border-top: 1px solid #f1f3f6;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+}
+
+.inner-body {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    margin: 0 auto;
+    padding: 0;
+    width: 570px;
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 570px;
+}
+
+/* Vlakken */
+
+.content-cell {
+    max-width: 100vw;
+    padding: 32px;
+}
+
+/* Knop */
+
+.action {
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+    margin: 24px auto;
+    padding: 0;
+    text-align: center;
+    width: 100%;
+}
+
+.button {
+    -webkit-text-size-adjust: none;
+    background-color: #12813d;
+    border-radius: 10px;
+    color: #ffffff;
+    display: inline-block;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 24px;
+    overflow: hidden;
+    padding: 14px 28px;
+    text-align: center;
+    text-decoration: none;
+}
+
+.button-primary,
+.button-success {
+    background-color: #12813d;
+    border-bottom: 8px solid #12813d;
+    border-left: 18px solid #12813d;
+    border-right: 18px solid #12813d;
+    border-top: 8px solid #12813d;
+}
+
+.button-error {
+    background-color: #b42318;
+    border-bottom: 8px solid #b42318;
+    border-left: 18px solid #b42318;
+    border-right: 18px solid #b42318;
+    border-top: 8px solid #b42318;
+}
+
+/* Paneel: het feitenblok (bedrag, datum, kind) */
+
+.panel {
+    border-left: none;
+    margin: 20px 0;
+}
+
+.panel-content {
+    background-color: #f8f9fa;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    color: #0f172a;
+    padding: 4px 20px;
+}
+
+.panel-content p {
+    color: #0f172a;
+}
+
+.panel-item {
+    padding: 0;
+}
+
+.panel-item p:last-of-type {
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+/* Tabel */
+
+.table table {
+    margin: 24px auto;
+    width: 100%;
+    -premailer-cellpadding: 0;
+    -premailer-cellspacing: 0;
+    -premailer-width: 100%;
+}
+
+.table th {
+    border-bottom: 1px solid #e2e8f0;
+    color: #5a677d;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    margin: 0;
+    padding-bottom: 8px;
+    text-transform: uppercase;
+}
+
+.table td {
+    color: #334155;
+    font-size: 15px;
+    line-height: 1.5;
+    margin: 0;
+    padding: 10px 0;
+}
+
+.content-cell .table td {
+    border-bottom: 1px solid #eef1f5;
+}
+
+.center {
+    text-align: center;
+}
+
+/* Onderschrift */
+
+.subcopy {
+    border-top: 1px solid #e2e8f0;
+    margin-top: 28px;
+    padding-top: 20px;
+}
+
+.subcopy p {
+    color: #5a677d;
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.subcopy a {
+    color: #5a677d;
+}
+
+.break-all {
+    word-break: break-all;
+}

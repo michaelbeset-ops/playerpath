@@ -48,17 +48,17 @@ class InschrijvingGoedgekeurd extends Notification implements ShouldQueue
         // anders wacht een gezin op een training die het nog niet heeft.
         if ($this->waitlist) {
             return $this->schoolMail($notifiable)
-                ->subject('Je aanmelding staat op de wachtlijst')
-                ->greeting('Hallo')
-                ->line("{$this->player->first_name} staat op de wachtlijst. Zodra er een plek vrijkomt, hoor je het van ons.")
-                ->line('Je betaalt pas als die plek er is.')
+                ->subject($this->player->first_name.' staat op de wachtlijst')
+                ->greeting($this->player->first_name.' staat op de wachtlijst')
+                ->line('Het aanbod zit vol. Zodra er een plek vrijkomt hoor je het van ons.')
+                ->line('Je betaalt pas als die plek er is; je hoeft nu niets te doen.')
                 ->salutation($this->schoolSalutation($notifiable));
         }
 
         $bericht = $this->schoolMail($notifiable)
-            ->subject('De inschrijving van '.$this->player->first_name.' is rond')
-            ->greeting('Hallo')
-            ->line("{$this->player->first_name} is ingeschreven. Welkom!");
+            ->subject($this->player->first_name.' is ingeschreven')
+            ->greeting($this->player->first_name.' is ingeschreven')
+            ->line('Welkom! We hebben de inschrijving rond.');
 
         if ($this->payment === null) {
             return $bericht
@@ -71,14 +71,14 @@ class InschrijvingGoedgekeurd extends Notification implements ShouldQueue
         if ($this->payment->method?->isOffline()) {
             return $bericht
                 ->line("Er staat **{$bedrag}** open voor {$this->payment->description}.")
-                ->line('Dat reken je af bij de school zelf.')
+                ->line('Dat reken je contant af bij de school; je hoeft nu niets over te maken.')
                 ->salutation($this->schoolSalutation($notifiable));
         }
 
         return $bericht
             ->line("Er staat **{$bedrag}** open voor {$this->payment->description}.")
             ->action('Nu betalen', app(PaymentLink::class)->for($this->payment))
-            ->line('De betaallink is '.PaymentLink::DAGEN_GELDIG.' dagen geldig. Lukt het niet, laat het ons dan weten.')
+            ->line('De betaallink is '.PaymentLink::DAGEN_GELDIG.' dagen geldig en werkt zonder in te loggen. Lukt het niet, laat het ons dan weten.')
             ->salutation($this->schoolSalutation($notifiable));
     }
 

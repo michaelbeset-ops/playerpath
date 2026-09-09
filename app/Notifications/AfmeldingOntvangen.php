@@ -33,8 +33,8 @@ class AfmeldingOntvangen extends Notification implements ShouldQueue
 
         $bericht = $this->schoolMail($notifiable)
             ->subject("Afmelding: {$this->player->full_name} voor {$this->training->label()}")
-            ->greeting('Hallo')
-            ->line("{$this->player->full_name} is afgemeld voor {$this->training->label()} op {$wanneer}.");
+            ->greeting("{$this->player->full_name} is afgemeld")
+            ->line("Het gaat om {$this->training->label()} op {$wanneer}.");
 
         if ($this->reason) {
             $bericht->line('Reden: '.$this->reason);

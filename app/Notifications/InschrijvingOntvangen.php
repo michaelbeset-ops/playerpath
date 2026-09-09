@@ -42,7 +42,7 @@ class InschrijvingOntvangen extends Notification implements ShouldQueue
 
         $bericht = $this->schoolMail($notifiable)
             ->subject("We hebben de aanmelding van {$namen} ontvangen")
-            ->greeting('Hallo')
+            ->greeting('We hebben je aanmelding ontvangen')
             ->line("Bedankt voor het aanmelden van {$namen}".($eerste->product ? " voor {$eerste->product->name}" : '').'.');
 
         $bericht = match ($eerste->status) {
@@ -55,8 +55,16 @@ class InschrijvingOntvangen extends Notification implements ShouldQueue
         };
 
         if ($this->newAccount) {
-            $bericht->line('Er is een account voor je aangemaakt. Je kunt inloggen met dit e-mailadres en het wachtwoord dat je koos.')
-                ->action('Inloggen', route('login'));
+            // Eén knop per mail. Staat er al een betaalknop, dan wordt inloggen
+            // een zin: een tweede ->action() overschrijft de eerste, en dan is
+            // precies de knop weg waar deze mail voor bedoeld was.
+            $bericht->line($bericht->actionText === null
+                ? 'Er is een account voor je aangemaakt. Je logt in met dit e-mailadres en het wachtwoord dat je koos; daar zie je de trainingen, de spelerskaart en wat er openstaat.'
+                : 'Er is ook een account voor je aangemaakt: je logt in met dit e-mailadres en het wachtwoord dat je koos.');
+
+            if ($bericht->actionText === null) {
+                $bericht->action('Inloggen', route('login'));
+            }
         }
 
         return $bericht->salutation($this->schoolSalutation($notifiable));

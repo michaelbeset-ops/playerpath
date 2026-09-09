@@ -263,7 +263,7 @@ class EnrollmentTest extends TestCase
         Notification::assertSentTo($ouder, InschrijvingGoedgekeurd::class, function (InschrijvingGoedgekeurd $m) use ($ouder) {
             $mail = $m->toMail($ouder);
             $this->assertNull($mail->actionUrl);
-            $this->assertStringContainsString('bij de school zelf', implode(' ', $mail->introLines));
+            $this->assertStringContainsString('contant af bij de school', implode(' ', $mail->introLines));
 
             return true;
         });

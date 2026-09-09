@@ -4,11 +4,11 @@ namespace App\Notifications;
 
 use App\Enums\Role;
 use App\Models\Invitation;
+use App\Support\Mail\MailBrand;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use Illuminate\Support\Facades\Storage;
 
 /**
  * "Je bent uitgenodigd" — de eerste mail die iemand van deze school krijgt.
@@ -51,29 +51,24 @@ class Uitnodiging extends Notification implements ShouldQueue
 
         $kinderen = $this->invitation->players()->pluck('first_name')->all();
 
-        return (new MailMessage)
+        $bericht = (new MailMessage)
             ->from(config('mail.from.address'), $school->name)
-            ->subject($school->name.' nodigt je uit')
-            ->markdown('mail.uitnodiging', [
-                'school' => $school,
-                'logo' => $this->logo($school),
-                'naam' => $this->invitation->name,
-                'isOuder' => $isOuder,
-                'kinderen' => $kinderen,
-                'url' => url('/uitnodiging/'.$this->invitation->token),
-                'verlooptOp' => $this->invitation->expires_at->translatedFormat('j F Y'),
-            ]);
-    }
+            ->subject($school->name.' nodigt je uit');
 
-    /**
-     * Het logo van de school, als er een is.
-     *
-     * Een absolute URL, want een mailprogramma heeft niets aan een pad. Zonder
-     * logo staat de naam er groot; het logo van PlayerPath hoort hier niet, dat
-     * zou de indruk wekken dat de mail van ons komt.
-     */
-    protected function logo(?object $school): ?string
-    {
-        return $school?->logo_path === null ? null : url(Storage::url($school->logo_path));
+        // Antwoorden hoort bij de school te komen: iemand die op een
+        // uitnodiging reageert schrijft aan zijn voetbalschool.
+        if (filled($school->contact_email)) {
+            $bericht->replyTo($school->contact_email, $school->name);
+        }
+
+        return $bericht->markdown('mail.uitnodiging', [
+            'merk' => MailBrand::describe($school),
+            'school' => $school,
+            'naam' => $this->invitation->name,
+            'isOuder' => $isOuder,
+            'kinderen' => $kinderen,
+            'url' => url('/uitnodiging/'.$this->invitation->token),
+            'verlooptOp' => $this->invitation->expires_at->translatedFormat('j F Y'),
+        ]);
     }
 }

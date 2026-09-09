@@ -35,11 +35,10 @@ class IncassoAankondiging extends Notification implements ShouldQueue
 
         return $this->schoolMail($notifiable)
             ->subject("Vooraankondiging: {$bedrag} wordt rond {$this->collectsOn->translatedFormat('j F')} afgeschreven")
-            ->greeting('Hallo')
-            ->line("Rond **{$this->collectsOn->translatedFormat('j F Y')}** schrijven we **{$bedrag}** af van je rekening, via automatische incasso.")
-            ->line("Het gaat om: {$this->payment->description}.")
-            ->line('Klopt er iets niet? Neem dan vóór die datum contact op met de school.')
-            ->action('Bekijk je betalingen', route('billing.index'))
+            ->greeting('Vooraankondiging van een incasso')
+            ->line("Rond **{$this->collectsOn->translatedFormat('j F Y')}** schrijven we **{$bedrag}** af van je rekening voor {$this->payment->description}.")
+            ->line('Zorg dat het bedrag er rond die dag op staat. Klopt er iets niet? Neem dan vóór die datum contact met ons op.')
+            ->action('Naar je betalingen', route('billing.index'))
             ->salutation($this->schoolSalutation($notifiable));
     }
 

@@ -38,8 +38,8 @@ class PlekVrijgekomen extends Notification implements ShouldQueue
     {
         $bericht = $this->schoolMail($notifiable)
             ->subject('Er is een plek vrij: '.$this->product->name)
-            ->greeting('Goed nieuws')
-            ->line("{$this->player->first_name} heeft een plek bij **{$this->product->name}**.");
+            ->greeting("Er is een plek vrij voor {$this->player->first_name}")
+            ->line("{$this->player->first_name} kan meedoen aan **{$this->product->name}**.");
 
         if ($this->product->starts_on !== null) {
             $bericht->line('Het begint op '.$this->product->starts_on->translatedFormat('j F Y').'.');

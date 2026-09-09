@@ -1919,7 +1919,65 @@ erger dan geen.
   verraden bij welke school het kind zit als de naam.
 - E-mails gaan uit naam van de school (`Notifications\Concerns\SendsFromSchool`).
   Alleen de afzendernaam; het adres blijft van het platform, want een eigen
-  afzenderadres vraagt SPF- en DKIM-records bij de school zelf.
+  afzenderadres vraagt SPF- en DKIM-records bij de school zelf. Zie hieronder.
+
+### De e-mails
+
+Mail is het enige deel van het product dat je niet in de app kunt controleren:
+je ziet hem pas als hij verstuurd is, en dan is het te laat. Daarom staat alles
+wat een mail eruit laat zien op **één plek**, en is er een manier om ze
+allemaal tegelijk te bekijken.
+
+#### De schil
+
+De gedeelde schil staat in `resources/views/vendor/mail` (de componenten) en
+`resources/views/vendor/notifications/email.blade.php` (elke melding). Het
+thema is `themes/playerpath.css` — de lichte kant uit hoofdstuk 4: gebroken wit
+als werkvloer, witte kaart met rand én schaduw, marineblauwe tekst. Vier dingen
+die je niet moet omdraaien:
+
+- **De mail draagt de school, niet PlayerPath.** Logo of naam bovenaan, de
+  merkkleur op de knop, contactgegevens in de voet, en alleen onderaan de kleine
+  regel "Verstuurd met PlayerPath". Een ouder heeft zijn kind bij Keepersschool
+  Rob aangemeld; herkent hij de afzender niet, dan opent hij de mail niet, en
+  dan is een betaalherinnering of een afgelasting waardeloos.
+- **De merkkleur gaat inline mee** via `Support\Mail\MailBrand`, want een
+  mailprogramma kent geen CSS-variabelen. Die klasse is de enige plek die hem
+  uitrekent, met dezelfde contrastcorrectie als de app — een school die
+  knalgeel koos krijgt anders een knop met onleesbare letters, en in een mail
+  valt dat niet meer te herstellen. **Statuskleuren blijven van PlayerPath**:
+  een foutknop is rood, ook bij een school met een eigen kleur.
+- **Antwoorden komt bij de school** (`replyTo` op haar contactadres, als ze er
+  een heeft). Een ouder die op een betaalmail reageert schrijft aan zijn
+  voetbalschool, niet aan een postbus die niemand leest.
+- **Mobiel eerst.** Onder 600px vult de kaart het scherm, onder 500px pakt de
+  knop de volle breedte; hij is altijd minstens 44 pixels hoog. Wat je niet kunt
+  inlinen (de media queries) staat in de `<style>` van `layout.blade.php`, de
+  rest komt uit het thema, want een groot deel van de mailprogramma's gooit een
+  `<style>` weg.
+
+#### De teksten
+
+- **De kop is de boodschap, niet een begroeting.** "Hallo" op de duurste regel
+  van de mail is een weggegooide regel; er staat nu "Sem is ingeschreven" of
+  "De betaling is niet gelukt". Dezelfde zin als het onderwerp, zodat een ouder
+  na het openen ziet dat hij goed zit.
+- **De eerste zin wordt de voorbeeldregel in de inbox** (de preheader). Die
+  wordt automatisch afgeleid, zonder opmaaktekens — dus de eerste `line()` van
+  een melding moet op zichzelf iets zeggen.
+- **Eén knop per mail.** `MailMessage::action()` kán er maar één, en een tweede
+  aanroep overschrijft stilletjes de eerste — daar verdween ooit precies de
+  betaalknop waar de mail voor bedoeld was. Is er al een knop, dan wordt het
+  tweede ding een zin.
+- **Toon: rustig en feitelijk.** Geen dreiging over een vergeten incasso, geen
+  superlatieven over talent. Wat er gebeurd is, en wat je nu kunt doen.
+
+#### Ze allemaal bekijken
+
+`php artisan mail:preview` schrijft elke mail als HTML-bestand weg (standaard
+`storage/app/mail-preview`), met een index. Dat gebeurt in een transactie die
+wordt teruggedraaid: er blijft geen verzonnen kind, order of rekening achter.
+Meet een wijziging op 375 pixels, net als elk ander scherm.
 
 ### PWA en productie (Fase 12)
 
