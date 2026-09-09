@@ -51,49 +51,50 @@ Zet in de Nginx-site de servernaam op `playerpath.nl *.playerpath.nl`.
 
 ## 3. Omgeving (.env)
 
-```dotenv
-APP_NAME=PlayerPath
-APP_ENV=production
-APP_DEBUG=false
-APP_URL=https://playerpath.nl
-APP_DOMAIN=playerpath.nl
+**`.env.production.example` in de repo is het volledige bestand**, met uitleg
+per blok. Plak het in Forge (Site → Environment) en vul de lege waarden in.
+Hier staan alleen de keuzes die je niet mag omdraaien:
 
-APP_LOCALE=nl
-APP_FALLBACK_LOCALE=nl
-APP_TIMEZONE=Europe/Amsterdam
-
-DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
-DB_DATABASE=playerpath
-DB_USERNAME=forge
-DB_PASSWORD=...
-
-CACHE_STORE=redis
-QUEUE_CONNECTION=redis
-SESSION_DRIVER=redis
-REDIS_HOST=127.0.0.1
-
-MAIL_MAILER=smtp
-MAIL_HOST=smtp-relay.brevo.com
-MAIL_PORT=587
-MAIL_USERNAME=...
-MAIL_PASSWORD=...
-MAIL_FROM_ADDRESS=noreply@playerpath.nl
-MAIL_FROM_NAME=PlayerPath
-
-MOLLIE_KEY=live_...
-```
-
-`APP_DEBUG=false` is niet onderhandelbaar. Met debug aan krijgt iedere bezoeker
-bij een fout je stacktrace, je databasenaam en je omgevingsvariabelen te zien.
+- **`APP_DEBUG=false` is niet onderhandelbaar.** Met debug aan krijgt iedere
+  bezoeker bij een fout je stacktrace, je databasenaam en je
+  omgevingsvariabelen te zien.
+- **`LOG_LEVEL=warning`**, niet `debug`. Een productielogboek vol queries is
+  onleesbaar, en het staat vol met gegevens van kinderen.
+- **`APP_DOMAIN` moet gezet zijn**, anders leidt `Branding::fromHost()` geen
+  enkel subdomein af en ziet elke school het merk van PlayerPath.
+- **`SESSION_DOMAIN` bepaalt of één keer inloggen genoeg is.** Laat je hem
+  leeg, dan hoort de sessie bij precies één host, en moet een ouder die vanuit
+  een mail op `playerpath.nl` binnenkomt opnieuw inloggen zodra hij op het
+  subdomein van zijn school komt. Zet hem daarom op `.playerpath.nl`. Dat is
+  veilig: het subdomein bepaalt alleen de huisstijl, welke gegevens iemand
+  ziet hangt uitsluitend van zijn account af (CLAUDE.md 3.1).
 
 **Mail bij Brevo:** zet SPF, DKIM en DMARC voor `playerpath.nl` klaar vóór de
 eerste school. Zonder die records belandt een wachtwoord-vergeten-mail in de
 spammap, en dan kan een ouder niet inloggen.
 
+1. Brevo → Senders, Domains & Dedicated IPs → **Domains** → `playerpath.nl`
+   toevoegen. Brevo geeft dan twee `TXT`-records (DKIM en een verificatie).
+2. Zet er zelf een SPF- en een DMARC-record bij:
+
+   | Naam | Type | Waarde |
+   |---|---|---|
+   | `@` | TXT | `v=spf1 include:spf.brevo.com ~all` |
+   | `_dmarc` | TXT | `v=DMARC1; p=none; rua=mailto:dmarc@playerpath.nl` |
+
+   Begin met `p=none`: dat rapporteert wel en weigert niets. Pas als je een
+   paar weken schone rapporten hebt kun je naar `p=quarantine`.
+3. Maak de SMTP-sleutel onder **SMTP & API**; die vult `MAIL_USERNAME` en
+   `MAIL_PASSWORD`.
+
 De afzendernaam van elke mail is de school; het afzenderadres blijft van het
 platform. Een eigen afzenderadres per school kan pas als die school haar eigen
 DNS-records aanlevert.
+
+**Controleer de mail vóór de eerste school.** `php artisan mail:preview` op de
+server rendert alle 22 mails; kijk of het logo en de merkkleur van de school
+kloppen, en stuur er daarna één echt naar jezelf via `school:create` +
+wachtwoord-vergeten.
 
 ## 4. Deploy-script (Forge)
 
