@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Enums\Role;
 use App\Models\Invitation;
 use App\Support\Mail\MailBrand;
+use App\Support\Tenancy\WithSchool;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -42,6 +43,19 @@ class Uitnodiging extends Notification implements ShouldQueue
     {
         // Alleen mail: de ontvanger heeft nog geen account om iets in te tonen.
         return ['mail'];
+    }
+
+    /**
+     * De school komt hier uit de uitnodiging en niet uit de ontvanger — die
+     * heeft nog geen account. Zonder dit staat de scope dicht in de worker en
+     * levert `players()` niets op: dan noemt de mail "je kind" in plaats van de
+     * naam van het kind, precies in het bericht dat vertrouwen moet wekken.
+     *
+     * @return list<object>
+     */
+    public function middleware(object $notifiable, string $channel): array
+    {
+        return [new WithSchool($this->invitation->school_id)];
     }
 
     public function toMail(object $notifiable): MailMessage

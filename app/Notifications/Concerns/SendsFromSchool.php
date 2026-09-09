@@ -4,6 +4,7 @@ namespace App\Notifications\Concerns;
 
 use App\Models\School;
 use App\Support\Mail\MailBrand;
+use App\Support\Tenancy\WithSchool;
 use Illuminate\Notifications\Messages\MailMessage;
 
 /**
@@ -30,6 +31,20 @@ use Illuminate\Notifications\Messages\MailMessage;
  */
 trait SendsFromSchool
 {
+    /**
+     * De school van de ontvanger geldt zolang deze melding verwerkt wordt.
+     *
+     * Zonder dit staat de global scope dicht in de queue-worker en levert elke
+     * query binnen `toMail()` of `toArray()` niets op — zonder foutmelding.
+     * Zie `Support\Tenancy\WithSchool`.
+     *
+     * @return list<object>
+     */
+    public function middleware(object $notifiable, string $channel): array
+    {
+        return [new WithSchool($this->schoolFor($notifiable)?->id)];
+    }
+
     protected function schoolMail(object $notifiable): MailMessage
     {
         return MailBrand::apply(new MailMessage, $this->schoolFor($notifiable));

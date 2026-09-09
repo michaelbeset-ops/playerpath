@@ -1972,6 +1972,31 @@ die je niet moet omdraaien:
 - **Toon: rustig en feitelijk.** Geen dreiging over een vergeten incasso, geen
   superlatieven over talent. Wat er gebeurd is, en wat je nu kunt doen.
 
+#### De wachtrij heeft ook een slot nodig
+
+Een mail wordt opgesteld in de **queue-worker**, niet in het verzoek. Daar is
+niemand ingelogd, dus de terugval in `AppServiceProvider`
+(`auth()->user()?->school`) levert niets op en de global scope staat
+fail-closed dicht. Voor de veiligheid precies goed; voor de inhoud precies
+fout — een query in `toMail()` geeft dan geen foutmelding maar een leeg
+antwoord, en dus een mail waar de helft uit weg is: een inschrijfbevestiging
+zonder betaalknop, een uitnodiging die "je kind" zegt in plaats van de naam.
+
+`Support\Tenancy\WithSchool` is daarom voor de wachtrij wat `SetCurrentSchool`
+voor een webverzoek is: een job-middleware die de school van de **ontvanger**
+zet zolang de melding verwerkt wordt. `SendsFromSchool` hangt hem aan elke
+melding; `Uitnodiging` doet het zelf, want daar komt de school uit de
+uitnodiging — de ontvanger heeft nog geen account.
+
+- **De school komt van de ontvanger, nooit uit de payload.** Dezelfde regel als
+  bij een webverzoek. `NotificationSender` roept `middleware()` per ontvanger
+  aan, dus dat kan.
+- **Alleen het id reist mee**; de school wordt opgehaald op het moment dat het
+  werk draait. Bestaat hij niet meer, dan blijft de scope dicht.
+- **Een nieuwe melding met `SendsFromSchool` krijgt dit vanzelf.** Zet je een
+  melding op zonder die trait, denk er dan aan — het gaat niet stuk, het wordt
+  stil verkeerd.
+
 #### Ze allemaal bekijken
 
 `php artisan mail:preview` schrijft elke mail als HTML-bestand weg (standaard
