@@ -25,11 +25,13 @@
      kunt reageren is een mail waarover gebeld wordt. --}}
 <x-slot:footer>
 <x-mail::footer>
+@if ($m['platform'])
 {{ $m['name'] }}@if ($m['email']) · [{{ $m['email'] }}](mailto:{{ $m['email'] }})@endif @if ($m['phone']) · {{ $m['phone'] }}@endif
 
-@if ($m['platform'])
 Verstuurd met PlayerPath.
 @else
+{{-- Zonder school is PlayerPath zelf de afzender: dan één regel, niet de
+     naam en daarna nog eens "© PlayerPath". --}}
 © {{ date('Y') }} {{ $m['name'] }}
 @endif
 </x-mail::footer>

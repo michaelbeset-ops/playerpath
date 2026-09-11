@@ -23,9 +23,9 @@
 {{-- Voet --}}
 <x-slot:footer>
 <x-mail::footer>
+@if ($m['platform'])
 {{ $m['name'] }}@if ($m['email']) · {{ $m['email'] }}@endif @if ($m['phone']) · {{ $m['phone'] }}@endif
 
-@if ($m['platform'])
 Verstuurd met PlayerPath.
 @else
 © {{ date('Y') }} {{ $m['name'] }}
