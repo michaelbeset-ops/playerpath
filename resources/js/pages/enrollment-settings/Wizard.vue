@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import InputError from '@/components/InputError.vue';
+import EnrollmentFlow from '@/components/onboarding/EnrollmentFlow.vue';
+import EnrollmentPreview from '@/components/onboarding/EnrollmentPreview.vue';
 import InviteForm, { type Uitnodiging } from '@/components/onboarding/InviteForm.vue';
 import ToggleSwitch from '@/components/ToggleSwitch.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -277,9 +279,8 @@ const trainingBetaalwijzen = [
 const uitleg: Record<number, string[]> = {
     1: ['Dit is wat ouders als eerste zien: de naam op je inschrijfpagina, je logo in de app en boven elke e-mail.'],
     2: [
-        'Hier bepaal je hoe ouders bij jou binnenkomen: wat ze kunnen afnemen en op welke momenten ze mogen instappen.',
-        'Alles mag naast elkaar. Een school met een doorlopende training kan ook kampen hebben en losse trainingen openzetten.',
-        'Vink aan wat bij jou past; je kunt meerdere antwoorden kiezen.',
+        'Vier korte blokken. Rechts (op een telefoon: hierboven) zie je meteen wat een ouder straks op je inschrijfpagina ziet; het verandert mee met wat je aanvinkt.',
+        'Alles mag naast elkaar, en je kunt overal meerdere antwoorden kiezen.',
     ],
     3: ['Eenmalige kosten bij de eerste inschrijving, los van de training zelf. Ze komen automatisch op de rekening en staan op het formulier.'],
     4: [
@@ -332,7 +333,7 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
     <Head :title="huidige.title + ' - Inschrijven en betalen'" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="mx-auto w-full max-w-2xl p-4 pb-28">
+        <div class="mx-auto w-full p-4 pb-28" :class="step === 2 ? 'max-w-5xl' : 'max-w-2xl'">
             <!-- Waar je bent. Zes bolletjes, de huidige groen, gedane met een vinkje. -->
             <div class="flex items-center justify-between gap-2">
                 <p class="text-sm text-muted-foreground">Stap {{ step }} van {{ steps.length }}</p>
@@ -543,10 +544,47 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
 
                 <!-- ================= 2. Inschrijven ================= -->
                 <template v-if="step === 2">
+                    <div class="lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-6">
+                    <div class="space-y-4">
+                    <!-- Eerst zien hoe het loopt, dan pas kiezen. -->
                     <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
-                        <p class="font-medium">1. Wat bied je aan?</p>
+                        <p class="font-medium">Zo verloopt een inschrijving bij jou</p>
                         <p class="mt-1 text-sm text-muted-foreground">
-                            Alleen wat je aanzet staat straks in het aanbodformulier. Meerdere mag; je kunt dit altijd uitbreiden.
+                            Van klik tot kind in de groep. Wie wat doet verandert mee met je antwoorden hier en bij Betalen.
+                        </p>
+                        <div class="mt-4">
+                            <EnrollmentFlow
+                                :approval="s.approval"
+                                :payment-types="s.default_payment.types"
+                                :trial-enabled="f.trial_enabled && f.offering_types.includes('proefles')"
+                            />
+                        </div>
+                    </section>
+
+                    <!-- Op een telefoon staat het voorbeeld hier, vóór de vragen. -->
+                    <div class="lg:hidden">
+                        <EnrollmentPreview
+                            :school-name="school.name"
+                            :slug="school.slug"
+                            :offering-types="f.offering_types"
+                            :moments="f.enrollment_moments"
+                            :training-open="f.training_open || f.enrollment_moments.includes('single_training')"
+                            :training-payment-methods="f.training_payment_methods"
+                            :training-requires-approval="f.training_requires_approval"
+                            :trial-enabled="f.trial_enabled"
+                            :trial-amount="f.trial_amount"
+                        />
+                    </div>
+
+                    <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
+                        <p class="text-xs font-medium uppercase tracking-wide text-primary">Blok 1 van 4</p>
+                        <p class="mt-1 text-lg font-semibold">Wat bied je aan?</p>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            Elke vorm die je aanvinkt wordt een soort kaart op je inschrijfpagina, en een keuze in je aanbodformulier. Meerdere mag;
+                            uitbreiden kan altijd.
+                        </p>
+                        <p class="mt-2 text-sm">
+                            <span class="font-medium">Voor de ouder:</span> hij ziet alleen wat jij aanzet, met prijs, data en hoeveel plekken er nog zijn.
                         </p>
 
                         <div class="mt-4 grid gap-2">
@@ -579,8 +617,14 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                     </section>
 
                     <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
-                        <p class="font-medium">2. Wanneer kunnen ouders inschrijven?</p>
-                        <p class="mt-1 text-sm text-muted-foreground">Kies alles wat bij jou voorkomt. De inschrijfpagina volgt dit.</p>
+                        <p class="text-xs font-medium uppercase tracking-wide text-primary">Blok 2 van 4</p>
+                        <p class="mt-1 text-lg font-semibold">Wanneer kunnen ouders inschrijven?</p>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            Kies alles wat bij jou voorkomt. Dit bepaalt de zin bovenaan je inschrijfpagina en welk aanbod er wanneer open staat.
+                        </p>
+                        <p class="mt-2 text-sm">
+                            <span class="font-medium">Voor de ouder:</span> hij weet meteen of hij nu kan instappen, of moet wachten op een volgend blok.
+                        </p>
 
                         <div class="mt-4 grid gap-2">
                             <button
@@ -614,9 +658,15 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                     </section>
 
                     <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
-                        <p class="font-medium">3. Losse trainingen</p>
+                        <p class="text-xs font-medium uppercase tracking-wide text-primary">Blok 3 van 4</p>
+                        <p class="mt-1 text-lg font-semibold">Losse trainingen</p>
                         <p class="mt-1 text-sm text-muted-foreground">
-                            Wat een nieuwe training standaard krijgt. Per training kun je er altijd van afwijken.
+                            Naast een blok of abonnement kan een kind ook meedoen aan precies één training. Dit is wat een nieuwe training standaard
+                            krijgt; per training kun je ervan afwijken.
+                        </p>
+                        <p class="mt-2 text-sm">
+                            <span class="font-medium">Voor de ouder:</span> in zijn agenda staat bij zo'n training een knop Inschrijven, met hoeveel plekken er
+                            nog zijn. Zit het vol, dan komt hij op de wachtlijst.
                         </p>
 
                         <div class="mt-3 divide-y divide-border">
@@ -670,11 +720,24 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                         </div>
                     </section>
 
-                    <section v-if="f.offering_types.includes('proefles')" class="rounded-xl border border-border bg-card p-5 shadow-sm">
-                        <p class="mb-3 font-medium">4. Proefles</p>
-                        <ToggleSwitch v-model="f.trial_enabled" label="Proefles aanbieden" description="Een ouder kan eerst één keer meedoen." />
+                    <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
+                        <p class="text-xs font-medium uppercase tracking-wide text-primary">Blok 4 van 4</p>
+                        <p class="mt-1 text-lg font-semibold">Proefles</p>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            Eén keer meetrainen om te kijken of het bevalt. De proefles komt vanzelf op je inschrijfpagina te staan; je hoeft hem niet
+                            als aanbod aan te maken.
+                        </p>
+                        <p v-if="!f.offering_types.includes('proefles')" class="mt-3 rounded-lg bg-secondary p-3 text-sm text-muted-foreground">
+                            Vink in blok 1 "Proefles" aan om hem aan te bieden.
+                        </p>
+                        <ToggleSwitch
+                            v-else
+                            v-model="f.trial_enabled"
+                            label="Proefles aanbieden"
+                            description="Voor de ouder: een kaart 'Proefles' bovenaan de pagina, gratis of tegen een klein bedrag."
+                        />
 
-                        <div v-if="f.trial_enabled" class="mt-3 border-t border-border pt-4">
+                        <div v-if="f.trial_enabled && f.offering_types.includes('proefles')" class="mt-3 border-t border-border pt-4">
                             <label for="trial_amount" class="block text-sm font-medium">Wat kost de proefles?</label>
                             <p class="text-xs text-muted-foreground">Leeg of 0 betekent gratis.</p>
                             <div class="mt-2 flex items-center gap-2">
@@ -684,6 +747,23 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                             <InputError class="mt-2" :message="form.errors.trial_amount" />
                         </div>
                     </section>
+                    </div>
+
+                    <!-- Op een groot scherm blijft het voorbeeld in beeld terwijl je scrolt. -->
+                    <div class="hidden lg:sticky lg:top-24 lg:block">
+                        <EnrollmentPreview
+                            :school-name="school.name"
+                            :slug="school.slug"
+                            :offering-types="f.offering_types"
+                            :moments="f.enrollment_moments"
+                            :training-open="f.training_open || f.enrollment_moments.includes('single_training')"
+                            :training-payment-methods="f.training_payment_methods"
+                            :training-requires-approval="f.training_requires_approval"
+                            :trial-enabled="f.trial_enabled"
+                            :trial-amount="f.trial_amount"
+                        />
+                    </div>
+                    </div>
                 </template>
 
                 <!-- ================= 3. Kosten erbij ================= -->
@@ -729,6 +809,18 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
 
                 <!-- ================= 4. Betalen ================= -->
                 <template v-else-if="step === 4">
+                    <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
+                        <p class="font-medium">Zo verloopt een inschrijving bij jou</p>
+                        <p class="mt-1 text-sm text-muted-foreground">Kijk wat er verandert als je hieronder iets aanvinkt.</p>
+                        <div class="mt-4">
+                            <EnrollmentFlow
+                                :approval="f.approval"
+                                :payment-types="f.default_payment_types"
+                                :trial-enabled="s.trial.enabled && s.offering_types.includes('proefles')"
+                            />
+                        </div>
+                    </section>
+
                     <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
                         <p class="font-medium">Welke betaalvormen bied je aan?</p>
                         <p class="mt-1 text-sm text-muted-foreground">

@@ -68,6 +68,7 @@ class EnrollmentSettingsController extends Controller
         return Inertia::render('enrollment-settings/Index', [
             'supportPhone' => self::SUPPORT_PHONE,
             'justCompleted' => (bool) $request->session()->get('wizardCompleted', false),
+            'slug' => $school->slug,
             'settings' => $this->presenteer($instellingen),
             'consents' => ConsentDocument::allForSchool(),
             'development' => Features::enabledFor($school, Feature::Ontwikkeling),

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import FlashMessage from '@/components/FlashMessage.vue';
+import EnrollmentFlow from '@/components/onboarding/EnrollmentFlow.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
-import { ArrowRight, ChevronRight, Phone, Settings2 } from 'lucide-vue-next';
+import { ArrowRight, ChevronRight, ExternalLink, Phone, Settings2 } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 /**
@@ -32,6 +33,7 @@ const props = defineProps<{
     steps: Stap[];
     supportPhone: string;
     justCompleted: boolean;
+    slug: string;
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Inschrijven en betalen', href: '/instellingen/inschrijven' }];
@@ -221,9 +223,28 @@ const samenvatting = computed<Record<string, string[]>>(() => {
             <!-- Zo werkt het nu, in gewone taal. -->
             <section class="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm" aria-labelledby="verhaal">
                 <h2 id="verhaal" class="font-semibold">Zo werkt het nu bij jouw school</h2>
-                <div class="mt-3 space-y-3 text-sm leading-relaxed text-foreground/85">
+
+                <div class="mt-4">
+                    <EnrollmentFlow
+                        :approval="s.approval"
+                        :payment-types="s.default_payment.types"
+                        :trial-enabled="s.trial.enabled && (s.offering_types as string[]).includes('proefles')"
+                    />
+                </div>
+
+                <div class="mt-5 space-y-3 text-sm leading-relaxed text-foreground/85">
                     <p v-for="(regel, i) in verhaal" :key="i">{{ regel }}</p>
                 </div>
+
+                <a
+                    :href="'/inschrijven/' + slug"
+                    target="_blank"
+                    rel="noopener"
+                    class="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-background px-4 text-sm font-medium transition hover:border-primary"
+                >
+                    Bekijk je inschrijfpagina zoals een ouder hem ziet
+                    <ExternalLink class="size-4" />
+                </a>
 
                 <div class="mt-5 flex flex-col gap-3 rounded-xl bg-primary/10 p-4 sm:flex-row sm:items-center">
                     <Phone class="size-5 shrink-0 text-primary" />

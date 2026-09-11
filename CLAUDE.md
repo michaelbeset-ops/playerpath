@@ -961,6 +961,14 @@ ontwikkelingslaag). Drie dingen die je niet moet omdraaien:
   echt óf-óf is (goedkeuren, ziekte) is een keuzerondje, en dat zegt de
   vraag er dan bij. Een oude, enkelvoudige `default_payment.type` blijft
   gelden via `paymentTypes()` tot de school hem aanpast.
+- **De stap Inschrijven laat zien wat een keuze doet, niet alleen wat hij
+  heet.** Vier genummerde blokken, elk met een regel "Voor de ouder: …", en
+  ernaast (op een telefoon: erboven) `onboarding/EnrollmentPreview.vue`: een
+  nagebouwde inschrijfpagina met verzonnen namen en prijzen die meebeweegt
+  met de vinkjes, plus een knop naar de echte pagina in een nieuw tabblad.
+  Bovenaan tekent `onboarding/EnrollmentFlow.vue` de keten van klik tot kind
+  in de groep — wie doet wat — en die verandert mee met goedkeuren en
+  betaalvormen. Dezelfde keten staat bij Betalen en op de samenvatting.
 - **De keuzes vullen nieuwe trainingen en nieuw aanbod voor.**
   `trainingDefaults()` zet los inschrijven, betaalwijze en goedkeuring in het
   trainingsformulier; de betaalvormen staan als extra betaalopties klaar bij
