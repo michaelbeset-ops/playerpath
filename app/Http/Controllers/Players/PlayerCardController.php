@@ -39,8 +39,9 @@ class PlayerCardController extends Controller
             ],
             // De kaart zelf, uit dezelfde bron als het dashboard en de deel-link.
             'card' => $this->presenter->for($player),
-            // Een foto toevoegen gebeurt op de spelerspagina; alleen voor wie dat mag.
-            'photoHref' => auth()->user()->can('update', $player) ? route('players.show', $player) : null,
+            // De foto zet je op de kaart zelf: de eigenaar, de ouders van dit
+            // kind en het kind zelf. Zie PlayerPolicy::updatePhoto.
+            'canPhoto' => auth()->user()->can('updatePhoto', $player),
             'reportCount' => $player->reports()->count(),
             'lastReport' => $laatste ? [
                 'reported_on' => $laatste->reported_on->format('d-m-Y'),

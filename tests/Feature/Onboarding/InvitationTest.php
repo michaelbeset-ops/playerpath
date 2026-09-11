@@ -97,10 +97,13 @@ class InvitationTest extends TestCase
                 ->where('invitation.children', ['Sem'])
             );
 
+        // Een ouder gaat eerst langs de foto van zijn kind; daar mag hij
+        // "later" zeggen, maar de vraag komt op het moment dat hij er tijd
+        // voor heeft.
         $this->post('/uitnodiging/'.$uitnodiging->token, [
             'password' => 'EenGoedWachtwoord!1',
             'password_confirmation' => 'EenGoedWachtwoord!1',
-        ])->assertRedirect('/dashboard');
+        ])->assertRedirect('/welkom/foto');
 
         $ouder = User::where('email', 'marieke@voorbeeld.nl')->firstOrFail();
 

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Onboarding\AcceptInvitationController;
 use App\Http\Controllers\Onboarding\InvitationController;
 use App\Http\Controllers\Onboarding\OnboardingController;
+use App\Http\Controllers\Onboarding\PhotoPromptController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['auth', 'verified'])->group(function () {
@@ -21,6 +22,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Het ouderscherm zoals een ouder het ziet, voor de eigenaar.
     Route::get('onboarding/ouderweergave', [OnboardingController::class, 'parentPreview'])->name('onboarding.parent-preview');
     Route::post('onboarding/welkom/gezien', [OnboardingController::class, 'dismissIntro'])->name('onboarding.intro.dismiss');
+    // De foto, meteen na het activeren van een ouder- of speleraccount.
+    Route::get('welkom/foto', [PhotoPromptController::class, 'show'])->name('onboarding.photo');
     Route::delete('onboarding/voorbeelddata', [OnboardingController::class, 'removeDemo'])->name('onboarding.demo.destroy');
 });
 

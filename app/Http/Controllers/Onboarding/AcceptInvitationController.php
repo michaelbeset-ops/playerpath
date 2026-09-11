@@ -108,7 +108,13 @@ class AcceptInvitationController extends Controller
         Auth::login($gebruiker);
         $request->session()->regenerate();
 
-        return redirect()->route('dashboard')->with('status', 'Je account is klaar. Welkom!');
+        // Een ouder of speler gaat eerst langs de foto: dat is het moment
+        // waarop hij er tijd voor heeft, en zonder foto is de kaart de helft
+        // minder waard. Het scherm stuurt zelf door als er niets te doen is.
+        $rol = $uitnodiging->role;
+        $naar = in_array($rol, [Role::Ouder->value, Role::Speler->value], true) ? 'onboarding.photo' : 'dashboard';
+
+        return redirect()->route($naar)->with('status', 'Je account is klaar. Welkom!');
     }
 
     /**

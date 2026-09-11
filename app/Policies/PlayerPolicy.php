@@ -69,6 +69,30 @@ class PlayerPolicy
     }
 
     /**
+     * De foto op de kaart.
+     *
+     * Ruimer dan `update`: de ouders van dít kind en het kind zelf (met een
+     * eigen inlog) mogen hem zetten — het is hun kaart. De trainer niet: de
+     * foto van andermans kind is niet van hem.
+     */
+    public function updatePhoto(User $user, Player $player): bool
+    {
+        if (! $user->belongsToSameSchool($player)) {
+            return false;
+        }
+
+        if ($user->isEigenaar()) {
+            return true;
+        }
+
+        if ($user->isOuder()) {
+            return $user->children()->whereKey($player->getKey())->exists();
+        }
+
+        return $user->isSpeler() && $player->user_id === $user->id;
+    }
+
+    /**
      * De kaart publiek deelbaar maken.
      *
      * Bewust NIET de trainer: die beslist niet of het kind van iemand anders

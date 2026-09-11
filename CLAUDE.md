@@ -1646,9 +1646,23 @@ moet weglaten:
   hij staat namelijk ook op een gedeelde kaart.
 
 `photo_path` staat bij `Player` en `User` **niet in `$fillable`**: hij gaat
-alleen via die klasse. Wie wat mag staat in de policies: `update` op de speler
-(de eigenaar) en `update` op de gebruiker (jezelf, of de eigenaar binnen zijn
-eigen school). **Geen svg**: dat is uitvoerbare opmaak op een deelbare pagina.
+alleen via die klasse. Wie wat mag staat in de policies: `updatePhoto` op de
+speler (de eigenaar, de ouders van dít kind, en het kind zelf met een eigen
+inlog — het is hun kaart; de trainer niet) en `update` op de gebruiker (jezelf,
+of de eigenaar binnen zijn eigen school). **Geen svg**: dat is uitvoerbare
+opmaak op een deelbare pagina.
+
+**De foto komt vroeg, maar wordt niet afgedwongen.** Na het activeren van een
+ouder- of speleraccount komt eerst `/welkom/foto` (`PhotoPromptController`):
+de kinderen zonder foto, met per kind de kiezer, en "Later doen". Een
+verplichte foto is waar iemand afhaakt. Wel blijft de herinnering staan tot
+de foto er is: "+ Foto toevoegen" op het kaartje van het kind op het
+gezinsdashboard, de knop op de kaart zelf (spelerdashboard én kaartpagina),
+en een groen omrand fotovak onder de kaart (`#foto`). Kiezen gaat via
+`PhotoUpload`: op een telefoon een cameraknop (`capture="user"`) én de
+galerij, en daarna `PhotoCrop` — schuiven en zoomen in een vierkant vak,
+uitvoer 512×512, zodat het gezicht op de kaart staat en niet het midden van
+een liggende telefoonfoto.
 
 De gedeelde kaart toont de foto wél en de achternaam niet. Dat is een bewuste
 afweging: een foto zonder naam of school laat een vreemde niets doen, en zonder

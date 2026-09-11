@@ -65,6 +65,8 @@ const props = withDefaults(
         card: Kaart;
         /** Waar je een foto toevoegt; leeg als deze kijker dat niet mag. */
         photoHref?: string | null;
+        /** Of de knop "Foto toevoegen" hier op de pagina zelf iets doet (emit `photo`). */
+        photoAction?: boolean;
         /** Voor wie de uitleg is: het gezin, of de trainer die de cijfers geeft. */
         audience?: 'gezin' | 'trainer';
         /** De deel-knop; op de gedeelde pagina zelf is die zinloos. */
@@ -80,10 +82,10 @@ const props = withDefaults(
         /** Speel de upgrade-flits af. */
         flash?: boolean;
     }>(),
-    { photoHref: null, audience: 'gezin', shareable: true, displayLevel: null, flash: false },
+    { photoHref: null, photoAction: false, audience: 'gezin', shareable: true, displayLevel: null, flash: false },
 );
 
-const emit = defineEmits<{ share: [] }>();
+const emit = defineEmits<{ share: []; photo: [] }>();
 
 const uitlegOpen = ref(false);
 
@@ -158,6 +160,10 @@ const upgradeTekst = computed(() => {
                             <Camera class="size-3.5" />
                             Foto toevoegen
                         </Link>
+                        <button v-else-if="photoAction" type="button" class="pp-foto-knop inline-flex min-h-11 items-center" @click="emit('photo')">
+                            <Camera class="size-3.5" />
+                            Foto toevoegen
+                        </button>
                     </div>
 
                     <div class="pp-foto-fade" aria-hidden="true"></div>

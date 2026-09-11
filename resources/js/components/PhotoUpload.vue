@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import Avatar from '@/components/Avatar.vue';
 import InputError from '@/components/InputError.vue';
+import PhotoCrop from '@/components/PhotoCrop.vue';
 import { router, useForm } from '@inertiajs/vue3';
-import { Camera, Trash2 } from 'lucide-vue-next';
+import { Camera, ImageIcon, Trash2 } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 /**
- * Een profielfoto kiezen of weghalen.
+ * Een profielfoto maken, kiezen of weghalen.
  *
- * Er is geen aparte opslaan-knop: je kiest een bestand en het staat er. Een
- * foto uploaden is één handeling, en er tussenuit stappen om nog een keer op
- * "opslaan" te drukken is precies het soort stap dat mensen halverwege laat
- * afhaken.
+ * Twee ingangen op een telefoon: de camera (een foto maken, hier en nu) en de
+ * galerij. Wat je kiest snij je eerst vierkant uit (PhotoCrop), en daarna
+ * gaat hij meteen weg — er is geen aparte opslaan-knop. Een foto uploaden is
+ * één handeling, en er tussenuit stappen om nog een keer op "opslaan" te
+ * drukken is precies het soort stap dat mensen halverwege laat afhaken.
  */
 const props = defineProps<{
     name: string;
@@ -24,27 +26,34 @@ const props = defineProps<{
 }>();
 
 const invoer = ref<HTMLInputElement | null>(null);
+const camera = ref<HTMLInputElement | null>(null);
 const form = useForm<{ photo: File | null }>({ photo: null });
+
+/** Het gekozen bestand, zolang het nog uitgesneden wordt. */
+const teKnippen = ref<File | null>(null);
+
+// Een cameraknop heeft alleen zin op een apparaat met een camera die je
+// vasthoudt; op een laptop opent hij dezelfde kiezer nog een keer.
+const heeftCamera = typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0;
 
 const kies = (event: Event) => {
     const bestand = (event.target as HTMLInputElement).files?.[0];
 
-    if (!bestand) {
-        return;
-    }
+    // Het veld leegmaken, anders kun je dezelfde foto niet nog eens kiezen
+    // nadat je hem hebt weggehaald of het uitsnijden hebt geannuleerd.
+    (event.target as HTMLInputElement).value = '';
 
-    form.photo = bestand;
+    if (bestand) {
+        teKnippen.value = bestand;
+    }
+};
+
+const verstuur = (blob: Blob) => {
+    teKnippen.value = null;
+    form.photo = new File([blob], 'foto.jpg', { type: 'image/jpeg' });
     form.post(props.action, {
         preserveScroll: true,
-        // Het veld leegmaken, anders kun je dezelfde foto niet nog eens kiezen
-        // nadat je hem hebt weggehaald.
-        onFinish: () => {
-            form.reset();
-
-            if (invoer.value) {
-                invoer.value.value = '';
-            }
-        },
+        onFinish: () => form.reset(),
     });
 };
 
@@ -53,6 +62,9 @@ const verwijder = () => {
         router.delete(props.action, { preserveScroll: true });
     }
 };
+
+/** Van buitenaf de kiezer openen, bijvoorbeeld vanaf de knop op de kaart. */
+defineExpose({ open: () => invoer.value?.click() });
 </script>
 
 <template>
@@ -73,6 +85,7 @@ const verwijder = () => {
             <Camera class="size-4" />
         </span>
         <input ref="invoer" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="kies" />
+        <PhotoCrop v-if="teKnippen" :file="teKnippen" :name="name" @done="verstuur" @cancel="teKnippen = null" />
     </button>
 
     <div v-else class="flex items-center gap-4">
@@ -81,13 +94,25 @@ const verwijder = () => {
         <div class="min-w-0">
             <div class="flex flex-wrap items-center gap-2">
                 <button
+                    v-if="heeftCamera"
+                    type="button"
+                    class="inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+                    :disabled="form.processing"
+                    @click="camera?.click()"
+                >
+                    <Camera class="size-4" />
+                    Foto maken
+                </button>
+
+                <button
                     type="button"
                     class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border bg-card px-3 text-sm font-medium transition hover:border-primary disabled:opacity-60"
                     :disabled="form.processing"
                     @click="invoer?.click()"
                 >
-                    <Camera class="size-4" />
-                    {{ photo ? 'Andere foto' : 'Foto kiezen' }}
+                    <ImageIcon v-if="heeftCamera" class="size-4" />
+                    <Camera v-else class="size-4" />
+                    {{ heeftCamera ? 'Uit galerij' : photo ? 'Andere foto' : 'Foto kiezen' }}
                 </button>
 
                 <button
@@ -101,10 +126,14 @@ const verwijder = () => {
                 </button>
             </div>
 
-            <p class="mt-1 text-xs text-muted-foreground">png, jpg of webp, hooguit 5 MB. Wordt vierkant bijgesneden.</p>
+            <p class="mt-1 text-xs text-muted-foreground">
+                {{ form.processing ? 'Bezig met opslaan…' : 'Je snijdt hem daarna vierkant uit. png, jpg of webp, hooguit 5 MB.' }}
+            </p>
             <InputError class="mt-1" :message="form.errors.photo" />
         </div>
 
         <input ref="invoer" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="kies" />
+        <input ref="camera" type="file" accept="image/*" capture="user" class="hidden" @change="kies" />
+        <PhotoCrop v-if="teKnippen" :file="teKnippen" :name="name" @done="verstuur" @cancel="teKnippen = null" />
     </div>
 </template>

@@ -73,8 +73,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('beschikbaarheid/uitzonderingen/{exception}', [AvailabilityController::class, 'destroyException'])->name('availability.exceptions.destroy');
     Route::get('personeel/beschikbaarheid', [AvailabilityController::class, 'team'])->name('availability.team');
 
-    // Profielfoto's. Wie wat mag staat in de policies: update op de speler
-    // (de eigenaar) en update op de gebruiker (jezelf, of de eigenaar).
+    // Profielfoto's. Wie wat mag staat in de policies: updatePhoto op de
+    // speler (eigenaar, ouders van dit kind, het kind zelf) en update op de
+    // gebruiker (jezelf, of de eigenaar).
     Route::post('players/{player}/photo', [PhotoController::class, 'storePlayer'])->name('players.photo.store');
     Route::delete('players/{player}/photo', [PhotoController::class, 'destroyPlayer'])->name('players.photo.destroy');
     Route::post('users/{user}/photo', [PhotoController::class, 'storeUser'])->name('users.photo.store');

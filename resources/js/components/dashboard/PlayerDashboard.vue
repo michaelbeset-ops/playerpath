@@ -132,7 +132,14 @@ const voortgangHref = computed(() => '/players/' + props.player.id + '/progress'
             <section>
                 <div class="theme-donker overflow-hidden rounded-3xl bg-background p-4 text-foreground sm:p-8">
                     <CardGlow :level="card.overall === null ? 'geen' : card.level.key">
-                        <PlayerCardVisual :card="card" audience="gezin" :shareable="card.overall !== null" @share="deel" />
+                        <!-- Zonder foto staat de knop op de kaart zelf; die brengt je naar het fotovak op de kaartpagina. -->
+                        <PlayerCardVisual
+                            :card="card"
+                            :photo-href="card.photo ? null : kaartHref + '#foto'"
+                            audience="gezin"
+                            :shareable="card.overall !== null"
+                            @share="deel"
+                        />
                     </CardGlow>
 
                     <!-- Nog geen rapport: dan staat er een staalgrijze kaart

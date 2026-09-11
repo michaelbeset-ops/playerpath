@@ -2,12 +2,13 @@
 import CardGlow from '@/components/CardGlow.vue';
 import FlashMessage from '@/components/FlashMessage.vue';
 import GoalList, { type Doel } from '@/components/GoalList.vue';
+import PhotoUpload from '@/components/PhotoUpload.vue';
 import PlayerCardVisual, { type Kaart } from '@/components/PlayerCardVisual.vue';
 import ReportCelebration, { type RapportWijziging } from '@/components/ReportCelebration.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { Check, Copy, Link2, Lock, TrendingUp, Trophy } from 'lucide-vue-next';
+import { Camera, Check, Copy, Link2, Lock, TrendingUp, Trophy } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 
 const props = defineProps<{
@@ -22,7 +23,8 @@ const props = defineProps<{
         rated_at: string | null;
     };
     card: Kaart;
-    photoHref: string | null;
+    /** Mag deze kijker de foto zetten: eigenaar, ouder van dit kind, het kind zelf. */
+    canPhoto: boolean;
     reportCount: number;
     lastReport: { reported_on: string; trainer: string | null; note: string | null } | null;
     canReport: boolean;
@@ -60,7 +62,21 @@ const vorigLevel = ref<string | null>(viering.value?.level.up ? viering.value.le
 const flits = ref(false);
 const levelUpZichtbaar = ref(false);
 
+// De foto: het vak onder de kaart. De knop op de kaart en de link
+// "Foto toevoegen" op het dashboard (#foto) komen hier allebei uit.
+const fotoBlok = ref<HTMLElement | null>(null);
+const fotoKiezer = ref<InstanceType<typeof PhotoUpload> | null>(null);
+
+const naarFoto = () => {
+    fotoBlok.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    fotoKiezer.value?.open();
+};
+
 onMounted(() => {
+    if (window.location.hash === '#foto') {
+        fotoBlok.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     if (!viering.value?.level.up) {
         return;
     }
@@ -115,18 +131,43 @@ const kopieer = async () => {
                 <CardGlow :level="vorigLevel ?? (player.overall_rating === null ? 'geen' : card.level.key)">
                     <PlayerCardVisual
                         :card="card"
-                        :photo-href="photoHref"
+                        :photo-action="canPhoto && !player.photo"
                         :audience="canReport ? 'trainer' : 'gezin'"
                         :shareable="share.can && player.overall_rating !== null"
                         :display-level="vorigLevel"
                         :flash="flits"
                         @share="naarDelen"
+                        @photo="naarFoto"
                     />
                 </CardGlow>
 
                 <p v-if="player.rated_at" class="mt-4 text-center text-xs text-muted-foreground">
                     Bijgewerkt op {{ player.rated_at }} &middot; gemiddelde van de laatste 3 rapporten
                 </p>
+            </div>
+
+            <!-- De foto. Zonder foto valt het vak op (groene rand): dat is de
+                 blijvende herinnering. Met foto is het een rustig vak om hem
+                 te vervangen. -->
+            <div
+                v-if="canPhoto"
+                id="foto"
+                ref="fotoBlok"
+                class="mt-4 rounded-xl border bg-card p-5 shadow-sm"
+                :class="player.photo ? 'border-border' : 'border-primary/50'"
+            >
+                <p class="flex items-center gap-2 font-medium">
+                    <Camera class="size-4 text-primary" />
+                    {{ player.photo ? 'Foto op de kaart' : 'Zet een foto op de kaart' }}
+                </p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    {{
+                        player.photo
+                            ? 'Deze foto staat op de kaart, ook op een gedeelde kaart.'
+                            : 'Een kaart met een gezicht erop is de helft meer waard. Maak een foto of kies er een; je snijdt hem daarna uit.'
+                    }}
+                </p>
+                <PhotoUpload ref="fotoKiezer" class="mt-3" :name="player.name" :photo="player.photo" :action="'/players/' + player.id + '/photo'" />
             </div>
 
             <div v-if="goals.length" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">

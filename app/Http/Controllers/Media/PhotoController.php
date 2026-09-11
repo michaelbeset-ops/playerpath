@@ -13,9 +13,10 @@ use Illuminate\Http\UploadedFile;
 /**
  * Profielfoto's van spelers en accounts.
  *
- * Wie wat mag staat in de policies, niet hier: `update` op de speler (de
- * eigenaar) en `update` op de gebruiker (jezelf, of de eigenaar binnen zijn
- * eigen school). Zo kan een trainer geen foto van andermans kind verwisselen.
+ * Wie wat mag staat in de policies, niet hier: `updatePhoto` op de speler
+ * (de eigenaar, de ouders van dit kind, het kind zelf) en `update` op de
+ * gebruiker (jezelf, of de eigenaar binnen zijn eigen school). Zo kan een
+ * trainer geen foto van andermans kind verwisselen.
  */
 class PhotoController extends Controller
 {
@@ -23,7 +24,7 @@ class PhotoController extends Controller
 
     public function storePlayer(Request $request, Player $player): RedirectResponse
     {
-        $this->authorize('update', $player);
+        $this->authorize('updatePhoto', $player);
 
         $this->fotos->store($player, $this->valideer($request), 'players/'.$player->school_id);
 
@@ -32,7 +33,7 @@ class PhotoController extends Controller
 
     public function destroyPlayer(Player $player): RedirectResponse
     {
-        $this->authorize('update', $player);
+        $this->authorize('updatePhoto', $player);
 
         $this->fotos->delete($player);
 

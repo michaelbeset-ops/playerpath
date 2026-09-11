@@ -2,7 +2,7 @@
 import Avatar from '@/components/Avatar.vue';
 import type { FamilyAanbod, FamilyBericht, FamilyKind, FamilyTraining } from '@/types/family';
 import { Link } from '@inertiajs/vue3';
-import { ArrowUpRight, CalendarDays, ChevronRight, IdCard, MapPin, ShoppingBag, TrendingUp, UserCog } from 'lucide-vue-next';
+import { ArrowUpRight, CalendarDays, Camera, ChevronRight, IdCard, MapPin, ShoppingBag, TrendingUp, UserCog } from 'lucide-vue-next';
 
 /**
  * Het dashboard van een ouder, in deze volgorde: binnenkort, mijn kinderen,
@@ -151,6 +151,16 @@ const levelRand: Record<string, string> = {
                             {{ kind.xp }} XP<template v-if="kind.next_level"> · op weg naar {{ kind.next_level }}</template>
                         </p>
                     </div>
+
+                    <!-- Blijft staan tot de foto er is: een kaart zonder gezicht is de helft minder waard. -->
+                    <Link
+                        v-if="!kind.photo"
+                        :href="'/players/' + kind.id + '/card#foto'"
+                        class="mt-3 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-primary"
+                    >
+                        <Camera class="size-4" />
+                        + Foto toevoegen
+                    </Link>
 
                     <div class="mt-3 flex flex-wrap gap-2">
                         <Link
