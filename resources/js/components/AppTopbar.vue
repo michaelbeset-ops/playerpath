@@ -142,7 +142,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                         v-if="groep.href"
                         :href="groep.href"
                         :data-tour="groep.tour"
-                        class="min-h-11 rounded-lg px-3 py-2 text-sm font-medium transition"
+                        class="flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-medium transition"
                         :class="
                             isActief(groep) ? 'bg-foreground/10 text-foreground' : 'text-foreground/75 hover:bg-foreground/10 hover:text-foreground'
                         "

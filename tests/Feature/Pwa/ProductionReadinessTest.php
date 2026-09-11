@@ -38,7 +38,13 @@ class ProductionReadinessTest extends TestCase
             ->assertJsonPath('start_url', '/dashboard');
     }
 
-    public function test_het_manifest_draagt_de_naam_en_kleur_van_de_school(): void
+    /**
+     * De naam is van de school; de kleuren niet. De themakleur is de balk
+     * bovenin, zodat de statusbalk van de telefoon erop aansluit — de
+     * merkkleur staat op knoppen, en een paarse streep boven een donkerblauwe
+     * balk is precies wat "stuk" oogt.
+     */
+    public function test_het_manifest_draagt_de_naam_van_de_school_en_de_kleur_van_de_balk(): void
     {
         $this->school->update(['brand_color' => '#7B1FA2']);
 
@@ -48,7 +54,8 @@ class ProductionReadinessTest extends TestCase
         $this->actingAs($eigenaar)
             ->get('/manifest.webmanifest')
             ->assertJsonPath('name', 'Keepersschool Rob')
-            ->assertJsonPath('theme_color', '#7B1FA2');
+            ->assertJsonPath('theme_color', '#111A2E')
+            ->assertJsonPath('background_color', '#0D0F12');
     }
 
     public function test_het_manifest_heeft_de_iconen_die_android_en_apple_nodig_hebben(): void

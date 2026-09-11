@@ -43,7 +43,7 @@ class TrainingController extends Controller
         $magAfvinken = $user->isEigenaar() || $user->isTrainer();
 
         // Een ouder of speler krijgt zijn eigen drie stapels: komend,
-        // inschrijven, geweest — per kind. Zie FamilyTrainings.
+        // inschrijven, geweest â€” per kind. Zie FamilyTrainings.
         if ($eigenSpelers !== [] && ! $magAfvinken) {
             return Inertia::render('trainings/Index', [
                 ...$this->gezin->for($user),
@@ -57,8 +57,8 @@ class TrainingController extends Controller
             ]);
         }
 
-        // Filteren is werk van wie het hele rooster ziet. Een ouder heeft één
-        // groep en zou een keuzelijst met één optie krijgen.
+        // Filteren is werk van wie het hele rooster ziet. Een ouder heeft Ã©Ã©n
+        // groep en zou een keuzelijst met Ã©Ã©n optie krijgen.
         $groep = $magAfvinken ? $request->integer('group') : 0;
         $trainer = $magAfvinken ? $request->integer('trainer') : 0;
 
@@ -243,8 +243,14 @@ class TrainingController extends Controller
                     'invited' => $e->invited_at !== null,
                     'since' => $e->created_at->translatedFormat('j M'),
                 ]),
-            // Kan de ingelogde ouder hier (nog) een kind op inschrijven?
-            'enrollUrl' => $user->isOuder() && $user->can('enroll', $training) ? route('trainings.enroll.show', $training) : null,
+            // Kan de ingelogde ouder hier (nog) een kind op inschrijven? Niet
+            // meer zodra al zijn kinderen zijn aangemeld of in de groep zitten;
+            // dan staat er per kind de status, met een afmeldknop.
+            'enrollUrl' => $user->isOuder()
+                && $user->can('enroll', $training)
+                && $training->enrollableChildren(Player::whereIn('id', $eigen)->get())->isNotEmpty()
+                ? route('trainings.enroll.show', $training)
+                : null,
             'can' => [
                 'record' => $mag,
                 'manage' => $user->can('update', $training),
@@ -284,7 +290,7 @@ class TrainingController extends Controller
     /**
      * Wie kun je aan een training hangen: trainers en de eigenaar.
      *
-     * De eigenaar staat er bewust bij — bij kleine scholen geeft die zelf ook
+     * De eigenaar staat er bewust bij â€” bij kleine scholen geeft die zelf ook
      * training.
      */
     protected function beschikbareTrainers()

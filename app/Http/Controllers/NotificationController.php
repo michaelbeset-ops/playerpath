@@ -34,6 +34,11 @@ class NotificationController extends Controller
                 'when' => $melding->created_at->diffForHumans(),
             ]);
 
+        // Openen is lezen. De lijst hierboven is al opgebouwd, dus wat je nu
+        // voor het eerst ziet staat er nog als "nieuw" bij; het belletje
+        // bovenin telt vanaf dit verzoek nul.
+        $request->user()->unreadNotifications()->update(['read_at' => now()]);
+
         return Inertia::render('notifications/Index', [
             'notifications' => $meldingen,
         ]);

@@ -99,7 +99,9 @@ class PaymentController extends Controller
             // afgenomen, plus wat nu te koop staat.
             'products' => Product::orderBy('name')->get(['id', 'name'])
                 ->map(fn (Product $product) => ['id' => $product->id, 'name' => $product->name]),
-            'summary' => $this->overview->summary(),
+            // Dezelfde periode als de lijst: kies je "vorige maand", dan gaat
+            // ook het cijfer Ontvangen daarover.
+            'summary' => $this->overview->summary($filters['period']),
             'gateway' => [
                 'connected' => $this->gateway->isConnected(),
                 'name' => $this->gateway->name(),

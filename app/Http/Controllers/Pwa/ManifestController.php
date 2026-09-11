@@ -40,8 +40,11 @@ class ManifestController extends Controller
             'dir' => 'ltr',
             // De donkere kant van het merk: dat is wat een speler of ouder ziet
             // bij het opstarten, en het staat goed op een beginscherm.
-            'background_color' => '#0A0F1C',
-            'theme_color' => $huisstijl['usedColor'] ?? '#0A0F1C',
+            // De opstartkleur is de donkere basis van het merk; de themakleur
+            // is de balk bovenin, zodat de statusbalk erop aansluit. Zie ook
+            // theme-color in app.blade.php.
+            'background_color' => '#0D0F12',
+            'theme_color' => '#111A2E',
             'icons' => [
                 ['src' => '/icons/icon-192.png', 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
                 ['src' => '/icons/icon-512.png', 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],

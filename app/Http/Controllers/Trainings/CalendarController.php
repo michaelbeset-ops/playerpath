@@ -129,7 +129,7 @@ class CalendarController extends Controller
                 ->whereNotIn('id', $trainingen->pluck('id'))
                 ->orderBy('starts_at')
                 ->get()
-                ->filter(fn (Training $t) => $kinderen->contains(fn (Player $k) => $t->acceptsPlayer($k)))
+                ->filter(fn (Training $t) => $t->enrollableChildren($kinderen)->isNotEmpty())
                 ->map(fn (Training $training) => [
                     'id' => $training->id,
                     'date' => $training->starts_at->format('Y-m-d'),

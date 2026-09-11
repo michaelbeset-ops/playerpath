@@ -148,6 +148,21 @@ class PaymentQuery
     }
 
     /** @return array{0: Carbon, 1: Carbon}|null */
+    /**
+     * De periode als woorden voor op het scherm: "september 2026", niet
+     * "this_month". Zo staat er bij elk cijfer waarover het gaat.
+     */
+    public static function label(string $periode): string
+    {
+        return match ($periode) {
+            'all' => 'alle tijd',
+            'last_month' => now()->subMonthNoOverflow()->translatedFormat('F Y'),
+            'this_quarter' => 'kwartaal '.now()->quarter.' van '.now()->year,
+            'this_year' => (string) now()->year,
+            default => now()->translatedFormat('F Y'),
+        };
+    }
+
     public static function range(string $periode): ?array
     {
         return match ($periode) {

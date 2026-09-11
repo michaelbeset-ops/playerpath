@@ -2,7 +2,7 @@
 import FlashMessage from '@/components/FlashMessage.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import { ClipboardList, Megaphone } from 'lucide-vue-next';
 import { computed } from 'vue';
 
@@ -26,9 +26,9 @@ const breadcrumbs: BreadcrumbItem[] = [
     { title: 'Meldingen', href: '/notifications' },
 ];
 
-const ongelezen = computed(() => props.notifications.filter((m) => !m.read).length);
-
-const allesGelezen = () => router.post('/notifications/read', {}, { preserveScroll: true });
+// Wat je nu voor het eerst ziet. De server heeft ze bij het openen al als
+// gelezen gemarkeerd; dit is alleen nog de markering "nieuw" in de lijst.
+const nieuw = computed(() => props.notifications.filter((m) => !m.read).length);
 </script>
 
 <template>
@@ -42,18 +42,9 @@ const allesGelezen = () => router.post('/notifications/read', {}, { preserveScro
                 <div>
                     <h1 class="text-2xl font-semibold tracking-tight">Meldingen</h1>
                     <p class="mt-1 text-sm text-muted-foreground">
-                        {{ ongelezen === 0 ? 'Je bent bij.' : ongelezen + (ongelezen === 1 ? ' ongelezen melding' : ' ongelezen meldingen') }}
+                        {{ nieuw === 0 ? 'Je bent bij.' : nieuw + (nieuw === 1 ? ' nieuwe melding' : ' nieuwe meldingen') + ' sinds de vorige keer' }}
                     </p>
                 </div>
-
-                <button
-                    v-if="ongelezen > 0"
-                    type="button"
-                    class="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4"
-                    @click="allesGelezen"
-                >
-                    Alles als gelezen markeren
-                </button>
             </div>
 
             <div v-if="notifications.length" class="mt-6 space-y-2">

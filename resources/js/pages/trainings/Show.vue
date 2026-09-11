@@ -239,7 +239,8 @@ const verwijderen = () => {
                             <div v-for="speler in players" :key="speler.id" class="flex items-center justify-between gap-3">
                                 <span class="text-sm">
                                     {{ speler.name.split(' ')[0] }}
-                                    <span v-if="speler.registration === 'declined'" class="text-warning">· afgemeld</span>
+                                    <span v-if="speler.loose" class="text-primary">· ingeschreven</span>
+                                    <span v-else-if="speler.registration === 'declined'" class="text-warning">· afgemeld</span>
                                     <span v-else-if="speler.registration === 'attending'" class="text-primary">· aangemeld</span>
                                     <span v-if="speler.loose && speler.cash_due" class="block text-xs text-muted-foreground">
                                         {{ speler.amount }} contant te voldoen bij de training

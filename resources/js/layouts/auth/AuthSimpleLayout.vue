@@ -1,4 +1,10 @@
 <script setup lang="ts">
+import { onBeforeUnmount, onMounted } from 'vue';
+
+// Een schermvullende donkere pagina: dan hoort ook wat vóórbij de pagina
+// zichtbaar wordt (overscroll op een telefoon) donker te zijn. Zie html.pp-donker.
+onMounted(() => document.documentElement.classList.add('pp-donker'));
+onBeforeUnmount(() => document.documentElement.classList.remove('pp-donker'));
 import AppWordmark from '@/components/AppWordmark.vue';
 import { type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/vue3';

@@ -91,6 +91,39 @@ class Training extends Model
     }
 
     /**
+     * De kinderen uit deze lijst die zich nog kunnen inschrijven.
+     *
+     * Dit is de ene plek waar "staat de knop er?" wordt beslist, voor de
+     * detailpagina, de agenda en het overzicht tegelijk. Wie al is aangemeld
+     * (aangevraagd, bevestigd of op de wachtlijst) of al in de groep zit, hoort
+     * geen knop Inschrijven meer te zien — de detailpagina toonde hem wel, en
+     * dan stuurt een ouder een tweede aanmelding in die de server weigert.
+     *
+     * @param  Collection<int, Player>  $kinderen
+     * @return Collection<int, Player>
+     */
+    public function enrollableChildren(Collection $kinderen): Collection
+    {
+        if (! $this->isOpenForEnrollment() || $kinderen->isEmpty()) {
+            return new Collection;
+        }
+
+        $aangemeld = $this->enrollments()
+            ->whereIn('player_id', $kinderen->pluck('id'))
+            ->active()
+            ->pluck('player_id')
+            ->all();
+
+        $inGroep = $this->group_id === null
+            ? []
+            : $this->group->players()->whereIn('players.id', $kinderen->pluck('id'))->pluck('players.id')->all();
+
+        return $kinderen->filter(fn (Player $kind) => $this->acceptsPlayer($kind)
+            && ! in_array($kind->id, $aangemeld, true)
+            && ! in_array($kind->id, $inGroep, true))->values();
+    }
+
+    /**
      * Mag dit kind meedoen? Leeftijdscategorie én positie, allebei.
      *
      * Dit is de echte grens; het scherm verbergt alleen wat toch niet kan.

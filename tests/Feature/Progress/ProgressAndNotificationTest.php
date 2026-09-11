@@ -175,6 +175,8 @@ class ProgressAndNotificationTest extends TestCase
 
         $this->assertSame(1, $ouder->unreadNotifications()->count());
 
+        // Openen is lezen: de melding staat er nog als "nieuw" bij, maar het
+        // belletje bovenin telt vanaf nu nul.
         $this->actingAs($ouder)
             ->get('/notifications')
             ->assertOk()
@@ -182,7 +184,16 @@ class ProgressAndNotificationTest extends TestCase
                 ->component('notifications/Index')
                 ->count('notifications', 1)
                 ->where('notifications.0.overall_rating', 80)
+                ->where('notifications.0.read', false)
+                ->where('unreadNotifications', 0)
             );
+
+        $this->assertSame(0, $ouder->refresh()->unreadNotifications()->count());
+
+        // De tweede keer is hij gewoon gelezen.
+        $this->actingAs($ouder)
+            ->get('/notifications')
+            ->assertInertia(fn ($page) => $page->where('notifications.0.read', true));
     }
 
     public function test_meldingen_zijn_als_gelezen_te_markeren(): void

@@ -323,6 +323,47 @@ class TrainingEnrollmentTest extends TestCase
             ->assertSessionHasErrors('payment_method');
     }
 
+    /**
+     * Eenmaal ingeschreven is de knop overal weg — ook op de detailpagina, waar
+     * hij bleef staan — en weigert de server een tweede aanmelding.
+     */
+    public function test_een_ingeschreven_kind_krijgt_nergens_meer_een_inschrijfknop(): void
+    {
+        $training = $this->training();
+
+        $this->actingAs($this->ouder)
+            ->get('/trainings/'.$training->id)
+            ->assertInertia(fn ($page) => $page->whereNot('enrollUrl', null));
+
+        $this->actingAs($this->ouder)
+            ->post('/trainings/'.$training->id.'/inschrijven', ['player_id' => $this->keeper->id, 'payment_method' => 'cash'])
+            ->assertSessionHas('status');
+
+        // Detailpagina: status in plaats van knop.
+        $this->actingAs($this->ouder)
+            ->get('/trainings/'.$training->id)
+            ->assertInertia(fn ($page) => $page
+                ->where('enrollUrl', null)
+                ->where('players.0.loose', true)
+            );
+
+        // Agenda en overzicht: niet meer als "inschrijven" gemarkeerd.
+        $this->actingAs($this->ouder)
+            ->get('/calendar?view=month&date='.$training->starts_at->toDateString())
+            ->assertInertia(fn ($page) => $page->where('trainings.0.enrollable', false));
+
+        $this->actingAs($this->ouder)
+            ->get('/trainings')
+            ->assertInertia(fn ($page) => $page->count('enrollable', 0)->count('upcoming', 1));
+
+        // En de server weigert een tweede keer, ook als iemand de URL intypt.
+        $this->actingAs($this->ouder)
+            ->post('/trainings/'.$training->id.'/inschrijven', ['player_id' => $this->keeper->id, 'payment_method' => 'cash'])
+            ->assertSessionHasErrors();
+
+        $this->assertSame(1, $training->enrollments()->count());
+    }
+
     public function test_wie_al_in_de_groep_zit_schrijft_niet_nog_eens_los_in(): void
     {
         $training = $this->training();

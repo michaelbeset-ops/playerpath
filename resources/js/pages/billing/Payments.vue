@@ -38,6 +38,7 @@ const props = defineProps<{
     products: { id: number; name: string }[];
     summary: {
         revenueThisMonth: string;
+        periodLabel: string;
         outstanding: string;
         outstandingCount: number;
         overdue: string;
@@ -140,13 +141,20 @@ const zetMethode = (betaling: Betaling, method: string) =>
             <h1 class="text-2xl font-semibold tracking-tight">Betalingen</h1>
             <p class="mt-1 text-sm text-muted-foreground">Wat er binnenkomt, wat openstaat en wat misging.</p>
 
-            <div class="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-                <StatCard label="Ontvangen" :value="summary.revenueThisMonth" hint="deze maand, betaalde facturen" :icon="Euro" />
+            <!-- Waarover de cijfers gaan. Het periodefilter stuurt de lijst én
+                 het cijfer Ontvangen; openstaand en achterstallig zijn een
+                 stand van nu en zeggen dat erbij. -->
+            <p class="mt-6 text-sm font-medium">
+                Cijfers over <span class="text-primary">{{ summary.periodLabel }}</span>
+            </p>
+
+            <div class="mt-3 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+                <StatCard label="Ontvangen" :value="summary.revenueThisMonth" :hint="summary.periodLabel + ', betaalde facturen'" :icon="Euro" />
                 <StatCard
                     label="Openstaand"
                     tone="warning"
                     :value="summary.outstanding"
-                    :hint="summary.outstandingCount + (summary.outstandingCount === 1 ? ' factuur' : ' facturen')"
+                    :hint="'nu, ' + summary.outstandingCount + (summary.outstandingCount === 1 ? ' factuur' : ' facturen')"
                     :icon="Wallet"
                 />
                 <StatCard

@@ -241,6 +241,16 @@ class BillingTest extends TestCase
                 ->where('summary.overdueCount', 1)
                 ->where('summary.needsAttentionCount', 1)
             );
+
+        // Het periodefilter stuurt ook het kerncijfer: vorige maand is er
+        // niets ontvangen, en het scherm zegt waarover het gaat.
+        $this->actingAs($this->eigenaar)
+            ->get('/payments?period=last_month')
+            ->assertInertia(fn ($page) => $page
+                ->where('summary.revenueThisMonth', '€ 0,00')
+                ->where('summary.periodLabel', now()->subMonthNoOverflow()->translatedFormat('F Y'))
+                ->where('summary.outstanding', '€ 37,50')
+            );
     }
 
     public function test_een_betaling_op_betaald_zetten_vult_de_betaaldatum(): void

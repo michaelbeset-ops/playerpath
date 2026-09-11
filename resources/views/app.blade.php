@@ -14,8 +14,13 @@
         {{-- PWA: installeerbaar op het beginscherm. Het manifest is per school. --}}
         <link rel="manifest" href="/manifest.webmanifest">
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-        <meta name="theme-color" content="{{ $branding['usedColor'] ?? '#0A0F1C' }}">
+        {{-- De statusbalk van de telefoon kleurt mee met de balk bovenin, die
+             voor iedereen dezelfde donkere tint heeft (--topbar). Niet de
+             merkkleur: die staat op knoppen, niet in de balk, en dan zit er
+             een gekleurde streep boven een donkerblauwe balk. --}}
+        <meta name="theme-color" content="#111A2E">
         <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-status-bar-style" content="black">
         <meta name="apple-mobile-web-app-title" content="{{ $branding['name'] ?? config('app.name') }}">
 
         <link rel="preconnect" href="https://fonts.bunny.net">

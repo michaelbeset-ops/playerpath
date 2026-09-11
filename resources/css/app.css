@@ -155,8 +155,23 @@
         @apply border-border;
     }
 
+    /*
+     * De kleur achter de pagina, ook waar de pagina ophoudt.
+     *
+     * Swipe je op een telefoon voorbij het begin of einde, dan zie je de
+     * achtergrond van <html>, niet van <body>. Zonder kleur is dat wit, en op
+     * een donkere pagina is een witte flits precies wat "stuk" oogt. Daarom
+     * krijgt <html> dezelfde kleur als de werkvloer; een schermvullende donkere
+     * pagina (inloggen) zet `pp-donker` op <html> en kleurt hem donker mee.
+     */
     html {
         color-scheme: light;
+        background-color: hsl(var(--background));
+    }
+
+    html.pp-donker {
+        background-color: hsl(225 12% 6%); /* #0D0F12, de donkere basis */
+        color-scheme: dark;
     }
 
     body {

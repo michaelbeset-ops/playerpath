@@ -16,11 +16,25 @@ use App\Support\Money\Money;
 class BillingOverview
 {
     /** @return array<string, mixed> */
-    public function summary(): array
+    /**
+     * @param  string  $periode  een sleutel uit PaymentQuery::PERIODEN; bepaalt
+     *                           waarover "ontvangen" gaat. Openstaand en
+     *                           achterstallig zijn een stand van nu en volgen
+     *                           de periode bewust niet: wat openstaat, staat open.
+     */
+    public function summary(string $periode = 'this_month'): array
     {
-        $betaaldDezeMaand = (int) Payment::paid()
-            ->whereBetween('paid_at', [now()->startOfMonth(), now()->endOfMonth()])
-            ->sum('amount_cents');
+        $ontvangen = Payment::paid();
+        $bereik = PaymentQuery::range($periode);
+
+        if ($bereik !== null) {
+            [$van, $tot] = $bereik;
+            // whereDate: paid_at draagt een tijd, en dan valt de laatste dag
+            // anders buiten de boot (zie de valkuil bij reported_on in CLAUDE.md).
+            $ontvangen->whereDate('paid_at', '>=', $van->toDateString())->whereDate('paid_at', '<=', $tot->toDateString());
+        }
+
+        $betaaldDezeMaand = (int) $ontvangen->sum('amount_cents');
 
         $openstaand = (int) Payment::outstanding()->sum('amount_cents');
 
@@ -34,6 +48,8 @@ class BillingOverview
         return [
             'revenueThisMonth' => Money::format($betaaldDezeMaand),
             'revenueThisMonthCents' => $betaaldDezeMaand,
+            'period' => $periode,
+            'periodLabel' => PaymentQuery::label($periode),
 
             'outstanding' => Money::format($openstaand),
             'outstandingCents' => $openstaand,
