@@ -1941,6 +1941,10 @@ die je niet moet omdraaien:
   regel "Verstuurd met PlayerPath". Een ouder heeft zijn kind bij Keepersschool
   Rob aangemeld; herkent hij de afzender niet, dan opent hij de mail niet, en
   dan is een betaalherinnering of een afgelasting waardeloos.
+  **Zonder school** (de platformbeheerder heeft er geen) komt de mail van
+  PlayerPath zelf en staat ons logo (`public/brand/logo.png`) bovenaan, met een
+  vaste breedte van 180 pixels: Outlook negeert CSS-breedtes op plaatjes. Een
+  school zonder eigen logo krijgt dat logo nooit, maar haar naam.
 - **De merkkleur gaat inline mee** via `Support\Mail\MailBrand`, want een
   mailprogramma kent geen CSS-variabelen. Die klasse is de enige plek die hem
   uitrekent, met dezelfde contrastcorrectie als de app — een school die

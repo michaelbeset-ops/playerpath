@@ -71,7 +71,20 @@ final class MailBrand
 
         return [
             'name' => $school?->name ?? config('app.name'),
-            'logo' => $school?->logo_path !== null ? url(Storage::url($school->logo_path)) : null,
+            // Zonder school komt de mail van PlayerPath zelf (een
+            // platformbeheerder heeft geen school), en dan hoort ons logo erboven.
+            // Bij een school nooit: zonder eigen logo krijgt ze haar naam, want
+            // een ouder heeft zich bij haar aangemeld en niet bij ons.
+            'logo' => match (true) {
+                $school === null => url('brand/logo.png'),
+                $school->logo_path !== null => url(Storage::url($school->logo_path)),
+                default => null,
+            },
+            // Vaste maat voor ons eigen logo (1060 × 320): Outlook negeert
+            // CSS-breedtes op plaatjes en toont hem anders op ware grootte. Een
+            // schoollogo heeft onbekende verhoudingen en houdt de CSS-grenzen.
+            'logoWidth' => $school === null ? 180 : null,
+            'logoHeight' => $school === null ? 54 : null,
             'color' => $kleur?->toHex() ?? self::STANDAARD_KLEUR,
             'onColor' => $kleur === null ? '#FFFFFF' : self::leesbaar($kleur),
             'email' => $school?->contact_email,

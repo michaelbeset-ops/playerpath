@@ -145,6 +145,26 @@ class MailShellTest extends TestCase
         $this->assertStringContainsString('Keepersschool Rob', (string) $verify->render());
     }
 
+    /**
+     * Een mail zonder school komt van PlayerPath zelf — de platformbeheerder
+     * heeft geen school — en draagt dan ons logo, met een vaste breedte. Een
+     * school zonder eigen logo krijgt dat logo juist níét, maar haar naam.
+     */
+    public function test_zonder_school_staat_het_logo_van_playerpath_erboven(): void
+    {
+        $beheerder = User::factory()->create(['school_id' => null]);
+
+        $html = (string) (new ResetPassword('een-token'))->toMail($beheerder)->render();
+
+        $this->assertStringContainsString('/brand/logo.png', $html);
+        $this->assertStringContainsString('width="180"', $html);
+
+        $schoolmail = (string) (new ResetPassword('een-token'))->toMail($this->ouder)->render();
+
+        $this->assertStringNotContainsString('/brand/logo.png', $schoolmail);
+        $this->assertStringContainsString('Keepersschool Rob', $schoolmail);
+    }
+
     /** @param  array<string, mixed>  $velden */
     protected function rekening(array $velden = []): Payment
     {
