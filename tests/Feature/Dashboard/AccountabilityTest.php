@@ -150,7 +150,7 @@ class AccountabilityTest extends TestCase
 
         $this->actingAs($this->eigenaar)
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->has('checklist.steps', 5)->where('checklist.done', 0));
+            ->assertInertia(fn ($page) => $page->has('checklist.steps', 8)->where('checklist.done', 0));
 
         $speler = Player::factory()->for($this->school)->keeper()->create();
         Training::factory()->for($this->school)->create();

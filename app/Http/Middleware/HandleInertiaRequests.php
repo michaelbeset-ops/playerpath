@@ -8,6 +8,8 @@ use App\Support\Navigation\MainNavigation;
 use App\Support\Navigation\QuickActions;
 use App\Support\Onboarding\OnboardingState;
 use App\Support\Onboarding\OnboardingTour;
+use App\Support\Payments\DemoGateway;
+use App\Support\Payments\PaymentGateway;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -49,9 +51,10 @@ class HandleInertiaRequests extends Middleware
         // Expliciet leegzetten in plaats van weglaten: Inertia's gedeelde props
         // zijn statisch, dus een eerdere request kan er nog iets in hebben laten
         // staan. Overschrijven is het enige wat gegarandeerd werkt.
-        if ($request->routeIs('players.shared', 'enroll.*', 'public-pay.*', 'invitations.accept')) {
+        if ($request->routeIs('players.shared', 'enroll.*', 'public-pay.*', 'demo-pay.*', 'invitations.accept')) {
             return array_merge(parent::share($request), [
                 'name' => config('app.name'),
+                'paymentsDemo' => $this->paymentsDemo(),
                 // Het inschrijfformulier hoort de school te tonen; de gedeelde
                 // kaart juist niet. Branding::forRequest maakt dat onderscheid.
                 'branding' => app()->bound('branding') ? app('branding') : null,
@@ -68,6 +71,8 @@ class HandleInertiaRequests extends Middleware
             ...parent::share($request),
             'name' => config('app.name'),
             'branding' => app()->bound('branding') ? app('branding') : null,
+            // Staat de demo-provider aan, dan zegt elk betaalscherm dat.
+            'paymentsDemo' => $this->paymentsDemo(),
             'auth' => [
                 'user' => $request->user(),
                 'roles' => $request->user()?->getRoleNames()->all() ?? [],
@@ -95,6 +100,11 @@ class HandleInertiaRequests extends Middleware
                 'reportResult' => fn () => $request->session()->get('reportResult'),
             ],
         ]);
+    }
+
+    protected function paymentsDemo(): bool
+    {
+        return app(PaymentGateway::class) instanceof DemoGateway;
     }
 
     /**

@@ -34,6 +34,13 @@ return [
         'key' => env('MOLLIE_KEY'),
     ],
 
+    // Demo-betalingen: de hele betaalflow zonder dat er een cent beweegt.
+    // Alleen voor demo's; op productie weigert playerpath:check het, en het
+    // staat nooit aan naast een echte Mollie-sleutel. Zie DemoGateway.
+    'payments' => [
+        'demo' => (bool) env('PAYMENTS_DEMO', false),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

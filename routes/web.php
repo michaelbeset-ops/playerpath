@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\FindSchoolController;
 use App\Http\Controllers\Branding\BrandingController;
 use App\Http\Controllers\Communication\AnnouncementController;
 use App\Http\Controllers\Communication\BirthdayGreetingController;
@@ -27,6 +28,10 @@ Route::get('/', function () {
  * installeerbaar.
  */
 Route::get('manifest.webmanifest', ManifestController::class)->name('manifest');
+
+// "Nog geen account? Zoek je school": van de inlogpagina naar de openbare
+// inschrijfpagina van een school. Zonder inlog, want dat is precies het punt.
+Route::get('scholen/zoeken', [FindSchoolController::class, 'index'])->middleware('throttle:60,1')->name('schools.find');
 Route::get('offline', fn () => Inertia::render('Offline'))->name('offline');
 
 Route::get('dashboard', DashboardController::class)

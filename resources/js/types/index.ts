@@ -67,6 +67,8 @@ export interface SharedData {
     } | null;
     /** Welke functies deze school heeft; zie App\Enums\Feature. */
     features: Record<string, boolean>;
+    /** Staat de demo-betaalprovider aan: dan zegt elk betaalscherm dat het nep is. */
+    paymentsDemo?: boolean;
     /** Gevuld zolang de platformbeheerder als iemand anders kijkt. */
     impersonating: { name: string | null; school: string | null } | null;
     ziggy: {

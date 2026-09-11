@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\School;
+use App\Support\Payments\DemoGateway;
 use App\Support\Payments\PaymentGateway;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -39,6 +40,7 @@ class CheckProduction extends Command
         $this->eis(str_starts_with((string) config('app.url'), 'https://') || ! $productie, 'APP_URL gebruikt https', 'Zonder https-URL genereert de app links die de browser blokkeert.');
         $this->eis(config('app.locale') === 'nl', 'De taal staat op Nederlands', 'APP_LOCALE hoort nl te zijn.');
         $this->eis(config('app.timezone') === 'Europe/Amsterdam' || ! $productie, 'De tijdzone staat op Europe/Amsterdam', 'Anders staan trainingstijden er een uur naast.');
+        $this->eis(! ($gateway instanceof DemoGateway && $productie), 'De demo-betaalprovider staat uit', 'PAYMENTS_DEMO=true op productie zet rekeningen op betaald zonder dat er geld binnenkomt.');
 
         $this->eis($this->databaseBereikbaar(), 'De database is bereikbaar', 'Controleer de DB_-instellingen.');
         // file_exists en niet is_dir/is_link: op Windows maakt storage:link een

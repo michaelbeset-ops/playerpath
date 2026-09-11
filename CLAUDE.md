@@ -1902,6 +1902,35 @@ tarief van een product aanpast.
 Een lege eigen zin valt terug op de standaardtekst; een lege felicitatie is
 erger dan geen.
 
+### Zoek je school
+
+`/scholen/zoeken` (`Auth\FindSchoolController`) is de wegwijzer achter "Nog
+geen account? Zoek je school" op de inlogpagina: typ de naam, kies de school,
+en je staat op haar openbare inschrijfpagina. Bewust karig — alleen actieve
+scholen, alleen naam en logo, hooguit tien, pas vanaf twee tekens en met een
+throttle — want dit is geen lijst van al onze klanten maar een wegwijzer voor
+wie de naam al kent.
+
+### Demo-betalingen
+
+`Support\Payments\DemoGateway` is een betaalprovider die doet alsof, voor
+demo's: de hele flow (rekening → betaalkeuze → een iDEAL-achtig scherm met
+bankkeuze → bevestiging → status betaald, ook het mandaat bij een abonnement
+en de incasso erna) zonder dat er een cent beweegt. Vier regels:
+
+- **Alleen aan met `PAYMENTS_DEMO=true`, en nooit naast een Mollie-sleutel**
+  (`AppServiceProvider`). Op productie is het een blokkerend punt in
+  `playerpath:check`.
+- **De uitkomst gaat door dezelfde deur als een echte webhook**:
+  `DemoCheckoutController::complete` roept `SyncPayment` aan. Order,
+  inschrijving, mandaat, abonnement en mails werken dus zonder er iets van
+  te weten, en er is geen tweede pad dat een status zet.
+- **Het scherm zegt overal dat het nep is** (`billing/DemoPay.vue`), en elk
+  betaalscherm in de app draagt de gedeelde prop `paymentsDemo`
+  (`GatewayNotice` toont dan een demo-melding, de knoppen zeggen "(demo)").
+- **De link naar het demoscherm is ondertekend** en komt alleen van de
+  gateway; zonder demo geeft het adres een 404.
+
 ### Betalingen met Mollie (Fase 9)
 
 - De app praat alleen met `Support\Payments\PaymentGateway`. Zonder `MOLLIE_KEY`

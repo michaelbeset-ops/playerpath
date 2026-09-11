@@ -226,7 +226,7 @@ const kleurVoor = (status: string) => {
                                 @click="betaal(betaling.id)"
                             >
                                 <CreditCard class="mr-2 size-4" />
-                                {{ bezig === betaling.id ? 'Bezig…' : 'Nu betalen' }}
+                                {{ bezig === betaling.id ? 'Bezig…' : demo ? 'Nu betalen (demo)' : 'Nu betalen' }}
                             </button>
                         </div>
                     </div>

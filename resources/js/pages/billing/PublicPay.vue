@@ -2,8 +2,9 @@
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
+import { type SharedData } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/vue3';
-import { CheckCircle2, LoaderCircle } from 'lucide-vue-next';
+import { CheckCircle2, FlaskConical, LoaderCircle } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 /**
@@ -19,8 +20,9 @@ const props = defineProps<{
     payUrl: string;
 }>();
 
-const page = usePage();
+const page = usePage<SharedData>();
 const melding = computed(() => (page.props.flash as { status: string | null } | undefined)?.status ?? null);
+const demo = computed(() => page.props.paymentsDemo === true);
 
 const form = useForm({});
 
@@ -63,9 +65,13 @@ const betaal = () => form.post(props.payUrl);
                     <p class="mt-1 text-xs text-muted-foreground">Vervaldatum {{ payment.due_on }}</p>
 
                     <form v-if="connected" class="mt-6" @submit.prevent="betaal">
+                        <p v-if="demo" class="mb-3 flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-xs">
+                            <FlaskConical class="mt-0.5 size-4 shrink-0 text-warning" />
+                            <span>Demo: je ziet de betaalflow, er wordt geen geld afgeschreven.</span>
+                        </p>
                         <Button type="submit" class="w-full" :disabled="form.processing">
                             <LoaderCircle v-if="form.processing" class="mr-2 size-4 animate-spin" />
-                            Betalen met iDEAL
+                            {{ demo ? 'Betalen (demo)' : 'Betalen met iDEAL' }}
                         </Button>
                         <InputError class="mt-2" :message="form.errors.payment" />
                     </form>

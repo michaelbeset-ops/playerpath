@@ -3,9 +3,22 @@
 namespace Tests;
 
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Testing\TestResponse;
 
 abstract class TestCase extends BaseTestCase
 {
+    /**
+     * De props van een Inertia-pagina, voor als je er iets uit nodig hebt
+     * (een ondertekende URL bijvoorbeeld) in plaats van er iets over te
+     * beweren.
+     *
+     * @return array<string, mixed>
+     */
+    protected function inertiaProps(TestResponse $response): array
+    {
+        return $response->viewData('page')['props'];
+    }
+
     /**
      * De waarde van één widget op het dashboard.
      *

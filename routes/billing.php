@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Billing\CheckoutController;
+use App\Http\Controllers\Billing\DemoCheckoutController;
 use App\Http\Controllers\Billing\MyBillingController;
 use App\Http\Controllers\Billing\PaymentController;
 use App\Http\Controllers\Billing\ProductController;
@@ -78,6 +79,11 @@ Route::middleware('signed')->group(function () {
     Route::get('betalen/{payment}', [PublicCheckoutController::class, 'show'])->name('public-pay.show');
     Route::post('betalen/{payment}', [PublicCheckoutController::class, 'pay'])->name('public-pay.pay');
     Route::get('betalen/{payment}/terug', [PublicCheckoutController::class, 'return'])->name('public-pay.return');
+
+    // Het nagebootste betaalscherm van de demo-provider (DemoGateway). Zonder
+    // demo een 404; de link is ondertekend en komt alleen van de gateway.
+    Route::get('betalen/demo/{payment}', [DemoCheckoutController::class, 'show'])->name('demo-pay.show');
+    Route::post('betalen/demo/{payment}', [DemoCheckoutController::class, 'complete'])->name('demo-pay.complete');
 });
 
 /*

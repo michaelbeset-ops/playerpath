@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Policies\PlatformPolicy;
+use App\Support\Payments\DemoGateway;
 use App\Support\Payments\MollieGateway;
 use App\Support\Payments\NotConnectedGateway;
 use App\Support\Payments\PaymentGateway;
@@ -30,9 +31,15 @@ class AppServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(PaymentGateway::class, function ($app) {
-            return blank(config('services.mollie.key'))
-                ? new NotConnectedGateway
-                : new MollieGateway($app->make(MollieApiClient::class));
+            if (! blank(config('services.mollie.key'))) {
+                return new MollieGateway($app->make(MollieApiClient::class));
+            }
+
+            // De demo bestaat alleen zonder echte sleutel: naast Mollie zou
+            // een nagebootste betaling een echte rekening op betaald zetten.
+            return config('services.payments.demo')
+                ? new DemoGateway
+                : new NotConnectedGateway;
         });
     }
 
