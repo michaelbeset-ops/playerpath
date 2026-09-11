@@ -57,6 +57,15 @@ class SetupChecklist
             return null;
         }
 
+        // Eerst de rondleiding, dan de lijst. Op het eerste scherm stonden
+        // anders de voorbeelddata-balk, de rondleiding, het aandacht-blok én
+        // deze lijst tegelijk om aandacht te vragen; wie nieuw is weet dan
+        // niet waar hij moet beginnen. De rondleiding eindigt bij de wizard,
+        // en daarna is dit precies wat er nog te doen is.
+        if (! $stand->tourSeen()) {
+            return null;
+        }
+
         $stappen = $this->stappen($school);
         $klaar = count(array_filter($stappen, fn (array $stap) => $stap['done']));
 

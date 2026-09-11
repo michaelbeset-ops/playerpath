@@ -223,7 +223,7 @@ const sla = () => {
                     <template v-else>Eerste rapport voor deze speler.</template>
                 </p>
                 <p class="shrink-0 text-right">
-                    <span class="block text-[10px] uppercase tracking-wide text-muted-foreground">Nieuw</span>
+                    <span class="block text-[10px] uppercase tracking-wide text-muted-foreground">Wordt</span>
                     <span class="tabular block text-2xl font-bold leading-none" :class="gemiddelde ? 'text-primary' : 'text-muted-foreground'">
                         {{ gemiddelde ?? '—' }}
                     </span>

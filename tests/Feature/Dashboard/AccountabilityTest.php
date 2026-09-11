@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\School;
 use App\Models\Training;
 use App\Models\User;
+use App\Support\Onboarding\OnboardingState;
 use App\Support\Tenancy\Tenancy;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -144,6 +145,9 @@ class AccountabilityTest extends TestCase
     {
         // Verse school: vijf praktische stappen open. Wat in de wizard zit
         // (schoolgegevens, groepen, trainers) staat hier niet nog eens.
+        // De lijst komt pas na de rondleiding.
+        OnboardingState::mark($this->school, 'tour_seen_at');
+
         $this->actingAs($this->eigenaar)
             ->get('/dashboard')
             ->assertInertia(fn ($page) => $page->has('checklist.steps', 5)->where('checklist.done', 0));

@@ -272,7 +272,11 @@ class AttentionItems
                 'title' => $trainers->count() === 1
                     ? $trainers->first()->name.' vulde deze week nog geen rapport in'
                     : $trainers->count().' trainers vulden deze week nog geen rapport in',
-                'body' => $trainers->take(4)->pluck('name')->join(', ', ' en ').'.',
+                // Bij één trainer staat zijn naam al in de kop; dan zegt de
+                // tekst waarom het ertoe doet in plaats van de naam te herhalen.
+                'body' => $trainers->count() === 1
+                    ? 'Een rapport vlak na de training houdt de spelerskaarten actueel, en dat is wat ouders zien.'
+                    : $trainers->take(4)->pluck('name')->join(', ', ' en ').'.',
                 'href' => '/reports',
                 'action' => 'Naar rapporten',
             ];

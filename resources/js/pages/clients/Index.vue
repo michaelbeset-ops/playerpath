@@ -101,6 +101,7 @@ const klap = (id: number) => {
                 <span class="tabular">{{ counts.players }}</span> actieve {{ counts.players === 1 ? 'speler' : 'spelers' }} en
                 <span class="tabular">{{ counts.guardians }}</span>
                 {{ counts.guardians === 1 ? 'ouder' : 'ouders' }}. Klap een speler uit om te zien wie je belt.
+                <span v-if="players.length" class="hidden sm:inline">Het groene getal is de rating op de spelerskaart.</span>
             </p>
 
             <div class="mt-5 flex flex-wrap items-center justify-between gap-3">
@@ -173,6 +174,7 @@ const klap = (id: number) => {
                             <span
                                 class="tabular hidden size-11 shrink-0 items-center justify-center rounded-lg text-base font-bold sm:flex"
                                 :class="speler.overall_rating ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground'"
+                                :title="speler.overall_rating ? 'Rating op de spelerskaart' : 'Nog geen rapport, dus nog geen rating'"
                             >
                                 {{ speler.overall_rating ?? '—' }}
                             </span>

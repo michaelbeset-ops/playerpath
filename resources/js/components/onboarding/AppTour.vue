@@ -111,7 +111,9 @@ const richt = async (poging = 0) => {
  * daarop vertrouwen, dan springt hij na elke navigatie een stap terug. De
  * browser onthoudt daarom zelf waar hij is, en de server is de terugval.
  */
-const SLEUTEL = 'pp.tour.index';
+// Per school, niet per browser: wie op dezelfde laptop als tweede school
+// inlogt hoort bij stap één te beginnen, niet bij de stap van de vorige.
+const SLEUTEL = 'pp.tour.index.' + (page.props.school?.id ?? 'x');
 
 const bewaar = (stap: number) => {
     try {

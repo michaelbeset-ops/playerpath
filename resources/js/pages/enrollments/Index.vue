@@ -165,7 +165,11 @@ const detailLabels: Record<string, string> = { kledingmaat: 'Kledingmaat', nivea
 
             <div v-if="!lijst.length" class="mt-6 rounded-xl border border-dashed border-border p-8 text-center">
                 <Inbox class="mx-auto size-8 text-muted-foreground" />
-                <p class="mt-2 text-sm text-muted-foreground">Niets in dit vak.</p>
+                <p class="mt-2 font-medium">Nog niets hier</p>
+                <p class="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+                    Zodra een ouder zich aanmeldt via je inschrijfpagina, staat hij hier en krijg je een melding. Zet de link op je website
+                    of stuur hem naar ouders; hij staat bovenaan deze pagina.
+                </p>
             </div>
 
             <div v-else class="mt-4 space-y-3">

@@ -388,7 +388,9 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                         <InputError class="mt-2" :message="form.errors.name" />
 
                         <label for="slug" class="mt-4 block text-sm font-medium">Het adres van je inschrijfpagina</label>
-                        <p class="mt-1 text-xs text-muted-foreground">Alleen kleine letters, cijfers en streepjes. Dit wordt ook je subdomein.</p>
+                        <p class="mt-1 text-xs text-muted-foreground">
+                            Alleen kleine letters, cijfers en streepjes. Dit is de link die je aan ouders geeft en op je website zet.
+                        </p>
                         <div class="mt-2 flex items-center gap-2">
                             <span class="hidden shrink-0 text-sm text-muted-foreground sm:inline">/inschrijven/</span>
                             <input

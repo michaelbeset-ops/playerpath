@@ -11,6 +11,7 @@ use App\Models\School;
 use App\Models\User;
 use App\Support\Enrollment\EnrollmentSettings;
 use App\Support\Features\Features;
+use App\Support\Onboarding\OnboardingState;
 use App\Support\Tenancy\Tenancy;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -296,7 +297,19 @@ class EnrollmentSettingsTest extends TestCase
             ->get('/instellingen/inschrijven')
             ->assertInertia(fn ($page) => $page->component('enrollment-settings/Wizard')->where('step', 3));
 
+        // De startlijst komt pas na de rondleiding; tot dan is het scherm
+        // van de rondleiding.
         $this->actingAs($this->eigenaar)
+            ->get('/dashboard')
+            ->assertInertia(fn ($page) => $page->where('checklist', null));
+
+        OnboardingState::mark($this->school->fresh(), 'tour_seen_at');
+
+        // Vers lezen: de gebruiker en de actieve school dragen anders nog de
+        // stand van vóór het markeren mee.
+        app(Tenancy::class)->set($this->school->fresh());
+
+        $this->actingAs($this->eigenaar->fresh())
             ->get('/dashboard')
             ->assertInertia(fn ($page) => $page->where('checklist.steps.0.key', 'player'));
     }

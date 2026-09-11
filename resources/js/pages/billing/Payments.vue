@@ -159,7 +159,7 @@ const zetMethode = (betaling: Betaling, method: string) =>
                 <StatCard
                     label="Vraagt om actie"
                     :value="summary.needsAttentionCount === 0 ? null : summary.needsAttentionCount"
-                    :hint="summary.needsAttentionCount === 0 ? 'Geen mislukte of gestorneerde' : 'mislukt of gestorneerd'"
+                    :hint="summary.needsAttentionCount === 0 ? 'Geen mislukte of teruggedraaide betalingen' : 'mislukt of teruggedraaid'"
                     :icon="AlertTriangle"
                     tone="danger"
                 />

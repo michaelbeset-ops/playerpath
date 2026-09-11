@@ -688,6 +688,14 @@ uitnodigingen zelf.
 
 #### De startchecklist
 
+**De lijst komt pas na de rondleiding** (`tour_seen_at`). Op het eerste scherm
+stonden anders de voorbeelddata-balk, de rondleiding, het aandacht-blok én de
+lijst tegelijk om aandacht te vragen, en wie nieuw is weet dan niet waar hij
+moet beginnen. De rondleiding eindigt bij de wizard; daarna is de lijst
+precies wat er nog te doen is. Om dezelfde reden onthoudt de rondleiding haar
+stap **per school** in de browser: wie op dezelfde laptop als tweede school
+inlogt begint bij één, niet bij de stap van de vorige.
+
 Vijf stappen (`Support\Dashboard\SetupChecklist`) — eerste speler, eerste
 training, eerste rapport, ouder uitnodigen, eerste aanbod — elk met een knop
 naar de plek waar je hem afmaakt. Wat de wizard al regelt (school, groepen,

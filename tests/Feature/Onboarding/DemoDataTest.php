@@ -146,6 +146,7 @@ class DemoDataTest extends TestCase
     public function test_de_startlijst_telt_voorbeelddata_niet_mee(): void
     {
         $this->zet();
+        OnboardingState::mark($this->school->fresh(), 'tour_seen_at');
 
         $this->actingAs($this->eigenaar->fresh())
             ->get('/dashboard')
