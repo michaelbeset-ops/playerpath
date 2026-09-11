@@ -85,7 +85,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('users', fn () => redirect()->route('clients.players'))->name('users.index');
     Route::get('players', fn () => redirect()->route('clients.players'))->name('players.index');
     Route::resource('players', PlayerController::class)->except(['index']);
-    Route::resource('groups', GroupController::class)->except('show');
+    Route::resource('groups', GroupController::class);
+    // Spelers in een groep zetten of eruit halen, vanaf de groep zelf.
+    Route::post('groups/{group}/spelers', [GroupController::class, 'attachPlayers'])->name('groups.players.attach');
+    Route::delete('groups/{group}/spelers/{player}', [GroupController::class, 'detachPlayer'])->name('groups.players.detach');
 
     Route::post('players/{player}/guardians', [GuardianController::class, 'store'])->name('guardians.store');
     Route::post('players/{player}/guardians/invite', [GuardianController::class, 'invite'])->name('guardians.invite');

@@ -29,13 +29,17 @@ class GoalController extends Controller
             // Een eigen doel is een zin, geen cijfer: dan is de omschrijving
             // het doel en heeft een streefcijfer nergens betrekking op.
             'custom_label' => [Rule::requiredIf($eigenDoel), 'nullable', 'string', 'max:60'],
-            // De trainer denkt in rapportcijfers (1-10); op de kaart is dat maal tien.
-            'target' => [Rule::requiredIf(! $eigenDoel), 'nullable', 'integer', 'between:1,10'],
+            // De trainer denkt in rapportcijfers met een decimaal ("6,7"); op
+            // de kaart is dat maal tien, dus 67. Komma of punt, allebei goed.
+            // Bij een eigen doel mag het, maar hoeft het niet: er is geen
+            // cijfer om het aan af te meten, dus het is dan een richtpunt.
+            'target' => [Rule::requiredIf(! $eigenDoel), 'nullable', 'regex:/^(10([,.]0)?|[1-9]([,.]\d)?)$/'],
             'due_on' => ['required', 'date', 'after:today', 'before:'.now()->addYear()->toDateString()],
             'note' => ['nullable', 'string', 'max:255'],
         ], [
             'category.in' => 'Deze categorie hoort niet bij de positie van de speler.',
             'custom_label.required' => 'Schrijf op waar dit doel over gaat.',
+            'target.regex' => 'Vul een cijfer tussen 1 en 10 in, bijvoorbeeld 6,7.',
             'due_on.after' => 'De einddatum moet in de toekomst liggen.',
             'due_on.before' => 'Stel een doel voor maximaal een jaar.',
         ], [
@@ -46,6 +50,10 @@ class GoalController extends Controller
             'note' => 'De toelichting',
         ]);
 
+        $streef = isset($validated['target']) && $validated['target'] !== null && $validated['target'] !== ''
+            ? Goal::ratingFromGrade((string) $validated['target'])
+            : null;
+
         if ($eigenDoel) {
             // Meerdere eigen doelen naast elkaar mag: het zijn verschillende
             // dingen, geen twee metingen van dezelfde categorie.
@@ -54,7 +62,7 @@ class GoalController extends Controller
                 'category' => Goal::CUSTOM,
                 'custom_label' => $validated['custom_label'],
                 'start_rating' => 0,
-                'target_rating' => null,
+                'target_rating' => $streef,
                 'starts_on' => now()->toDateString(),
                 'due_on' => $validated['due_on'],
                 'note' => $validated['note'] ?? null,
@@ -64,10 +72,9 @@ class GoalController extends Controller
         }
 
         $huidig = ($player->category_ratings ?? [])[$validated['category']] ?? 0;
-        $streef = $validated['target'] * 10;
 
         if ($huidig >= $streef) {
-            return back()->withErrors(['target' => "Het huidige cijfer is al {$huidig}. Kies een hoger streefcijfer."]);
+            return back()->withErrors(['target' => 'Het huidige cijfer is al '.Goal::gradeFromRating((int) round($huidig)).'. Kies een hoger streefcijfer.']);
         }
 
         // Eén actief doel per categorie: anders wordt "op koers" onleesbaar.

@@ -154,7 +154,7 @@ const opslaan = () => form.post('/players/' + props.player.id + '/reports');
                                 :class="goals[categorie.category].on_track ? 'bg-primary/10 text-primary' : 'bg-warning/10 text-warning'"
                                 :title="goals[categorie.category].on_track ? 'Op koers' : 'Achter op schema'"
                             >
-                                doel {{ goals[categorie.category].target }}
+                                doel {{ (goals[categorie.category].target / 10).toFixed(1).replace('.', ',') }}
                             </span>
                             <p v-if="categorie.rating !== null" class="tabular text-muted-foreground">nu {{ categorie.rating }}</p>
                         </div>

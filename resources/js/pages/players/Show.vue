@@ -95,10 +95,18 @@ const toonDoelFormulier = ref(false);
 const doelForm = useForm({
     category: props.goalCategories[0]?.value ?? '',
     custom_label: '',
-    target: 8,
+    // Als tekst met komma, zoals een trainer het opschrijft: "7,5".
+    target: '8,0',
     due_on: '',
     note: '',
 });
+
+/** Een tiende erbij of eraf, binnen 1,0 en 10,0. */
+const stapStreef = (delta: number) => {
+    const huidig = parseFloat(String(doelForm.target).replace(',', '.')) || 8;
+    const nieuw = Math.min(10, Math.max(1, Math.round((huidig + delta) * 10) / 10));
+    doelForm.target = nieuw.toFixed(1).replace('.', ',');
+};
 
 // Een eigen doel gaat niet over een cijfer maar over een afspraak: dan verdwijnt
 // het streefcijfer en typ je zelf op waar het over gaat.
@@ -247,14 +255,15 @@ const verwijderen = () => {
                     <p class="font-medium">Groepen</p>
 
                     <div v-if="groups.length" class="mt-3 flex flex-wrap gap-2">
-                        <span
+                        <Link
                             v-for="groep in groups"
                             :key="groep.id"
-                            class="rounded-lg border border-primary/30 bg-primary/5 px-3 py-1.5 text-sm text-primary"
+                            :href="'/groups/' + groep.id"
+                            class="inline-flex min-h-11 items-center gap-1 rounded-lg border border-primary/30 bg-primary/5 px-3 text-sm text-primary transition hover:bg-primary/10"
                         >
                             {{ groep.name }}
                             <span v-if="groep.age_category" class="text-xs opacity-70">{{ groep.age_category }}</span>
-                        </span>
+                        </Link>
                     </div>
 
                     <p v-else class="mt-3 text-sm text-muted-foreground">Deze speler zit nog in geen enkele groep.</p>
@@ -308,28 +317,41 @@ const verwijderen = () => {
                         <Label for="goal_label">Waar gaat het doel over?</Label>
                         <Input id="goal_label" v-model="doelForm.custom_label" maxlength="60" placeholder="Bijvoorbeeld: uitverdedigen met links" />
                         <p class="text-xs text-muted-foreground">
-                            Hier hoort geen cijfer bij, dus er is ook geen "op koers". Je vinkt dit doel zelf af zodra het gehaald is.
+                            Dit meten we niet, dus er is geen "op koers". Je vinkt dit doel zelf af zodra het gehaald is.
                         </p>
                         <InputError :message="doelForm.errors.custom_label" />
                     </div>
 
-                    <div v-else class="grid gap-2">
-                        <Label>Streefcijfer <span class="text-muted-foreground">(op de kaart wordt dit maal tien)</span></Label>
-                        <div class="grid grid-cols-10 gap-1">
+                    <div class="grid gap-2">
+                        <Label for="goal_target">
+                            Streefcijfer
+                            <span class="text-muted-foreground">{{ eigenDoel ? '(optioneel, als richtpunt)' : '(op de kaart wordt dit maal tien)' }}</span>
+                        </Label>
+                        <div class="flex items-center gap-2">
                             <button
-                                v-for="n in 10"
-                                :key="n"
                                 type="button"
-                                class="tabular h-10 rounded-lg border text-sm font-semibold transition"
-                                :class="
-                                    doelForm.target === n
-                                        ? 'border-transparent bg-primary text-primary-foreground'
-                                        : 'border-border text-muted-foreground hover:border-primary'
-                                "
-                                @click="doelForm.target = n"
+                                class="flex size-11 shrink-0 items-center justify-center rounded-lg border border-border text-lg font-semibold transition hover:border-primary"
+                                aria-label="Een tiende lager"
+                                @click="stapStreef(-0.1)"
                             >
-                                {{ n }}
+                                −
                             </button>
+                            <Input
+                                id="goal_target"
+                                v-model="doelForm.target"
+                                inputmode="decimal"
+                                class="tabular w-24 text-center text-lg font-semibold"
+                                placeholder="7,5"
+                            />
+                            <button
+                                type="button"
+                                class="flex size-11 shrink-0 items-center justify-center rounded-lg border border-border text-lg font-semibold transition hover:border-primary"
+                                aria-label="Een tiende hoger"
+                                @click="stapStreef(0.1)"
+                            >
+                                +
+                            </button>
+                            <span class="text-xs text-muted-foreground">Met komma, bijvoorbeeld 6,7 of 7,3.</span>
                         </div>
                         <InputError :message="doelForm.errors.target" />
                     </div>

@@ -57,6 +57,44 @@ class GoalTest extends TestCase
         $this->actingAs($this->trainer)->post("/players/{$this->keeper->id}/reports", ['scores' => $this->cijfers($score)]);
     }
 
+    /**
+     * Een streefcijfer heeft een decimaal, zoals een rapportcijfer: 6,7 is
+     * een ander doel dan 7. Op de kaart is dat 67, dus er gaat niets verloren.
+     */
+    public function test_een_streefcijfer_mag_een_komma_hebben(): void
+    {
+        $this->rapporteer(6);
+
+        $this->actingAs($this->trainer)
+            ->post("/players/{$this->keeper->id}/goals", ['category' => 'reflexen', 'target' => '6,7', 'due_on' => now()->addMonths(2)->toDateString()])
+            ->assertSessionHasNoErrors();
+
+        $doel = Goal::active()->firstOrFail();
+
+        $this->assertSame(67, $doel->target_rating);
+        $this->assertSame('6,7', $doel->targetGrade());
+        $this->assertSame('Reflexen naar 6,7', $doel->describe());
+
+        $beeld = app(GoalProgress::class)->describe($doel, $this->keeper->refresh());
+        $this->assertSame('6,7', $beeld['target_grade']);
+        $this->assertSame('6,0', $beeld['current_grade']);
+        $this->assertSame('on_track', $beeld['track']);
+
+        // Ook met een punt, en een eigen doel mag een richtpunt dragen.
+        $this->actingAs($this->trainer)
+            ->post("/players/{$this->keeper->id}/goals", ['category' => Goal::CUSTOM, 'custom_label' => 'Uitverdedigen', 'target' => '7.5', 'due_on' => now()->addMonth()->toDateString()])
+            ->assertSessionHasNoErrors();
+
+        $eigen = Goal::where('category', Goal::CUSTOM)->firstOrFail();
+        $this->assertSame(75, $eigen->target_rating);
+        $this->assertNull(app(GoalProgress::class)->describe($eigen, $this->keeper)['progress']);
+
+        // Onzin wordt geweigerd.
+        $this->actingAs($this->trainer)
+            ->post("/players/{$this->keeper->id}/goals", ['category' => 'uitkomen', 'target' => '11', 'due_on' => now()->addMonth()->toDateString()])
+            ->assertSessionHasErrors('target');
+    }
+
     public function test_een_trainer_stelt_een_doel_met_het_huidige_cijfer_als_start(): void
     {
         $this->rapporteer(6);

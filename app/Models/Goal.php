@@ -107,6 +107,28 @@ class Goal extends Model
     {
         return $this->target_rating === null
             ? $this->label()
-            : $this->label().' naar '.$this->target_rating;
+            : $this->label().' naar '.$this->targetGrade();
+    }
+
+    /** Het streefcijfer als rapportcijfer met komma: 67 op de kaart is "6,7". */
+    public function targetGrade(): ?string
+    {
+        return $this->target_rating === null ? null : self::gradeFromRating($this->target_rating);
+    }
+
+    /**
+     * "6,7" → 67. Een trainer denkt in rapportcijfers met één decimaal; de
+     * kaart rekent in hele punten van 0 tot 100. Dat is precies maal tien, dus
+     * er gaat niets verloren — daarom hoeft de kolom niet decimaal te worden.
+     */
+    public static function ratingFromGrade(string $cijfer): int
+    {
+        return (int) round(((float) str_replace(',', '.', trim($cijfer))) * 10);
+    }
+
+    /** 67 → "6,7". Nederlandse notatie, één decimaal. */
+    public static function gradeFromRating(int $rating): string
+    {
+        return number_format($rating / 10, 1, ',', '');
     }
 }

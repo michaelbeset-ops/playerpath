@@ -15,11 +15,16 @@ export interface Doel {
     /** Een zelf ingetypt doel: geen cijfer, dus geen balk en geen "op koers". */
     is_custom: boolean;
     target: number | null;
+    /** Het streefcijfer als rapportcijfer, met komma: "6,7". */
+    target_grade: string | null;
     start: number | null;
     current: number | null;
+    current_grade: string | null;
     progress: number | null;
     expected: number;
     on_track: boolean | null;
+    track: 'achieved' | 'on_track' | 'just_behind' | 'behind' | null;
+    track_label: string | null;
     status: string;
     status_label: string;
     due_on: string;
@@ -52,16 +57,29 @@ const chip = (doel: Doel) => {
         return { tekst: 'Gestopt', klas: 'bg-secondary text-muted-foreground' };
     }
 
-    // Zonder cijfer valt er niets over koers te zeggen; dan staat er wanneer
+    // Zonder meting valt er niets over koers te zeggen; dan staat er wanneer
     // het af moet zijn en verder niets.
     if (doel.is_custom) {
         return { tekst: 'Loopt', klas: 'bg-secondary text-muted-foreground' };
     }
 
-    return doel.on_track
-        ? { tekst: 'Op koers', klas: 'bg-primary/10 text-primary' }
-        : { tekst: 'Achter op schema', klas: 'bg-warning/10 text-warning' };
+    // Behaald · op koers · net niet · achter. Groen is goed, oranje vraagt
+    // aandacht; "net niet" is oranje, want dat is precies waar je nu iets
+    // aan kunt doen.
+    switch (doel.track) {
+        case 'achieved':
+            return { tekst: 'Behaald', klas: 'bg-gold/15 text-gold' };
+        case 'on_track':
+            return { tekst: 'Op koers', klas: 'bg-primary/10 text-primary' };
+        case 'just_behind':
+            return { tekst: 'Net niet', klas: 'bg-warning/10 text-warning' };
+        default:
+            return { tekst: 'Achter', klas: 'bg-warning/10 text-warning' };
+    }
 };
+
+/** Van 67 naar "6,7", voor het geval een oudere melding alleen het getal heeft. */
+const cijfer = (rating: number | null) => (rating === null ? '—' : (rating / 10).toFixed(1).replace('.', ','));
 </script>
 
 <template>
@@ -74,7 +92,7 @@ const chip = (doel: Doel) => {
                     <Target v-else class="size-4 text-primary" />
                     {{ doel.label
                     }}<template v-if="doel.target !== null">
-                        naar <span class="tabular">{{ doel.target }}</span></template
+                        naar <span class="tabular">{{ doel.target_grade ?? cijfer(doel.target) }}</span></template
                     >
                 </p>
                 <span class="rounded-md px-2 py-0.5 text-xs font-medium" :class="chip(doel).klas">{{ chip(doel).tekst }}</span>
@@ -97,9 +115,10 @@ const chip = (doel: Doel) => {
 
             <p class="tabular mt-1.5 flex flex-wrap justify-between gap-x-3 text-xs text-muted-foreground">
                 <span v-if="!doel.is_custom"
-                    >Nu <span class="font-medium text-foreground">{{ doel.current ?? '—' }}</span> · gestart op {{ doel.start }}</span
+                    >Nu <span class="font-medium text-foreground">{{ doel.current_grade ?? cijfer(doel.current) }}</span> · gestart op
+                    {{ cijfer(doel.start) }}</span
                 >
-                <span v-else>Eigen doel</span>
+                <span v-else>Eigen doel<template v-if="doel.target !== null"> · richtpunt {{ doel.target_grade ?? cijfer(doel.target) }}</template></span>
                 <span v-if="doel.status === 'achieved'">Gehaald op {{ doel.achieved_at }}</span>
                 <span v-else-if="doel.status === 'active'"
                     >{{ doel.days_left === 0 ? 'Vandaag' : 'Nog ' + doel.days_left + ' dagen' }} · tot {{ doel.due_on }}</span

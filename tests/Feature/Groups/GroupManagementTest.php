@@ -37,7 +37,7 @@ class GroupManagementTest extends TestCase
     {
         $this->actingAs($this->eigenaar)
             ->post('/groups', ['name' => 'Keepers ochtend', 'age_category' => 'Onder 11', 'is_active' => true])
-            ->assertRedirect('/groups');
+            ->assertRedirect('/groups/'.Group::first()->id);
 
         $this->assertDatabaseHas('groups', [
             'school_id' => $this->school->id,
@@ -80,6 +80,51 @@ class GroupManagementTest extends TestCase
                 ->count('groups', 1)
                 ->where('groups.0.players_count', 2)
             );
+    }
+
+    /**
+     * Op de groep zelf zet je spelers erin en haal je ze eruit — meerdere
+     * tegelijk, want een school die overstapt doet er twintig in één keer.
+     */
+    public function test_op_de_groep_zet_je_spelers_erin_en_haal_je_ze_eruit(): void
+    {
+        $groep = Group::factory()->for($this->school)->create(['age_category' => 'O12']);
+        [$a, $b, $c] = Player::factory()->count(3)->for($this->school)->create();
+        $buur = Player::factory()->for(School::factory()->create())->create();
+
+        $this->actingAs($this->eigenaar)
+            ->get('/groups/'.$groep->id)
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('groups/Show')
+                ->count('players', 0)
+                ->count('available', 3)
+                ->where('can.manage', true)
+            );
+
+        $this->actingAs($this->eigenaar)
+            ->post('/groups/'.$groep->id.'/spelers', ['players' => [$a->id, $b->id, $a->id]])
+            ->assertSessionHas('status');
+
+        $this->assertSame(2, $groep->players()->count());
+
+        // Een speler van een andere school hoort niet in de lijst en niet in
+        // de groep, ook niet als iemand zijn id intypt.
+        $this->actingAs($this->eigenaar)
+            ->post('/groups/'.$groep->id.'/spelers', ['players' => [$buur->id]])
+            ->assertSessionHasErrors('players.0');
+
+        $this->actingAs($this->eigenaar)
+            ->get('/groups/'.$groep->id)
+            ->assertInertia(fn ($page) => $page->count('players', 2)->count('available', 1));
+
+        $this->actingAs($this->eigenaar)
+            ->delete('/groups/'.$groep->id.'/spelers/'.$a->id)
+            ->assertSessionHas('status');
+
+        $this->assertSame(1, $groep->players()->count());
+        $this->assertTrue(Player::whereKey($a->id)->exists());
+        $this->assertTrue($c->exists);
     }
 
     public function test_een_groep_verwijderen_laat_de_spelers_bestaan(): void

@@ -49,12 +49,17 @@ class GoalProgress
         if ($goal->isCustom()) {
             return [
                 ...$basis,
-                'target' => null,
+                // Een richtpunt mag erbij staan; meten doen we het niet.
+                'target' => $goal->target_rating,
+                'target_grade' => $goal->targetGrade(),
                 'start' => null,
                 'current' => null,
+                'current_grade' => null,
                 'progress' => null,
                 'expected' => $verwacht,
                 'on_track' => null,
+                'track' => $goal->status === GoalStatus::Achieved ? 'achieved' : null,
+                'track_label' => $goal->status === GoalStatus::Achieved ? 'Behaald' : null,
             ];
         }
 
@@ -64,18 +69,31 @@ class GoalProgress
         $afgelegd = $huidig === null ? 0 : max(0, $huidig - $goal->start_rating);
         $voortgang = (int) min(100, round($afgelegd / $weg * 100));
 
-        $opKoers = $goal->status === GoalStatus::Achieved
-            || ($huidig !== null && $huidig >= $goal->target_rating)
-            || $voortgang >= $verwacht;
+        $behaald = $goal->status === GoalStatus::Achieved || ($huidig !== null && $huidig >= $goal->target_rating);
+        $opKoers = $behaald || $voortgang >= $verwacht;
+
+        // Drie woorden die een ouder snapt: behaald, op koers, net niet. En
+        // "achter" als het echt niet bijloopt — meer dan vijftien punten onder
+        // waar je nu hoort te zijn.
+        $spoor = match (true) {
+            $behaald => ['achieved', 'Behaald'],
+            $opKoers => ['on_track', 'Op koers'],
+            $voortgang >= $verwacht - 15 => ['just_behind', 'Net niet'],
+            default => ['behind', 'Achter'],
+        };
 
         return [
             ...$basis,
             'target' => $goal->target_rating,
+            'target_grade' => $goal->targetGrade(),
             'start' => $goal->start_rating,
-            'current' => $huidig,
+            'current' => $huidig === null ? null : (int) round($huidig),
+            'current_grade' => $huidig === null ? null : Goal::gradeFromRating((int) round($huidig)),
             'progress' => $voortgang,
             'expected' => $verwacht,
             'on_track' => $opKoers,
+            'track' => $spoor[0],
+            'track_label' => $spoor[1],
         ];
     }
 
