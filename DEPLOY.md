@@ -160,6 +160,7 @@ npm ci
 npm run build
 
 php artisan migrate --force
+php artisan db:seed --class=RoleSeeder --force
 
 php artisan storage:link
 php artisan playerpath:icons
@@ -170,6 +171,14 @@ php artisan view:cache
 
 php artisan queue:restart
 ```
+
+**`db:seed --class=RoleSeeder --force` hoort er elke keer in.** De rollen
+(eigenaar, trainer, ouder, speler) komen niet uit de migraties maar uit de
+seeder, en zonder die rollen weigert `school:create`. De seeder gebruikt
+`findOrCreate`, dus vaker draaien kan geen kwaad, en een rol die er later bij
+komt staat na de eerstvolgende deploy vanzelf klaar. `--force` is verplicht:
+zonder die vlag vraagt Laravel op productie om een bevestiging, en in het
+Commands-scherm van Forge wacht zo'n vraag eindeloos op een antwoord.
 
 `queue:restart` is makkelijk te vergeten en levert het vervelendste soort bug
 op: workers die oude code blijven draaien, dus meldingen die verwijzen naar een
