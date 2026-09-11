@@ -712,6 +712,17 @@ omdat "een gevulde spelerskaart" het adres van een echte voorbeeldspeler is,
 en omdat de functies van de school bepalen welke stappen er zijn — staat
 Betalingen uit, dan is er geen stap Financiën.
 
+- **Het scherm blijft te gebruiken.** Er ligt geen donkere laag overheen: je
+  kunt scrollen, klikken en rondkijken terwijl het kaartje staat. De eerste
+  versie blokkeerde alles, en dan is een rondleiding een diavoorstelling over
+  een scherm dat je niet mag aanraken. Het kaartje staat rechtsonder (op een
+  telefoon onderaan) en klapt met één tik in tot een smal balkje.
+- **Elke stap zegt wat je ziet, wat je ermee doet, en wat je zelf kunt
+  proberen** (`tip`). Geen vaktaal: er staat "punten" en niet "XP". De
+  pijltjestoetsen bladeren, maar niet zolang iemand in een invulveld typt.
+- **Eén ring om het onderdeel waar het over gaat.** Is het anker groter dan
+  zeventig procent van het scherm (het hele dashboard), dan komt er geen ring:
+  een ring om alles wijst nergens naar.
 - **"Wat een ouder ziet" is een echt scherm**: `/onboarding/ouderweergave`
   toont het gezinsdashboard met de voorbeeldspelers als kinderen. Een plaatje
   ervan zou verouderen; dit is het scherm zelf.

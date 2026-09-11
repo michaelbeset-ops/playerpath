@@ -63,7 +63,7 @@ export interface SharedData {
         canRestartTour: boolean;
         intro: boolean;
         tourStep: number;
-        tourSteps: { key: string; url: string; anchor: string | null; title: string; body: string }[];
+        tourSteps: { key: string; url: string; anchor: string | null; title: string; body: string; tip: string | null }[];
     } | null;
     /** Welke functies deze school heeft; zie App\Enums\Feature. */
     features: Record<string, boolean>;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/vue3';
-import { ArrowLeft, ArrowRight, Check, Compass, X } from 'lucide-vue-next';
+import { ArrowLeft, ArrowRight, Check, ChevronDown, ChevronUp, Compass, Lightbulb, X } from 'lucide-vue-next';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 /**
@@ -13,20 +13,25 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
  * want welke schermen er zijn hangt af van de functies van de school, en het
  * adres van "een gevulde spelerskaart" is dat van een echte voorbeeldspeler.
  *
- * Vijf regels:
+ * Wat deze versie anders doet dan de eerste, en waarom:
  *
- * 1. **Overslaan kan altijd**, in elke stap, en het is geen kleine grijze link.
- * 2. **Hoe ver je bent wordt onthouden** (`tour_step` op de school). Wie
- *    halverwege zijn telefoon wegstopt komt terug bij stap acht, niet bij één.
- *    Sta je op een ander scherm dan de stap, dan staat er een klein kaartje
- *    "Rondleiding hervatten" in plaats van dat je ongevraagd wordt weggestuurd.
- * 3. **Het anker wordt alleen omcirkeld als het zichtbaar is.** Op een telefoon
- *    zit het menu in een uitklap; een ring om iets onzichtbaars is een ring om
- *    niets. De kaart vertelt het verhaal ook zonder pijl.
- * 4. **Op een telefoon staat de kaart onderaan**, binnen duimbereik. Op een
- *    groot scherm staat hij onder het anker, en anders onderaan.
- * 5. **De laatste stap is een deur**, niet een "klaar": hij brengt je naar het
- *    inrichten van je eigen school.
+ * 1. **Het scherm blijft gewoon te gebruiken.** Er ligt geen donkere laag
+ *    overheen: je kunt scrollen, klikken en rondkijken terwijl het kaartje
+ *    staat. De eerste versie blokkeerde alles, en dan is een rondleiding een
+ *    dia-show over een scherm dat je niet mag aanraken.
+ * 2. **Het kaartje staat in een hoek en klapt in.** Rechtsonder op een groot
+ *    scherm, onderaan op een telefoon, en met één tik wordt het een smal
+ *    balkje. Zo kun je even zelf kijken en daarna verder.
+ * 3. **Eén ring om het onderdeel waar het over gaat**, en verder niets. Is het
+ *    anker zo groot als het scherm zelf (het hele dashboard), dan komt er geen
+ *    ring: een ring om alles wijst nergens naar.
+ * 4. **Elke stap heeft een tip om zelf iets te proberen.** Dat is het verschil
+ *    tussen uitleg lezen en iets snappen.
+ * 5. **Pijltjestoetsen werken, maar niet in een invulveld.** Het scherm is
+ *    bruikbaar, dus iemand kan aan het typen zijn.
+ * 6. **Hoe ver je bent wordt onthouden** (`tour_step` op de school). Sta je op
+ *    een ander scherm dan de stap, dan staat er een klein balkje om terug te
+ *    gaan, in plaats van dat je ongevraagd wordt weggestuurd.
  */
 interface TourStap {
     key: string;
@@ -34,6 +39,7 @@ interface TourStap {
     anchor: string | null;
     title: string;
     body: string;
+    tip: string | null;
 }
 
 const page = usePage<SharedData>();
@@ -43,22 +49,33 @@ const bezig = computed(() => page.props.onboarding?.tour === true && stappen.val
 
 const index = ref(0);
 const doel = ref<DOMRect | null>(null);
-const smal = ref(false);
+const ingeklapt = ref(false);
 
 const huidige = computed(() => stappen.value[index.value] ?? null);
 const laatste = computed(() => index.value >= stappen.value.length - 1);
 
 const pad = computed(() => page.url.split('?')[0]);
 
-/** Sta je op het scherm van deze stap? Zo niet: hervatten aanbieden. */
+/** Sta je op het scherm van deze stap? Zo niet: teruggaan aanbieden. */
 const opHetScherm = computed(() => huidige.value !== null && pad.value === huidige.value.url.split('?')[0]);
 
 const zoek = (anchor: string | null) => (anchor ? document.querySelector<HTMLElement>('[data-tour="' + anchor + '"]') : null);
 const zichtbaar = (el: HTMLElement | null) => el !== null && el.getClientRects().length > 0 && el.offsetParent !== null;
 
+/** Een anker dat bijna het hele scherm is krijgt geen ring: die wijst nergens naar. */
+const teGroot = (rect: DOMRect) => rect.height > window.innerHeight * 0.7;
+
 const meet = () => {
     const el = zoek(huidige.value?.anchor ?? null);
-    doel.value = zichtbaar(el) ? el!.getBoundingClientRect() : null;
+
+    if (!zichtbaar(el)) {
+        doel.value = null;
+
+        return;
+    }
+
+    const rect = el!.getBoundingClientRect();
+    doel.value = teGroot(rect) ? null : rect;
 };
 
 // Naar het anker scrollen als het buiten beeld staat, dan meten.
@@ -73,12 +90,13 @@ const richt = async (poging = 0) => {
     }
 
     if (zichtbaar(el)) {
-        // In één keer, niet vloeiend: een vloeiende scroll duurt op een groot
-        // scherm langer dan je denkt, en een meting halverwege zet de kaart
-        // naast iets wat er nog niet is. Een hoog blok (het hele dashboard)
-        // begint bovenaan; de rest komt in het midden.
-        const hoog = el!.getBoundingClientRect().height > window.innerHeight * 0.7;
-        el!.scrollIntoView({ block: hoog ? 'start' : 'center', behavior: 'auto' });
+        // Bovenaan in beeld, met ruimte voor de balk bovenin. Niet in het
+        // midden: op een telefoon staat het kaartje onderaan, en "midden"
+        // schuift het onderdeel er dan half onder. In één keer, niet
+        // vloeiend: een meting halverwege een vloeiende scroll zet de ring
+        // naast iets wat er nog niet is.
+        el!.style.scrollMarginTop = '5rem';
+        el!.scrollIntoView({ block: 'start', behavior: 'auto' });
         requestAnimationFrame(meet);
     }
 
@@ -131,6 +149,7 @@ const ga = (stap: number) => {
     }
 
     index.value = stap;
+    ingeklapt.value = false;
     bewaar(stap);
 
     if (pad.value !== doelStap.url.split('?')[0]) {
@@ -143,7 +162,7 @@ const ga = (stap: number) => {
 const volgende = () => (laatste.value ? afronden() : ga(index.value + 1));
 const vorige = () => ga(Math.max(0, index.value - 1));
 
-/** Overslaan telt als gezien; opnieuw starten kan altijd via het vraagteken. */
+/** Stoppen telt als gezien; opnieuw starten kan altijd via het vraagteken. */
 const stop = () => {
     vergeet();
     router.post('/onboarding/rondleiding/klaar', {}, { preserveScroll: true });
@@ -155,30 +174,31 @@ const afronden = () => {
     router.post('/onboarding/rondleiding/klaar', {}, { onSuccess: () => router.visit('/instellingen/inschrijven/stap/1') });
 };
 
-const hervat = () => ga(index.value);
+const terug = () => ga(index.value);
+
+/** Typt iemand ergens? Dan zijn de pijltjes van hem, niet van ons. */
+const aanHetTypen = (event: KeyboardEvent) => {
+    const el = event.target as HTMLElement | null;
+
+    return el !== null && (el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName));
+};
 
 const opToets = (event: KeyboardEvent) => {
-    if (!bezig.value || !opHetScherm.value) {
+    if (!bezig.value || !opHetScherm.value || ingeklapt.value || aanHetTypen(event)) {
         return;
     }
 
-    if (event.key === 'Escape') {
-        stop();
-    } else if (event.key === 'ArrowRight') {
+    if (event.key === 'ArrowRight') {
         volgende();
     } else if (event.key === 'ArrowLeft') {
         vorige();
     }
 };
 
-const meetBreedte = () => (smal.value = window.matchMedia('(max-width: 639px)').matches);
-
 onMounted(() => {
     index.value = Math.min(onthouden() ?? page.props.onboarding?.tourStep ?? 0, Math.max(0, stappen.value.length - 1));
-    meetBreedte();
     window.addEventListener('resize', meet);
-    window.addEventListener('resize', meetBreedte);
-    window.addEventListener('scroll', meet, true);
+    window.addEventListener('scroll', meet, { capture: true, passive: true });
     document.addEventListener('keydown', opToets);
 
     // Even wachten tot het scherm er echt staat; anders vindt hij het anker niet.
@@ -187,8 +207,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
     window.removeEventListener('resize', meet);
-    window.removeEventListener('resize', meetBreedte);
-    window.removeEventListener('scroll', meet, true);
+    window.removeEventListener('scroll', meet, { capture: true });
     document.removeEventListener('keydown', opToets);
 });
 
@@ -200,117 +219,115 @@ watch(pad, () => {
     }
 });
 
-// Scrollt of draait iemand het scherm, dan verhuist de ring mee.
-onMounted(() => {
-    window.addEventListener('scroll', meet, { passive: true });
-    window.addEventListener('resize', meet);
-});
-onBeforeUnmount(() => {
-    window.removeEventListener('scroll', meet);
-    window.removeEventListener('resize', meet);
-});
-
 // Opnieuw gestart via het vraagteken: dan begint hij écht vooraan.
 watch(bezig, (nu, eerst) => {
     if (nu && !eerst) {
         vergeet();
         index.value = 0;
+        ingeklapt.value = false;
         setTimeout(richt, 500);
     }
-});
-
-/** Waar de kaart staat op een groot scherm: onder het anker als dat kan. */
-const kaartStijl = computed(() => {
-    if (smal.value || !doel.value) {
-        return undefined;
-    }
-
-    const breedte = 416;
-    const links = Math.min(Math.max(16, doel.value.left), window.innerWidth - breedte - 16);
-    const onder = doel.value.bottom + 16;
-
-    // Past hij eronder? Anders erboven, en anders onderaan het scherm.
-    if (onder + 260 < window.innerHeight) {
-        return { left: links + 'px', top: onder + 'px' };
-    }
-
-    // Erboven kan alleen als het anker zelf in beeld is; anders hangt de
-    // kaart aan iets wat je niet ziet.
-    if (doel.value.top - 276 > 0 && doel.value.top < window.innerHeight) {
-        return { left: links + 'px', top: doel.value.top - 276 + 'px' };
-    }
-
-    return undefined;
 });
 </script>
 
 <template>
     <Teleport to="body">
-        <!-- ===== Actief op het juiste scherm ===== -->
-        <div v-if="bezig && huidige && opHetScherm" class="fixed inset-0 z-[60]" role="dialog" aria-label="Rondleiding">
-            <div class="absolute inset-0 bg-foreground/50" @click="stop"></div>
-
+        <template v-if="bezig && huidige">
+            <!-- De ring om het onderdeel waar deze stap over gaat. Laat klikken
+                 door: het scherm eronder blijft van de gebruiker. -->
             <div
-                v-if="doel"
-                class="pointer-events-none absolute rounded-xl ring-4 ring-primary ring-offset-2 ring-offset-transparent transition-all"
+                v-if="opHetScherm && !ingeklapt && doel"
+                class="pp-tour-ring pointer-events-none fixed z-40 rounded-xl ring-4 ring-primary ring-offset-2 ring-offset-background"
                 :style="{
-                    left: doel.left - 4 + 'px',
-                    top: doel.top - 4 + 'px',
-                    width: doel.width + 8 + 'px',
-                    height: doel.height + 8 + 'px',
+                    left: doel.left - 6 + 'px',
+                    top: doel.top - 6 + 'px',
+                    width: doel.width + 12 + 'px',
+                    height: doel.height + 12 + 'px',
                 }"
             ></div>
 
+            <!-- ===== Op het scherm van de stap, ingeklapt: een smal balkje ===== -->
             <div
-                class="absolute inset-x-0 bottom-0 p-3 sm:w-[26rem] sm:p-0"
-                :class="kaartStijl ? '' : 'sm:inset-x-auto sm:bottom-8 sm:left-1/2 sm:-translate-x-1/2'"
-                :style="kaartStijl"
+                v-if="opHetScherm && ingeklapt"
+                class="fixed inset-x-3 bottom-[calc(var(--pp-tabbar)+0.75rem)] z-50 flex items-center gap-3 rounded-xl border border-border bg-card p-2 pl-4 shadow-lg sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-96"
             >
-                <div class="rounded-2xl border border-border bg-card p-4 shadow-2xl sm:p-5">
-                    <div class="flex items-start justify-between gap-3">
-                        <p class="tabular text-xs font-medium text-muted-foreground">Stap {{ index + 1 }} van {{ stappen.length }}</p>
-                        <button
-                            type="button"
-                            class="-my-2.5 flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary"
-                            aria-label="Rondleiding overslaan"
-                            @click="stop"
-                        >
-                            <X class="size-4" />
-                        </button>
-                    </div>
+                <Compass class="size-5 shrink-0 text-primary" />
+                <span class="min-w-0 flex-1 text-sm">
+                    <span class="tabular block text-xs text-muted-foreground">Rondleiding · stap {{ index + 1 }} van {{ stappen.length }}</span>
+                    <span class="block truncate font-medium">{{ huidige.title }}</span>
+                </span>
+                <button
+                    type="button"
+                    class="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground"
+                    @click="ingeklapt = false"
+                >
+                    <ChevronUp class="size-4" />
+                    Verder
+                </button>
+            </div>
 
-                    <p class="mt-1 text-lg font-semibold">{{ huidige.title }}</p>
-                    <p class="mt-1 text-sm text-muted-foreground">{{ huidige.body }}</p>
+            <!-- ===== Op het scherm van de stap: het kaartje ===== -->
+            <div
+                v-else-if="opHetScherm"
+                class="fixed inset-x-3 bottom-[calc(var(--pp-tabbar)+0.75rem)] z-50 sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[24rem]"
+                role="complementary"
+                aria-label="Rondleiding"
+            >
+                <div class="max-h-[60vh] overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl sm:max-h-[calc(100vh-6rem)]">
+                    <div class="p-4 sm:p-5">
+                        <div class="flex items-center justify-between gap-2">
+                            <p class="tabular text-xs font-medium text-muted-foreground">Stap {{ index + 1 }} van {{ stappen.length }}</p>
+                            <div class="-my-2 -mr-2 flex items-center">
+                                <button
+                                    type="button"
+                                    class="flex size-11 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                                    aria-label="Kaartje even wegklappen"
+                                    title="Even zelf kijken"
+                                    @click="ingeklapt = true"
+                                >
+                                    <ChevronDown class="size-5" />
+                                </button>
+                                <button
+                                    type="button"
+                                    class="flex size-11 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-secondary hover:text-foreground"
+                                    aria-label="Rondleiding stoppen"
+                                    title="Rondleiding stoppen"
+                                    @click="stop"
+                                >
+                                    <X class="size-4" />
+                                </button>
+                            </div>
+                        </div>
 
-                    <div class="mt-3 h-1 overflow-hidden rounded-full bg-secondary">
-                        <div
-                            class="h-full rounded-full bg-primary transition-all"
-                            :style="{ width: ((index + 1) / stappen.length) * 100 + '%' }"
-                        ></div>
-                    </div>
+                        <div class="mt-2 h-1 overflow-hidden rounded-full bg-secondary">
+                            <div
+                                class="h-full rounded-full bg-primary transition-all"
+                                :style="{ width: ((index + 1) / stappen.length) * 100 + '%' }"
+                            ></div>
+                        </div>
 
-                    <div class="mt-4 flex items-center justify-between gap-2">
-                        <button
-                            type="button"
-                            class="inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-sm text-muted-foreground transition enabled:hover:text-foreground disabled:opacity-30"
-                            :disabled="index === 0"
-                            @click="vorige"
-                        >
-                            <ArrowLeft class="size-4" />
-                            Vorige
-                        </button>
+                        <p class="mt-4 text-lg font-semibold leading-snug">{{ huidige.title }}</p>
+                        <p class="mt-2 text-[15px] leading-relaxed text-foreground/85">{{ huidige.body }}</p>
 
-                        <div class="flex items-center gap-2">
+                        <div v-if="huidige.tip" class="mt-3 flex gap-2.5 rounded-xl bg-primary/10 p-3 text-sm leading-relaxed">
+                            <Lightbulb class="mt-0.5 size-4 shrink-0 text-primary" />
+                            <p>{{ huidige.tip }}</p>
+                        </div>
+
+                        <div class="mt-4 flex items-center justify-between gap-2">
                             <button
                                 type="button"
-                                class="inline-flex min-h-11 items-center rounded-xl px-3 text-sm text-muted-foreground transition hover:text-foreground"
-                                @click="stop"
+                                class="inline-flex min-h-11 items-center gap-1.5 rounded-xl px-3 text-sm text-muted-foreground transition enabled:hover:text-foreground disabled:opacity-30"
+                                :disabled="index === 0"
+                                @click="vorige"
                             >
-                                Overslaan
+                                <ArrowLeft class="size-4" />
+                                Vorige
                             </button>
+
                             <button
                                 type="button"
-                                class="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                                class="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
                                 @click="volgende"
                             >
                                 <template v-if="laatste">
@@ -326,33 +343,57 @@ const kaartStijl = computed(() => {
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- ===== Actief, maar op een ander scherm: hervatten aanbieden ===== -->
-        <div
-            v-else-if="bezig && huidige"
-            class="fixed inset-x-3 bottom-[calc(var(--pp-tabbar)+0.75rem)] z-50 flex items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-lg sm:left-auto sm:w-96"
-        >
-            <Compass class="size-5 shrink-0 text-primary" />
-            <span class="min-w-0 flex-1 text-sm">
-                <span class="block font-medium">Rondleiding hervatten</span>
-                <span class="tabular block text-xs text-muted-foreground">Stap {{ index + 1 }} van {{ stappen.length }} · {{ huidige.title }}</span>
-            </span>
-            <button
-                type="button"
-                class="inline-flex min-h-11 shrink-0 items-center rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground"
-                @click="hervat"
+            <!-- ===== Op een ander scherm dan de stap: terug aanbieden ===== -->
+            <div
+                v-else
+                class="fixed inset-x-3 bottom-[calc(var(--pp-tabbar)+0.75rem)] z-50 flex items-center gap-3 rounded-xl border border-border bg-card p-2 pl-4 shadow-lg sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-96"
             >
-                Verder
-            </button>
-            <button
-                type="button"
-                class="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground"
-                aria-label="Rondleiding overslaan"
-                @click="stop"
-            >
-                <X class="size-4" />
-            </button>
-        </div>
+                <Compass class="size-5 shrink-0 text-primary" />
+                <span class="min-w-0 flex-1 text-sm">
+                    <span class="tabular block text-xs text-muted-foreground">Rondleiding · stap {{ index + 1 }} van {{ stappen.length }}</span>
+                    <span class="block truncate font-medium">{{ huidige.title }}</span>
+                </span>
+                <button
+                    type="button"
+                    class="inline-flex min-h-11 shrink-0 items-center rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground"
+                    @click="terug"
+                >
+                    Terug
+                </button>
+                <button
+                    type="button"
+                    class="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground"
+                    aria-label="Rondleiding stoppen"
+                    @click="stop"
+                >
+                    <X class="size-4" />
+                </button>
+            </div>
+        </template>
     </Teleport>
 </template>
+
+<style scoped>
+/* Een zachte ademhaling, zodat het oog de ring vindt zonder dat hij schreeuwt.
+   Uit voor wie liever geen beweging heeft. */
+@keyframes pp-tour-adem {
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 hsl(var(--primary) / 0.35);
+    }
+    50% {
+        box-shadow: 0 0 0 10px hsl(var(--primary) / 0);
+    }
+}
+
+.pp-tour-ring {
+    animation: pp-tour-adem 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .pp-tour-ring {
+        animation: none;
+    }
+}
+</style>

@@ -18,21 +18,24 @@ use App\Support\Features\Features;
  * echte voorbeeldspeler, en welke functies deze school heeft bepaalt welke
  * stappen er überhaupt zijn.
  *
- * Drie regels:
+ * Vier regels voor de tekst:
  *
- * 1. **Twee of drie zinnen per stap.** Een tour die langer leest dan het
- *    uitproberen zelf wordt weggeklikt.
- * 2. **Alleen schermen die bestaan.** Staat Betalingen uit, dan is er geen stap
+ * 1. **Zeg wat je ziet en wat je ermee doet.** Geen uitleg van het product,
+ *    maar van dít scherm: "bovenaan staan vier cijfers", "hier vink je af".
+ * 2. **Elke stap heeft een tip om zelf iets te proberen.** Het scherm blijft
+ *    tijdens de rondleiding gewoon te gebruiken; de tip zegt wat de moeite is.
+ * 3. **Geen vaktaal.** Geen "XP", "trend" of "signaal" zonder dat er staat wat
+ *    het in gewone woorden is. De eigenaar van een keepersschool is geen
+ *    softwaregebruiker van beroep.
+ * 4. **Alleen schermen die bestaan.** Staat Betalingen uit, dan is er geen stap
  *    Financiën. Een stap naar een 404 is erger dan geen stap.
- * 3. **Zonder voorbeelddata ook bruikbaar.** Dan wijzen de spelerstappen naar
- *    de lijst in plaats van naar één kaart; de tekst blijft kloppen.
  */
 class OnboardingTour
 {
     public function __construct(protected Features $features) {}
 
     /**
-     * @return list<array{key: string, url: string, anchor: string|null, title: string, body: string}>
+     * @return list<array{key: string, url: string, anchor: string|null, title: string, body: string, tip: string|null}>
      */
     public function steps(School $school): array
     {
@@ -53,63 +56,72 @@ class OnboardingTour
                 'url' => '/dashboard',
                 'anchor' => null,
                 'title' => 'Welkom bij PlayerPath',
-                'body' => 'Een trainer vult in een halve minuut een rapport in, en de spelerskaart van het kind verandert zichtbaar mee. Ouders zien groei; jij ziet je hele school in één oogopslag. Deze rondleiding loopt langs elk onderdeel — in veertien korte stappen.',
+                'body' => 'Hier plan je trainingen, beoordelen je trainers de spelers, en zien ouders hoe hun kind vooruitgaat. In veertien korte stappen laten we zien waar alles staat.',
+                'tip' => 'Je kunt tijdens de rondleiding gewoon klikken en scrollen. Dit kaartje blijft staan tot je op Volgende drukt, en met het pijltje klap je het even weg.',
             ],
             [
                 'key' => 'dashboard',
                 'url' => '/dashboard',
                 'anchor' => 'dashboard',
-                'title' => 'Je dashboard',
-                'body' => 'Hoe staat je school ervoor: spelers, rating, rapporten en omzet, met de trend erbij. Je kunt de onderdelen zelf schikken; op een telefoon staat er minder, zodat het in één blik past.',
+                'title' => 'Je startpagina',
+                'body' => 'Bovenaan staan vier cijfers: hoeveel spelers je hebt, hoe goed ze gemiddeld scoren, hoeveel rapporten er deze week zijn ingevuld en wat je deze maand hebt verdiend.',
+                'tip' => 'Scroll naar beneden. Daar zie je wie het hardst groeit en welke trainingen eraan komen.',
             ],
             [
                 'key' => 'aandacht',
                 'url' => '/dashboard',
                 'anchor' => 'attention',
-                'title' => 'Wat er nu actie vraagt',
-                'body' => 'Mislukte betalingen, spelers zonder recent rapport, een training zonder trainer. Elk signaal heeft een knop naar de plek waar je het oplost. Is er niets, dan staat er één rustige regel.',
+                'title' => 'Wat er nu van je gevraagd wordt',
+                'body' => 'In dit blok staat wat aandacht nodig heeft: een betaling die mislukte, een speler die lang geen rapport kreeg, een training zonder trainer. Achter elke regel zit een knop naar de plek waar je het oplost.',
+                'tip' => 'Is er niets aan de hand, dan staat hier één regel: alles loopt. Nu staat er voorbeelddata in, dus je ziet misschien al iets.',
             ],
             [
                 'key' => 'agenda',
                 'url' => '/calendar',
                 'anchor' => 'calendar',
                 'title' => 'Je agenda',
-                'body' => 'Trainingen plannen, met een trainer en een locatie erbij. Trainers zien hier hun eigen rooster; ouders alleen de groep van hun kind.',
+                'body' => 'Alle trainingen in een kalender. Een nieuwe training plan je met de plusknop: je kiest een groep, een tijd, een plek en een trainer. Trainers zien hier hun eigen rooster; ouders alleen de trainingen van hun kind.',
+                'tip' => 'Klik eens op een training in de kalender om te zien wat erin staat.',
             ],
             [
                 'key' => 'trainingen',
                 'url' => $training ? '/trainings/'.$training->id : '/trainings',
                 'anchor' => 'attendance',
-                'title' => 'Aanwezigheid afvinken',
-                'body' => 'Bij elke training staat de groep klaar om af te vinken. Ouders kunnen vooraf afmelden; de trainer vinkt achteraf af. Aanwezigheid levert een speler XP op.',
+                'title' => 'Wie was erbij',
+                'body' => 'Dit is één training. Onderaan staat de groep: na afloop vinkt de trainer af wie er was. Ouders kunnen vooraf laten weten dat hun kind niet komt, dan staat dat er al bij.',
+                'tip' => 'Aanwezig zijn levert een speler punten op. Die punten zie je straks terug op zijn spelerskaart.',
             ],
             [
                 'key' => 'klanten',
                 'url' => '/clients',
                 'anchor' => 'clients',
                 'title' => 'Je klanten',
-                'body' => 'Spelers met hun ouders eronder — één lijst, want je denkt in een kind met iemand erbij die je belt. Hier koppel je ouders, deel je spelers in groepen en nodig je uit.',
+                'body' => 'Elke speler, met daaronder zijn ouders. Hier voeg je spelers toe, zet je ze in een groep en nodig je ouders uit voor hun eigen inlog.',
+                'tip' => 'Klik op een speler: dan zie je alles over hem op één pagina, van rapporten tot betalingen.',
             ],
             [
                 'key' => 'rapport',
                 'url' => $training ? '/trainings/'.$training->id.'/rapporten' : '/reports',
                 'anchor' => 'quick-report',
-                'title' => 'Rapport invullen in dertig seconden',
-                'body' => 'Zes schuiven, de cijfers van vorige keer staan al ingevuld, en "Opslaan & volgende" gaat meteen door naar de volgende speler. Dit is het hart van het product: hier ontstaat de kaart.',
+                'title' => 'Een rapport invullen',
+                'body' => 'Dit is het belangrijkste scherm van de app. Na een training geeft de trainer elke speler een cijfer op zes onderdelen, met een schuifje. De cijfers van de vorige keer staan al ingevuld; hij past alleen aan wat veranderde. Opslaan gaat meteen door naar de volgende speler.',
+                'tip' => 'Probeer het: schuif een cijfer omhoog. Zolang je niet op Opslaan drukt, verandert er niets.',
             ],
             [
                 'key' => 'kaart',
                 'url' => $speler ? '/players/'.$speler->id.'/card' : '/clients',
                 'anchor' => 'player-card',
                 'title' => 'De spelerskaart',
-                'body' => 'De laatste drie rapporten worden gemiddeld en maal tien: een 7,5 leest als 75. Aanwezig zijn en groeien levert XP op, XP brengt een speler naar brons, zilver, goud en elite, en onderweg haalt hij mijlpalen.',
+                'body' => 'Dit is wat een kind en zijn ouders zien. Het grote cijfer is het gemiddelde van de laatste drie rapporten. Door te komen trainen en beter te worden verdient een speler punten, en daarmee stijgt hij van brons naar zilver, goud en elite.',
+                'tip' => 'Scroll naar beneden voor "Hoe werkt mijn rating?". Die uitleg zien ouders ook, zodat je die vraag niet zelf hoeft te beantwoorden.',
             ],
             [
                 'key' => 'ouder',
                 'url' => '/onboarding/ouderweergave',
                 'anchor' => 'family',
                 'title' => 'Wat een ouder ziet',
-                'body' => 'Dit is jouw verkoopargument. Een ouder ziet wanneer de training is, de kaart en de groei van zijn kind, en wat er nog openstaat. Geen instellingen, niets in te vullen.',
+                'body' => 'Zo ziet een ouder de app: de eerstvolgende trainingen, het kaartje van zijn kind en wat er nog betaald moet worden. Geen instellingen, niets in te vullen. Dit is wat je laat zien als je ouders wilt overtuigen.',
+                'tip' => 'Dit is een voorbeeld, met de voorbeeldspelers als kinderen. Een echte ouder ziet alleen zijn eigen kind.',
             ],
         ];
 
@@ -118,8 +130,9 @@ class OnboardingTour
                 'key' => 'inschrijven',
                 'url' => '/enrollments',
                 'anchor' => 'enrollments',
-                'title' => 'Inschrijvingen en aanbod',
-                'body' => 'Elke school heeft een eigen aanmeldpagina met haar aanbod: blokken, abonnementen, kampen. Een ouder meldt zich daar aan, jij keurt goed, en de ouder krijgt een betaalverzoek.',
+                'title' => 'Aanmeldingen',
+                'body' => 'Elke school krijgt een eigen aanmeldpagina. Daar ziet een ouder je aanbod — blokken, abonnementen, kampen — en meldt hij zijn kind aan. Hier komen die aanmeldingen binnen en keur je ze goed. Na je goedkeuring krijgt de ouder een betaalverzoek.',
+                'tip' => 'Je aanbod zelf, met prijzen en data, beheer je bovenin onder Mijn bedrijf → Aanbod.',
             ];
         }
 
@@ -128,8 +141,9 @@ class OnboardingTour
                 'key' => 'financien',
                 'url' => '/payments',
                 'anchor' => 'payments',
-                'title' => 'Financiën',
-                'body' => 'Wat er binnenkwam, wat openstaat en wat te laat is — met wie je moet bellen. Overzichten voor de boekhouder staan er naast.',
+                'title' => 'Je geld',
+                'body' => 'In één oogopslag: wat er binnenkwam, wat nog openstaat en wat te laat is. Bij elke openstaande rekening staan de naam en het telefoonnummer, zodat je weet wie je moet bellen.',
+                'tip' => 'Onder Overzichten download je alles in één bestand voor je boekhouder.',
             ];
         }
 
@@ -138,8 +152,9 @@ class OnboardingTour
                 'key' => 'mededelingen',
                 'url' => '/announcements',
                 'anchor' => 'announcements',
-                'title' => 'Mededelingen',
-                'body' => 'Een bericht naar de hele school of naar één groep, in de app en per e-mail. Een training afzeggen stuurt vanzelf een bericht naar de ouders van die groep.',
+                'title' => 'Berichten sturen',
+                'body' => 'Een bericht naar alle ouders, of alleen naar één groep. Het komt in de app én per e-mail aan. Zeg je een training af, dan krijgen de ouders van die groep vanzelf bericht.',
+                'tip' => 'Je trainers kunnen ook een bericht sturen, bijvoorbeeld als het veld onder water staat.',
             ];
         }
 
@@ -148,15 +163,17 @@ class OnboardingTour
             'url' => '/staff',
             'anchor' => 'business',
             'title' => 'Mijn bedrijf',
-            'body' => 'Je personeel, je locaties, je huisstijl en hoe je inschrijft en int. Alles wat over de school zelf gaat en niet over een klant.',
+            'body' => 'Alles over je school zelf: je trainers, je locaties, je logo en kleur, en hoe je inschrijft en int. Je vindt het bovenin onder Mijn bedrijf.',
+            'tip' => 'Hier nodig je ook je trainers uit. Zij krijgen een mail en kiezen zelf een wachtwoord.',
         ];
 
         $stappen[] = [
             'key' => 'afsluiting',
             'url' => '/dashboard',
             'anchor' => null,
-            'title' => 'Nu gaan we jouw school inrichten',
-            'body' => 'Wat je zag was voorbeelddata. Hierna vul je in een paar stappen je eigen school in: naam en logo, je aanbod, hoe je int, en wie er training geeft. Alles is later aan te passen.',
+            'title' => 'Dat was de rondleiding',
+            'body' => 'Alles wat je zag was voorbeelddata; die ruimen we straks voor je op. Nu richt je in een paar stappen je eigen school in: naam en logo, je aanbod, en wie er training geeft. Alles kun je later nog aanpassen.',
+            'tip' => 'Wil je de rondleiding nog eens zien? Klik bovenin op het vraagteken.',
         ];
 
         return $stappen;
