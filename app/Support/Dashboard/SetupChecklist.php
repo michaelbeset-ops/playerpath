@@ -3,12 +3,15 @@
 namespace App\Support\Dashboard;
 
 use App\Enums\Role;
+use App\Models\Group;
 use App\Models\Invitation;
+use App\Models\Location;
 use App\Models\Player;
 use App\Models\Product;
 use App\Models\Report;
 use App\Models\Training;
 use App\Models\User;
+use App\Support\Enrollment\EnrollmentSettings;
 use App\Support\Onboarding\OnboardingState;
 use App\Support\Tenancy\Tenancy;
 
@@ -34,7 +37,12 @@ use App\Support\Tenancy\Tenancy;
  * 3. **Hij verdwijnt als hij af is**, met één felicitatie, en komt daarna nooit
  *    terug. Een checklist die blijft hangen nadat je klaar bent, leer je negeren.
  * 4. **Wegklikken mag, en is terug te halen.** Anders is de enige manier om van
- *    het blok af te komen: alle zeven stappen doen, ook die je niet wilt.
+ *    het blok af te komen: alle stappen doen, ook die je niet wilt.
+ *
+ * De volgorde is die van het fundament: eerst je schoolgegevens, dan waar je
+ * traint (locatie), dan wie er samen traint (groep) — en pas daarna spelers
+ * en trainingen. Andersom loop je vast: een training zonder groep kan niet, en
+ * een speler zonder groep staat nergens op een lijst.
  */
 class SetupChecklist
 {
@@ -81,17 +89,45 @@ class SetupChecklist
     }
 
     /**
-     * De vijf praktische stappen die na de wizard overblijven.
+     * De stappen, in de volgorde waarin ze op elkaar bouwen.
      *
      * @return list<array<string, mixed>>
      */
     protected function stappen($school): array
     {
+        $stand = OnboardingState::for($school);
+
         return [
+            [
+                'key' => 'school',
+                'title' => 'Vul je schoolgegevens in',
+                'body' => 'Naam, logo en contactgegevens: dat staat straks op elke mail en op je inschrijfpagina.',
+                'href' => '/instellingen/inschrijven/stap/1',
+                'action' => 'Schoolgegevens',
+                // Stap 1 van de wizard is gedaan (of overgeslagen) zodra de
+                // wizard voorbij stap 1 is, of helemaal is afgerond.
+                'done' => $stand->wizardStep() >= 2 || EnrollmentSettings::for($school)->isCompleted(),
+            ],
+            [
+                'key' => 'location',
+                'title' => 'Zet je locatie neer',
+                'body' => 'Waar je traint. Elke training en elk aanbod wijst naar een locatie, zodat ouders weten waar ze moeten zijn.',
+                'href' => '/locaties',
+                'action' => 'Locatie toevoegen',
+                'done' => Location::query()->real()->exists(),
+            ],
+            [
+                'key' => 'group',
+                'title' => 'Maak je eerste groep',
+                'body' => 'Wie traint er samen, bijvoorbeeld "Keepers O12". Trainingen plan je per groep.',
+                'href' => '/groups/create',
+                'action' => 'Groep aanmaken',
+                'done' => Group::query()->real()->exists(),
+            ],
             [
                 'key' => 'player',
                 'title' => 'Voeg je eerste speler toe',
-                'body' => 'Zonder spelers valt er niets te plannen en niets te beoordelen.',
+                'body' => 'Zet hem meteen in een groep; dan staat hij bij de volgende training op de lijst.',
                 'href' => '/players/create',
                 'action' => 'Speler toevoegen',
                 'done' => Player::query()->real()->exists(),

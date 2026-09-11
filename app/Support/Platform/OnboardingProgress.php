@@ -3,7 +3,9 @@
 namespace App\Support\Platform;
 
 use App\Enums\Role;
+use App\Models\Group;
 use App\Models\Invitation;
+use App\Models\Location;
 use App\Models\Player;
 use App\Models\Product;
 use App\Models\Report;
@@ -22,9 +24,9 @@ use App\Support\Tenancy\Tenancy;
  * vóórdat ze afhaken. Een school die na twee weken op één van de zeven staat
  * heeft geen mail nodig maar een telefoontje.
  *
- * Het rekent met dezelfde zeven stappen als de startchecklist die de school
+ * Het rekent met dezelfde stappen als de startchecklist die de school
  * zelf ziet — en dus ook met dezelfde regel dat **voorbeelddata niet meetelt**.
- * Zou dat hier anders zijn, dan staat elke verse school hier op zeven van zeven
+ * Zou dat hier anders zijn, dan staat elke verse school hier op alles gedaan
  * en zie je nooit meer wie er hulp nodig heeft.
  *
  * De teller draait in de platformmodus, waar de global scope openstaat; elke
@@ -34,7 +36,7 @@ use App\Support\Tenancy\Tenancy;
 class OnboardingProgress
 {
     /** In dezelfde volgorde als de checklist die de school zelf ziet. */
-    public const STAPPEN = ['school', 'player', 'training', 'report', 'guardian', 'product'];
+    public const STAPPEN = ['school', 'location', 'group', 'player', 'training', 'report', 'guardian', 'product'];
 
     public function __construct(protected Tenancy $tenancy) {}
 
@@ -45,6 +47,8 @@ class OnboardingProgress
     {
         $gedaan = [
             'school' => EnrollmentSettings::for($school)->isCompleted(),
+            'location' => $this->bestaat(Location::class, $school),
+            'group' => $this->bestaat(Group::class, $school),
             'player' => $this->bestaat(Player::class, $school),
             'training' => $this->bestaat(Training::class, $school),
             'report' => $this->bestaat(Report::class, $school),
@@ -62,6 +66,8 @@ class OnboardingProgress
             'steps' => $gedaan,
             'labels' => [
                 'school' => 'Wizard afgerond',
+                'location' => 'Eerste locatie',
+                'group' => 'Eerste groep',
                 'player' => 'Eerste speler',
                 'training' => 'Eerste training',
                 'report' => 'Eerste rapport',

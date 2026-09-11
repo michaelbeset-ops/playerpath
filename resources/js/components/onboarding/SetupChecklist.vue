@@ -9,14 +9,17 @@ import { computed, ref } from 'vue';
  * Geen rondleiding maar een lijst die tot handelingen leidt: elke stap is een
  * knop naar de plek waar je hem afmaakt. Vier dingen die dit bruikbaar houden:
  *
- * 1. **Je ziet hoe ver je bent** — "3 van 7", plus een balk. Zonder dat is een
- *    lijst van zeven dingen een muur.
+ * 1. **Je ziet hoe ver je bent** — "3 van 8", plus een balk. Zonder dat is een
+ *    lijst van acht dingen een muur.
  * 2. **Het eerste rapport is gemarkeerd.** Dat is het moment waarop een lege
  *    kaart een spelerskaart wordt; de rest is administratie eromheen.
  * 3. **Af is af.** Eén felicitatie, dan voorgoed weg. Een lijst die blijft
  *    hangen nadat je klaar bent, leer je negeren.
  * 4. **Wegklikken mag**, en de melding zegt waar je hem terugvindt. Anders is
- *    de enige uitweg: alle zeven stappen doen, ook die je niet wilt.
+ *    de enige uitweg: alle stappen doen, ook die je niet wilt.
+ *
+ * De volgorde komt van de server en is die van het fundament: school →
+ * locatie → groep, en dan pas spelers en trainingen.
  */
 export interface Stap {
     key: string;
@@ -34,7 +37,7 @@ const props = defineProps<{
 
 const percentage = computed(() => Math.round((props.data.done / props.data.total) * 100));
 
-// De eerstvolgende open stap: die krijgt de knop, de rest een tekstlink. Zeven
+// De eerstvolgende open stap: die krijgt de knop, de rest een tekstlink. Acht
 // even zware knoppen onder elkaar is geen lijst maar een keuzemenu.
 const volgende = computed(() => props.data.steps.find((stap) => !stap.done)?.key ?? null);
 
@@ -63,7 +66,7 @@ const afronden = () => {
                 <PartyPopper class="mx-auto size-7 text-primary" />
                 <p class="mt-2 text-lg font-semibold">Je school draait</p>
                 <p class="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-                    Alle zeven stappen zijn gedaan. Vanaf nu zien je trainers hun rooster en je ouders de kaart van hun kind.
+                    Alle stappen zijn gedaan. Vanaf nu zien je trainers hun rooster en je ouders de kaart van hun kind.
                 </p>
                 <button
                     type="button"

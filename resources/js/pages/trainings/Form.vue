@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { LoaderCircle } from 'lucide-vue-next';
+import { LoaderCircle, TriangleAlert } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 const props = defineProps<{
@@ -108,6 +108,20 @@ const opslaan = () => {
             <h1 class="text-2xl font-semibold tracking-tight">
                 {{ bewerken ? 'Training bewerken' : 'Training inplannen' }}
             </h1>
+
+            <!-- Zonder locatie kan een training wel, maar dan weet een ouder
+                 niet waar hij moet zijn. Bovenaan, niet als voetnoot bij het
+                 veld: dit is de stap die je vóór het inplannen hoort te doen. -->
+            <div v-if="groups.length && !locations.length" class="mt-4 flex gap-3 rounded-xl border border-warning/40 bg-warning/10 p-4 text-sm">
+                <TriangleAlert class="mt-0.5 size-5 shrink-0 text-warning" />
+                <div class="min-w-0">
+                    <p class="font-medium">Je hebt nog geen locatie</p>
+                    <p class="mt-1 text-muted-foreground">Ouders zien bij de training waar ze moeten zijn. Zet eerst je locatie neer, dan kies je hem hier.</p>
+                    <Link href="/locaties" class="mt-2 inline-flex min-h-11 items-center font-medium text-primary underline underline-offset-4">
+                        Eerst een locatie toevoegen
+                    </Link>
+                </div>
+            </div>
 
             <form v-if="groups.length" class="mt-6 space-y-5 rounded-xl border border-border bg-card p-5 shadow-sm" @submit.prevent="opslaan">
                 <div class="grid gap-2">
@@ -298,7 +312,8 @@ const opslaan = () => {
                         <option v-for="locatie in locations" :key="locatie.id" :value="locatie.id">{{ locatie.name }}</option>
                     </select>
                     <p v-if="!locations.length" class="text-xs text-muted-foreground">
-                        Je hebt nog geen locaties. Zet ze neer bij Mijn bedrijf → Locaties.
+                        Je hebt nog geen locaties.
+                        <Link href="/locaties" class="font-medium text-primary underline underline-offset-4">Zet er een neer</Link>, dan staat hij hier.
                     </p>
                     <InputError :message="form.errors.location_id" />
                 </div>
@@ -347,12 +362,24 @@ const opslaan = () => {
                 </div>
             </form>
 
-            <div v-else class="mt-6 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
-                <p class="font-medium">Eerst een groep nodig</p>
-                <p class="mt-1 text-sm text-muted-foreground">Een training hoort altijd bij een groep.</p>
-                <Link href="/groups/create" class="mt-3 inline-block text-sm font-medium text-primary underline underline-offset-4">
-                    Groep aanmaken
-                </Link>
+            <div v-else class="mt-6 rounded-2xl border border-dashed border-border bg-card/50 p-8 text-center">
+                <TriangleAlert class="mx-auto size-6 text-warning" />
+                <p class="mt-2 font-medium">Eerst een groep nodig</p>
+                <p class="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
+                    Een training hoort altijd bij een groep: wie erin zit, staat op de aanwezigheidslijst. De volgorde is locatie → groep →
+                    training.
+                </p>
+                <div class="mt-4 flex flex-col items-center gap-2">
+                    <Link
+                        href="/groups/create"
+                        class="inline-flex min-h-11 items-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                    >
+                        Groep aanmaken
+                    </Link>
+                    <Link v-if="!locations.length" href="/locaties" class="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4">
+                        Nog geen locatie? Begin daar
+                    </Link>
+                </div>
             </div>
         </div>
     </AppLayout>

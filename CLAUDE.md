@@ -696,10 +696,15 @@ precies wat er nog te doen is. Om dezelfde reden onthoudt de rondleiding haar
 stap **per school** in de browser: wie op dezelfde laptop als tweede school
 inlogt begint bij één, niet bij de stap van de vorige.
 
-Vijf stappen (`Support\Dashboard\SetupChecklist`) — eerste speler, eerste
-training, eerste rapport, ouder uitnodigen, eerste aanbod — elk met een knop
-naar de plek waar je hem afmaakt. Wat de wizard al regelt (school, groepen,
-trainers) staat er niet nog eens in. Drie regels:
+Acht stappen (`Support\Dashboard\SetupChecklist`), in de volgorde van het
+fundament: **schoolgegevens → locatie → groep**, en dan pas eerste speler,
+eerste training, eerste rapport, ouder uitnodigen, eerste aanbod — elk met
+een knop naar de plek waar je hem afmaakt. Die volgorde is er omdat het
+andersom vastloopt: een training zonder groep kan niet, en een speler zonder
+groep staat nergens op een lijst. De formulieren zeggen dat ook: het
+spelerformulier waarschuwt bovenaan als er nog geen groep is (met de link),
+het trainingsformulier blokkeert zonder groep en waarschuwt zonder locatie.
+`OnboardingProgress` in het platformbeheer telt dezelfde acht. Drie regels:
 
 - **Het eerste rapport is gemarkeerd** (`highlight`). Dat is het moment waarop
   een lege kaart een spelerskaart wordt en een ouder voor het eerst iets ziet;
@@ -786,7 +791,7 @@ kaart na de eerste training verschijnt.
 
 #### Voortgang in het platformbeheer
 
-`Support\Platform\OnboardingProgress` rekent met dezelfde zeven stappen, en dus
+`Support\Platform\OnboardingProgress` rekent met dezelfde acht stappen, en dus
 ook met dezelfde regel dat voorbeelddata niet meetelt — anders staat elke verse
 school op zeven van zeven en zie je nooit wie er hulp nodig heeft. In de
 schoollijst een balkje per school, op de detailpagina de stappen plus wat de

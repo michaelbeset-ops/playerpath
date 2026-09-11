@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { LoaderCircle } from 'lucide-vue-next';
+import { LoaderCircle, TriangleAlert } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 interface Speler {
@@ -79,6 +79,23 @@ const opslaan = () => {
             <h1 class="text-2xl font-semibold tracking-tight">
                 {{ bewerken ? 'Speler bewerken' : 'Speler toevoegen' }}
             </h1>
+
+            <!-- Zonder groep staat een speler nergens op een lijst. Niet
+                 blokkeren (een speler zonder groep mag bestaan), wel bovenaan
+                 zeggen wat de volgorde is en waar je heen moet. -->
+            <div v-if="!availableGroups.length" class="mt-4 flex gap-3 rounded-xl border border-warning/40 bg-warning/10 p-4 text-sm">
+                <TriangleAlert class="mt-0.5 size-5 shrink-0 text-warning" />
+                <div class="min-w-0">
+                    <p class="font-medium">Je hebt nog geen groep</p>
+                    <p class="mt-1 text-muted-foreground">
+                        Een speler hoort in een groep, want daar plan je trainingen voor. Maak eerst een groep aan; daarna zet je deze speler
+                        erin.
+                    </p>
+                    <Link href="/groups/create" class="mt-2 inline-flex min-h-11 items-center font-medium text-primary underline underline-offset-4">
+                        Eerst een groep aanmaken
+                    </Link>
+                </div>
+            </div>
 
             <div class="mt-6 space-y-5 rounded-xl border border-border bg-card p-5 shadow-sm">
                 <!-- De foto hoort bij het bewerken van een speler, niet bij het

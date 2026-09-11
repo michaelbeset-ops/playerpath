@@ -154,6 +154,8 @@ class DemoDataTest extends TestCase
                 $perSleutel = collect($stappen)->keyBy('key');
 
                 $this->assertFalse($perSleutel['player']['done'], 'een voorbeeldspeler telde mee');
+                $this->assertFalse($perSleutel['location']['done'], 'een voorbeeldlocatie telde mee');
+                $this->assertFalse($perSleutel['group']['done'], 'een voorbeeldgroep telde mee');
                 $this->assertFalse($perSleutel['product']['done']);
                 $this->assertFalse($perSleutel['training']['done']);
                 $this->assertFalse($perSleutel['report']['done']);

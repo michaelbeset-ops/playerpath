@@ -309,9 +309,19 @@ class EnrollmentSettingsTest extends TestCase
         // stand van vóór het markeren mee.
         app(Tenancy::class)->set($this->school->fresh());
 
+        // De volgorde is die van het fundament: school, locatie, groep, en
+        // dan pas spelers en trainingen.
         $this->actingAs($this->eigenaar->fresh())
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('checklist.steps.0.key', 'player'));
+            ->assertInertia(fn ($page) => $page
+                ->where('checklist.steps.0.key', 'school')
+                ->where('checklist.steps.1.key', 'location')
+                ->where('checklist.steps.2.key', 'group')
+                ->where('checklist.steps.3.key', 'player')
+                ->where('checklist.steps.4.key', 'training')
+                // Stap 2 is gedaan, dus de schoolgegevens tellen als gedaan.
+                ->where('checklist.steps.0.done', true)
+            );
     }
 
     /**
