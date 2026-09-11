@@ -953,6 +953,24 @@ ontwikkelingslaag). Drie dingen die je niet moet omdraaien:
 - **Elke stap slaat alleen zijn eigen velden op**, laag voor laag samengevoegd.
   Een school die alleen de proeflesprijs zet raakt haar andere antwoorden niet
   kwijt, en een stap kan nooit een andere instelling overschrijven.
+- **Het is een enquête met uitleg, en meerdere antwoorden mogen.** Boven elke
+  stap staat in gewone taal wat je hier beslist en wat het voor ouders
+  betekent. Wat naast elkaar kan bestaan is een vinkjeslijst: aanbodvormen,
+  instapmomenten (`enrollment.moments`: hele jaar, vóór een blok, losse
+  training, kampen) en betaalvormen (`default_payment.types`). Alleen wat
+  echt óf-óf is (goedkeuren, ziekte) is een keuzerondje, en dat zegt de
+  vraag er dan bij. Een oude, enkelvoudige `default_payment.type` blijft
+  gelden via `paymentTypes()` tot de school hem aanpast.
+- **De keuzes vullen nieuwe trainingen en nieuw aanbod voor.**
+  `trainingDefaults()` zet los inschrijven, betaalwijze en goedkeuring in het
+  trainingsformulier; de betaalvormen staan als extra betaalopties klaar bij
+  nieuw aanbod. Per training of aanbod wijk je ervan af — de wizard is de
+  standaard, niet de wet.
+- **Na de laatste stap kom je op de samenvatting**, niet op het dashboard:
+  `enrollment-settings/Index` vertelt in alinea's hoe het nu werkt ("Meldt een
+  ouder zich aan, dan…"), met daaronder het telefoonnummer
+  (`EnrollmentSettingsController::SUPPORT_PHONE`). Wie na negen vragen denkt
+  "zo werk ik niet" moet niet gaan zoeken, maar bellen.
 - **Wat een instelling elders al is, wordt geen tweede instelling.** De
   ontwikkelingslaag is `Feature::Ontwikkeling`; de wizard zet die functie en
   het menu, de routes en de taken lezen hem al. De aanbodsoorten die de school

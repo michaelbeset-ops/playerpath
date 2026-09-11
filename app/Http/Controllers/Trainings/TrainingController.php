@@ -14,9 +14,11 @@ use App\Models\Player;
 use App\Models\Training;
 use App\Models\TrainingEnrollment;
 use App\Models\User;
+use App\Support\Enrollment\EnrollmentSettings;
 use App\Support\Money\Money;
 use App\Support\Payments\PaymentGateway;
 use App\Support\PlayerCard\BadgeSettings;
+use App\Support\Tenancy\Tenancy;
 use App\Support\Trainings\FamilyTrainings;
 use App\Support\Trainings\VisibleTrainings;
 use Illuminate\Http\RedirectResponse;
@@ -316,6 +318,9 @@ class TrainingController extends Controller
                 'payment_methods' => $training->payment_methods ?? ['online', 'cash'],
                 'requires_approval' => $training->requires_approval,
             ] : null,
+            // Wat een nieuwe training voorgevuld krijgt, uit de wizard
+            // Inschrijven en betalen. Per training wijk je ervan af.
+            'defaults' => EnrollmentSettings::for(app(Tenancy::class)->school())->trainingDefaults(),
             'ageCategories' => BadgeSettings::categories(),
             'audiences' => ProductAudience::options(),
             'gatewayConnected' => $this->gateway->isConnected(),

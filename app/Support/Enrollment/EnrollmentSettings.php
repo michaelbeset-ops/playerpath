@@ -44,16 +44,25 @@ class EnrollmentSettings
 
     /** @var array<string, mixed> */
     public const STANDAARD = [
-        // 1. Aanbod
+        // 1. Inschrijven: wat je aanbiedt, en wanneer een ouder kan instappen.
         'offering_types' => ['blok', 'doorlopend', 'rittenkaart', 'kamp', 'privetraining', 'proefles'],
         'trial' => ['enabled' => true, 'amount_cents' => 0],
+        // Op welke momenten een ouder zich kan aanmelden. Meerdere mag: een
+        // school die het hele jaar laat instromen kan ook kampen hebben.
+        'enrollment' => ['moments' => ['anytime', 'before_block']],
+        // De standaard voor een nieuwe training: mag een ouder zijn kind los
+        // aanmelden, hoe betaalt hij dan, en kijk jij er eerst naar. Per
+        // training kun je ervan afwijken; dit vult het formulier voor.
+        'training_enrollment' => ['open' => false, 'payment_methods' => ['online', 'cash'], 'requires_approval' => false],
 
         // 2. Kosten erbij
         'registration_fee' => ['enabled' => false, 'amount_cents' => 0],
         'kit' => ['enabled' => false, 'amount_cents' => 0],
 
-        // 3. Betalen
-        'default_payment' => ['type' => 'upfront', 'installments' => 3, 'interval' => 'month'],
+        // 3. Betalen. Meerdere betaalvormen mogen naast elkaar: een ouder
+        // kiest dan bij het inschrijven. `type` is de oude, enkelvoudige
+        // instelling; wie hem nog heeft staan krijgt hem via paymentTypes().
+        'default_payment' => ['types' => ['upfront'], 'installments' => 3, 'interval' => 'month'],
         'auto_renew_block' => false,
         'notice_months' => 1,
         'chargeback_fee' => ['enabled' => false, 'amount_cents' => 0],
@@ -93,12 +102,25 @@ class EnrollmentSettings
     /** De betaalvormen die een school als standaard kan kiezen. */
     public const BETAALVORMEN = ['upfront', 'installments', 'monthly'];
 
+    /** Wanneer een ouder zich kan aanmelden. */
+    public const INSTAPMOMENTEN = ['anytime', 'before_block', 'single_training', 'camp'];
+
     /** @var array<string, mixed> */
     protected array $waarden;
 
+    /**
+     * Wat de school zelf opsloeg, zonder de standaarden erdoorheen. Nodig om
+     * een oude, enkelvoudige keuze te herkennen: na het samenvoegen staat de
+     * nieuwe standaard er altijd, en dan zie je niet meer wat er echt gekozen is.
+     *
+     * @var array<string, mixed>
+     */
+    protected array $opgeslagen;
+
     public function __construct(?School $school = null)
     {
-        $this->waarden = self::samenvoegen(self::STANDAARD, $school?->enrollment_settings ?? []);
+        $this->opgeslagen = $school?->enrollment_settings ?? [];
+        $this->waarden = self::samenvoegen(self::STANDAARD, $this->opgeslagen);
     }
 
     public static function for(?School $school): self
@@ -191,6 +213,44 @@ class EnrollmentSettings
     public function kitCents(): int
     {
         return $this->waarden['kit']['enabled'] ? (int) $this->waarden['kit']['amount_cents'] : 0;
+    }
+
+    /**
+     * De betaalvormen die een school standaard aanbiedt, altijd als lijst.
+     *
+     * Een school die de wizard doorliep toen dit nog één keuze was heeft
+     * `type` staan; die keuze blijft gelden tot ze hem aanpast.
+     *
+     * @return list<string>
+     */
+    public function paymentTypes(): array
+    {
+        $eigen = $this->opgeslagen['default_payment'] ?? [];
+        $lijst = $eigen['types'] ?? (isset($eigen['type']) ? [$eigen['type']] : $this->waarden['default_payment']['types']);
+
+        return array_values(array_intersect(self::BETAALVORMEN, (array) $lijst)) ?: ['upfront'];
+    }
+
+    /** @return list<string> */
+    public function enrollmentMoments(): array
+    {
+        return array_values(array_intersect(self::INSTAPMOMENTEN, (array) ($this->waarden['enrollment']['moments'] ?? [])));
+    }
+
+    /**
+     * Wat een nieuwe training voorgevuld krijgt voor los inschrijven.
+     *
+     * @return array{open: bool, payment_methods: list<string>, requires_approval: bool}
+     */
+    public function trainingDefaults(): array
+    {
+        $t = $this->waarden['training_enrollment'];
+
+        return [
+            'open' => (bool) $t['open'],
+            'payment_methods' => array_values(array_intersect(['online', 'cash'], (array) $t['payment_methods'])) ?: ['cash'],
+            'requires_approval' => (bool) $t['requires_approval'],
+        ];
     }
 
     public function approvesManually(): bool

@@ -40,6 +40,13 @@ use Inertia\Response;
  */
 class EnrollmentSettingsController extends Controller
 {
+    /**
+     * Wie je belt als het niet bij je school past. Staat onder de samenvatting:
+     * een school die na het instellen denkt "zo werk ik niet" moet niet gaan
+     * zoeken, maar iemand aan de lijn krijgen.
+     */
+    public const SUPPORT_PHONE = '06 43 43 00 03';
+
     public function index(Request $request): Response
     {
         abort_unless($request->user()->isEigenaar(), 403);
@@ -59,6 +66,8 @@ class EnrollmentSettingsController extends Controller
         }
 
         return Inertia::render('enrollment-settings/Index', [
+            'supportPhone' => self::SUPPORT_PHONE,
+            'justCompleted' => (bool) $request->session()->get('wizardCompleted', false),
             'settings' => $this->presenteer($instellingen),
             'consents' => ConsentDocument::allForSchool(),
             'development' => Features::enabledFor($school, Feature::Ontwikkeling),
@@ -178,15 +187,35 @@ class EnrollmentSettingsController extends Controller
         $validated = $request->validate([
             'offering_types' => ['required', 'array', 'min:1'],
             'offering_types.*' => ['string', Rule::in($soorten)],
+            'enrollment_moments' => ['required', 'array', 'min:1'],
+            'enrollment_moments.*' => ['string', Rule::in(EnrollmentSettings::INSTAPMOMENTEN)],
+            'training_open' => ['required', 'boolean'],
+            'training_payment_methods' => ['present', 'array'],
+            'training_payment_methods.*' => ['string', Rule::in(['online', 'cash'])],
+            'training_requires_approval' => ['required', 'boolean'],
             'trial_enabled' => ['required', 'boolean'],
             'trial_amount' => ['nullable', 'string', 'max:20'],
         ], [
             'offering_types.required' => 'Kies minstens één aanbodvorm.',
             'offering_types.min' => 'Kies minstens één aanbodvorm.',
+            'enrollment_moments.required' => 'Kies minstens één moment waarop ouders kunnen inschrijven.',
+            'enrollment_moments.min' => 'Kies minstens één moment waarop ouders kunnen inschrijven.',
         ]);
+
+        // Wie "voor een losse training" aanvinkt, wil dat een nieuwe training
+        // standaard open staat. Andersom niet: het moment uitzetten laat een
+        // bewuste keuze bij de training zelf staan.
+        $momenten = array_values(array_unique($validated['enrollment_moments']));
+        $losOpen = (bool) $validated['training_open'] || in_array('single_training', $momenten, true);
 
         $antwoorden = [
             'offering_types' => array_values(array_unique($validated['offering_types'])),
+            'enrollment' => ['moments' => $momenten],
+            'training_enrollment' => [
+                'open' => $losOpen,
+                'payment_methods' => array_values(array_unique($validated['training_payment_methods'])) ?: ['cash'],
+                'requires_approval' => (bool) $validated['training_requires_approval'],
+            ],
             'trial' => [
                 'enabled' => (bool) $validated['trial_enabled'],
                 'amount_cents' => $this->centen($validated['trial_amount'] ?? null),
@@ -256,7 +285,8 @@ class EnrollmentSettingsController extends Controller
     protected function betalen(Request $request): array
     {
         $validated = $request->validate([
-            'default_payment_type' => ['required', Rule::in(EnrollmentSettings::BETAALVORMEN)],
+            'default_payment_types' => ['required', 'array', 'min:1'],
+            'default_payment_types.*' => ['string', Rule::in(EnrollmentSettings::BETAALVORMEN)],
             'installments' => ['required', 'integer', 'min:2', 'max:12'],
             'installment_interval' => ['required', Rule::in(['month', 'week'])],
             'auto_renew_block' => ['required', 'boolean'],
@@ -265,14 +295,23 @@ class EnrollmentSettingsController extends Controller
             'chargeback_fee_enabled' => ['required', 'boolean'],
             'chargeback_fee_amount' => ['nullable', 'string', 'max:20'],
             'dunning_days' => ['nullable', 'string', 'max:40'],
-        ], [], [
+        ], [
+            'default_payment_types.required' => 'Kies minstens één betaalvorm.',
+            'default_payment_types.min' => 'Kies minstens één betaalvorm.',
+        ], [
             'installments' => 'het aantal termijnen',
             'notice_months' => 'de opzegtermijn',
         ]);
 
+        // Meerdere betaalvormen naast elkaar: de ouder kiest bij het
+        // inschrijven. De oude enkelvoudige `type` gaat mee als de eerste,
+        // zodat wat er al op leest niet ineens iets anders ziet.
+        $vormen = array_values(array_intersect(EnrollmentSettings::BETAALVORMEN, array_unique($validated['default_payment_types'])));
+
         return [
             'default_payment' => [
-                'type' => $validated['default_payment_type'],
+                'types' => $vormen,
+                'type' => $vormen[0],
                 'installments' => (int) $validated['installments'],
                 'interval' => $validated['installment_interval'],
             ],
@@ -434,6 +473,9 @@ class EnrollmentSettingsController extends Controller
         $alles['kit']['formatted'] = Money::format($alles['kit']['amount_cents']);
         $alles['chargeback_fee']['formatted'] = Money::format($alles['chargeback_fee']['amount_cents']);
         $alles['dunning']['text'] = implode(', ', $alles['dunning']['days']);
+        $alles['default_payment']['types'] = $instellingen->paymentTypes();
+        $alles['enrollment']['moments'] = $instellingen->enrollmentMoments();
+        $alles['training_enrollment'] = $instellingen->trainingDefaults();
 
         $alles['offering_labels'] = array_values(array_map(fn (ProductType $t) => $t->label(), array_filter(
             $instellingen->offeringTypes(),
@@ -448,9 +490,9 @@ class EnrollmentSettingsController extends Controller
     {
         $titels = [
             'school' => ['Je school', 'Naam, logo, je kleur en waar je traint'],
-            'aanbod' => ['Aanbod', 'Wat je aanbiedt, en of er een proefles is'],
+            'aanbod' => ['Inschrijven', 'Wat je aanbiedt, wanneer ouders kunnen instappen, en of er een proefles is'],
             'kosten' => ['Kosten erbij', 'Inschrijfgeld en kledingpakket'],
-            'betalen' => ['Betalen', 'Vooraf, in termijnen of per maand; verlengen en opzeggen'],
+            'betalen' => ['Betalen', 'Vooraf, in termijnen en/of per maand; goedkeuren, verlengen en opzeggen'],
             'annuleren' => ['Annuleren', 'Wat er terugkomt bij annuleren of ziekte'],
             'kortingen' => ['Kortingen', 'Gezin, vroegboek, volume en codes'],
             'formulier' => ['Formulier', 'Wachtlijst, verplichte velden, toestemmingen'],
@@ -491,10 +533,14 @@ class EnrollmentSettingsController extends Controller
             // ledenbestand blijft staan naast de echte.
             $opgeruimd = $this->ruimVoorbeeldOp($school);
 
-            return redirect()->route('dashboard')->with(
-                'status',
-                'Je school is ingericht.'.($opgeruimd ? ' De voorbeelddata is opgeruimd; wat je nu ziet is van jou.' : '')
-            );
+            // Naar de samenvatting, niet naar het dashboard: wie net negen
+            // vragen beantwoordde wil in gewone taal lezen wat dat betekent.
+            return redirect()->route('enrollment-settings.index')
+                ->with('wizardCompleted', true)
+                ->with(
+                    'status',
+                    'Je school is ingericht.'.($opgeruimd ? ' De voorbeelddata is opgeruimd; wat je nu ziet is van jou.' : '')
+                );
         }
 
         if (! $klaar) {

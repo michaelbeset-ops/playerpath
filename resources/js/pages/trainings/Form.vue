@@ -32,6 +32,7 @@ const props = defineProps<{
     groups: { id: number; name: string; age_category: string | null }[];
     availableTrainers: { id: number; name: string }[];
     locations: { id: number; name: string }[];
+    defaults?: { open: boolean; payment_methods: string[]; requires_approval: boolean };
     ageCategories: { key: string; label: string }[];
     audiences: Record<string, string>;
     gatewayConnected: boolean;
@@ -54,13 +55,14 @@ const form = useForm({
     trainers: props.training?.trainers ?? ([] as number[]),
     repeat_until: '',
     // Los inschrijven: wie mag meedoen, hoeveel, wat kost het, hoe betalen.
-    open_enrollment: props.training?.open_enrollment ?? false,
+    // Een nieuwe training begint met wat de school in de wizard koos.
+    open_enrollment: props.training?.open_enrollment ?? props.defaults?.open ?? false,
     age_categories: (props.training?.age_categories ?? []) as string[],
     audience: props.training?.audience ?? 'all',
     capacity: props.training?.capacity ?? null,
     price: props.training?.price ?? '0,00',
-    payment_methods: (props.training?.payment_methods ?? ['online', 'cash']) as string[],
-    requires_approval: props.training?.requires_approval ?? false,
+    payment_methods: [...(props.training?.payment_methods ?? props.defaults?.payment_methods ?? ['online', 'cash'])] as string[],
+    requires_approval: props.training?.requires_approval ?? props.defaults?.requires_approval ?? false,
 });
 
 const wisselCategorie = (key: string) => {

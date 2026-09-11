@@ -79,6 +79,10 @@ class EnrollmentSettingsTest extends TestCase
         $this->actingAs($this->eigenaar)
             ->patch('/instellingen/inschrijven/stap/2', [
                 'offering_types' => ['blok', 'kamp'],
+                'enrollment_moments' => ['before_block', 'single_training'],
+                'training_open' => false,
+                'training_payment_methods' => ['cash'],
+                'training_requires_approval' => true,
                 'trial_enabled' => true,
                 'trial_amount' => '7,50',
             ])
@@ -92,6 +96,10 @@ class EnrollmentSettingsTest extends TestCase
         $this->assertFalse($instellingen->trialEnabled());
         $this->assertFalse($instellingen->offers(ProductType::Doorlopend));
         $this->assertTrue($instellingen->offers(ProductType::Kamp));
+        $this->assertSame(['before_block', 'single_training'], $instellingen->enrollmentMoments());
+        // "Voor een losse training" aangevinkt: een nieuwe training staat dan
+        // standaard open, met alleen contant en eerst een blik van de school.
+        $this->assertSame(['open' => true, 'payment_methods' => ['cash'], 'requires_approval' => true], $instellingen->trainingDefaults());
         // De andere instellingen zijn niet aangeraakt: alleen deze stap is opgeslagen.
         $this->assertSame(['blok', 'kamp'], array_keys(array_flip($this->school->enrollment_settings['offering_types'])));
         $this->assertArrayNotHasKey('notice_months', $this->school->enrollment_settings);
@@ -104,7 +112,7 @@ class EnrollmentSettingsTest extends TestCase
         ])->assertRedirect('/instellingen/inschrijven/stap/4');
 
         $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/4', [
-            'default_payment_type' => 'installments',
+            'default_payment_types' => ['installments', 'monthly'],
             'installments' => 4,
             'installment_interval' => 'month',
             'auto_renew_block' => false,
@@ -147,12 +155,16 @@ class EnrollmentSettingsTest extends TestCase
         $this->assertSame(2, Group::count());
         $this->assertSame('Onder 12', Group::where('name', 'Keepers O12')->value('age_category'));
 
+        // De laatste stap rondt af en komt uit op de samenvatting in gewone
+        // taal, niet op het dashboard.
         $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/9', [])
-            ->assertRedirect('/dashboard');
+            ->assertRedirect('/instellingen/inschrijven')
+            ->assertSessionHas('wizardCompleted', true);
 
         $instellingen = EnrollmentSettings::for($this->school->refresh());
 
         $this->assertTrue($instellingen->isCompleted());
+        $this->assertSame(['installments', 'monthly'], $instellingen->paymentTypes());
         $this->assertSame(2500, $instellingen->registrationFeeCents());
         $this->assertFalse($instellingen->approvesManually());
         $this->assertSame(2, $instellingen->noticeMonths());
@@ -178,6 +190,41 @@ class EnrollmentSettingsTest extends TestCase
         $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/5', [
             'free_until_days' => 14, 'retain_percent' => 50, 'absence' => 'none',
         ])->assertRedirect('/instellingen/inschrijven');
+    }
+
+    /**
+     * Een school die de wizard doorliep toen "betaalvorm" nog één keuze was
+     * heeft `type` staan. Die keuze blijft gelden tot ze hem aanpast.
+     */
+    public function test_een_oude_enkelvoudige_betaalvorm_blijft_gelden(): void
+    {
+        EnrollmentSettings::save($this->school, ['default_payment' => ['type' => 'monthly']]);
+
+        $this->assertSame(['monthly'], EnrollmentSettings::for($this->school->refresh())->paymentTypes());
+    }
+
+    /** Wat de wizard koos staat voorgevuld in een nieuwe training en nieuw aanbod. */
+    public function test_de_keuzes_uit_de_wizard_vullen_nieuwe_trainingen_en_aanbod_voor(): void
+    {
+        EnrollmentSettings::save($this->school, [
+            'training_enrollment' => ['open' => true, 'payment_methods' => ['online'], 'requires_approval' => false],
+            'default_payment' => ['types' => ['upfront', 'installments'], 'installments' => 5, 'interval' => 'month'],
+        ]);
+
+        $this->actingAs($this->eigenaar)
+            ->get('/trainings/create')
+            ->assertInertia(fn ($page) => $page
+                ->where('defaults.open', true)
+                ->where('defaults.payment_methods', ['online'])
+            );
+
+        $this->actingAs($this->eigenaar)
+            ->get('/aanbod/create')
+            ->assertInertia(fn ($page) => $page
+                ->count('defaultPaymentOptions', 1)
+                ->where('defaultPaymentOptions.0.type', 'termijnen')
+                ->where('defaultPaymentOptions.0.installments', 5)
+            );
     }
 
     public function test_een_andere_tekst_is_een_nieuwe_versie_van_de_toestemming(): void
@@ -240,7 +287,9 @@ class EnrollmentSettingsTest extends TestCase
     public function test_het_menu_item_opent_waar_je_was_gebleven(): void
     {
         $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/2', [
-            'offering_types' => ['blok'], 'trial_enabled' => false, 'trial_amount' => '',
+            'offering_types' => ['blok'], 'enrollment_moments' => ['before_block'],
+            'training_open' => false, 'training_payment_methods' => ['online', 'cash'], 'training_requires_approval' => false,
+            'trial_enabled' => false, 'trial_amount' => '',
         ]);
 
         $this->actingAs($this->eigenaar)

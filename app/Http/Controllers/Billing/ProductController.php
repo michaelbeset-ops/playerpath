@@ -419,9 +419,33 @@ class ProductController extends Controller
     }
 
     /** @return array<string, mixed> */
+    /**
+     * @return list<array{type: string, amount: string, installments: int|null, interval: string|null, label: null}>
+     */
+    protected function standaardBetaalvormen(): array
+    {
+        $instellingen = EnrollmentSettings::for(app(Tenancy::class)->school());
+        $betaling = $instellingen->get('default_payment');
+        $extra = [];
+
+        foreach ($instellingen->paymentTypes() as $vorm) {
+            if ($vorm === 'installments') {
+                $extra[] = ['type' => 'termijnen', 'amount' => '', 'installments' => (int) $betaling['installments'], 'interval' => $betaling['interval'], 'label' => null];
+            } elseif ($vorm === 'monthly') {
+                $extra[] = ['type' => 'abonnement', 'amount' => '', 'installments' => null, 'interval' => 'monthly', 'label' => null];
+            }
+        }
+
+        return $extra;
+    }
+
     protected function formData(?Product $product): array
     {
         return [
+            // Nieuw aanbod begint met de betaalvormen uit de wizard: naast het
+            // prijsblok (eenmalig) alvast termijnen en/of per maand, zodat een
+            // school die dat koos het niet per aanbod opnieuw hoeft te zeggen.
+            'defaultPaymentOptions' => $product === null ? $this->standaardBetaalvormen() : [],
             'product' => $product ? [
                 'id' => $product->id,
                 'name' => $product->name,

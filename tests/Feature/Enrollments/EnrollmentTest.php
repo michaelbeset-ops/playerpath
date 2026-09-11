@@ -384,7 +384,9 @@ class EnrollmentTest extends TestCase
 
         // De proefles ontstaat uit de instellingen.
         $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/2', [
-            'offering_types' => ['blok', 'proefles'], 'trial_enabled' => true, 'trial_amount' => '',
+            'offering_types' => ['blok', 'proefles'], 'enrollment_moments' => ['before_block'],
+            'training_open' => false, 'training_payment_methods' => ['online', 'cash'], 'training_requires_approval' => false,
+            'trial_enabled' => true, 'trial_amount' => '',
         ]);
 
         app(Tenancy::class)->set($this->school);

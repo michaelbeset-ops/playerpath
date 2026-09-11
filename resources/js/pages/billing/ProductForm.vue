@@ -55,6 +55,7 @@ const props = defineProps<{
         time_from: string;
         time_to: string;
     } | null;
+    defaultPaymentOptions?: Betaalvorm[];
     types: Soort[];
     intervals: Record<string, string>;
     billingTypes: Record<string, string>;
@@ -115,7 +116,8 @@ const form = useForm({
     max_age: props.product?.max_age ?? null,
     audience: props.product?.audience ?? 'all',
     sessions_count: props.product?.sessions_count ?? null,
-    payment_options: (props.product?.payment_options ?? []) as Betaalvorm[],
+    // Nieuw aanbod: de betaalvormen uit de wizard staan er alvast; het bedrag vul je in.
+    payment_options: [...(props.product?.payment_options ?? props.defaultPaymentOptions ?? [])] as Betaalvorm[],
     location_id: props.product?.location_id ?? null,
     status: props.product?.status ?? 'open',
     stops_at_end: props.product?.stops_at_end ?? true,
