@@ -131,7 +131,9 @@ class HandleInertiaRequests extends Middleware
             // De rondleiding is voor de eigenaar: hij loopt langs zijn hele
             // bedrijf. Een ouder krijgt er geen; die moet het meteen snappen.
             'tour' => $tour,
-            'canRestartTour' => $werktVoorDeSchool,
+            // Opnieuw starten kan alleen wie hem ook krijgt. Een trainer had de
+            // knop wel, maar de rondleiding niet: een knop die niets doet.
+            'canRestartTour' => $gebruiker->isEigenaar(),
             // Het welkomstregeltje van een ouder of speler; één keer.
             'intro' => ! $werktVoorDeSchool && $gebruiker->intro_seen_at === null,
         ];

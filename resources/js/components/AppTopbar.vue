@@ -289,9 +289,22 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                         v-if="open === 'gebruiker'"
                         class="absolute right-0 top-full mt-1 min-w-48 overflow-hidden rounded-xl border border-border bg-card py-1 shadow-lg"
                     >
-                        <!-- Alleen uitloggen: je instellingen staan al onder
-                             Mijn bedrijf, en twee wegen naar hetzelfde scherm
-                             laat je zoeken welke de goede is. -->
+                        <!-- De rondleiding staat ook hier, met een woord erbij.
+                             Het vraagteken in de balk is voor wie hem kent; wie
+                             hem zoekt kijkt bij zijn naam. -->
+                        <button
+                            v-if="page.props.onboarding?.canRestartTour"
+                            type="button"
+                            class="flex w-full items-center gap-3 px-3 py-2.5 text-sm transition hover:bg-foreground/10"
+                            @click="startRondleiding"
+                        >
+                            <CircleHelp class="size-4 shrink-0 opacity-70" />
+                            Rondleiding starten
+                        </button>
+
+                        <!-- Verder alleen uitloggen: je instellingen staan al
+                             onder Mijn bedrijf, en twee wegen naar hetzelfde
+                             scherm laat je zoeken welke de goede is. -->
                         <Link
                             href="/logout"
                             method="post"
