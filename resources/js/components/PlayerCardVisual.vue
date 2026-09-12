@@ -10,6 +10,7 @@ import {
     Hand,
     Medal,
     Rocket,
+    RotateCw,
     Share2,
     Shirt,
     Star,
@@ -18,7 +19,7 @@ import {
     Trophy,
     UserRound,
 } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 
 /**
  * De spelerskaart als verzamelkaart.
@@ -45,7 +46,8 @@ export interface Kaart {
     age_category: { key: string; label: string } | null;
     moved_up: boolean;
     overall: number | null;
-    categories: { category: string; label: string; hint?: string; rating: number | null }[];
+    /** `delta` is wat het laatste rapport aan deze categorie veranderde; null zonder vorige stand. */
+    categories: { category: string; label: string; hint?: string; rating: number | null; delta?: number | null }[];
     report_count: number;
     level: {
         key: string;
@@ -58,6 +60,10 @@ export interface Kaart {
     badges: { key: string; label: string; description: string }[];
     season: string;
     school: string | null;
+    /** De achterkant: de laatste rapporten. Publiek zonder trainer en toelichting. */
+    recent_reports?: { date: string; overall: number | null; trainer: string | null; note: string | null }[];
+    /** Het lopende doel, of null (en publiek altijd null). */
+    goal?: { label: string; target_grade: string | null; current_grade: string | null; progress: number | null; track_label: string | null; due: string | null } | null;
 }
 
 const props = withDefaults(
@@ -88,6 +94,135 @@ const props = withDefaults(
 const emit = defineEmits<{ share: []; photo: [] }>();
 
 const uitlegOpen = ref(false);
+
+/*
+ * De kaart kantelt mee: met de muis op een laptop, met de gyroscoop op een
+ * Android-telefoon (iOS vraagt daar eerst toestemming voor, en dat is een
+ * pop-up die niemand wil). Een glans loopt met de kanteling mee over het
+ * metaal. Alles uit bij "minder beweging".
+ */
+const minderBeweging = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const rx = ref(0);
+const ry = ref(0);
+const gx = ref(30);
+const gy = ref(20);
+const licht = ref(0);
+
+const kantel = (e: PointerEvent) => {
+    if (minderBeweging || e.pointerType !== 'mouse') {
+        return;
+    }
+
+    const vak = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const px = (e.clientX - vak.left) / vak.width;
+    const py = (e.clientY - vak.top) / vak.height;
+    ry.value = (px - 0.5) * 14;
+    rx.value = -(py - 0.5) * 12;
+    gx.value = px * 100;
+    gy.value = py * 100;
+    licht.value = 1;
+};
+
+const rechtop = () => {
+    rx.value = 0;
+    ry.value = 0;
+    licht.value = 0;
+};
+
+let orientatieGepland = false;
+
+const opGyroscoop = (e: DeviceOrientationEvent) => {
+    if (orientatieGepland || e.gamma === null || e.beta === null) {
+        return;
+    }
+
+    orientatieGepland = true;
+    const gamma = e.gamma;
+    const beta = e.beta;
+
+    requestAnimationFrame(() => {
+        orientatieGepland = false;
+        // Links/rechts kantelen draait om de verticale as; naar je toe of van
+        // je af om de horizontale. Rond de gewone leeshouding (±45°) is nul.
+        ry.value = Math.max(-10, Math.min(10, gamma / 4));
+        rx.value = Math.max(-10, Math.min(10, (45 - beta) / 4));
+        gx.value = 50 + ry.value * 4;
+        gy.value = 50 - rx.value * 4;
+        licht.value = 1;
+    });
+};
+
+onMounted(() => {
+    const zonderToestemming =
+        typeof DeviceOrientationEvent !== 'undefined' &&
+        typeof (DeviceOrientationEvent as unknown as { requestPermission?: unknown }).requestPermission !== 'function';
+
+    if (!minderBeweging && navigator.maxTouchPoints > 0 && zonderToestemming) {
+        window.addEventListener('deviceorientation', opGyroscoop);
+    }
+});
+
+onBeforeUnmount(() => window.removeEventListener('deviceorientation', opGyroscoop));
+
+/*
+ * Omdraaien. Geen echte 3D-achterkant (die verdraagt zich slecht met de
+ * clip-path en de gloed van het frame) maar hetzelfde frame dat tot 90°
+ * draait, van inhoud wisselt en terugdraait. Voor het oog is dat een kaart
+ * die omgaat; voor de browser is het één element.
+ */
+const kant = ref<'voor' | 'achter'>('voor');
+const flip = ref(0);
+const zonderOvergang = ref(false);
+const binnen = ref<HTMLElement | null>(null);
+const voorHoogte = ref(0);
+let bezigDraaien = false;
+
+const heeftAchterkant = computed(() => props.card.recent_reports !== undefined);
+
+const wacht = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
+
+const draai = async () => {
+    if (bezigDraaien) {
+        return;
+    }
+
+    bezigDraaien = true;
+
+    if (kant.value === 'voor' && binnen.value) {
+        voorHoogte.value = binnen.value.offsetHeight;
+    }
+
+    if (minderBeweging) {
+        kant.value = kant.value === 'voor' ? 'achter' : 'voor';
+        bezigDraaien = false;
+        return;
+    }
+
+    flip.value = 90;
+    await wacht(280);
+    kant.value = kant.value === 'voor' ? 'achter' : 'voor';
+    zonderOvergang.value = true;
+    flip.value = -90;
+    await nextTick();
+    // Eén reflow, anders veegt de browser de sprong naar -90 en de overgang
+    // naar 0 samen en zie je de achterkant achterstevoren binnenkomen.
+    void binnen.value?.offsetHeight;
+    zonderOvergang.value = false;
+    flip.value = 0;
+    await wacht(280);
+    bezigDraaien = false;
+};
+
+const kaartStijl = computed(() => ({
+    '--pp-rx': rx.value.toFixed(2) + 'deg',
+    '--pp-ry': ry.value.toFixed(2) + 'deg',
+    '--pp-flip': flip.value + 'deg',
+    '--pp-gx': gx.value.toFixed(1) + '%',
+    '--pp-gy': gy.value.toFixed(1) + '%',
+    '--pp-licht': String(licht.value),
+}));
+
+const deltaTekst = (delta: number) => (delta > 0 ? '▲' + delta : '▼' + Math.abs(delta));
 
 // Zonder rapport is er nog geen level: dan een neutraal, stalen frame.
 const tier = computed(() => {
@@ -144,12 +279,75 @@ const upgradeTekst = computed(() => {
 </script>
 
 <template>
-    <div class="pp-wrap" :class="['pp-tier-' + tier, 'pp-' + card.position_key, { 'pp-puls': flash }]">
-        <div class="pp-frame">
+    <div
+        class="pp-wrap"
+        :class="['pp-tier-' + tier, 'pp-' + card.position_key, { 'pp-puls': flash }]"
+        :style="kaartStijl"
+        @pointermove="kantel"
+        @pointerleave="rechtop"
+    >
+        <div class="pp-frame" :class="{ 'pp-geen-overgang': zonderOvergang }">
             <div class="pp-frame-glans" aria-hidden="true"></div>
+            <div class="pp-frame-licht" aria-hidden="true"></div>
             <div v-if="flash" class="pp-flits" aria-hidden="true"></div>
 
-            <div class="pp-binnen">
+            <!-- ===== Achterkant: de laatste rapporten, mijlpalen en het doel ===== -->
+            <div v-if="kant === 'achter'" ref="binnen" class="pp-binnen pp-achter" :style="{ minHeight: voorHoogte + 'px' }">
+                <div class="pp-patroon" aria-hidden="true"></div>
+
+                <div class="pp-achter-inhoud">
+                    <p class="pp-achter-naam">{{ card.first_name }} {{ card.last_name }}</p>
+
+                    <p class="pp-achter-kop">Laatste rapporten</p>
+                    <ul v-if="card.recent_reports?.length" class="pp-rapporten">
+                        <li v-for="r in card.recent_reports" :key="r.date + (r.trainer ?? '')" class="pp-rapport">
+                            <div class="pp-rapport-regel">
+                                <span class="tabular">{{ r.date }}</span>
+                                <span v-if="r.trainer" class="pp-rapport-trainer">{{ r.trainer }}</span>
+                                <span class="pp-rapport-cijfer tabular">{{ r.overall ?? '—' }}</span>
+                            </div>
+                            <p v-if="r.note" class="pp-rapport-noot">{{ r.note }}</p>
+                        </li>
+                    </ul>
+                    <p v-else class="pp-achter-leeg">Nog geen rapport. Na de eerste training komt hier de eerste.</p>
+
+                    <template v-if="card.goal">
+                        <p class="pp-achter-kop">Waar we aan werken</p>
+                        <div class="pp-doel">
+                            <div class="pp-rapport-regel">
+                                <span>{{ card.goal.label }}<template v-if="card.goal.target_grade"> naar {{ card.goal.target_grade }}</template></span>
+                                <span v-if="card.goal.track_label" class="pp-doel-status">{{ card.goal.track_label }}</span>
+                            </div>
+                            <div v-if="card.goal.progress !== null" class="pp-balk">
+                                <div class="pp-balk-vulling" :style="{ width: Math.max(0, Math.min(100, card.goal.progress)) + '%' }"></div>
+                            </div>
+                            <p class="pp-achter-leeg">
+                                <template v-if="card.goal.current_grade">Nu {{ card.goal.current_grade }}</template>
+                                <template v-if="card.goal.due"> · tot {{ card.goal.due }}</template>
+                            </p>
+                        </div>
+                    </template>
+
+                    <template v-if="card.badges.length">
+                        <p class="pp-achter-kop">Mijlpalen</p>
+                        <ul class="pp-achter-badges" aria-label="Behaalde mijlpalen">
+                            <li v-for="badge in card.badges" :key="badge.key" class="pp-badge" :title="badge.description">
+                                <span class="pp-badge-icoon">
+                                    <component :is="icoonVoor(badge.key)" class="size-3.5" aria-hidden="true" />
+                                </span>
+                                <span class="pp-badge-label">{{ badge.label }}</span>
+                            </li>
+                        </ul>
+                    </template>
+
+                    <div class="pp-voet pp-achter-voet">
+                        <p class="pp-voet-regel">Seizoen {{ card.season }}</p>
+                        <p v-if="card.school" class="pp-school">{{ card.school }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div v-else ref="binnen" class="pp-binnen">
                 <!-- Boven: de foto met daaroverheen het cijfer en de badges -->
                 <div class="pp-foto-vak">
                     <img v-if="card.photo" :src="card.photo" :alt="card.name" class="pp-foto" />
@@ -203,6 +401,14 @@ const upgradeTekst = computed(() => {
                         <div v-for="c in card.categories" :key="c.category" class="pp-stat">
                             <div class="pp-stat-regel">
                                 <span class="pp-stat-label">{{ c.label }}</span>
+                                <!-- Wat het laatste rapport deed: groei voelbaar, niet alleen een stand. -->
+                                <span
+                                    v-if="c.delta"
+                                    class="pp-delta tabular"
+                                    :class="c.delta > 0 ? 'pp-delta-op' : 'pp-delta-af'"
+                                    :title="'Sinds het vorige rapport'"
+                                    >{{ deltaTekst(c.delta) }}</span
+                                >
                                 <span class="pp-stat-cijfer tabular">{{ c.rating ?? '—' }}</span>
                             </div>
                             <div class="pp-balk">
@@ -240,6 +446,10 @@ const upgradeTekst = computed(() => {
             <button type="button" class="pp-actie" @click="uitlegOpen = true">
                 <CircleHelp class="size-4" aria-hidden="true" />
                 Hoe werkt mijn rating?
+            </button>
+            <button v-if="heeftAchterkant" type="button" class="pp-actie" :aria-pressed="kant === 'achter'" @click="draai">
+                <RotateCw class="size-4" aria-hidden="true" />
+                {{ kant === 'voor' ? 'Draai om' : 'Terug' }}
             </button>
             <button v-if="shareable" type="button" class="pp-actie" @click="emit('share')">
                 <Share2 class="size-4" aria-hidden="true" />
@@ -293,6 +503,159 @@ const upgradeTekst = computed(() => {
         0 var(--pp-facet)
     );
     filter: drop-shadow(0 18px 30px rgba(0, 0, 0, 0.55)) drop-shadow(0 0 22px var(--pp-gloed));
+    /* Kantelen (muis of gyroscoop) en omdraaien zitten in dezelfde transform. */
+    transform: perspective(900px) rotateX(var(--pp-rx, 0deg)) rotateY(calc(var(--pp-ry, 0deg) + var(--pp-flip, 0deg)));
+    transition: transform 0.28s ease;
+    will-change: transform;
+}
+
+.pp-geen-overgang {
+    transition: none;
+}
+
+/* De lichtval die met het kantelen meeloopt over het metaal. */
+.pp-frame-licht {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: var(--pp-licht, 0);
+    background: radial-gradient(45% 45% at var(--pp-gx, 30%) var(--pp-gy, 20%), rgba(255, 255, 255, 0.45), transparent 70%);
+    mix-blend-mode: soft-light;
+    transition: opacity 0.4s ease;
+}
+
+/* ---------- De achterkant ---------- */
+.pp-achter-inhoud {
+    position: relative;
+    padding: 1rem 1.1rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.pp-achter-naam {
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+
+.pp-achter-kop {
+    margin-top: 0.6rem;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--pp-tier);
+}
+
+.pp-rapporten {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.pp-rapport {
+    padding: 0.5rem 0.65rem;
+    border-radius: 0.6rem;
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.pp-rapport-regel {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+}
+
+.pp-rapport-trainer {
+    min-width: 0;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--pp-tekst-zacht);
+}
+
+.pp-rapport-cijfer {
+    margin-left: auto;
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+
+.pp-rapport-noot {
+    margin-top: 0.2rem;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    color: var(--pp-tekst-zacht);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.pp-achter-leeg {
+    font-size: 0.78rem;
+    color: var(--pp-tekst-zacht);
+}
+
+.pp-doel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.5rem 0.65rem;
+    border-radius: 0.6rem;
+    background: rgba(34, 224, 107, 0.08);
+    box-shadow: inset 0 0 0 1px rgba(34, 224, 107, 0.25);
+}
+
+.pp-doel-status {
+    margin-left: auto;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--pp-accent);
+}
+
+.pp-achter-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.pp-achter-voet {
+    margin-top: auto;
+    padding-top: 0.8rem;
+}
+
+/* ---------- Het pijltje per categorie ---------- */
+.pp-delta {
+    margin-left: auto;
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 0.05rem 0.3rem;
+    border-radius: 999px;
+    animation: pp-delta-in 0.6s ease-out both;
+}
+
+.pp-delta-op {
+    color: #22e06b;
+    background: rgba(34, 224, 107, 0.14);
+}
+
+.pp-delta-af {
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.14);
+}
+
+@keyframes pp-delta-in {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
 }
 
 /* De glans over het metaal: een lichtval linksboven en een diagonale streep. */
@@ -715,6 +1078,15 @@ const upgradeTekst = computed(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .pp-frame {
+        transition: none;
+        transform: none;
+    }
+
+    .pp-delta {
+        animation: none;
+    }
+
     .pp-flits,
     .pp-puls {
         animation: none;

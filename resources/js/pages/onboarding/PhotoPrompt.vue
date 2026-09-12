@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import PhotoUpload from '@/components/PhotoUpload.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { strooiConfetti } from '@/lib/confetti';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
 import { Camera } from 'lucide-vue-next';
@@ -46,7 +47,13 @@ const breadcrumbs: BreadcrumbItem[] = [
             <div class="mt-6 space-y-3">
                 <div v-for="speler in players" :key="speler.id" class="rounded-xl border border-border bg-card p-4 shadow-sm">
                     <p v-if="!self" class="mb-3 font-medium">{{ speler.name }}</p>
-                    <PhotoUpload :name="speler.name" :photo="speler.photo" :action="'/players/' + speler.id + '/photo'" />
+                    <PhotoUpload
+                        :name="speler.name"
+                        :photo="speler.photo"
+                        :action="'/players/' + speler.id + '/photo'"
+                        :kaart="{ first_name: speler.first_name, last_name: speler.name.slice(speler.first_name.length + 1), overall: null, position: '' }"
+                        @uploaded="(eerste) => eerste && strooiConfetti()"
+                    />
                 </div>
             </div>
 

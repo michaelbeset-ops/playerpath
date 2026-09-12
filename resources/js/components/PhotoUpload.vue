@@ -28,7 +28,7 @@ const props = defineProps<{
 }>();
 
 /** De uitsnede tijdens het schuiven, zodat de kaart op de pagina meebeweegt. */
-const emit = defineEmits<{ preview: [url: string | null] }>();
+const emit = defineEmits<{ preview: [url: string | null]; uploaded: [eerste: boolean] }>();
 
 const invoer = ref<HTMLInputElement | null>(null);
 const camera = ref<HTMLInputElement | null>(null);
@@ -55,9 +55,12 @@ const kies = (event: Event) => {
 
 const verstuur = (blob: Blob) => {
     teKnippen.value = null;
+    // Vóór het versturen vastleggen: na het antwoord staat de nieuwe foto al in de props.
+    const eerste = props.photo === null;
     form.photo = new File([blob], 'foto.jpg', { type: 'image/jpeg' });
     form.post(props.action, {
         preserveScroll: true,
+        onSuccess: () => emit('uploaded', eerste),
         // De echte foto staat nu in de props; het voorbeeld mag weg.
         onFinish: () => {
             form.reset();

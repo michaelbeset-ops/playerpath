@@ -942,6 +942,29 @@ zodat die drie nooit uit elkaar lopen.
 De kaart is bewust donker, ook binnen de lichte admin-schil: dat is de
 speler/ouder-kant van het merk (hoofdstuk 4).
 
+#### Wat de kaart levend maakt
+
+- **Hij kantelt mee** (`--pp-rx/--pp-ry` op `.pp-frame`): met de muis op een
+  laptop, met de gyroscoop op Android. Op iOS niet — dat vraagt een
+  toestemmingspop-up, en die is het niet waard. Een lichtval
+  (`.pp-frame-licht`) loopt mee. Alles uit bij `prefers-reduced-motion`.
+- **Per categorie een pijltje** (`categories[].delta`,
+  `CalculatePlayerCard::deltas()`): de kaart van nu tegenover de kaart vóór
+  het laatste rapport, met dezelfde demping — dus geen pijl van twintig
+  punten door één uitschieter. Zonder vorige stand geen pijl.
+- **Omdraaien** ("Draai om"): geen echte 3D-achterkant (die verdraagt zich
+  slecht met de clip-path en de gloed) maar hetzelfde frame dat tot 90°
+  draait, van inhoud wisselt en terugdraait. Achterop: de laatste drie
+  rapporten (`recent_reports`), het lopende doel (`goal`) en de mijlpalen.
+  **Publiek zonder trainer, toelichting en doel** — dat is wat een trainer
+  over een kind opschreef, niet voor internet.
+- **Confetti** (`lib/confetti.ts`) bij een nieuw level en bij de eerste foto.
+  Eén keer, anderhalve seconde, zonder bibliotheek; niets bij "minder
+  beweging".
+- **Tijdens het uitsnijden beweegt de kaart mee**: `PhotoCrop` geeft de
+  uitsnede als `preview` door, het kaartje in het venster én de echte kaart
+  erachter tonen hem meteen.
+
 ### Inschrijven en betalen: de instellingen per school
 
 Scholen verschillen sterk in hoe ze inschrijven en innen, maar gebruiken

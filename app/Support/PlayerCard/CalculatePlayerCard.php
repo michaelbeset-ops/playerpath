@@ -4,6 +4,7 @@ namespace App\Support\PlayerCard;
 
 use App\Enums\ReportCategory;
 use App\Models\Player;
+use App\Models\Report;
 use App\Support\Rating\RatingSettings;
 
 /**
@@ -57,8 +58,63 @@ class CalculatePlayerCard
             ->limit(RatingSettings::for($player->school)->reportsInAverage())
             ->get();
 
-        $categories = $player->position->categories();
+        $subScores = $this->subScores($reports, $player);
 
+        $overall = $subScores === []
+            ? null
+            : round(array_sum($subScores) / count($subScores), 2);
+
+        return new PlayerCard(
+            overall: $overall,
+            categoryRatings: $subScores,
+            reportCount: $player->reports()->count(),
+        );
+    }
+
+    /**
+     * Wat het laatste rapport aan de kaart veranderde, per categorie.
+     *
+     * De kaart van nu (de laatste N rapporten) tegenover de kaart zoals hij
+     * stond vóór het laatste rapport (de N rapporten daarvoor). Zo staat er op
+     * de kaart een pijltje per categorie dat precies zegt wat de trainer de
+     * vorige keer zag veranderen — dezelfde demping als de kaart zelf, dus een
+     * uitschieter geeft geen pijl van twintig punten.
+     *
+     * @return array<string, int|null> categorie => verschil, null zonder vorige stand
+     */
+    public function deltas(Player $player): array
+    {
+        $n = RatingSettings::for($player->school)->reportsInAverage();
+
+        $reports = $player->reports()->newestFirst()->with('scores')->limit($n + 1)->get();
+
+        if ($reports->count() < 2) {
+            return [];
+        }
+
+        $nu = $this->subScores($reports->take($n), $player);
+        $vorige = $this->subScores($reports->slice(1, $n), $player);
+
+        $deltas = [];
+
+        foreach ($player->position->categories() as $category) {
+            $key = $category->value;
+            $deltas[$key] = isset($nu[$key], $vorige[$key])
+                ? self::afronden($nu[$key]) - self::afronden($vorige[$key])
+                : null;
+        }
+
+        return $deltas;
+    }
+
+    /**
+     * Per categorie het gemiddelde cijfer maal tien, precies bewaard.
+     *
+     * @param  iterable<int, Report>  $reports
+     * @return array<string, float>
+     */
+    protected function subScores(iterable $reports, Player $player): array
+    {
         /** @var array<string, list<float>> $verzameld */
         $verzameld = [];
 
@@ -70,7 +126,7 @@ class CalculatePlayerCard
 
         $subScores = [];
 
-        foreach ($categories as $category) {
+        foreach ($player->position->categories() as $category) {
             $cijfers = $verzameld[$category->value] ?? [];
 
             if ($cijfers === []) {
@@ -81,15 +137,7 @@ class CalculatePlayerCard
             $subScores[$category->value] = round(array_sum($cijfers) / count($cijfers) * 10, 2);
         }
 
-        $overall = $subScores === []
-            ? null
-            : round(array_sum($subScores) / count($subScores), 2);
-
-        return new PlayerCard(
-            overall: $overall,
-            categoryRatings: $subScores,
-            reportCount: $player->reports()->count(),
-        );
+        return $subScores;
     }
 
     /**

@@ -7,6 +7,7 @@ import PlayerCardVisual, { type Kaart } from '@/components/PlayerCardVisual.vue'
 import ReportCelebration, { type RapportWijziging } from '@/components/ReportCelebration.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { deelKaartAlsAfbeelding } from '@/lib/cardImage';
+import { strooiConfetti } from '@/lib/confetti';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { Camera, Check, Copy, ImageDown, Link2, Lock, Share2, TrendingUp, Trophy } from 'lucide-vue-next';
@@ -91,6 +92,7 @@ onMounted(() => {
         vorigLevel.value = null;
         flits.value = true;
         levelUpZichtbaar.value = true;
+        strooiConfetti();
         setTimeout(() => (flits.value = false), 1200);
     }, 900);
 });
@@ -201,6 +203,7 @@ const deelAfbeelding = async () => {
                     :action="'/players/' + player.id + '/photo'"
                     :kaart="{ first_name: card.first_name, last_name: card.last_name, overall: card.overall, position: card.position }"
                     @preview="voorbeeldFoto = $event"
+                    @uploaded="(eerste) => eerste && strooiConfetti()"
                 />
             </div>
 

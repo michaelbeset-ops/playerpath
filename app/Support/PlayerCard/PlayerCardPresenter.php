@@ -2,7 +2,10 @@
 
 namespace App\Support\PlayerCard;
 
+use App\Models\Goal;
 use App\Models\Player;
+use App\Models\Report;
+use App\Support\Goals\GoalProgress;
 use App\Support\Rating\AgeCategory;
 use App\Support\Rating\RatingEngine;
 
@@ -26,6 +29,7 @@ class PlayerCardPresenter
         protected PlayerBadges $badges,
         protected PlayerProgress $progress,
         protected RatingEngine $engine,
+        protected GoalProgress $goals,
     ) {}
 
     public function for(Player $player, bool $public = false): array
@@ -47,7 +51,9 @@ class PlayerCardPresenter
             ],
             'moved_up' => $this->engine->recentlyMovedUp($player),
             'overall' => $player->overall_rating,
-            'categories' => $this->calculator->breakdown($player),
+            // Per categorie ook wat het laatste rapport veranderde: een pijltje
+            // op de kaart maakt groei voelbaar in plaats van alleen een stand.
+            'categories' => $this->metDeltas($player),
             'report_count' => $player->reports()->count(),
             'level' => $this->badges->level($player),
             'levels' => array_map(
@@ -60,6 +66,65 @@ class PlayerCardPresenter
             )),
             'season' => AgeCategory::seasonLabel(now(), $settings->seasonStartMonth()),
             'school' => $public ? null : $player->school?->name,
+            // De achterkant van de kaart: de laatste rapporten en het doel.
+            // Publiek zonder trainer en toelichting, en zonder doel: dat is
+            // de opmerking van een trainer over een kind, niet voor internet.
+            'recent_reports' => $this->recenteRapporten($player, $public),
+            'goal' => $public ? null : $this->doel($player),
+        ];
+    }
+
+    /** @return list<array<string, mixed>> */
+    protected function metDeltas(Player $player): array
+    {
+        $deltas = $this->calculator->deltas($player);
+
+        return array_map(
+            fn (array $c) => [...$c, 'delta' => $deltas[$c['category']] ?? null],
+            $this->calculator->breakdown($player),
+        );
+    }
+
+    /** @return list<array<string, mixed>> */
+    protected function recenteRapporten(Player $player, bool $public): array
+    {
+        return $player->reports()
+            ->newestFirst()
+            ->with(['scores', 'trainer'])
+            ->limit(3)
+            ->get()
+            ->map(function (Report $report) use ($public) {
+                $scores = $report->scoresByCategory();
+
+                return [
+                    'date' => $report->reported_on->format('d-m-Y'),
+                    'overall' => $scores === [] ? null : CalculatePlayerCard::afronden(array_sum($scores) / count($scores) * 10),
+                    'trainer' => $public ? null : $report->trainer?->name,
+                    'note' => $public ? null : $report->note,
+                ];
+            })
+            ->values()
+            ->all();
+    }
+
+    /** Het eerstvolgende lopende doel, of null. @return array<string, mixed>|null */
+    protected function doel(Player $player): ?array
+    {
+        $doel = $player->goals()->active()->orderBy('due_on')->first();
+
+        if (! $doel instanceof Goal) {
+            return null;
+        }
+
+        $beeld = $this->goals->describe($doel, $player);
+
+        return [
+            'label' => $beeld['label'],
+            'target_grade' => $beeld['target_grade'],
+            'current_grade' => $beeld['current_grade'],
+            'progress' => $beeld['progress'],
+            'track_label' => $beeld['track_label'],
+            'due' => $beeld['due_on'] ?? null,
         ];
     }
 }
