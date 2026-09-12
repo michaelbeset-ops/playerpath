@@ -270,7 +270,7 @@ const toonKlasse = (toon: 'goed' | 'aandacht' | 'rustig') =>
                                                 class="tabular rounded-full bg-gold/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold"
                                             >
                                                 inschrijven<template v-if="training.spots_left !== null && training.spots_left !== undefined">
-                                                    · {{ training.spots_left }} vrij</template
+                                                    · {{ training.spots_left === 0 ? 'vol' : training.spots_left + ' vrij' }}</template
                                                 >
                                             </span>
                                             <span
