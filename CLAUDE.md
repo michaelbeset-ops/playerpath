@@ -970,6 +970,11 @@ speler/ouder-kant van het merk (hoofdstuk 4).
   (`PlayerPolicy::personalise`, `PATCH /players/{player}/rugnummer`), de
   trainer niet. En elke kaart draagt een **kaartnummer** (`#0042`, het id
   van de speler) in de voet, zoals op een verzamelkaart.
+- **Mijn kaarten** (`/players/{player}/kaarten`,
+  `PlayerCardCollectionController`): de kaart van nu en de bewaarde
+  seizoenskaarten (`player_card_seasons`) als verzameling, elk getekend met
+  dezelfde component uit de cijfers en het level van toen. Geen mijlpalen en
+  geen achterkant op een oude kaart: die horen bij nu.
 - **De deel-afbeelding krijgt een sticker** als er iets te vieren is:
   "NIEUW LEVEL" na een level-up, anders "+X GEGROEID" als de gemiddelde
   groei van het laatste rapport minstens drie punten is (`groeiSticker()`).

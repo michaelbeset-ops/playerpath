@@ -65,7 +65,9 @@ export interface Kaart {
     season: string;
     school: string | null;
     /** De achterkant: de laatste rapporten. Publiek zonder trainer en toelichting. */
-    recent_reports?: { date: string; overall: number | null; trainer: string | null; note: string | null }[];
+    recent_reports?: { date: string; overall: number | null; trainer: string | null; note: string | null }[] | null;
+    /** Een bewaarde seizoenskaart: de stand van toen, er groeit niets meer. */
+    archived?: boolean;
     /** Het lopende doel, of null (en publiek altijd null). */
     goal?: { label: string; target_grade: string | null; current_grade: string | null; progress: number | null; track_label: string | null; due: string | null } | null;
 }
@@ -181,7 +183,7 @@ const binnen = ref<HTMLElement | null>(null);
 const voorHoogte = ref(0);
 let bezigDraaien = false;
 
-const heeftAchterkant = computed(() => props.card.recent_reports !== undefined);
+const heeftAchterkant = computed(() => props.card.recent_reports !== undefined && props.card.recent_reports !== null);
 
 const wacht = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 
@@ -269,6 +271,10 @@ const balk = (rating: number | null) => (rating === null ? '0%' : rating + '%');
 
 const upgradeTekst = computed(() => {
     const next = props.card.level.next;
+
+    if (props.card.archived) {
+        return 'Eindstand van dit seizoen';
+    }
 
     if (props.card.overall === null) {
         return 'Je eerste rapport zet de kaart aan';

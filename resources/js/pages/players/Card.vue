@@ -10,7 +10,7 @@ import { deelKaartAlsAfbeelding, groeiSticker } from '@/lib/cardImage';
 import { strooiConfetti } from '@/lib/confetti';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import { Camera, Check, Copy, ImageDown, Link2, Lock, Share2, TrendingUp, Trophy } from 'lucide-vue-next';
+import { Camera, Check, Copy, ImageDown, Layers, Link2, Lock, Share2, TrendingUp, Trophy } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 
 const props = defineProps<{
@@ -253,6 +253,14 @@ const deelAfbeelding = async () => {
                 >
                     <TrendingUp class="size-4" />
                     Bekijk de voortgang
+                </Link>
+
+                <Link
+                    :href="'/players/' + player.id + '/kaarten'"
+                    class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-semibold shadow-sm transition hover:border-primary"
+                >
+                    <Layers class="size-4" />
+                    Mijn kaarten
                 </Link>
 
                 <Link

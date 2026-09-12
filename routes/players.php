@@ -6,6 +6,7 @@ use App\Http\Controllers\Groups\GroupController;
 use App\Http\Controllers\Media\PhotoController;
 use App\Http\Controllers\Players\GuardianController;
 use App\Http\Controllers\Players\PlayerBadgeController;
+use App\Http\Controllers\Players\PlayerCardCollectionController;
 use App\Http\Controllers\Players\PlayerCardController;
 use App\Http\Controllers\Players\PlayerController;
 use App\Http\Controllers\Players\PlayerProgressController;
@@ -29,6 +30,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('players/{player}/reports/create', [ReportController::class, 'create'])->name('reports.create');
         Route::post('players/{player}/reports', [ReportController::class, 'store'])->name('reports.store');
         Route::get('players/{player}/card', [PlayerCardController::class, 'show'])->name('players.card');
+        // Mijn kaarten: de kaart van nu en de bewaarde seizoenskaarten.
+        Route::get('players/{player}/kaarten', [PlayerCardCollectionController::class, 'index'])->name('players.cards');
 
         // De snelle invulflow: alle spelers van een training achter elkaar.
         // "klaar" staat vóór de gewone route, anders vangt {player} dat woord.
