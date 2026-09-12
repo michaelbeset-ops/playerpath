@@ -175,7 +175,9 @@ const zetMethode = (betaling: Betaling, method: string) =>
 
             <!-- Tabbladen: elk beantwoordt een vraag. Wat kwam er binnen, wat
                  staat er open, wat is te laat, wat komt eraan. -->
-            <div class="mt-6 flex gap-1 overflow-x-auto rounded-xl border border-border bg-card p-1 shadow-sm">
+            <!-- Ze lopen om op een telefoon: vijf naast elkaar past niet in 375
+                 pixels, en een tabblad dat buiten beeld valt bestaat niet. -->
+            <div class="mt-6 flex flex-wrap gap-1 rounded-xl border border-border bg-card p-1 shadow-sm">
                 <button
                     v-for="(label, waarde) in tabs"
                     :key="waarde"

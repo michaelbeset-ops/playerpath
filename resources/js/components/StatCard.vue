@@ -63,7 +63,8 @@ const kleuren = computed(() => {
                      "Gemiddelde rating" anders "Gemiddelde r…". Overlopen kan niet
                      meer sinds rasteritems mogen krimpen (zie app.css). -->
                 <p class="text-xs font-medium leading-snug text-muted-foreground sm:text-sm">{{ label }}</p>
-                <p class="tabular mt-1.5 text-2xl font-bold leading-none sm:mt-2 sm:text-3xl" :class="kleuren.tekst">
+                <!-- Nooit afbreken: "€ 806,50" viel op een telefoon in twee regels, met het euroteken alleen. -->
+                <p class="tabular mt-1.5 whitespace-nowrap text-2xl font-bold leading-none sm:mt-2 sm:text-3xl" :class="kleuren.tekst">
                     {{ heeftWaarde ? value : '—' }}
                 </p>
             </div>
