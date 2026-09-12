@@ -255,6 +255,7 @@ class PlayerController extends Controller
                 'photo' => $player->photo_url,
                 'date_of_birth' => $player->date_of_birth->format('Y-m-d'),
                 'position' => $player->position->value,
+                'shirt_number' => $player->shirt_number,
                 'is_active' => $player->is_active,
                 'groups' => $player->groups->pluck('id')->all(),
             ] : null,

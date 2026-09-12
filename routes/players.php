@@ -10,6 +10,7 @@ use App\Http\Controllers\Players\PlayerCardController;
 use App\Http\Controllers\Players\PlayerController;
 use App\Http\Controllers\Players\PlayerProgressController;
 use App\Http\Controllers\Players\SharedCardController;
+use App\Http\Controllers\Players\ShirtNumberController;
 use App\Http\Controllers\Reports\ReportController;
 use App\Http\Controllers\Reports\TrainingReportController;
 use App\Http\Controllers\Staff\AvailabilityController;
@@ -77,6 +78,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // speler (eigenaar, ouders van dit kind, het kind zelf) en update op de
     // gebruiker (jezelf, of de eigenaar).
     Route::post('players/{player}/photo', [PhotoController::class, 'storePlayer'])->name('players.photo.store');
+    // Het rugnummer op de kaart: dezelfde kring als de foto (personalise).
+    Route::patch('players/{player}/rugnummer', [ShirtNumberController::class, 'update'])->name('players.shirt-number');
     Route::delete('players/{player}/photo', [PhotoController::class, 'destroyPlayer'])->name('players.photo.destroy');
     Route::post('users/{user}/photo', [PhotoController::class, 'storeUser'])->name('users.photo.store');
     Route::delete('users/{user}/photo', [PhotoController::class, 'destroyUser'])->name('users.photo.destroy');

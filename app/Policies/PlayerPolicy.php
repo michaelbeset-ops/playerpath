@@ -75,6 +75,12 @@ class PlayerPolicy
      * eigen inlog) mogen hem zetten — het is hun kaart. De trainer niet: de
      * foto van andermans kind is niet van hem.
      */
+    /** Versiering van de eigen kaart (rugnummer): dezelfde kring als de foto. */
+    public function personalise(User $user, Player $player): bool
+    {
+        return $this->updatePhoto($user, $player);
+    }
+
     public function updatePhoto(User $user, Player $player): bool
     {
         if (! $user->belongsToSameSchool($player)) {

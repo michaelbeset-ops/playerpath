@@ -69,6 +69,24 @@ const passend = (ctx: CanvasRenderingContext2D, tekst: string, max: number) => {
 export interface KaartAfbeeldingOpties {
     /** De regel onderaan, bijvoorbeeld de deel-link. */
     voet?: string | null;
+    /** Een schuine sticker over de hoek: "NIEUW LEVEL", "+5 GEGROEID". */
+    sticker?: string | null;
+}
+
+/**
+ * De sticker die bij de kaart hoort op grond van het laatste rapport: de
+ * gemiddelde groei over de categorieën, vanaf drie punten. Minder is ruis.
+ */
+export function groeiSticker(card: Kaart): string | null {
+    const deltas = card.categories.map((c) => c.delta ?? 0);
+
+    if (!deltas.some((d) => d !== 0)) {
+        return null;
+    }
+
+    const gemiddeld = Math.round(deltas.reduce((a, b) => a + b, 0) / deltas.length);
+
+    return gemiddeld >= 3 ? `+${gemiddeld} GEGROEID` : null;
 }
 
 export async function renderKaartStory(card: Kaart, opties: KaartAfbeeldingOpties = {}): Promise<Blob> {
@@ -194,6 +212,17 @@ export async function renderKaartStory(card: Kaart, opties: KaartAfbeeldingOptie
         ctx.fillText(card.age_category.key, bx + 48, by + 266);
     }
 
+    // Het rugnummer, linksonder op de foto, in het metaal van het level.
+    if (card.shirt_number) {
+        ctx.textAlign = 'left';
+        ctx.fillStyle = tint.accent;
+        ctx.font = `900 120px ${FONT}`;
+        ctx.shadowColor = 'rgba(0,0,0,0.6)';
+        ctx.shadowBlur = 24;
+        ctx.fillText(String(card.shirt_number), bx + 48, by + fotoH - 80);
+        ctx.shadowBlur = 0;
+    }
+
     // --- Naam ---
     let y = by + fotoH - 40;
     ctx.fillStyle = '#99a3b3';
@@ -282,9 +311,32 @@ export async function renderKaartStory(card: Kaart, opties: KaartAfbeeldingOptie
     ctx.textAlign = 'left';
     ctx.fillText(`Seizoen ${card.season}` + (card.overall !== null ? `  ·  Level ${card.level.label}` : ''), bx + 48, voetY);
 
-    if (card.school) {
+    const rechts = [card.school ? passend(ctx, card.school, 320) : null, card.card_number ?? null].filter(Boolean).join('  ·  ');
+
+    if (rechts) {
         ctx.textAlign = 'right';
-        ctx.fillText(passend(ctx, card.school, 380), bx + bw - 48, voetY);
+        ctx.fillText(rechts, bx + bw - 48, voetY);
+    }
+
+    // --- De sticker: schuin over de rechterbovenhoek, goud met donkere letters ---
+    if (opties.sticker) {
+        ctx.save();
+        ctx.translate(bx + bw - 60, by + 130);
+        ctx.rotate(-Math.PI / 14);
+        ctx.font = `900 40px ${FONT}`;
+        const tb = ctx.measureText(opties.sticker).width + 64;
+        afgerond(ctx, -tb, -38, tb, 76, 38);
+        ctx.fillStyle = '#d4af37';
+        ctx.shadowColor = 'rgba(0,0,0,0.5)';
+        ctx.shadowBlur = 20;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#0d0f12';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(opties.sticker, -tb / 2, 2);
+        ctx.restore();
+        ctx.textBaseline = 'alphabetic';
     }
 
     // --- Onder de kaart: de link of een zinnetje ---
@@ -304,11 +356,11 @@ export type DeelUitkomst = 'gedeeld' | 'gedownload' | 'geannuleerd' | 'mislukt';
  * De kaart delen als afbeelding: via het deelmenu van de telefoon als dat
  * kan (Web Share API met bestanden), anders als download.
  */
-export async function deelKaartAlsAfbeelding(card: Kaart, link: string | null): Promise<DeelUitkomst> {
+export async function deelKaartAlsAfbeelding(card: Kaart, link: string | null, sticker: string | null = null): Promise<DeelUitkomst> {
     let blob: Blob;
 
     try {
-        blob = await renderKaartStory(card, { voet: link });
+        blob = await renderKaartStory(card, { voet: link, sticker });
     } catch {
         return 'mislukt';
     }

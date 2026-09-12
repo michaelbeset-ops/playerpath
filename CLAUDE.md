@@ -964,6 +964,15 @@ speler/ouder-kant van het merk (hoofdstuk 4).
 - **Tijdens het uitsnijden beweegt de kaart mee**: `PhotoCrop` geeft de
   uitsnede als `preview` door, het kaartje in het venster én de echte kaart
   erachter tonen hem meteen.
+- **Een rugnummer** (`players.shirt_number`, 1–99, optioneel) staat groot
+  rechtsonder op de foto in het metaal van het level. Het is versiering van
+  de eigen kaart: de eigenaar, de ouders en het kind zelf zetten het
+  (`PlayerPolicy::personalise`, `PATCH /players/{player}/rugnummer`), de
+  trainer niet. En elke kaart draagt een **kaartnummer** (`#0042`, het id
+  van de speler) in de voet, zoals op een verzamelkaart.
+- **De deel-afbeelding krijgt een sticker** als er iets te vieren is:
+  "NIEUW LEVEL" na een level-up, anders "+X GEGROEID" als de gemiddelde
+  groei van het laatste rapport minstens drie punten is (`groeiSticker()`).
 
 ### Inschrijven en betalen: de instellingen per school
 

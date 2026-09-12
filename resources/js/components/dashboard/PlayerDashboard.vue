@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import CardGlow from '@/components/CardGlow.vue';
 import PlayerCardVisual from '@/components/PlayerCardVisual.vue';
-import { deelKaartAlsAfbeelding } from '@/lib/cardImage';
+import { deelKaartAlsAfbeelding, groeiSticker } from '@/lib/cardImage';
 import type { SpelerDashboardData, SpelerTrend } from '@/types/player-dashboard';
 import { Link } from '@inertiajs/vue3';
 import {
@@ -102,7 +102,7 @@ const deel = async () => {
     deelBezig.value = true;
     deelMelding.value = null;
 
-    const uitkomst = await deelKaartAlsAfbeelding(props.card, props.share?.url ?? null);
+    const uitkomst = await deelKaartAlsAfbeelding(props.card, props.share?.url ?? null, groeiSticker(props.card));
 
     deelBezig.value = false;
     deelMelding.value = {

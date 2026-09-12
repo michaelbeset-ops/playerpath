@@ -100,6 +100,39 @@ class CardExtrasTest extends TestCase
             );
     }
 
+    /**
+     * Het rugnummer is van het kind: de ouders en het kind zelf zetten het,
+     * de trainer niet. En elke kaart heeft een vast kaartnummer.
+     */
+    public function test_ouders_zetten_een_rugnummer_op_de_kaart(): void
+    {
+        $ouder = User::factory()->for($this->school)->create();
+        $ouder->assignRole(Role::Ouder->value);
+        $this->keeper->guardians()->attach($ouder->id, ['relationship' => 'vader']);
+
+        $this->actingAs($ouder)
+            ->patch("/players/{$this->keeper->id}/rugnummer", ['shirt_number' => 1])
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('status', 'Rugnummer 1 staat op de kaart.');
+
+        $this->actingAs($ouder)
+            ->get("/players/{$this->keeper->id}/card")
+            ->assertInertia(fn ($page) => $page
+                ->where('card.shirt_number', 1)
+                ->where('card.card_number', sprintf('#%04d', $this->keeper->id))
+            );
+
+        $this->actingAs($ouder)
+            ->patch("/players/{$this->keeper->id}/rugnummer", ['shirt_number' => 100])
+            ->assertSessionHasErrors('shirt_number');
+
+        $this->actingAs($this->trainer)
+            ->patch("/players/{$this->keeper->id}/rugnummer", ['shirt_number' => 7])
+            ->assertForbidden();
+
+        $this->assertSame(1, $this->keeper->fresh()->shirt_number);
+    }
+
     public function test_het_lopende_doel_staat_op_de_achterkant(): void
     {
         $this->rapporteer(6);

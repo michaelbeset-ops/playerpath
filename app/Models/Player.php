@@ -25,6 +25,7 @@ class Player extends Model
         'last_name',
         'date_of_birth',
         'position',
+        'shirt_number',
         'is_active',
     ];
 

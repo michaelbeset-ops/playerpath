@@ -26,6 +26,7 @@ class PlayerRequest extends FormRequest
             'last_name' => ['required', 'string', 'max:255'],
             'date_of_birth' => ['required', 'date', 'before:today', 'after:'.now()->subYears(60)->toDateString()],
             'position' => ['required', Rule::enum(PlayerPosition::class)],
+            'shirt_number' => ['nullable', 'integer', 'between:1,99'],
             'is_active' => ['required', 'boolean'],
 
             // Let op: exists gaat rechtstreeks naar de database en kent de
@@ -46,6 +47,7 @@ class PlayerRequest extends FormRequest
             'last_name' => 'De achternaam',
             'date_of_birth' => 'De geboortedatum',
             'position' => 'De positie',
+            'shirt_number' => 'Het rugnummer',
             'is_active' => 'De status',
             'groups' => 'De groepen',
         ];
@@ -56,6 +58,7 @@ class PlayerRequest extends FormRequest
         return [
             'date_of_birth.before' => 'De geboortedatum moet in het verleden liggen.',
             'date_of_birth.after' => 'Deze geboortedatum lijkt niet te kloppen.',
+            'shirt_number.between' => 'Kies een rugnummer van 1 tot en met 99.',
             'groups.*.exists' => 'Een van de gekozen groepen bestaat niet binnen deze school.',
         ];
     }

@@ -18,6 +18,7 @@ interface Speler {
     photo: string | null;
     date_of_birth: string;
     position: string;
+    shirt_number: number | null;
     is_active: boolean;
     groups: number[];
 }
@@ -48,6 +49,7 @@ const form = useForm({
     last_name: props.player?.last_name ?? '',
     date_of_birth: props.player?.date_of_birth ?? '',
     position: props.player?.position ?? 'keeper',
+    shirt_number: props.player?.shirt_number ?? ('' as number | ''),
     is_active: props.player?.is_active ?? true,
     groups: props.player?.groups ?? ([] as number[]),
 });
@@ -145,6 +147,13 @@ const opslaan = () => {
                         <p class="text-xs text-muted-foreground">Bepaalt op welke categorieën de speler beoordeeld wordt.</p>
                         <InputError :message="form.errors.position" />
                     </div>
+                </div>
+
+                <div class="grid gap-2">
+                    <Label for="shirt_number">Rugnummer <span class="text-muted-foreground">(optioneel)</span></Label>
+                    <Input id="shirt_number" v-model="form.shirt_number" type="number" inputmode="numeric" min="1" max="99" class="w-24" placeholder="10" />
+                    <p class="text-xs text-muted-foreground">Staat groot op de foto van de kaart. De speler of zijn ouders kunnen het zelf ook zetten.</p>
+                    <InputError :message="form.errors.shirt_number" />
                 </div>
 
                 <div class="grid gap-2">

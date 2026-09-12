@@ -45,6 +45,11 @@ class PlayerCardPresenter
             'photo' => $player->photo_url,
             'position' => $player->position->label(),
             'position_key' => $player->position->value,
+            // Het rugnummer, zoals op een shirt; en een kaartnummer als bij
+            // een verzamelkaart — vast per speler, dus herkenbaar op elke
+            // seizoenskaart.
+            'shirt_number' => $player->shirt_number,
+            'card_number' => sprintf('#%04d', $player->id),
             'age_category' => [
                 'key' => $categorie,
                 'label' => AgeCategory::describe($categorie),

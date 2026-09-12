@@ -43,6 +43,10 @@ export interface Kaart {
     photo: string | null;
     position: string;
     position_key: 'keeper' | 'field';
+    /** Het rugnummer, groot op de foto; null als er geen is. */
+    shirt_number?: number | null;
+    /** Het kaartnummer, zoals op een verzamelkaart: "#0042". */
+    card_number?: string;
     age_category: { key: string; label: string } | null;
     moved_up: boolean;
     overall: number | null;
@@ -378,6 +382,8 @@ const upgradeTekst = computed(() => {
                         <p v-if="card.age_category" class="pp-categorie" :title="card.age_category.label">{{ card.age_category.key }}</p>
                     </div>
 
+                    <p v-if="card.shirt_number" class="pp-rugnummer tabular" aria-label="Rugnummer">{{ card.shirt_number }}</p>
+
                     <ul v-if="badges.length" class="pp-badges" aria-label="Mijlpalen">
                         <li v-for="badge in badges" :key="badge.key" class="pp-badge" :title="badge.description">
                             <span class="pp-badge-icoon">
@@ -435,7 +441,11 @@ const upgradeTekst = computed(() => {
                             Seizoen {{ card.season }}
                             <template v-if="card.overall !== null"> &middot; Level {{ card.level.label }}</template>
                         </p>
-                        <p v-if="card.school" class="pp-school">{{ card.school }}</p>
+                        <p v-if="card.school || card.card_number" class="pp-school">
+                            <template v-if="card.school">{{ card.school }}</template>
+                            <template v-if="card.school && card.card_number"> &middot; </template>
+                            <span v-if="card.card_number" class="tabular">{{ card.card_number }}</span>
+                        </p>
                     </div>
                 </div>
             </div>
@@ -522,6 +532,21 @@ const upgradeTekst = computed(() => {
     background: radial-gradient(45% 45% at var(--pp-gx, 30%) var(--pp-gy, 20%), rgba(255, 255, 255, 0.45), transparent 70%);
     mix-blend-mode: soft-light;
     transition: opacity 0.4s ease;
+}
+
+/* Het rugnummer: groot en in het metaal van het level, linksonder op de foto
+   (rechts staan de mijlpalen). */
+.pp-rugnummer {
+    position: absolute;
+    left: 0.9rem;
+    bottom: 0.35rem;
+    z-index: 2;
+    font-size: 2.6rem;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: var(--pp-tier);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.6);
 }
 
 /* ---------- De achterkant ---------- */

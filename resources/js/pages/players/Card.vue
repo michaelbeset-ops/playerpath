@@ -6,10 +6,10 @@ import PhotoUpload from '@/components/PhotoUpload.vue';
 import PlayerCardVisual, { type Kaart } from '@/components/PlayerCardVisual.vue';
 import ReportCelebration, { type RapportWijziging } from '@/components/ReportCelebration.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { deelKaartAlsAfbeelding } from '@/lib/cardImage';
+import { deelKaartAlsAfbeelding, groeiSticker } from '@/lib/cardImage';
 import { strooiConfetti } from '@/lib/confetti';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { Camera, Check, Copy, ImageDown, Link2, Lock, Share2, TrendingUp, Trophy } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 
@@ -77,6 +77,11 @@ const naarFoto = () => {
 // Tijdens het uitsnijden beweegt de kaart mee: wat je schuift zie je meteen
 // op de echte kaart, niet pas na het opslaan.
 const voorbeeldFoto = ref<string | null>(null);
+
+// Het rugnummer: versiering van de eigen kaart, dus hier bij de foto en niet
+// alleen in het spelersformulier van de school.
+const rugnummer = useForm({ shirt_number: props.card.shirt_number ?? ('' as number | '') });
+const bewaarRugnummer = () => rugnummer.patch('/players/' + props.player.id + '/rugnummer', { preserveScroll: true });
 const kaartMetVoorbeeld = computed(() => (voorbeeldFoto.value ? { ...props.card, photo: voorbeeldFoto.value } : props.card));
 
 onMounted(() => {
@@ -130,7 +135,10 @@ const deelAfbeelding = async () => {
     deelBezig.value = true;
     deelMelding.value = null;
 
-    const uitkomst = await deelKaartAlsAfbeelding(props.card, props.share.url);
+    // Net een level erbij? Dan zegt de sticker dat; anders de groei van het
+    // laatste rapport, als die de moeite waard is.
+    const sticker = viering.value?.level.up ? 'NIEUW LEVEL' : groeiSticker(props.card);
+    const uitkomst = await deelKaartAlsAfbeelding(props.card, props.share.url, sticker);
 
     deelBezig.value = false;
     deelMelding.value = {
@@ -205,6 +213,31 @@ const deelAfbeelding = async () => {
                     @preview="voorbeeldFoto = $event"
                     @uploaded="(eerste) => eerste && strooiConfetti()"
                 />
+
+                <form class="mt-4 flex flex-wrap items-end gap-2 border-t border-border pt-4" @submit.prevent="bewaarRugnummer">
+                    <div class="grid gap-1">
+                        <label for="rugnummer" class="text-sm font-medium">Rugnummer</label>
+                        <input
+                            id="rugnummer"
+                            v-model="rugnummer.shirt_number"
+                            type="number"
+                            inputmode="numeric"
+                            min="1"
+                            max="99"
+                            placeholder="10"
+                            class="tabular h-11 w-24 rounded-lg border border-input bg-background px-3 text-center text-lg font-semibold outline-none focus:border-primary"
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        class="inline-flex h-11 items-center rounded-lg border border-border bg-card px-4 text-sm font-medium transition hover:border-primary disabled:opacity-60"
+                        :disabled="rugnummer.processing"
+                    >
+                        Op de kaart zetten
+                    </button>
+                    <p class="basis-full text-xs text-muted-foreground">Staat groot op de foto, zoals op een shirt. Leeg laten mag.</p>
+                    <p v-if="rugnummer.errors.shirt_number" class="basis-full text-sm text-destructive">{{ rugnummer.errors.shirt_number }}</p>
+                </form>
             </div>
 
             <div v-if="goals.length" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
