@@ -8,7 +8,7 @@ use App\Models\Attendance;
  * Eén regel per speler per training. Grof, maar precies wat je in Excel wilt
  * om zelf te draaien en te filteren.
  */
-class AttendanceExport implements Export
+class AttendanceExport implements Export, FormattedExport
 {
     public function key(): string
     {
@@ -33,6 +33,16 @@ class AttendanceExport implements Export
     public function headings(): array
     {
         return ['Datum', 'Tijd', 'Groep', 'Speler', 'Positie', 'Aanmelding', 'Aanwezigheid'];
+    }
+
+    public function types(): array
+    {
+        return ['date', 'text', 'text', 'text', 'text', 'text', 'text'];
+    }
+
+    public function totals(): array
+    {
+        return [];
     }
 
     public function rows(array $filters): iterable

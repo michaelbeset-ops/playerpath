@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Exports;
 
+use App\Enums\PlayerPosition;
+use App\Enums\ReportCategory;
 use App\Enums\Role;
 use App\Models\Attendance;
 use App\Models\Group;
@@ -14,11 +16,14 @@ use App\Support\Exports\AttendanceExport;
 use App\Support\Exports\ExportRegistry;
 use App\Support\Exports\FinancialExport;
 use App\Support\Exports\PlayersExport;
+use App\Support\Exports\ReportsExport;
 use App\Support\Exports\TrainingsExport;
 use App\Support\Tenancy\Tenancy;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 use Tests\TestCase;
+use ZipArchive;
 
 class ExportTest extends TestCase
 {
@@ -48,11 +53,12 @@ class ExportTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('exports/Index')
-                ->count('exports', 4)
+                ->count('exports', 5)
                 ->where('exports.0.key', 'players')
                 ->where('exports.1.key', 'trainings')
                 ->where('exports.2.key', 'attendance')
-                ->where('exports.3.key', 'financial')
+                ->where('exports.3.key', 'reports')
+                ->where('exports.4.key', 'financial')
             );
     }
 
@@ -111,8 +117,67 @@ class ExportTest extends TestCase
         $response->assertOk();
         $response->assertHeader('content-type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 
+        // De bestandsnaam draagt school, overzicht en datum.
+        $this->assertStringContainsString(
+            Str::slug($this->school->name).'-spelers-'.now()->format('Y-m-d').'.xlsx',
+            $response->headers->get('content-disposition'),
+        );
+
         // Een xlsx is een zip: begint met "PK".
         $this->assertStringStartsWith('PK', $response->streamedContent());
+    }
+
+    /**
+     * Excel is een net document: de naam van de school en de titel bovenaan,
+     * echte datums en bedragen, en een totaalregel waar dat zin heeft.
+     */
+    public function test_de_excel_heeft_een_kop_en_een_totaalregel(): void
+    {
+        $groep = Group::factory()->for($this->school)->create();
+        $training = Training::factory()->for($this->school)->for($groep)->past()->create();
+        $speler = Player::factory()->for($this->school)->create();
+        $speler->groups()->attach($groep->id);
+        Attendance::factory()->for($this->school)->create(['training_id' => $training->id, 'player_id' => $speler->id, 'status' => 'present']);
+
+        $inhoud = $this->actingAs($this->eigenaar)->get('/exports/trainings?format=xlsx')->streamedContent();
+
+        $pad = tempnam(sys_get_temp_dir(), 'pp');
+        file_put_contents($pad, $inhoud);
+
+        $zip = new ZipArchive;
+        $zip->open($pad);
+        // OpenSpout schrijft tekst inline in het blad, niet in sharedStrings.
+        $blad = (string) $zip->getFromName('xl/worksheets/sheet1.xml');
+        $zip->close();
+        unlink($pad);
+
+        $this->assertStringContainsString(htmlspecialchars($this->school->name), $blad);
+        $this->assertStringContainsString('Trainingen — Trainingen', $blad);
+        $this->assertStringContainsString('Totaal', $blad);
+        // De kop staat over de volle breedte, en de kolommen hebben een breedte.
+        $this->assertStringContainsString('<mergeCell', $blad);
+        $this->assertStringContainsString('<cols>', $blad);
+    }
+
+    public function test_de_rapportenexport_geeft_gemiddelde_en_cijfers(): void
+    {
+        $speler = Player::factory()->for($this->school)->keeper()->create(['first_name' => 'Sem', 'last_name' => 'de Vries']);
+        $trainer = User::factory()->for($this->school)->create(['name' => 'Rob']);
+        $trainer->assignRole(Role::Trainer->value);
+
+        $cijfers = collect(ReportCategory::forPosition(PlayerPosition::Keeper))
+            ->mapWithKeys(fn (ReportCategory $c) => [$c->value => 7])
+            ->all();
+
+        $this->actingAs($trainer)->post("/players/{$speler->id}/reports", ['scores' => $cijfers]);
+
+        $rijen = iterator_to_array(app(ReportsExport::class)->rows([]));
+
+        $this->assertCount(1, $rijen);
+        $this->assertSame('Sem de Vries', $rijen[0][1]);
+        $this->assertSame('Rob', $rijen[0][3]);
+        $this->assertSame(7.0, $rijen[0][4]);
+        $this->assertStringContainsString('Reflexen 7,0', $rijen[0][5]);
     }
 
     public function test_de_trainingenexport_respecteert_de_periode(): void

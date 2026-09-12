@@ -47,6 +47,12 @@ class FinancialExport implements WorkbookExport
         return ['Vervaldatum', 'Betaald op', 'Speler', 'Omschrijving', 'Bedrag', 'Status', 'Methode', 'Maand'];
     }
 
+    /** @return list<string> */
+    protected function types(): array
+    {
+        return ['date', 'date', 'text', 'text', 'money', 'text', 'text', 'text'];
+    }
+
     public function rows(array $filters): iterable
     {
         foreach ($this->betalingen($filters) as $betaling) {
@@ -66,10 +72,29 @@ class FinancialExport implements WorkbookExport
     public function sheets(array $filters): array
     {
         return [
-            new Sheet('Overzicht', ['Maand', 'Ontvangen', 'Openstaand', 'Mislukt of gestorneerd', 'Aantal betalingen', 'Aantal betaald'], $this->overzicht($filters)),
-            new Sheet('Betalingen', $this->headings(), $this->rows($filters)),
-            new Sheet('Openstaand', ['Speler', 'Ouder(s)', 'E-mail', 'Omschrijving', 'Bedrag', 'Vervaldatum', 'Dagen te laat', 'Status'], $this->openstaand()),
-            new Sheet('Abonnementen', ['Speler', 'Tarief', 'Bedrag', 'Frequentie', 'Status', 'Betaalmethode', 'Sinds', 'Tot', 'Jaarwaarde'], $this->abonnementen()),
+            // Het overzicht telt zelf al op (de regel "Totaal"); de andere
+            // tabbladen krijgen hun totaal van de writer.
+            new Sheet(
+                'Overzicht',
+                ['Maand', 'Ontvangen', 'Openstaand', 'Mislukt of gestorneerd', 'Aantal betalingen', 'Aantal betaald'],
+                $this->overzicht($filters),
+                ['text', 'money', 'money', 'money', 'int', 'int'],
+            ),
+            new Sheet('Betalingen', $this->headings(), $this->rows($filters), $this->types(), [4]),
+            new Sheet(
+                'Openstaand',
+                ['Speler', 'Ouder(s)', 'E-mail', 'Omschrijving', 'Bedrag', 'Vervaldatum', 'Dagen te laat', 'Status'],
+                $this->openstaand(),
+                ['text', 'text', 'text', 'text', 'money', 'date', 'int', 'text'],
+                [4],
+            ),
+            new Sheet(
+                'Abonnementen',
+                ['Speler', 'Tarief', 'Bedrag', 'Frequentie', 'Status', 'Betaalmethode', 'Sinds', 'Tot', 'Jaarwaarde'],
+                $this->abonnementen(),
+                ['text', 'text', 'money', 'text', 'text', 'text', 'date', 'date', 'money'],
+                [2, 8],
+            ),
         ];
     }
 

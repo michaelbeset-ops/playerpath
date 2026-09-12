@@ -6,9 +6,10 @@ import PhotoUpload from '@/components/PhotoUpload.vue';
 import PlayerCardVisual, { type Kaart } from '@/components/PlayerCardVisual.vue';
 import ReportCelebration, { type RapportWijziging } from '@/components/ReportCelebration.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { deelKaartAlsAfbeelding } from '@/lib/cardImage';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { Camera, Check, Copy, Link2, Lock, TrendingUp, Trophy } from 'lucide-vue-next';
+import { Camera, Check, Copy, ImageDown, Link2, Lock, Share2, TrendingUp, Trophy } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 
 const props = defineProps<{
@@ -111,6 +112,26 @@ const kopieer = async () => {
     await navigator.clipboard.writeText(props.share.url);
     gekopieerd.value = true;
     setTimeout(() => (gekopieerd.value = false), 2000);
+};
+
+// De kaart als afbeelding, in story-formaat: via het deelmenu van de
+// telefoon, en anders als download. De link gaat mee als hij aanstaat.
+const deelBezig = ref(false);
+const deelMelding = ref<string | null>(null);
+
+const deelAfbeelding = async () => {
+    deelBezig.value = true;
+    deelMelding.value = null;
+
+    const uitkomst = await deelKaartAlsAfbeelding(props.card, props.share.url);
+
+    deelBezig.value = false;
+    deelMelding.value = {
+        gedeeld: null,
+        geannuleerd: null,
+        gedownload: 'De afbeelding is gedownload. Deel hem vanuit je galerij of downloads.',
+        mislukt: 'Het maken van de afbeelding is niet gelukt. Probeer het nog eens.',
+    }[uitkomst];
 };
 </script>
 
@@ -228,9 +249,44 @@ const kopieer = async () => {
                 <p v-if="lastReport.note" class="mt-3 text-sm">{{ lastReport.note }}</p>
             </div>
 
-            <!-- Delen: standaard uit, en met de gevolgen erbij -->
-            <div v-if="share.can && player.overall_rating" ref="deelVak" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
-                <p class="font-medium">Kaart delen</p>
+            <!-- Delen als afbeelding: voor iedereen die de kaart mag zien. Dit
+                 is wat een kind in de groepsapp zet: een plaatje, geen link. -->
+            <div v-if="player.overall_rating" ref="deelVak" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+                <p class="font-medium">Kaart delen als afbeelding</p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    Een plaatje van de kaart in story-formaat, voor WhatsApp of Instagram. Er staat op wat je hier ziet: naam, positie, cijfers en level.
+                </p>
+
+                <div class="mt-4 flex flex-wrap items-center gap-2">
+                    <button
+                        type="button"
+                        class="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+                        :disabled="deelBezig"
+                        @click="deelAfbeelding"
+                    >
+                        <Share2 v-if="!deelBezig" class="size-4" />
+                        <ImageDown v-else class="size-4 animate-pulse" />
+                        {{ deelBezig ? 'Afbeelding maken…' : 'Deel als afbeelding' }}
+                    </button>
+
+                    <button
+                        v-if="share.url"
+                        type="button"
+                        class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border px-4 text-sm font-medium transition hover:border-primary"
+                        @click="kopieer"
+                    >
+                        <Check v-if="gekopieerd" class="size-4 text-primary" />
+                        <Copy v-else class="size-4" />
+                        {{ gekopieerd ? 'Link gekopieerd' : 'Link kopiëren' }}
+                    </button>
+                </div>
+
+                <p v-if="deelMelding" class="mt-3 text-sm text-muted-foreground" role="status">{{ deelMelding }}</p>
+            </div>
+
+            <!-- De deel-link: standaard uit, en met de gevolgen erbij -->
+            <div v-if="share.can && player.overall_rating" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+                <p class="font-medium">Deel-link</p>
                 <p class="mt-1 text-sm text-muted-foreground">
                     Maak een link waarmee iemand zonder account deze kaart kan bekijken. Op die pagina staan alleen de voornaam met initiaal, de
                     positie en de cijfers — geen achternaam, leeftijd, school of trainersnotities.

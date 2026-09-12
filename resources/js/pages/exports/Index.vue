@@ -53,7 +53,7 @@ const url = (overzicht: Overzicht, format: 'csv' | 'xlsx') => {
             <!-- Periode: geldt voor de overzichten met een datum -->
             <div class="mt-6 rounded-xl border border-border bg-card p-4 shadow-sm">
                 <p class="text-sm font-medium">Periode</p>
-                <p class="mt-0.5 text-xs text-muted-foreground">Voor trainingen en aanwezigheid. Spelers zijn altijd de volledige lijst.</p>
+                <p class="mt-0.5 text-xs text-muted-foreground">Voor trainingen, aanwezigheid, rapporten en betalingen. Spelers zijn altijd de volledige lijst.</p>
 
                 <div class="mt-3 grid grid-cols-2 gap-3">
                     <div class="grid gap-1.5">
@@ -105,8 +105,9 @@ const url = (overzicht: Overzicht, format: 'csv' | 'xlsx') => {
             </div>
 
             <p class="mt-6 text-xs text-muted-foreground">
-                Het financiële overzicht bevat in Excel vier tabbladen; als CSV krijg je alleen de betalingen. Zodra Mollie is aangesloten komen de
-                echte incassogegevens hier automatisch in.
+                Elk Excel-bestand heeft bovenaan de naam van je school, de titel en de periode, met datums en bedragen als echte datums en
+                bedragen en waar dat kan een totaalregel. Het financiële overzicht heeft vier tabbladen; als CSV krijg je alleen de betalingen,
+                kaal, voor het importeren in een ander programma.
             </p>
         </div>
     </AppLayout>

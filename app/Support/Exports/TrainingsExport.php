@@ -5,7 +5,7 @@ namespace App\Support\Exports;
 use App\Enums\AttendanceStatus;
 use App\Models\Training;
 
-class TrainingsExport implements Export
+class TrainingsExport implements Export, FormattedExport
 {
     public function key(): string
     {
@@ -30,6 +30,17 @@ class TrainingsExport implements Export
     public function headings(): array
     {
         return ['Datum', 'Van', 'Tot', 'Groep', 'Trainers', 'Locatie', 'Verwacht', 'Aanwezig', 'Afwezig', 'Niet afgevinkt', 'Toelichting'];
+    }
+
+    public function types(): array
+    {
+        return ['date', 'text', 'text', 'text', 'text', 'text', 'int', 'int', 'int', 'int', 'text'];
+    }
+
+    /** Verwacht, aanwezig, afwezig en niet afgevinkt worden onderaan opgeteld. */
+    public function totals(): array
+    {
+        return [6, 7, 8, 9];
     }
 
     public function rows(array $filters): iterable

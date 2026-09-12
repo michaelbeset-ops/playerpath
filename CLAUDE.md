@@ -1245,6 +1245,16 @@ CSV gaat met **puntkomma en BOM**, anders propt Nederlands Excel alles in één
 kolom. Geld in exports: pas in `rows()` van centen naar een getal in euro's,
 nooit als tekst met euroteken — anders kan Excel er niet mee rekenen.
 
+**Excel is een net document, CSV is kaal.** `ExportWriter` zet in een xlsx
+bovenaan de schoolnaam, de titel en de periode (samengevoegd over de
+breedte), vette kolomkoppen op een lichte achtergrond, kolombreedtes naar
+inhoud, datums als echte datums (`dd-mm-jjjj`), bedragen met euroteken en
+twee decimalen, en een totaalregel waar dat zin heeft. Wat voor soort waarde
+in een kolom staat zegt het overzicht zelf: `FormattedExport::types()` en
+`totals()`, of per `Sheet` (`types`, `totals`). CSV blijft koppen en rijen:
+dat is voor importeren, en een kopregel zit daar in de weg. De bestandsnaam
+is `school-overzicht-datum`. Er is ook een `ReportsExport` (rapporten).
+
 ### Datavisualisatie
 
 - **Eén serie per grafiek.** Zes categorieën in één grafiek wordt spaghetti;
@@ -2102,6 +2112,27 @@ uitnodiging — de ontvanger heeft nog geen account.
 `storage/app/mail-preview`), met een index. Dat gebeurt in een transactie die
 wordt teruggedraaid: er blijft geen verzonnen kind, order of rekening achter.
 Meet een wijziging op 375 pixels, net als elk ander scherm.
+
+### De kaart delen als afbeelding
+
+`lib/cardImage.ts` tekent de kaart op een canvas in story-formaat (1080 ×
+1920) — niet "gefotografeerd" uit de DOM, want iOS Safari struikelt over
+foreignObject en webfonts, en een canvas geeft op elke telefoon dezelfde
+scherpe PNG. `deelKaartAlsAfbeelding()` gaat via de Web Share API met een
+bestand als dat kan (WhatsApp, Instagram), en anders als download; de
+deel-link gaat als tekst mee als hij aanstaat. Op de kaart staat wat de kaart
+in de app toont en niets meer. Knoppen: op de kaartpagina ("Deel als
+afbeelding" + "Link kopiëren") en de deelknop op het spelerdashboard.
+
+### "Zet op je beginscherm"
+
+`components/InstallPrompt.vue`: niet als het al een app is (`useAppMode`),
+pas vanaf het tweede bezoek op een andere dag of na drie minuten, en
+wegklikken is nee — onthouden op dit apparaat (`localStorage`). Android en
+desktop krijgen de echte knop (`beforeinstallprompt`); iOS heeft dat niet en
+krijgt de twee stappen: Deel → Zet op beginscherm. Het manifest
+(`/manifest.webmanifest`) heeft naam, iconen, `start_url` en
+`display: standalone`; de test `ProductionReadinessTest` bewaakt dat.
 
 ### PWA en productie (Fase 12)
 

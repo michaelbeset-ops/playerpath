@@ -5,6 +5,8 @@ namespace Tests\Feature\Dashboard;
 use App\Enums\PlayerPosition;
 use App\Enums\ReportCategory;
 use App\Enums\Role;
+use App\Models\Group;
+use App\Models\Location;
 use App\Models\Player;
 use App\Models\Product;
 use App\Models\School;
@@ -156,18 +158,24 @@ class AccountabilityTest extends TestCase
         Training::factory()->for($this->school)->create();
         Product::factory()->for($this->school)->create();
 
+        // Speler, training, aanbod. De schoolgegevens, de locatie en de
+        // groep staan nog open.
         $this->actingAs($this->eigenaar->fresh())
             ->get('/dashboard')
             ->assertInertia(fn ($page) => $page->where('checklist.done', 3));
 
         $this->rapporteer($speler, 7);
         $this->ouder();
+        Location::create(['name' => 'Sportpark Noord']);
+        Group::factory()->for($this->school)->create();
+        OnboardingState::save($this->school->fresh(), ['wizard_step' => 2]);
+        app(Tenancy::class)->set($this->school->fresh());
 
         // Alles gedaan: dan staat de felicitatie er, en pas als die gezien is
         // gaat het blok voorgoed weg.
         $this->actingAs($this->eigenaar->fresh())
             ->get('/dashboard')
-            ->assertInertia(fn ($page) => $page->where('checklist.complete', true)->where('checklist.done', 5));
+            ->assertInertia(fn ($page) => $page->where('checklist.complete', true)->where('checklist.done', 8));
 
         $this->actingAs($this->eigenaar->fresh())->post('/onboarding/startlijst/klaar');
 

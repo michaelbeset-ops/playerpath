@@ -5,7 +5,7 @@ namespace App\Support\Exports;
 use App\Models\Player;
 use Illuminate\Support\Carbon;
 
-class PlayersExport implements Export
+class PlayersExport implements Export, FormattedExport
 {
     public function key(): string
     {
@@ -33,6 +33,16 @@ class PlayersExport implements Export
             'Voornaam', 'Achternaam', 'Geboortedatum', 'Leeftijd', 'Positie', 'Actief',
             'Groepen', 'Ouders', 'E-mail ouders', 'Overall rating', 'Aantal rapporten', 'Laatste rapport',
         ];
+    }
+
+    public function types(): array
+    {
+        return ['text', 'text', 'date', 'int', 'text', 'text', 'text', 'text', 'text', 'int', 'int', 'date'];
+    }
+
+    public function totals(): array
+    {
+        return [];
     }
 
     public function rows(array $filters): iterable

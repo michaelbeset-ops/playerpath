@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import CardGlow from '@/components/CardGlow.vue';
 import PlayerCardVisual from '@/components/PlayerCardVisual.vue';
+import { deelKaartAlsAfbeelding } from '@/lib/cardImage';
 import type { SpelerDashboardData, SpelerTrend } from '@/types/player-dashboard';
 import { Link } from '@inertiajs/vue3';
 import {
@@ -89,32 +90,27 @@ const deltaTekst = (delta: number | null) => (delta === null ? '' : delta > 0 ? 
 const kaartHref = computed(() => '/players/' + props.player.id + '/card');
 
 /*
- * Delen. Of de kaart gedeeld wordt beslist een ouder of de school (zie
- * PlayerPolicy::share); een kind zet dat niet zelf aan. Staat de link aan,
- * dan mag het hem wél doorsturen — het is zijn kaart. Staat hij uit, dan
- * zegt de knop wie hem kan aanzetten in plaats van te zwijgen.
+ * Delen: de kaart als afbeelding, via het deelmenu van de telefoon. Dat is
+ * wat een kind in de groepsapp zet — een plaatje, geen link. Of de deel-link
+ * ook meegaat beslist een ouder of de school (zie PlayerPolicy::share); een
+ * kind zet dat niet zelf aan. Zonder deelmenu wordt het een download.
  */
 const deelMelding = ref<string | null>(null);
+const deelBezig = ref(false);
 
 const deel = async () => {
-    const url = props.share?.url ?? null;
+    deelBezig.value = true;
+    deelMelding.value = null;
 
-    if (!url) {
-        deelMelding.value = 'Delen staat nog uit. Vraag je ouders of je trainer om je kaart te delen.';
-        return;
-    }
+    const uitkomst = await deelKaartAlsAfbeelding(props.card, props.share?.url ?? null);
 
-    try {
-        if (navigator.share) {
-            await navigator.share({ title: 'Mijn spelerskaart', url });
-            return;
-        }
-
-        await navigator.clipboard.writeText(url);
-        deelMelding.value = 'Link gekopieerd. Plak hem in een berichtje.';
-    } catch {
-        deelMelding.value = null;
-    }
+    deelBezig.value = false;
+    deelMelding.value = {
+        gedeeld: null,
+        geannuleerd: null,
+        gedownload: 'Je kaart is gedownload als afbeelding. Deel hem vanuit je galerij.',
+        mislukt: 'Het maken van de afbeelding is niet gelukt. Probeer het nog eens.',
+    }[uitkomst];
 };
 
 const behaald = computed(() => props.badges.filter((b) => b.earned));

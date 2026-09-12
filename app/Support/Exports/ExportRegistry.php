@@ -17,6 +17,7 @@ class ExportRegistry
         PlayersExport::class,
         TrainingsExport::class,
         AttendanceExport::class,
+        ReportsExport::class,
         FinancialExport::class,
     ];
 
