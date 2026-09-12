@@ -23,7 +23,12 @@ const props = defineProps<{
     size?: string;
     /** Alleen het rondje met een cameraknopje, voor in een lijst. */
     compact?: boolean;
+    /** Wat er op het kaartje in het uitsnijvenster staat. */
+    kaart?: { first_name: string; last_name: string; overall: number | null; position: string } | null;
 }>();
+
+/** De uitsnede tijdens het schuiven, zodat de kaart op de pagina meebeweegt. */
+const emit = defineEmits<{ preview: [url: string | null] }>();
 
 const invoer = ref<HTMLInputElement | null>(null);
 const camera = ref<HTMLInputElement | null>(null);
@@ -53,7 +58,11 @@ const verstuur = (blob: Blob) => {
     form.photo = new File([blob], 'foto.jpg', { type: 'image/jpeg' });
     form.post(props.action, {
         preserveScroll: true,
-        onFinish: () => form.reset(),
+        // De echte foto staat nu in de props; het voorbeeld mag weg.
+        onFinish: () => {
+            form.reset();
+            emit('preview', null);
+        },
     });
 };
 
@@ -85,7 +94,7 @@ defineExpose({ open: () => invoer.value?.click() });
             <Camera class="size-4" />
         </span>
         <input ref="invoer" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="kies" />
-        <PhotoCrop v-if="teKnippen" :file="teKnippen" :name="name" @done="verstuur" @cancel="teKnippen = null" />
+        <PhotoCrop v-if="teKnippen" :file="teKnippen" :name="name" :kaart="kaart" @done="verstuur" @cancel="teKnippen = null" @preview="emit('preview', $event)" />
     </button>
 
     <div v-else class="flex items-center gap-4">
@@ -134,6 +143,6 @@ defineExpose({ open: () => invoer.value?.click() });
 
         <input ref="invoer" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" @change="kies" />
         <input ref="camera" type="file" accept="image/*" capture="user" class="hidden" @change="kies" />
-        <PhotoCrop v-if="teKnippen" :file="teKnippen" :name="name" @done="verstuur" @cancel="teKnippen = null" />
+        <PhotoCrop v-if="teKnippen" :file="teKnippen" :name="name" :kaart="kaart" @done="verstuur" @cancel="teKnippen = null" @preview="emit('preview', $event)" />
     </div>
 </template>

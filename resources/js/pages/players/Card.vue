@@ -73,6 +73,11 @@ const naarFoto = () => {
     fotoKiezer.value?.open();
 };
 
+// Tijdens het uitsnijden beweegt de kaart mee: wat je schuift zie je meteen
+// op de echte kaart, niet pas na het opslaan.
+const voorbeeldFoto = ref<string | null>(null);
+const kaartMetVoorbeeld = computed(() => (voorbeeldFoto.value ? { ...props.card, photo: voorbeeldFoto.value } : props.card));
+
 onMounted(() => {
     if (window.location.hash === '#foto') {
         fotoBlok.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -151,8 +156,8 @@ const deelAfbeelding = async () => {
             <div class="theme-donker overflow-hidden rounded-3xl bg-background p-4 text-foreground sm:p-8" data-tour="player-card">
                 <CardGlow :level="vorigLevel ?? (player.overall_rating === null ? 'geen' : card.level.key)">
                     <PlayerCardVisual
-                        :card="card"
-                        :photo-action="canPhoto && !player.photo"
+                        :card="kaartMetVoorbeeld"
+                        :photo-action="canPhoto && !player.photo && !voorbeeldFoto"
                         :audience="canReport ? 'trainer' : 'gezin'"
                         :shareable="share.can && player.overall_rating !== null"
                         :display-level="vorigLevel"
@@ -188,7 +193,15 @@ const deelAfbeelding = async () => {
                             : 'Een kaart met een gezicht erop is de helft meer waard. Maak een foto of kies er een; je snijdt hem daarna uit.'
                     }}
                 </p>
-                <PhotoUpload ref="fotoKiezer" class="mt-3" :name="player.name" :photo="player.photo" :action="'/players/' + player.id + '/photo'" />
+                <PhotoUpload
+                    ref="fotoKiezer"
+                    class="mt-3"
+                    :name="player.name"
+                    :photo="player.photo"
+                    :action="'/players/' + player.id + '/photo'"
+                    :kaart="{ first_name: card.first_name, last_name: card.last_name, overall: card.overall, position: card.position }"
+                    @preview="voorbeeldFoto = $event"
+                />
             </div>
 
             <div v-if="goals.length" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">

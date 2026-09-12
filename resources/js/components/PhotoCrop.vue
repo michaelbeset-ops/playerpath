@@ -18,9 +18,22 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 const props = defineProps<{
     file: File;
     name: string;
+    /** Wat er op het kaartje naast de uitsnede staat; zonder alleen de foto. */
+    kaart?: { first_name: string; last_name: string; overall: number | null; position: string } | null;
 }>();
 
-const emit = defineEmits<{ done: [blob: Blob]; cancel: [] }>();
+/**
+ * `preview` geeft bij elke verschuiving de uitsnede als kleine afbeelding
+ * door, zodat de echte kaart op de pagina meebeweegt terwijl je schuift.
+ */
+const emit = defineEmits<{ done: [blob: Blob]; cancel: []; preview: [url: string | null] }>();
+
+/** De uitsnede als kleine afbeelding, voor het kaartje in dit venster én de kaart erachter. */
+const voorbeeld = ref<string | null>(null);
+const klein = document.createElement('canvas');
+klein.width = 192;
+klein.height = 192;
+let voorbeeldGepland = false;
 
 /** Maat van het vak op het scherm, in css-pixels. Past op 375 breed. */
 const VAK = 280;
@@ -60,6 +73,26 @@ const teken = () => {
     const f = doek.value!.width / VAK;
     ctx.clearRect(0, 0, doek.value!.width, doek.value!.height);
     ctx.drawImage(afbeelding, x * f, y * f, breedte * schaal() * f, hoogte * schaal() * f);
+
+    // Het kaartje hooguit één keer per beeld bijwerken; een dataURL per
+    // muisbeweging maakt het slepen stroperig.
+    if (!voorbeeldGepland) {
+        voorbeeldGepland = true;
+        requestAnimationFrame(() => {
+            voorbeeldGepland = false;
+
+            if (!afbeelding) {
+                return;
+            }
+
+            const k = klein.width / VAK;
+            const kctx = klein.getContext('2d')!;
+            kctx.clearRect(0, 0, klein.width, klein.height);
+            kctx.drawImage(afbeelding, x * k, y * k, breedte * schaal() * k, hoogte * schaal() * k);
+            voorbeeld.value = klein.toDataURL('image/jpeg', 0.8);
+            emit('preview', voorbeeld.value);
+        });
+    }
 };
 
 // Zoomen gebeurt om het midden van het vak, niet om de linkerbovenhoek.
@@ -149,11 +182,13 @@ const bevestig = () => {
 
 const annuleer = () => {
     open.value = false;
+    emit('preview', null);
     emit('cancel');
 };
 
 watch(open, (nu) => {
     if (!nu && !bezig.value) {
+        emit('preview', null);
         emit('cancel');
     }
 });
@@ -190,6 +225,31 @@ onBeforeUnmount(() => {
                     <div v-if="laden" class="absolute inset-0 flex items-center justify-center bg-secondary">
                         <LoaderCircle class="size-6 animate-spin text-muted-foreground" />
                     </div>
+                </div>
+
+                <!-- Zo komt hij op de kaart: een klein kaartje dat meebeweegt
+                     met het schuiven. Op een telefoon staat de echte kaart
+                     achter dit venster, dus hier zie je het meteen. -->
+                <div class="mt-3 flex items-center gap-3">
+                    <div class="w-24 shrink-0 overflow-hidden rounded-xl border-2 border-[#8c96a3] bg-[#0a0f1c] text-[#f1f5f9] shadow-md">
+                        <div class="relative aspect-square bg-[#131c30]">
+                            <img v-if="voorbeeld" :src="voorbeeld" alt="" class="size-full object-cover" />
+                            <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#0a0f1c] to-transparent"></div>
+                            <p v-if="kaart" class="tabular absolute bottom-1 left-1.5 text-lg font-extrabold leading-none">{{ kaart.overall ?? '—' }}</p>
+                        </div>
+                        <div class="px-1.5 pb-1.5 pt-0.5">
+                            <p class="truncate text-[9px] leading-tight text-[#94a3b8]">{{ kaart?.first_name ?? name.split(' ')[0] }}</p>
+                            <p class="truncate text-[11px] font-bold leading-tight">{{ kaart?.last_name ?? name.split(' ').slice(1).join(' ') }}</p>
+                            <div class="mt-1 space-y-0.5">
+                                <div class="h-0.5 w-full rounded bg-[#25282d]"><div class="h-full w-2/3 rounded bg-[#22e06b]"></div></div>
+                                <div class="h-0.5 w-full rounded bg-[#25282d]"><div class="h-full w-1/2 rounded bg-[#22e06b]"></div></div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-xs leading-relaxed text-muted-foreground">
+                        <span class="font-medium text-foreground">Zo komt hij op de kaart.</span> Sleep de foto en zoom in tot het gezicht bovenin het vak
+                        staat; het cijfer komt linksonder over de foto heen.
+                    </p>
                 </div>
 
                 <label class="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
