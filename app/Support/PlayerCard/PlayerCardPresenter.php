@@ -46,7 +46,7 @@ class PlayerCardPresenter
             'position' => $player->position->label(),
             'position_key' => $player->position->value,
             // Het rugnummer, zoals op een shirt; en een kaartnummer als bij
-            // een verzamelkaart — vast per speler, dus herkenbaar op elke
+            // een verzamelkaart - vast per speler, dus herkenbaar op elke
             // seizoenskaart.
             'shirt_number' => $player->shirt_number,
             'card_number' => sprintf('#%04d', $player->id),

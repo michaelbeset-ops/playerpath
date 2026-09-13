@@ -14,8 +14,8 @@ use RuntimeException;
  * Een inschrijving goedkeuren (school met handmatig goedkeuren).
  *
  * De speler en het ouderaccount bestaan al sinds het indienen. Goedkeuren
- * betekent: de order gaat open en de ouder krijgt een betaalverzoek, of — als
- * er niets te betalen valt — de inschrijving is meteen rond.
+ * betekent: de order gaat open en de ouder krijgt een betaalverzoek, of - als
+ * er niets te betalen valt - de inschrijving is meteen rond.
  *
  * Betalen gebeurt dus pas ná goedkeuring. Anders kan er geld binnenkomen van
  * iemand die de school afwijst, en terugbetalen is een gesprek, geen knop.

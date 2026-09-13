@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Onboarding;
 
 use App\Actions\Onboarding\RemoveDemoData;
+use App\Actions\Onboarding\SeedDemoData;
 use App\Http\Controllers\Controller;
 use App\Models\Player;
 use App\Support\Dashboard\FamilyDashboard;
 use App\Support\Onboarding\OnboardingState;
+use App\Support\Trainings\FamilyTrainings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -45,7 +47,7 @@ class OnboardingController extends Controller
      *
      * Het scherm meldt dit zelf zodra alle stappen gedaan zijn. Zou de server
      * het meteen bij het laatste vinkje wegzetten, dan zag niemand ooit dat hij
-     * klaar was — het blok zou gewoon verdwenen zijn.
+     * klaar was - het blok zou gewoon verdwenen zijn.
      */
     public function completeChecklist(Request $request): RedirectResponse
     {
@@ -93,7 +95,7 @@ class OnboardingController extends Controller
     }
 
     /**
-     * Wat een ouder ziet — voor de eigenaar.
+     * Wat een ouder ziet - voor de eigenaar.
      *
      * Dit is zijn verkoopargument, en hij kan het nergens anders zien: hij is
      * geen ouder. Dus tekenen we het gezinsdashboard voor hem, met de
@@ -117,6 +119,57 @@ class OnboardingController extends Controller
             'upcoming' => $family->upcomingTrainings($request->user(), $kinderen),
             'offerings' => $family->openOfferings($request->user()),
             'messages' => $family->messages($request->user()),
+        ]);
+    }
+
+    /**
+     * Je eigen inschrijfpagina, zoals een ouder hem ziet.
+     *
+     * De echte pagina in een kader, niet een nagebouwde: wat de eigenaar hier
+     * ziet is precies wat een ouder krijgt als hij de link deelt.
+     */
+    public function enrollPreview(Request $request): Response
+    {
+        abort_unless($request->user()->isEigenaar(), 403);
+
+        $school = $request->user()->school;
+
+        return Inertia::render('onboarding/EnrollPreview', [
+            'url' => route('enroll.show', $school->slug),
+            'school' => $school->name,
+        ]);
+    }
+
+    /**
+     * De trainingen zoals een ouder ze ziet: komend, inschrijven, geweest.
+     *
+     * Met de voorbeeldspelers als kinderen, zodat er iets in "Inschrijven"
+     * staat: daar meldt een ouder zijn kind met één tik aan voor een losse
+     * training en kiest hij online of contant. Een oudere school zonder open
+     * voorbeeldtraining krijgt er hier een bij, zolang de voorbeelddata er is.
+     */
+    public function parentTrainingsPreview(Request $request, FamilyTrainings $gezin, SeedDemoData $demo): Response
+    {
+        abort_unless($request->user()->isEigenaar(), 403);
+
+        $demo->ensureOpenTraining($request->user()->school);
+
+        $kinderen = Player::query()->demo()->orderBy('first_name')->limit(2)->pluck('id')->all();
+
+        if ($kinderen === []) {
+            $kinderen = Player::query()->active()->orderBy('first_name')->limit(2)->pluck('id')->all();
+        }
+
+        return Inertia::render('trainings/Index', [
+            ...$gezin->for($request->user(), $kinderen),
+            'preview' => true,
+            'canManage' => false,
+            'canRecord' => false,
+            'isParticipant' => true,
+            'canEnroll' => true,
+            'filters' => ['group' => null, 'trainer' => null],
+            'groups' => [],
+            'trainers' => [],
         ]);
     }
 

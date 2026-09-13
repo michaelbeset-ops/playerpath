@@ -20,7 +20,7 @@ use App\Support\Money\Money;
  * Dit is het antwoord op de tweede vraag die een dashboard hoort te
  * beantwoorden: "wat moet ik doen?". Het staat daarom bovenaan, boven de
  * widgets, en is geen widget: je kunt het niet verplaatsen. Wegklikken kan wel,
- * maar alleen tot er iets verandert — zie signature() hieronder.
+ * maar alleen tot er iets verandert - zie signature() hieronder.
  *
  * Vier regels die deze lijst bruikbaar houden:
  *
@@ -32,7 +32,7 @@ use App\Support\Money\Money;
  * 3. **Niets tonen is ook een uitkomst.** Bij een lege lijst staat er één
  *    geruststellende regel; een leeg vak met een kopje leest als een fout.
  * 4. **Wat deze rol niet mag zien, staat er niet in.** Een trainer krijgt geen
- *    betaalsignalen — daar kan hij niets mee.
+ *    betaalsignalen - daar kan hij niets mee.
  */
 class AttentionItems
 {

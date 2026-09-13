@@ -45,7 +45,7 @@ const groepen = computed<NavGroup[]>(() =>
 );
 
 // Draait dit als app? Dan staat het menu in de tabbalk onderin, en is de
-// hamburger hierboven een tweede weg naar hetzelfde — die laten we weg.
+// hamburger hierboven een tweede weg naar hetzelfde - die laten we weg.
 const { isApp } = useAppMode();
 
 const acties = computed(() => page.props.quickAdd ?? []);

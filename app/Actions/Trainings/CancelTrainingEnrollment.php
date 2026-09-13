@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Notification;
 /**
  * Een losse aanmelding afmelden, en de plek doorgeven.
  *
- * De rekening die nog openstond vervalt; wat al betaald was blijft betaald —
+ * De rekening die nog openstond vervalt; wat al betaald was blijft betaald -
  * of er iets terug gaat is een gesprek tussen school en ouder, geen boeking.
  *
  * Komt er zo een plek vrij, dan krijgt de **eerste op de wachtlijst** bericht

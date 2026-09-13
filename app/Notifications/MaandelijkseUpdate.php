@@ -15,7 +15,7 @@ use Illuminate\Support\HtmlString;
  *
  * Toon: rustig en feitelijk. Geen superlatieven over talent, geen beloftes
  * over de toekomst. De sector wordt er publiekelijk op aangesproken dat er
- * voetbaldromen worden verkocht; deze mail moet het tegendeel laten zien —
+ * voetbaldromen worden verkocht; deze mail moet het tegendeel laten zien -
  * gewoon wat er die maand gebeurd is.
  */
 class MaandelijkseUpdate extends Notification implements ShouldQueue
@@ -70,7 +70,7 @@ class MaandelijkseUpdate extends Notification implements ShouldQueue
         foreach ($d['goals'] as $doel) {
             $punten[] = $doel['status'] === 'achieved'
                 ? 'Doel gehaald: '.e($doel['label']).' naar '.$doel['target']
-                : 'Werkt aan: '.e($doel['label']).' naar '.$doel['target'].' — '.($doel['on_track'] ? 'op koers' : 'nog even doorzetten');
+                : 'Werkt aan: '.e($doel['label']).' naar '.$doel['target'].' - '.($doel['on_track'] ? 'op koers' : 'nog even doorzetten');
         }
 
         // Als HtmlString, want line() plakt gewone regels met spaties aan

@@ -29,7 +29,7 @@ use App\Support\Rating\RatingSettings;
  * **Naar buiten wordt altijd naar boven afgerond.** Een 74,5 op de kaart wordt
  * 75, nooit 74. Dat is een keuze in het voordeel van het kind: een cijfer op
  * zijn kaart hoort nooit lager te zijn dan wat hij verdiende. Die afronding
- * staat op één plek — `afronden()` hieronder — zodat de kaart, het rapport en
+ * staat op één plek - `afronden()` hieronder - zodat de kaart, het rapport en
  * elk scherm hetzelfde getal laten zien.
  */
 class CalculatePlayerCard
@@ -77,7 +77,7 @@ class CalculatePlayerCard
      * De kaart van nu (de laatste N rapporten) tegenover de kaart zoals hij
      * stond vóór het laatste rapport (de N rapporten daarvoor). Zo staat er op
      * de kaart een pijltje per categorie dat precies zegt wat de trainer de
-     * vorige keer zag veranderen — dezelfde demping als de kaart zelf, dus een
+     * vorige keer zag veranderen - dezelfde demping als de kaart zelf, dus een
      * uitschieter geeft geen pijl van twintig punten.
      *
      * @return array<string, int|null> categorie => verschil, null zonder vorige stand

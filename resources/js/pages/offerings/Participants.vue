@@ -195,7 +195,7 @@ const haalVanLijst = (deelnemer: Deelnemer) => {
             <section v-if="waitlist.length" class="mt-6">
                 <h2 class="text-sm font-semibold">Wachtlijst</h2>
                 <p class="mt-0.5 text-xs text-muted-foreground">
-                    Op volgorde van aanmelden. Jij bepaalt wie er doorschuift — jij weet wie je al gesproken hebt.
+                    Op volgorde van aanmelden. Jij bepaalt wie er doorschuift - jij weet wie je al gesproken hebt.
                 </p>
 
                 <div class="mt-2 overflow-hidden rounded-xl border border-border bg-card shadow-sm">

@@ -16,7 +16,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Wie mag wat met rapporten en kaarten — inclusief de vraag of school A
+ * Wie mag wat met rapporten en kaarten - inclusief de vraag of school A
  * ergens bij school B kan komen.
  */
 class ReportAccessTest extends TestCase

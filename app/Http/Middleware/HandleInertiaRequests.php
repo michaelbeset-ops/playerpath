@@ -112,7 +112,7 @@ class HandleInertiaRequests extends Middleware
      *
      * Bewust maar drie vlaggen: alles wat op één scherm hoort, hoort ook door
      * dat scherm te worden opgehaald. Dit zijn de dingen die overal kunnen
-     * staan — de balk boven de voorbeelddata, de rondleiding en het
+     * staan - de balk boven de voorbeelddata, de rondleiding en het
      * welkomstregeltje.
      *
      * @return array<string, mixed>|null

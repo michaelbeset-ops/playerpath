@@ -10,7 +10,7 @@ import { computed, type Component } from 'vue';
  * Een getal zonder vergelijking zegt weinig: "drie spelers" kan geweldig of
  * rampzalig zijn. Daarom staat er altijd bij wat het deed.
  *
- * De pijl is nooit het enige teken van richting — er staat een getal naast en
+ * De pijl is nooit het enige teken van richting - er staat een getal naast en
  * het woord "meer" of "minder" in de toelichting. Kleur alleen zou betekenen
  * dat wie kleuren slecht onderscheidt niets ziet.
  */
@@ -73,7 +73,7 @@ const verschil = computed(() => {
 
         <div class="mt-2">
             <p class="tabular text-2xl font-bold leading-none sm:text-3xl" :class="heeftWaarde ? 'text-foreground' : 'text-muted-foreground/60'">
-                {{ heeftWaarde ? value : '—' }}
+                {{ heeftWaarde ? value : '-' }}
             </p>
 
             <p v-if="verschil !== null" class="tabular mt-1.5 flex items-center gap-1 text-xs font-medium" :class="trendKleur">

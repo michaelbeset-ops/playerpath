@@ -170,20 +170,27 @@ const opslaan = () => {
     // Stap één kan een logo meesturen, en een bestand gaat niet mee met PATCH.
     // Inertia lost dat op met een POST plus _method; voor de server is er geen
     // verschil, dus de route blijft één route.
+    // Na het opslaan komt de volgende stap: dezelfde pagina-component met
+    // andere props. Inertia bewaart bij een formulier standaard de staat van
+    // de component, en dan bleef het formulier van stap één staan terwijl
+    // stap twee getekend werd: een leeg scherm. Met preserveState 'errors'
+    // blijft wat je typte alleen staan bij een validatiefout.
     if (props.step === 1) {
         form.transform((data) => ({ ...data, _method: 'patch' })).post('/instellingen/inschrijven/stap/1', {
             preserveScroll: true,
+            preserveState: 'errors',
             forceFormData: true,
         });
 
         return;
     }
 
-    form.patch('/instellingen/inschrijven/stap/' + props.step, { preserveScroll: true });
+    form.patch('/instellingen/inschrijven/stap/' + props.step, { preserveScroll: true, preserveState: 'errors' });
 };
 
 /** Overslaan: elke vraag heeft een bruikbare standaard. */
-const overslaan = () => router.post('/instellingen/inschrijven/stap/' + props.step + '/overslaan', {}, { preserveScroll: true });
+const overslaan = () =>
+    router.post('/instellingen/inschrijven/stap/' + props.step + '/overslaan', {}, { preserveScroll: true, preserveState: false });
 
 // Live voorbeeld van het gekozen logo, nog vóór het is opgeslagen.
 const logoVoorbeeld = ref<string | null>(props.school.logo);
@@ -230,7 +237,7 @@ const wisselSoort = (waarde: string) => wissel(f.offering_types as string[], waa
 
 /**
  * Wanneer een ouder kan instappen. Meerdere mag: een school die het hele jaar
- * laat instromen heeft óók kampen. Het is uitleg én instelling tegelijk — de
+ * laat instromen heeft óók kampen. Het is uitleg én instelling tegelijk - de
  * samenvatting zegt straks in gewone taal wat je hier koos.
  */
 const instapmomenten = [

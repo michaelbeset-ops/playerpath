@@ -59,8 +59,10 @@ class DemoDataTest extends TestCase
         $this->zet();
 
         $this->assertSame(4, Player::demo()->count());
-        $this->assertSame(2, Training::demo()->count());
-        $this->assertSame(1, Group::demo()->count());
+        // Twee groepstrainingen plus één open training om op in te schrijven,
+        // in een eigen voorbeeldgroep zonder spelers.
+        $this->assertSame(3, Training::demo()->count());
+        $this->assertSame(2, Group::demo()->count());
         $this->assertSame(1, Product::demo()->count());
         $this->assertSame(1, Announcement::demo()->count());
         $this->assertSame(1, Location::demo()->count());

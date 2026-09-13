@@ -22,7 +22,7 @@ use Inertia\Response;
  * Een blok schrijf je je op in; een privétraining boek je. De school zet hier
  * neer wanneer welke trainer kan, en een ouder kiest daaruit in de shop.
  *
- * Momenten maak je per stuk of in een reeks — "elke dinsdag van 16:00 tot 17:00,
+ * Momenten maak je per stuk of in een reeks - "elke dinsdag van 16:00 tot 17:00,
  * vier weken lang" is hoe een trainer zijn agenda beschrijft, niet als zestien
  * losse formulieren.
  */
@@ -71,7 +71,7 @@ class SlotController extends Controller
     /**
      * Momenten toevoegen: één dag, of wekelijks herhaald.
      *
-     * Losse momenten, geen reeks-entiteit — net als bij het herhalen van
+     * Losse momenten, geen reeks-entiteit - net als bij het herhalen van
      * trainingen. Eén moment verzetten of weghalen raakt de rest niet.
      */
     public function store(Request $request, Product $product): RedirectResponse
@@ -143,7 +143,7 @@ class SlotController extends Controller
      * Een moment weghalen, of een boeking terugdraaien.
      *
      * Een geboekt moment weghalen is een boeking annuleren; de rekening blijft
-     * staan. Wat er is afgesproken hoort in de historie te blijven — of er iets
+     * staan. Wat er is afgesproken hoort in de historie te blijven - of er iets
      * terugbetaald wordt is een gesprek tussen school en ouder.
      */
     public function destroy(Request $request, Product $product, Slot $slot, BookSlot $boeken): RedirectResponse

@@ -12,7 +12,7 @@ use Illuminate\Support\Carbon;
  *
  * De lijst en het totaal onder de kop moeten dezelfde rijen tellen. Stonden de
  * filters twee keer, dan wijzen ze vroeg of laat naar iets anders en klopt het
- * totaal niet meer met wat je eronder ziet — precies het soort verschil waar
+ * totaal niet meer met wat je eronder ziet - precies het soort verschil waar
  * niemand een boekhouder mee wil laten bellen.
  */
 class PaymentQuery

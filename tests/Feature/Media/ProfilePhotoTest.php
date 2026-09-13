@@ -19,7 +19,7 @@ use Tests\TestCase;
  *
  * Wat hier echt toe doet: wie de foto van een kind mag zetten, dat de oude
  * foto verdwijnt, en dat de bestandsnaam niet te raden is aan de hand van een
- * id — die foto komt namelijk ook op een deelbare spelerskaart.
+ * id - die foto komt namelijk ook op een deelbare spelerskaart.
  */
 class ProfilePhotoTest extends TestCase
 {

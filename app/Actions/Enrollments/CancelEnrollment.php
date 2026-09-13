@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Notification;
  * Wat er terugkomt volgt het restitutiebeleid uit de instellingen
  * (RefundPolicy): kosteloos tot X dagen voor de start, daarna Y% ingehouden.
  * Het bedrag wordt vastgelegd op de inschrijving (`refund_cents`); het
- * terugbetalen zelf is een handeling van de school — er is geen automatische
+ * terugbetalen zelf is een handeling van de school - er is geen automatische
  * boeking, want terugbetalen zit niet in de app zolang er geen provider is.
  *
  * Wat er verder gebeurt: de deelname gaat op geannuleerd en het kind uit de

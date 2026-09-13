@@ -7,7 +7,7 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
  * Een foto vierkant uitsnijden vóór het uploaden.
  *
  * De server maakt een foto toch vierkant (ProfilePhoto), maar dan uit het
- * midden — en het gezicht van een kind zit zelden precies in het midden van
+ * midden - en het gezicht van een kind zit zelden precies in het midden van
  * een telefoonfoto. Hier schuif je de foto zelf goed en zoom je in, en pas
  * dan gaat hij weg. Het resultaat is 512 bij 512, dezelfde maat als op de
  * server, zodat er onderweg niets meer verandert.
@@ -235,7 +235,7 @@ onBeforeUnmount(() => {
                         <div class="relative aspect-square bg-[#131c30]">
                             <img v-if="voorbeeld" :src="voorbeeld" alt="" class="size-full object-cover" />
                             <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#0a0f1c] to-transparent"></div>
-                            <p v-if="kaart" class="tabular absolute bottom-1 left-1.5 text-lg font-extrabold leading-none">{{ kaart.overall ?? '—' }}</p>
+                            <p v-if="kaart" class="tabular absolute bottom-1 left-1.5 text-lg font-extrabold leading-none">{{ kaart.overall ?? '-' }}</p>
                         </div>
                         <div class="px-1.5 pb-1.5 pt-0.5">
                             <p class="truncate text-[9px] leading-tight text-[#94a3b8]">{{ kaart?.first_name ?? name.split(' ')[0] }}</p>

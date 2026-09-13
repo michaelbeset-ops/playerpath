@@ -5,7 +5,7 @@ import PlayerCardVisual, { type Kaart } from '@/components/PlayerCardVisual.vue'
 import { Head } from '@inertiajs/vue3';
 
 /**
- * De publiek gedeelde kaart. Geen navigatie, geen inlog, geen app-schil —
+ * De publiek gedeelde kaart. Geen navigatie, geen inlog, geen app-schil -
  * alleen de kaart. Bewust zonder achternaam, leeftijd, school of groep.
  */
 defineProps<{ card: Kaart }>();

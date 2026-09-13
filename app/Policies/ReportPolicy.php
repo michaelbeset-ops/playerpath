@@ -7,7 +7,7 @@ use App\Models\User;
 
 /**
  * Rapporten schrijft de trainer (en de eigenaar). Lezen mag iedereen die de
- * speler zelf ook mag zien — dat regelt PlayerPolicy::view.
+ * speler zelf ook mag zien - dat regelt PlayerPolicy::view.
  */
 class ReportPolicy
 {

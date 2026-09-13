@@ -29,7 +29,7 @@ use RuntimeException;
 /**
  * De openbare inschrijfflow van een school: /inschrijven/{slug}.
  *
- * Geen inlog vooraf. De school komt uit de slug in de URL — dat is hier wél
+ * Geen inlog vooraf. De school komt uit de slug in de URL - dat is hier wél
  * de bron, want er is geen ingelogde gebruiker. Een ouder kiest een aanbod,
  * vult zijn kind(eren) in, maakt onderweg een account, geeft toestemmingen,
  * kiest hoe hij betaalt en ziet vóór het bevestigen precies wat hij betaalt

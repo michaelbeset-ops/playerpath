@@ -18,7 +18,7 @@ use Illuminate\Notifications\Notification;
  * niemand handmatig volhoudt.
  *
  * De school kan er een eigen zin bij zetten. Doet ze dat niet, dan staat er
- * een nette standaardtekst — een lege felicitatie is erger dan geen.
+ * een nette standaardtekst - een lege felicitatie is erger dan geen.
  */
 class Verjaardag extends Notification implements ShouldQueue
 {

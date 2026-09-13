@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
  * Zet de actieve school op basis van de ingelogde gebruiker.
  *
  * De school komt nadrukkelijk NIET uit de URL, een subdomein of een
- * formulierveld — alleen uit het account waarmee je bent ingelogd. Daarmee
+ * formulierveld - alleen uit het account waarmee je bent ingelogd. Daarmee
  * valt er niets te knoeien.
  */
 class SetCurrentSchool

@@ -18,14 +18,14 @@ use Inertia\Response;
  * De kalender: maand- en weekweergave van de trainingen.
  *
  * Welke trainingen je ziet bepaalt VisibleTrainings, net als in het gewone
- * overzicht — een ouder ziet hier dus ook alleen de groep van zijn kind.
+ * overzicht - een ouder ziet hier dus ook alleen de groep van zijn kind.
  *
  * De server levert alleen de trainingen in het zichtbare bereik; het raster
  * zelf tekent de browser, want dat is puur presentatie.
  *
  * Daarnaast kies je tussen alle trainingen en alleen de eigen. Die keuze
  * verandert de gegevens en wordt daarom hier gemaakt en in de sessie onthouden
- * — niet in de browser, want dan zou de eerste weergave altijd de verkeerde
+ * - niet in de browser, want dan zou de eerste weergave altijd de verkeerde
  * zijn tot je hem opnieuw aanklikt.
  *
  * Lijst versus raster is géén keuze van de server: dat is dezelfde maand met
@@ -71,7 +71,7 @@ class CalendarController extends Controller
         }
 
         // Groep, trainer en locatie: alleen voor wie het hele rooster ziet.
-        // Voor een ouder is er niets te kiezen — hij ziet al alleen zijn kind.
+        // Voor een ouder is er niets te kiezen - hij ziet al alleen zijn kind.
         // Een vreemd id levert gewoon niets op: de global scope filtert de
         // query zelf al op de school.
         $filters = [

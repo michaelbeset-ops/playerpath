@@ -27,8 +27,8 @@ use Throwable;
  * gekozen. Zie PaymentLink voor waarom dit veilig kan.
  *
  * Er is geen ingelogde gebruiker en dus geen actieve school. De betaling wordt
- * daarom met withoutSchoolScope() opgezocht — de handtekening op de link is
- * hier het slot — en daarna wordt de school expliciet gezet, zodat alles wat
+ * daarom met withoutSchoolScope() opgezocht - de handtekening op de link is
+ * hier het slot - en daarna wordt de school expliciet gezet, zodat alles wat
  * erna gebeurt (de aankoop, het abonnement, de webhook) weer binnen die school
  * blijft. Dezelfde aanpak als de webhook.
  */

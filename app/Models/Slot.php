@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 /**
  * Een beschikbaar moment voor privétraining.
  *
- * Bestaat vóórdat er iemand geboekt heeft — dat is precies het verschil met een
+ * Bestaat vóórdat er iemand geboekt heeft - dat is precies het verschil met een
  * training. Zodra er geboekt wordt ontstaat de training erbij, zodat dit uur in
  * de agenda staat en er aanwezigheid en een rapport bij kunnen.
  */

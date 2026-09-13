@@ -18,7 +18,7 @@ use Tests\TestCase;
  * Het dashboard van een speler met een eigen inlog.
  *
  * Alleen zijn kaart, zijn voortgang en zijn volgende training. Inschrijven en
- * betalen doen zijn ouders, dus dat staat er niet — ook niet als je de URL
+ * betalen doen zijn ouders, dus dat staat er niet - ook niet als je de URL
  * intypt.
  */
 class PlayerDashboardTest extends TestCase

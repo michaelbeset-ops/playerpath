@@ -22,7 +22,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
  *   aan wat veranderd is.
  * - **Eén knop onderaan**: opslaan én door naar de volgende. Geen tussenscherm.
  * - **De knop staat vast onderin**, binnen duimbereik, en zegt wie er hierna
- *   komt — dan weet je of je nog een ronde te gaan hebt.
+ *   komt - dan weet je of je nog een ronde te gaan hebt.
  * - **Overslaan zit ernaast**, want een kind dat halverwege naar huis ging
  *   beoordeel je niet.
  * - De cijfertoetsen blijven werken voor wie dit op een laptop doet.
@@ -219,13 +219,13 @@ const sla = () => {
 
             <div class="mt-4 flex items-baseline justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-sm">
                 <p class="text-xs text-muted-foreground">
-                    <template v-if="previousReportedOn">Vorig rapport {{ previousReportedOn }} — pas alleen aan wat veranderd is.</template>
+                    <template v-if="previousReportedOn">Vorig rapport {{ previousReportedOn }} - pas alleen aan wat veranderd is.</template>
                     <template v-else>Eerste rapport voor deze speler.</template>
                 </p>
                 <p class="shrink-0 text-right">
                     <span class="block text-[10px] uppercase tracking-wide text-muted-foreground">Wordt</span>
                     <span class="tabular block text-2xl font-bold leading-none" :class="gemiddelde ? 'text-primary' : 'text-muted-foreground'">
-                        {{ gemiddelde ?? '—' }}
+                        {{ gemiddelde ?? '-' }}
                     </span>
                 </p>
             </div>
@@ -306,7 +306,7 @@ const sla = () => {
 
             <p class="mt-4 text-center text-xs text-muted-foreground">
                 <Link :href="'/trainings/' + training.id" class="inline-flex min-h-11 items-center underline underline-offset-4">
-                    Stoppen — wat je hebt ingevuld blijft bewaard
+                    Stoppen - wat je hebt ingevuld blijft bewaard
                 </Link>
             </p>
 

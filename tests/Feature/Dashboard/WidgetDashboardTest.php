@@ -324,7 +324,7 @@ class WidgetDashboardTest extends TestCase
      * Een eigenaar pakt zijn telefoon om te zien hoe het ervoor staat en of er
      * iets moet gebeuren; de analyse doet hij op zijn laptop. Op een klein
      * scherm blijven dus de twee cijfers waar hij op stuurt en wat er staat te
-     * gebeuren — de rest staat er wel, maar alleen op een groot scherm.
+     * gebeuren - de rest staat er wel, maar alleen op een groot scherm.
      */
     public function test_op_een_telefoon_blijven_alleen_de_onderdelen_die_ertoe_doen(): void
     {

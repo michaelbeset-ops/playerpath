@@ -21,7 +21,7 @@ use Tests\TestCase;
  * Een trainer ziet zijn eigen werk: de groepen waar hij voor staat en de
  * spelers daarin. Niet het hele ledenbestand, en niets van het bedrijf.
  *
- * Wat hier echt toe doet: het is server-side, in de policies en de lijsten —
+ * Wat hier echt toe doet: het is server-side, in de policies en de lijsten -
  * niet alleen in het menu. Een URL intypen helpt niet.
  */
 class TrainerScopeTest extends TestCase

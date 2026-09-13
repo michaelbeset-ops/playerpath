@@ -9,7 +9,7 @@ use App\Models\User;
  * Het betaaloverzicht van de school is van de eigenaar.
  *
  * Een ouder ziet zijn eigen betalingen wel, maar via een eigen scherm en
- * alleen die van zijn eigen kind — niet via dit overzicht.
+ * alleen die van zijn eigen kind - niet via dit overzicht.
  */
 class PaymentPolicy
 {

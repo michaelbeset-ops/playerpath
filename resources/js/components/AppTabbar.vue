@@ -17,7 +17,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
  * Vier regels die deze balk bruikbaar houden:
  *
  * 1. **Het is hetzelfde menu.** De items komen uit `MainNavigation`, net als de
- *    balk bovenin — dus wat je hier ziet is wat je mag, en er is geen tweede
+ *    balk bovenin - dus wat je hier ziet is wat je mag, en er is geen tweede
  *    lijst die kan gaan afwijken.
  * 2. **Hooguit vijf tabs.** Op 375 pixels is dat 75 per tab; bij zes wordt het
  *    label onleesbaar en raak je met een duim de verkeerde. Passen ze niet

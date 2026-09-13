@@ -73,7 +73,7 @@ class PlayerTimeline
                 'date' => $training->starts_at->format('d-m-Y'),
                 'sort' => $training->starts_at->format('Y-m-d').'-1',
                 'title' => "{$mijlpaal} trainingen aanwezig",
-                'body' => 'Mooie opkomst — dat zie je terug in je cijfers.',
+                'body' => 'Mooie opkomst - dat zie je terug in je cijfers.',
                 'value' => null,
                 'delta' => null,
             ];

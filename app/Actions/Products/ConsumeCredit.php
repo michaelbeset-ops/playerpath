@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
  * Beurten van een rittenkaart afschrijven, en teruggeven.
  *
  * Een rittenkaart zonder afschrijven is een prijslijst, geen kaart. De beurt
- * gaat eraf op het moment dat de trainer iemand **aanwezig** meldt — niet bij
+ * gaat eraf op het moment dat de trainer iemand **aanwezig** meldt - niet bij
  * het aanmelden. Wie zich aanmeldt en niet komt heeft niets afgenomen, en dat
  * verschil tussen "ik kom" en "hij was er" is precies waarom `registration` en
  * `status` in dit project twee losse velden zijn.
@@ -22,7 +22,7 @@ use Illuminate\Support\Facades\DB;
  *    andersom raakt een ouder beurten kwijt die hij had kunnen gebruiken.
  * 2. **Het is omkeerbaar.** `attendances.purchase_id` legt vast van welke kaart
  *    de beurt kwam, dus een trainer die zich vergist krijgt hem terug op
- *    dezelfde kaart — ook als die inmiddels verlopen is.
+ *    dezelfde kaart - ook als die inmiddels verlopen is.
  * 3. **Zonder kaart gebeurt er niets.** Een school die geen rittenkaarten
  *    verkoopt merkt hier niets van, en een speler zonder saldo wordt gewoon
  *    afgevinkt. Aanwezigheid vastleggen mag nooit stuklopen op de administratie.

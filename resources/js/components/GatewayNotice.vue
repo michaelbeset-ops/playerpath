@@ -5,7 +5,7 @@ import { FlaskConical, Plug } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 /**
- * De eerlijke melding dat er nog geen betaalprovider hangt — of dat de
+ * De eerlijke melding dat er nog geen betaalprovider hangt - of dat de
  * demo-provider aanstaat en er dus geen echt geld beweegt.
  *
  * Bewust geen alarmerende kleur: er is niets stuk, dit is gewoon de stand van

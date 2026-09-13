@@ -10,7 +10,7 @@ use App\Models\User;
  * Trainingen plannen doen de eigenaar en de trainer; verwijderen alleen de
  * eigenaar, want dat neemt de aanwezigheidshistorie mee.
  *
- * Kijken mag iedereen binnen de school — welke trainingen je te zien krijgt
+ * Kijken mag iedereen binnen de school - welke trainingen je te zien krijgt
  * is een aparte vraag, en die beantwoordt VisibleTrainings.
  */
 class TrainingPolicy
@@ -31,7 +31,7 @@ class TrainingPolicy
         }
 
         // Speler en ouder zien alleen trainingen van een groep waar hun eigen
-        // speler in zit — of hun eigen privétraining, want die heeft geen groep.
+        // speler in zit - of hun eigen privétraining, want die heeft geen groep.
         $eigen = $user->visiblePlayerIds();
 
         if ($training->enrollments()->whereIn('player_id', $eigen)->active()->exists()) {

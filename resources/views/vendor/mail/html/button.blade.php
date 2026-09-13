@@ -9,7 +9,7 @@
 
     // Een foutknop blijft rood, ook bij een school met een eigen kleur: "er
     // ging iets mis" hoort overal hetzelfde te betekenen. Zie CLAUDE.md over
-    // white-label — statuskleuren zijn van PlayerPath.
+    // white-label - statuskleuren zijn van PlayerPath.
     $achtergrond = $color === 'error' ? '#B42318' : $m['color'];
     $tekst = $color === 'error' ? '#FFFFFF' : $m['onColor'];
 @endphp

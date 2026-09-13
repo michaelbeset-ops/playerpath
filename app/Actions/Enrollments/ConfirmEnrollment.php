@@ -23,10 +23,10 @@ use Illuminate\Support\Facades\DB;
  *
  * Twee stappen die hier bij elkaar staan omdat ze elkaar opvolgen:
  *
- * 1. **`openOrConfirm()`** — de order gaat open: er ontstaan rekeningen (één
+ * 1. **`openOrConfirm()`** - de order gaat open: er ontstaan rekeningen (één
  *    per termijn, of één voor alles) en de inschrijving wacht op betaling.
  *    Valt er niets te betalen, dan wordt hij meteen bevestigd.
- * 2. **`confirm()`** — de inschrijving is rond: het kind komt in het aanbod
+ * 2. **`confirm()`** - de inschrijving is rond: het kind komt in het aanbod
  *    en in de groep (JoinOffering), en bij een abonnement ontstaat het
  *    abonnement met zijn eigen termijnen. Aankopen ontstaan zonder eigen
  *    rekening: die zit al op de order.

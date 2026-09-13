@@ -17,7 +17,7 @@ use Illuminate\Support\Collection;
  * 4. Abonnementen - wie zit op wat, en wat is dat op jaarbasis waard
  *
  * Bedragen als getal in euro's (12.5), uit centen. Nooit als tekst met
- * euroteken — dan kan Excel er niet mee optellen. Zie Export.
+ * euroteken - dan kan Excel er niet mee optellen. Zie Export.
  */
 class FinancialExport implements WorkbookExport
 {

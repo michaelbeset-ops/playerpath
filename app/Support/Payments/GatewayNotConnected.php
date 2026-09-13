@@ -9,7 +9,7 @@ use RuntimeException;
  *
  * Dit hoort een programmeerfout te zijn, geen gebruikersfout: elk scherm
  * vraagt eerst isConnected() en toont anders geen betaalknop. Vandaar een
- * exception en geen nette melding — stilletjes niets doen zou erger zijn.
+ * exception en geen nette melding - stilletjes niets doen zou erger zijn.
  */
 class GatewayNotConnected extends RuntimeException
 {

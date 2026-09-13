@@ -38,7 +38,7 @@ use Inertia\Response;
  *    de eerste die nog open staat.
  * 5. **Dezelfde flow voor de eigenaar.** Die geeft bij een kleine school zelf
  *    training; twee keer hetzelfde bouwen betekent dat er één van de twee
- *    achterloopt. De poort is `recordAttendance` — wie mag afvinken, mag ook
+ *    achterloopt. De poort is `recordAttendance` - wie mag afvinken, mag ook
  *    beoordelen.
  *
  * Wat er onderweg veranderde wordt in de sessie verzameld en aan het eind in
@@ -145,7 +145,7 @@ class TrainingReportController extends Controller
             scores: $request->scores(),
             note: $request->validated('note'),
             // De dag van de training, niet die van vandaag. Wie 's avonds laat
-            // afsluit hoort geen rapport van morgen te krijgen — en het is de
+            // afsluit hoort geen rapport van morgen te krijgen - en het is de
             // datum waarop het herinneringsblok "gedaan" telt.
             reportedOn: $training->starts_at->toDateString(),
         );
@@ -219,7 +219,7 @@ class TrainingReportController extends Controller
     /**
      * Wie er al een rapport heeft op de dag van deze training.
      *
-     * Rapporten hangen bewust niet aan een training — een trainer schrijft over
+     * Rapporten hangen bewust niet aan een training - een trainer schrijft over
      * een speler, niet over een sessie. De datum is het enige eerlijke verband,
      * en dezelfde regel als in ReportPrompts.
      *

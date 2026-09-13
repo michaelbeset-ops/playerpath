@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Een speler die meedoet aan een aanbod.
  *
  * Bewust naast `group_player`: die zegt alleen "zit in deze groep". Hier hoort
- * een status bij — ingeschreven, wachtlijst, geannuleerd — en de rekening die
+ * een status bij - ingeschreven, wachtlijst, geannuleerd - en de rekening die
  * eraan hangt. Zonder dat onderscheid kun je geen wachtlijst bijhouden en weet
  * je later niet meer waarvoor iemand betaald heeft.
  */

@@ -6,7 +6,7 @@ import { ref } from 'vue';
 /**
  * Het nagebootste iDEAL-scherm van de demo-provider.
  *
- * Het lijkt bewust op wat een ouder kent — bank kiezen, bedrag, betalen —
+ * Het lijkt bewust op wat een ouder kent - bank kiezen, bedrag, betalen -
  * zodat een school in een demo de hele flow ziet. En het zegt bewust
  * overal dat het nep is: er wordt geen geld afgeschreven.
  */

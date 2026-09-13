@@ -17,7 +17,7 @@ use App\Models\School;
  *
  * Wat hier níét in staat: of er spelers zijn, of er een rapport is, of de
  * inschrijfwizard af is. Dat zijn feiten over de database, en die vraag je aan
- * de database — anders krijg je twee waarheden die uit elkaar lopen zodra
+ * de database - anders krijg je twee waarheden die uit elkaar lopen zodra
  * iemand zijn enige speler verwijdert. Hier staat alleen wat je nergens anders
  * kunt aflezen: dat iemand iets heeft weggeklikt of gezien.
  */

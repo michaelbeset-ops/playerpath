@@ -69,7 +69,7 @@ const deltaTekst = (delta: number | null) => (delta === null ? '' : delta > 0 ? 
  *
  * Groei wordt gevierd, maar een mindere periode wordt niet weggepoetst: een
  * pagina die altijd juicht gelooft een ouder na twee keer niet meer. Wel warm
- * geformuleerd — achteruitgang hoort bij leren, en dat mag er staan.
+ * geformuleerd - achteruitgang hoort bij leren, en dat mag er staan.
  */
 const kop = computed(() => {
     const groei = props.quarter.growth;
@@ -86,7 +86,7 @@ const kop = computed(() => {
         return {
             toon: 'goed',
             tekst: `+${groei} gegroeid in drie\u00a0maanden\u00a0🎉`,
-            sub: `${props.player.first_name} staat nu op ${props.progress.overall.last ?? '—'}.`,
+            sub: `${props.player.first_name} staat nu op ${props.progress.overall.last ?? '-'}.`,
         };
     }
 
@@ -183,7 +183,7 @@ const tijdlijnZichtbaar = computed(() => (tijdlijnUit.value ? props.timeline : p
                             <div class="min-w-0">
                                 <p class="flex items-center gap-1.5 text-lg font-bold leading-none">
                                     <Trophy class="size-5 shrink-0 text-gold" />
-                                    <span class="min-w-0 break-words">{{ quarter.best ?? '—' }}</span>
+                                    <span class="min-w-0 break-words">{{ quarter.best ?? '-' }}</span>
                                 </p>
                                 <p class="mt-1 text-xs text-muted-foreground">sterkste categorie</p>
                             </div>
@@ -251,14 +251,14 @@ const tijdlijnZichtbaar = computed(() => (tijdlijnUit.value ? props.timeline : p
                     <!-- Begin en eind als getal: een lijn zonder cijfers laat je raden -->
                     <div class="mt-4 flex items-end justify-between gap-4">
                         <div>
-                            <p class="tabular text-2xl font-bold leading-none text-muted-foreground">{{ progress.overall.first ?? '—' }}</p>
+                            <p class="tabular text-2xl font-bold leading-none text-muted-foreground">{{ progress.overall.first ?? '-' }}</p>
                             <p class="mt-1 text-xs text-muted-foreground">eerste rapport</p>
                         </div>
                         <p v-if="progress.overall.delta !== null" class="tabular text-sm font-semibold" :class="trendKleur(progress.overall.trend)">
                             {{ deltaTekst(progress.overall.delta) }}
                         </p>
                         <div class="text-right">
-                            <p class="tabular text-3xl font-bold leading-none text-primary">{{ progress.overall.last ?? '—' }}</p>
+                            <p class="tabular text-3xl font-bold leading-none text-primary">{{ progress.overall.last ?? '-' }}</p>
                             <p class="mt-1 text-xs text-muted-foreground">nu</p>
                         </div>
                     </div>
@@ -324,10 +324,10 @@ const tijdlijnZichtbaar = computed(() => (tijdlijnUit.value ? props.timeline : p
 
                             <div class="mt-2 flex items-end justify-between gap-2">
                                 <p class="tabular text-3xl font-bold leading-none" :class="trendKleur(categorie.trend)">
-                                    {{ categorie.delta === null ? '—' : deltaTekst(categorie.delta) }}
+                                    {{ categorie.delta === null ? '-' : deltaTekst(categorie.delta) }}
                                 </p>
                                 <p class="tabular text-right text-sm text-muted-foreground">
-                                    nu <span class="text-base font-semibold text-foreground">{{ categorie.last ?? '—' }}</span>
+                                    nu <span class="text-base font-semibold text-foreground">{{ categorie.last ?? '-' }}</span>
                                 </p>
                             </div>
 
@@ -355,7 +355,7 @@ const tijdlijnZichtbaar = computed(() => (tijdlijnUit.value ? props.timeline : p
                                 <tr v-for="categorie in progress.categories" :key="categorie.category" class="border-b border-border last:border-0">
                                     <td class="whitespace-nowrap p-3">{{ categorie.label }}</td>
                                     <td v-for="(waarde, i) in categorie.series" :key="i" class="tabular p-3 text-right">
-                                        {{ waarde ?? '—' }}
+                                        {{ waarde ?? '-' }}
                                     </td>
                                 </tr>
                             </tbody>

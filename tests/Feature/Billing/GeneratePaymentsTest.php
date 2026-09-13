@@ -116,7 +116,7 @@ class GeneratePaymentsTest extends TestCase
 
     public function test_een_jaarbedrag_in_termijnen_telt_precies_op(): void
     {
-        // 100 euro in 3 termijnen is niet 3 x 33,33 — er zou een cent missen.
+        // 100 euro in 3 termijnen is niet 3 x 33,33 - er zou een cent missen.
         $abonnement = $this->abonnement([
             'interval' => BillingInterval::Yearly,
             'amount_cents' => 10000,

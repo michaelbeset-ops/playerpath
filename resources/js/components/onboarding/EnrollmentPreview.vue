@@ -3,12 +3,12 @@ import { CalendarDays, ExternalLink, MapPin } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 /**
- * Zo ziet je inschrijfpagina eruit voor een ouder — met de keuzes van nu.
+ * Zo ziet je inschrijfpagina eruit voor een ouder - met de keuzes van nu.
  *
  * Een nagebouwde, verkleinde versie van `/inschrijven/{slug}`: per gekozen
  * aanbodvorm één voorbeeldkaart, met een zin die zegt wanneer je erop kunt
  * inschrijven. Het zijn verzonnen namen en prijzen; het gaat om de vorm.
- * De echte pagina staat één klik verderop, in een nieuw tabblad — die toont
+ * De echte pagina staat één klik verderop, in een nieuw tabblad - die toont
  * je echte aanbod, dus ook wat je nog niet hebt aangemaakt staat er níét op.
  */
 const props = defineProps<{

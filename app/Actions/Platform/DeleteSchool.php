@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
  *
  * Dit is het einde van een klantrelatie: de school zegt op, de gegevens gaan
  * weg en niemand van die school kan nog inloggen. Onomkeerbaar, dus de
- * bevestiging in het scherm vraagt om de naam van de school — niet om een
+ * bevestiging in het scherm vraagt om de naam van de school - niet om een
  * kliksnelle "OK".
  *
  * De databasesleutels doen het meeste werk: elke tabel met school_id staat op
@@ -42,7 +42,7 @@ class DeleteSchool
      *
      * Hier wordt de scope bewust opzijgezet en de school met de hand ingevuld.
      * Dit draait namelijk in de beheeromgeving, en daar staat de scope juist
-     * open — een gewone `Player::count()` zou dan de spelers van álle scholen
+     * open - een gewone `Player::count()` zou dan de spelers van álle scholen
      * tellen en een veel te groot getal in de bevestiging zetten.
      *
      * @return array<string, int>

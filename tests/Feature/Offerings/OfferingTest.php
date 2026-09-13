@@ -29,7 +29,7 @@ use Tests\TestCase;
  *
  * De kern van dit onderdeel is dat een blok een gewone groep met gewone
  * trainingen oplevert. Daardoor blijven aanwezigheid, rapporten en de agenda
- * werken zoals ze altijd al deden — dat wordt hier dus ook getest.
+ * werken zoals ze altijd al deden - dat wordt hier dus ook getest.
  */
 class OfferingTest extends TestCase
 {
@@ -233,7 +233,7 @@ class OfferingTest extends TestCase
         $this->assertTrue($blok->isFull());
         $this->assertFalse($blok->acceptsSignups());
 
-        // Zegt er iemand af, dan is er weer plek — zonder dat iemand een status
+        // Zegt er iemand af, dan is er weer plek - zonder dat iemand een status
         // hoeft bij te werken.
         Participation::where('player_id', $spelers->first()->id)
             ->update(['status' => ParticipationStatus::Cancelled->value]);
@@ -267,7 +267,7 @@ class OfferingTest extends TestCase
         $this->assertFalse($blok->fitsAge(13));
 
         // Zonder grenzen mag iedereen mee, en zonder geboortedatum weet je het
-        // niet — dan weiger je niemand.
+        // niet - dan weiger je niemand.
         $open = Product::factory()->for($this->school)->blok()->create(['min_age' => null, 'max_age' => null]);
         $this->assertTrue($open->fitsAge(4));
         $this->assertTrue($blok->fitsAge(null));

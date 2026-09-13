@@ -58,7 +58,7 @@ final class BrandColor
      * Dezelfde kleur, zo nodig lichter of donkerder gemaakt tot er leesbare
      * tekst op past.
      *
-     * Sommige middentinten — een fel oranjerood bijvoorbeeld — halen met wít
+     * Sommige middentinten - een fel oranjerood bijvoorbeeld - halen met wít
      * noch met zwart de ondergrens van 4,5:1. De eis verlagen zou betekenen dat
      * een school haar eigen knoppen niet meer kan lezen; de kleur weigeren zou
      * betekenen dat ze haar merk niet mag gebruiken. Daarom schuiven we alleen

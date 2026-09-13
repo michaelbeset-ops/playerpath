@@ -7,15 +7,15 @@ namespace App\Support\Dashboard;
  *
  * Eén plek voor die vraag, want anders staat elke component zijn eigen grens te
  * bedenken en betekent groen op het ene vak iets anders dan op het andere. Dan
- * is kleur geen signaal meer maar versiering — precies wat er gebeurde toen
+ * is kleur geen signaal meer maar versiering - precies wat er gebeurde toen
  * bijna alles op het dashboard oranje was.
  *
  * De uitkomst is één woord dat de weergave vertaalt naar een kleur:
  *
- * - `good`    — groen: dit gaat de goede kant op.
- * - `warn`    — oranje: dit kan beter, maar er brandt niets.
- * - `bad`     — rood: hier moet iets gebeuren.
- * - `neutral` — grijs: er valt niets over te zeggen (nog geen cijfers, of
+ * - `good`    - groen: dit gaat de goede kant op.
+ * - `warn`    - oranje: dit kan beter, maar er brandt niets.
+ * - `bad`     - rood: hier moet iets gebeuren.
+ * - `neutral` - grijs: er valt niets over te zeggen (nog geen cijfers, of
  *               precies gelijk gebleven).
  *
  * "Geen gegevens" is bewust `neutral` en niet oranje. Een school die net begint

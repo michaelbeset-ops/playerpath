@@ -78,7 +78,7 @@ class SendPaymentReminders extends Command
                         continue;
                     }
 
-                    $this->line("  mislukt: {$betaling->description} — herinnering ".($poging + 1).' van '.count($schema));
+                    $this->line("  mislukt: {$betaling->description} - herinnering ".($poging + 1).' van '.count($schema));
 
                     if ($droog) {
                         continue;
@@ -111,7 +111,7 @@ class SendPaymentReminders extends Command
 
                     $dagen = (int) $betaling->due_on->startOfDay()->diffInDays(now()->startOfDay());
 
-                    $this->line("  {$betaling->description} — {$betaling->player?->full_name} ({$dagen} dagen te laat)");
+                    $this->line("  {$betaling->description} - {$betaling->player?->full_name} ({$dagen} dagen te laat)");
 
                     if ($droog) {
                         continue;

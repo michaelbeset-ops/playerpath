@@ -52,7 +52,7 @@ final class AgeCategory
         return $op->month >= $seasonStartMonth ? $op->year : $op->year - 1;
     }
 
-    /** "2026/27" — het seizoen zoals een school het noemt. */
+    /** "2026/27" - het seizoen zoals een school het noemt. */
     public static function seasonLabel(Carbon $op, int $seasonStartMonth = 8): string
     {
         $start = self::seasonStartYear($op, $seasonStartMonth);

@@ -33,7 +33,7 @@ use Illuminate\Support\Facades\DB;
  *
  * 1. **Alles is gemarkeerd als voorbeeld** (`is_demo`), overal zichtbaar, en
  *    gaat er met één knop in één keer uit. Voorbeelddata die je niet herkent en
- *    niet kunt weghalen is erger dan een leeg scherm — dan staat er straks een
+ *    niet kunt weghalen is erger dan een leeg scherm - dan staat er straks een
  *    verzonnen kind in je ledenbestand.
  * 2. **Het zijn echte rijen in de echte tabellen.** Geen aparte demo-modus die
  *    elk scherm moet samenvoegen: de kaart wordt echt doorgerekend, de agenda
@@ -83,6 +83,7 @@ class SeedDemoData
             $spelers = $this->spelers($groep);
 
             $this->trainingen($groep, $locatie, $trainer);
+            $this->openTraining($locatie, $trainer);
             $this->aanbod($locatie);
             $this->mededeling($school);
 
@@ -99,7 +100,7 @@ class SeedDemoData
      *
      * Via forceFill en niet via create(): `is_demo` staat bewust in geen enkel
      * `$fillable`. Zou het daar wel staan, dan kan een formulier een echte
-     * speler als voorbeeld markeren — en die verdwijnt dan zodra iemand op
+     * speler als voorbeeld markeren - en die verdwijnt dan zodra iemand op
      * "voorbeelddata verwijderen" drukt.
      *
      * @template TModel of \Illuminate\Database\Eloquent\Model
@@ -215,17 +216,82 @@ class SeedDemoData
         }
     }
 
+    /**
+     * Een training waar een ouder zijn kind los op kan inschrijven.
+     *
+     * In een eigen voorbeeldgroep zonder spelers, want wie in de groep zit
+     * staat er al op en hoeft niet in te schrijven. Zo staat er in het
+     * ouderscherm iets onder "Inschrijven", en ziet de eigenaar hoe dat gaat.
+     */
+    protected function openTraining(Location $locatie, ?User $trainer): void
+    {
+        $groep = $this->maak(Group::class, [
+            'name' => 'Voorbeeld: open keeperstraining',
+            'age_category' => 'Alle leeftijden',
+            'is_active' => true,
+        ]);
+
+        $training = $this->maak(Training::class, [
+            'group_id' => $groep->id,
+            'starts_at' => now()->addDays(5)->setTime(19, 0),
+            'ends_at' => now()->addDays(5)->setTime(20, 15),
+            'location' => $locatie->name,
+            'location_id' => $locatie->id,
+            'note' => 'Losse training, iedereen welkom. Dit is een voorbeeld.',
+            'open_enrollment' => true,
+            'capacity' => 8,
+            'price_cents' => 1250,
+            'payment_methods' => ['online', 'cash'],
+            'requires_approval' => false,
+        ]);
+
+        if ($trainer !== null) {
+            $training->trainers()->attach($trainer->id);
+        }
+    }
+
+    /**
+     * Een school die haar voorbeelddata kreeg vóór de open training bestond,
+     * krijgt hem hier alsnog. Alleen zolang de voorbeelddata er nog is: daarna
+     * is er niets om bij te zetten.
+     */
+    public function ensureOpenTraining(School $school): void
+    {
+        if (! OnboardingState::for($school)->hasDemoData()) {
+            return;
+        }
+
+        $this->tenancy->set($school);
+
+        // Een ouder voorbeeldaanbod stond nog op concept; op de inschrijfpagina
+        // in de rondleiding staat er dan niets.
+        Product::where('is_demo', true)->where('status', OfferingStatus::Concept->value)->update(['status' => OfferingStatus::Open->value]);
+
+        if (Training::where('is_demo', true)->where('open_enrollment', true)->where('starts_at', '>=', now())->exists()) {
+            return;
+        }
+
+        $trainer = $school->users()
+            ->whereHas('roles', fn ($q) => $q->whereIn('name', ['eigenaar', 'trainer']))
+            ->first();
+        $locatie = Location::where('is_demo', true)->first() ?? Location::first() ?? $this->locatie();
+
+        DB::transaction(fn () => $this->openTraining($locatie, $trainer));
+    }
+
     protected function aanbod(Location $locatie): void
     {
         $this->maak(Product::class, [
             'name' => 'Voorbeeld: keeperstraining per maand',
-            'description' => 'Wekelijkse keeperstraining. Dit is een voorbeeld — pas hem aan of haal hem weg.',
+            'description' => 'Wekelijkse keeperstraining. Dit is een voorbeeld - pas hem aan of haal hem weg.',
             'type' => ProductType::Doorlopend->value,
             'billing_type' => BillingType::Maandelijks->value,
             'amount_cents' => 3250,
             'interval' => 'monthly',
             'vat_rate' => 9,
-            'status' => OfferingStatus::Concept->value,
+            // Open, en niet concept: zo laat de inschrijfpagina in de
+            // rondleiding echt iets zien. Het gaat met de voorbeelddata mee weg.
+            'status' => OfferingStatus::Open->value,
             'location' => $locatie->name,
             'location_id' => $locatie->id,
             'is_active' => true,
@@ -238,7 +304,7 @@ class SeedDemoData
      * Een voorbeeldmededeling die daadwerkelijk de deur uit gaat zou bij een
      * echte school een e-mail aan echte ouders opleveren over iets dat niet
      * bestaat. Hij staat er dus als verstuurd bericht in de lijst, met nul
-     * ontvangers — genoeg om te laten zien waar het staat.
+     * ontvangers - genoeg om te laten zien waar het staat.
      */
     protected function mededeling(School $school): void
     {

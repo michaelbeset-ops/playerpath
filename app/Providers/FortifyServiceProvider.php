@@ -70,7 +70,7 @@ class FortifyServiceProvider extends ServiceProvider
      *
      * Ze komen uit Laravel zelf en gaan dus niet langs `SendsFromSchool`. Zonder
      * dit blok draagt precies de eerste mail die een schooleigenaar krijgt de
-     * naam PlayerPath — hij zet zijn wachtwoord immers via wachtwoord-vergeten
+     * naam PlayerPath - hij zet zijn wachtwoord immers via wachtwoord-vergeten
      * (zie DEPLOY.md), en een ouder komt hier terecht zodra hij zijn wachtwoord
      * kwijt is. Dan ken je de afzender niet, en dan kom je je account niet meer
      * in.

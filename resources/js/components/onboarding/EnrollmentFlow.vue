@@ -3,7 +3,7 @@ import { Check } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 /**
- * Zo verloopt een inschrijving bij jou — van klik tot kind in de groep.
+ * Zo verloopt een inschrijving bij jou - van klik tot kind in de groep.
  *
  * Een instelling als "handmatig goedkeuren" zegt een eigenaar weinig; "jij
  * krijgt een melding en keurt goed, dán pas krijgt de ouder een betaalverzoek"
@@ -28,7 +28,7 @@ const betaalzin = computed(() => {
     if (delen.length === 0) return 'via een betaallink';
     if (delen.length === 1) return delen[0];
 
-    return delen.slice(0, -1).join(', ') + ' of ' + delen[delen.length - 1] + ' — de ouder kiest';
+    return delen.slice(0, -1).join(', ') + ' of ' + delen[delen.length - 1] + ' - de ouder kiest';
 });
 
 const stappen = computed(() => {
@@ -36,7 +36,7 @@ const stappen = computed(() => {
         {
             wie: 'ouder',
             titel: 'Kiest iets op je inschrijfpagina',
-            uitleg: props.trialEnabled ? 'Een blok, een abonnement, een kamp — of eerst een proefles.' : 'Een blok, een abonnement of een kamp.',
+            uitleg: props.trialEnabled ? 'Een blok, een abonnement, een kamp - of eerst een proefles.' : 'Een blok, een abonnement of een kamp.',
         },
         {
             wie: 'ouder',

@@ -114,7 +114,7 @@ const kleurVoor = (status: string) =>
                         >
                             <option value="">Kies een tarief...</option>
                             <option v-for="plan in products" :key="plan.id" :value="plan.id">
-                                {{ plan.name }} — {{ plan.amount }} {{ plan.interval.toLowerCase() }}
+                                {{ plan.name }} - {{ plan.amount }} {{ plan.interval.toLowerCase() }}
                             </option>
                         </select>
                         <InputError :message="form.errors.product_id" />

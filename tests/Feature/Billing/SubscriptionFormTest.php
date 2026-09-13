@@ -16,7 +16,7 @@ use Tests\TestCase;
  * Het abonnementenscherm biedt alleen aanbod aan dat écht als abonnement loopt.
  *
  * Op alleen "actief" filteren liet ook een kamp in de keuzelijst komen. Dat
- * brak het scherm — een kamp heeft geen interval — maar erger was wat eronder
+ * brak het scherm - een kamp heeft geen interval - maar erger was wat eronder
  * zat: je kon een kamp als abonnement kiezen, en dan brengt een blok van één
  * week elke maand een rekening voort.
  */

@@ -346,7 +346,7 @@ const deelAfbeelding = async () => {
                 <p class="font-medium">Deel-link</p>
                 <p class="mt-1 text-sm text-muted-foreground">
                     Maak een link waarmee iemand zonder account deze kaart kan bekijken. Op die pagina staan alleen de voornaam met initiaal, de
-                    positie en de cijfers — geen achternaam, leeftijd, school of trainersnotities.
+                    positie en de cijfers - geen achternaam, leeftijd, school of trainersnotities.
                 </p>
 
                 <template v-if="share.url">

@@ -12,7 +12,7 @@ use App\Support\PlayerCard\CalculatePlayerCard;
  * vooruit kijkt. Bewust **één** ding: een lijstje met zes verbeterpunten leest
  * als kritiek en niemand begint eraan.
  *
- * Loopt er een doel, dan is dat het volgende doel — de trainer heeft er al
+ * Loopt er een doel, dan is dat het volgende doel - de trainer heeft er al
  * over nagedacht. Anders wijzen we de laagste categorie aan met een stap van
  * vijf punten: klein genoeg om te halen, groot genoeg om te merken.
  */

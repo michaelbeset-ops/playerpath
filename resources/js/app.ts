@@ -37,7 +37,7 @@ createInertiaApp({
 
 /*
  * De service worker. Alleen op https (of localhost), want anders staat hij de
- * browser niet toe — en achter een tunnel of op productie is dat altijd zo.
+ * browser niet toe - en achter een tunnel of op productie is dat altijd zo.
  *
  * De registratie staat bewust ná het opstarten van de app: mislukt hij, dan is
  * dat vervelend maar mag het de app niet tegenhouden.

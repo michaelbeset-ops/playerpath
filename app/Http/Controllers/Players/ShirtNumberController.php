@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
  *
  * Wie het mag zetten is dezelfde kring als bij de foto (`personalise` in
  * PlayerPolicy): de eigenaar, de ouders van dit kind en het kind zelf. Het
- * is versiering van de eigen kaart, geen administratie — daarom staat het
+ * is versiering van de eigen kaart, geen administratie - daarom staat het
  * op de kaartpagina en niet alleen in het spelersformulier.
  */
 class ShirtNumberController extends Controller

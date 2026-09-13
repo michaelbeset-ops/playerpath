@@ -27,7 +27,7 @@ use Inertia\Response;
 
 /**
  * Het **aanbod** van de school: blokken, kampen, doorlopende training,
- * privétraining, small group — en wat er verder verkocht wordt.
+ * privétraining, small group - en wat er verder verkocht wordt.
  *
  * Eén lijst, geen twee. Een aanbod is tegelijk het ding met een prijs en het
  * ding met data, plekken en trainers; die uit elkaar trekken betekent bij elke

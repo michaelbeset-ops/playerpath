@@ -9,7 +9,7 @@ import { computed, ref } from 'vue';
  * Geen rondleiding maar een lijst die tot handelingen leidt: elke stap is een
  * knop naar de plek waar je hem afmaakt. Vier dingen die dit bruikbaar houden:
  *
- * 1. **Je ziet hoe ver je bent** — "3 van 8", plus een balk. Zonder dat is een
+ * 1. **Je ziet hoe ver je bent** - "3 van 8", plus een balk. Zonder dat is een
  *    lijst van acht dingen een muur.
  * 2. **Het eerste rapport is gemarkeerd.** Dat is het moment waarop een lege
  *    kaart een spelerskaart wordt; de rest is administratie eromheen.
@@ -50,7 +50,7 @@ const wegklikken = () => {
 
 // De felicitatie is gezien: pas daarna gaat het blok voorgoed weg. Zou de
 // server het bij het laatste vinkje wegzetten, dan zag niemand ooit dat hij
-// klaar was — het blok zou gewoon verdwenen zijn.
+// klaar was - het blok zou gewoon verdwenen zijn.
 const afronden = () => {
     bezig.value = true;
     router.post('/onboarding/startlijst/klaar', {}, { preserveScroll: true, onFinish: () => (bezig.value = false) });

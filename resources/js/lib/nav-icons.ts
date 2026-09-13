@@ -29,7 +29,7 @@ import {
  *
  * De server (MainNavigation, QuickActions) stuurt alleen een naam mee; welk
  * plaatje daarbij hoort is presentatie. Dit staat op één plek omdat er twee
- * balken zijn die hetzelfde menu tekenen — de balk bovenin en de tabbalk
+ * balken zijn die hetzelfde menu tekenen - de balk bovenin en de tabbalk
  * onderin in de app. Twee losse lijstjes lopen vroeg of laat uit elkaar, en dan
  * heeft hetzelfde menu-item op je telefoon een ander icoon dan op je laptop.
  */

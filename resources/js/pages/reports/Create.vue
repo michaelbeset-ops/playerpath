@@ -122,7 +122,7 @@ const opslaan = () => form.post('/players/' + props.player.id + '/reports');
                 <div class="text-right">
                     <p class="text-xs uppercase tracking-wide text-muted-foreground">Nieuw gemiddelde</p>
                     <p class="tabular text-3xl font-bold leading-none" :class="gemiddelde ? 'text-primary' : 'text-muted-foreground'">
-                        {{ gemiddelde ?? '—' }}
+                        {{ gemiddelde ?? '-' }}
                     </p>
                 </div>
             </div>

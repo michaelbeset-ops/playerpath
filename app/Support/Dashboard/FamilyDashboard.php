@@ -21,7 +21,7 @@ use App\Support\Trainings\VisibleTrainings;
  *
  * Een ouder komt hier voor praktische dingen: wanneer is de training, moet ik
  * nog betalen of inschrijven, is er nieuws? De spelerskaart is het mooiste wat
- * dit product maakt, maar hij beantwoordt geen van die vragen — vandaar dat hij
+ * dit product maakt, maar hij beantwoordt geen van die vragen - vandaar dat hij
  * hier klein staat en met één tik groot wordt.
  *
  * Drie regels die dit scherm bruikbaar houden:
@@ -165,7 +165,7 @@ class FamilyDashboard
      * Wat er nú van een ouder gevraagd wordt.
      *
      * Alleen dingen met een knop: een rekening die openstaat, een bericht dat
-     * hij nog niet gelezen heeft. Geen cijfers ter informatie — daar komt hij
+     * hij nog niet gelezen heeft. Geen cijfers ter informatie - daar komt hij
      * niet voor.
      *
      * @param  list<int>  $spelerIds

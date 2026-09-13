@@ -16,7 +16,7 @@ import { computed, ref, watch } from 'vue';
  * Dit is de plek waar je indeelt. Zoeken en meerdere tegelijk aanvinken,
  * want een school die overstapt zet er twintig in één keer in; één voor één
  * via het spelersformulier is dan een middag werk. Vanaf de speler kan het
- * ook (zijn bewerkscherm) — beide kanten schrijven dezelfde koppeling.
+ * ook (zijn bewerkscherm) - beide kanten schrijven dezelfde koppeling.
  */
 interface Speler {
     id: number;

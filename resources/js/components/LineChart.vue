@@ -6,7 +6,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
  *
  * Bewust één serie: zes categorieën in één grafiek wordt spaghetti. De
  * voortgangspagina zet er daarom zes kleine naast elkaar (small multiples),
- * elk met hun eigen titel — dan hoeft er geen legenda bij en is kleur nooit
+ * elk met hun eigen titel - dan hoeft er geen legenda bij en is kleur nooit
  * de enige drager van betekenis.
  *
  * De lijnkleur komt uit --chart-1, die per thema is gecontroleerd op
@@ -34,7 +34,7 @@ const props = withDefaults(
  *
  * Met een vaste breedte ging dat mis: de bovenste grafiek had een viewBox van
  * 640 in een vak van 301 breed, dus alles schaalde met 0,47 mee en werden de
- * aslabels vier pixels hoog — op precies het scherm waarop een ouder kijkt.
+ * aslabels vier pixels hoog - op precies het scherm waarop een ouder kijkt.
  */
 const vak = ref<HTMLElement | null>(null);
 const gemeten = ref<number | null>(null);

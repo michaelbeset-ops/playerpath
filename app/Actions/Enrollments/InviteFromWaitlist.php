@@ -87,7 +87,7 @@ class InviteFromWaitlist
                 'expires_at' => $verloopt,
             ]);
 
-            // Open zetten: rekeningen, wacht op betaling — of meteen rond bij nul.
+            // Open zetten: rekeningen, wacht op betaling - of meteen rond bij nul.
             $this->bevestig->openOrConfirm($enrollment, $enrollment->order);
 
             return $uitnodiging;

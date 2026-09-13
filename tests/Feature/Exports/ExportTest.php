@@ -152,7 +152,7 @@ class ExportTest extends TestCase
         unlink($pad);
 
         $this->assertStringContainsString(htmlspecialchars($this->school->name), $blad);
-        $this->assertStringContainsString('Trainingen — Trainingen', $blad);
+        $this->assertStringContainsString('Trainingen - Trainingen', $blad);
         $this->assertStringContainsString('Totaal', $blad);
         // De kop staat over de volle breedte, en de kolommen hebben een breedte.
         $this->assertStringContainsString('<mergeCell', $blad);

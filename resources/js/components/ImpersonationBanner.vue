@@ -7,7 +7,7 @@ import { computed } from 'vue';
  * De balk die laat zien dat je als iemand anders kijkt.
  *
  * Bewust bovenaan, bewust in een kleur die nergens anders in de app voorkomt,
- * en bewust altijd zichtbaar — niet weg te klikken. Wie in andermans gegevens
+ * en bewust altijd zichtbaar - niet weg te klikken. Wie in andermans gegevens
  * kijkt moet daar op elk scherm aan herinnerd worden, anders wijzig je een
  * keer iets in de veronderstelling dat je in je eigen omgeving zit.
  */

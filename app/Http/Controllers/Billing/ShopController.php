@@ -25,7 +25,7 @@ use Throwable;
 /**
  * De shop: wat een ouder zelf kan afnemen.
  *
- * Alles wat de school in haar prijslijst zet en géén abonnement is — een
+ * Alles wat de school in haar prijslijst zet en géén abonnement is - een
  * rittenkaart van tien, een kamp, een clinic, kleding. De eigenaar vult dat
  * zelf in bij Producten; hier staat het te koop. Er is dus geen aparte lijst
  * die kan gaan afwijken van de prijslijst.
@@ -201,7 +201,7 @@ class ShopController extends Controller
 
     /**
      * De spelers van deze gebruiker. Zonder eigen speler valt er niets te
-     * kopen — en te kiezen ook niet.
+     * kopen - en te kiezen ook niet.
      *
      * @return list<int>
      */

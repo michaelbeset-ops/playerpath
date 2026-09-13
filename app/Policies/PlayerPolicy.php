@@ -72,7 +72,7 @@ class PlayerPolicy
      * De foto op de kaart.
      *
      * Ruimer dan `update`: de ouders van dít kind en het kind zelf (met een
-     * eigen inlog) mogen hem zetten — het is hun kaart. De trainer niet: de
+     * eigen inlog) mogen hem zetten - het is hun kaart. De trainer niet: de
      * foto van andermans kind is niet van hem.
      */
     /** Versiering van de eigen kaart (rugnummer): dezelfde kring als de foto. */
@@ -118,7 +118,7 @@ class PlayerPolicy
     }
 
     /**
-     * Rapporten schrijven doet de trainer (fase 2) — over zijn eigen spelers.
+     * Rapporten schrijven doet de trainer (fase 2) - over zijn eigen spelers.
      *
      * Invallen bij een andere groep kan: de eigenaar koppelt hem aan die
      * training, en vanaf dat moment horen die spelers bij hem.

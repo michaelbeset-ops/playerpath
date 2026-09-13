@@ -47,7 +47,7 @@ use Inertia\Response;
  * Het **aandacht-blok staat vast** bovenaan en is geen widget: het is het
  * antwoord op de tweede vraag, en dat hoort niet weg te klikken te zijn.
  * Al het andere komt uit `WidgetRegistry`, en **er wordt alleen berekend wat er
- * ook staat** — een widget die iemand heeft weggehaald kost geen enkele query.
+ * ook staat** - een widget die iemand heeft weggehaald kost geen enkele query.
  */
 class DashboardController extends Controller
 {

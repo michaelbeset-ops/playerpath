@@ -20,8 +20,8 @@ use Carbon\CarbonImmutable;
  *
  * Twee regels die het bericht eerlijk houden:
  *
- * 1. **Geen bericht zonder inhoud.** Is er die maand niets gebeurd — geen
- *    rapport, geen doel, geen training — dan gaat er niets uit. Een maandelijkse
+ * 1. **Geen bericht zonder inhoud.** Is er die maand niets gebeurd - geen
+ *    rapport, geen doel, geen training - dan gaat er niets uit. Een maandelijkse
  *    mail die vier keer achter elkaar "geen nieuws" zegt, leert de ouder hem
  *    weg te klikken, en dan mist hij ook de maand waarin het er wel toe doet.
  * 2. **Alleen de eigen speler.** Er staat nergens een vergelijking met andere

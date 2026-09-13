@@ -12,7 +12,7 @@ use Illuminate\Notifications\Messages\MailMessage;
  *
  * Een ouder heeft zich ingeschreven bij Keepersschool Rob, niet bij PlayerPath.
  * Staat er "PlayerPath" als afzender in zijn inbox, dan is de kans groot dat
- * hij de mail niet herkent en dus niet opent — en dan is een afgelasting of
+ * hij de mail niet herkent en dus niet opent - en dan is een afgelasting of
  * een betaalherinnering waardeloos.
  *
  * Deze trait zet drie dingen, en die horen bij elkaar:
@@ -23,7 +23,7 @@ use Illuminate\Notifications\Messages\MailMessage;
  *    het inrichten van een domein, niet hier.
  * 2. **Antwoorden gaat naar de school.** Een ouder die op een betaalmail
  *    reageert schrijft aan zijn voetbalschool, niet aan een postbus die niemand
- *    leest. Heeft de school geen contactadres, dan blijft het weg — een
+ *    leest. Heeft de school geen contactadres, dan blijft het weg - een
  *    reply-to naar het platform belooft iets wat we niet waarmaken.
  * 3. **De huisstijl** (logo, merkkleur) reist als `merk` mee in de viewData,
  *    zodat de gedeelde mailschil in resources/views/vendor/mail hem kan
@@ -35,7 +35,7 @@ trait SendsFromSchool
      * De school van de ontvanger geldt zolang deze melding verwerkt wordt.
      *
      * Zonder dit staat de global scope dicht in de queue-worker en levert elke
-     * query binnen `toMail()` of `toArray()` niets op — zonder foutmelding.
+     * query binnen `toMail()` of `toArray()` niets op - zonder foutmelding.
      * Zie `Support\Tenancy\WithSchool`.
      *
      * @return list<object>

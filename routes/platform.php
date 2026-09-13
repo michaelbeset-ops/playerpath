@@ -54,7 +54,7 @@ Route::middleware(['auth', 'verified', EnterPlatform::class])
  * Terugkeren uit "bekijken als".
  *
  * Buiten de groep hierboven, want EnterPlatform weigert verzoeken zolang je
- * aan het kijken bent — dan zou de uitgang achter de deur liggen die hij zelf
+ * aan het kijken bent - dan zou de uitgang achter de deur liggen die hij zelf
  * op slot doet. De controller controleert zelf of er iets te verlaten valt en
  * of degene die terugkomt echt de platformbeheerder was.
  */

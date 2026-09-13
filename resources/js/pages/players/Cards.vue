@@ -80,7 +80,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                     <p class="font-medium">Nog geen oude kaarten</p>
                     <p class="mx-auto mt-1 max-w-sm text-sm text-muted-foreground">
                         Zodra {{ isOwn ? 'je' : player.first_name }} een jaargang omhoog {{ isOwn ? 'gaat' : 'gaat' }}, komt de kaart van dat seizoen hier
-                        te staan — met de cijfers en het level van toen.
+                        te staan - met de cijfers en het level van toen.
                     </p>
                 </div>
             </section>

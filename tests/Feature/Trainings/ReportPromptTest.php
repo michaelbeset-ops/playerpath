@@ -22,7 +22,7 @@ use Tests\TestCase;
  * De rapport-herinnering rond het einde van een training.
  *
  * Het venster wordt server-side berekend op de eindtijd: tien minuten ervoor
- * tot vijf uur erna. Wat hier echt toe doet is dat het blok vanzelf weggaat —
+ * tot vijf uur erna. Wat hier echt toe doet is dat het blok vanzelf weggaat -
  * zodra alles is ingevuld, of zodra het venster voorbij is. Een herinnering
  * die blijft staan nadat je hem hebt afgehandeld leer je negeren.
  */

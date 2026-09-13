@@ -120,7 +120,7 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
                         het hele dashboard toch in beeld, en je opent het om
                         iets te doen. Op een telefoon zie je maar één ding
                         tegelijk, en dan is de eerste vraag "moet er iets
-                        gebeuren?" — dus staat het aandacht-blok daar boven de
+                        gebeuren?" - dus staat het aandacht-blok daar boven de
                         knoppen. Met order-klassen op één flexkolom, want het is
                         dezelfde inhoud in een andere volgorde en geen tweede
                         dashboard dat kan gaan afwijken.

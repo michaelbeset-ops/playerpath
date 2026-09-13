@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { type SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/vue3';
-import { ArrowLeft, ArrowRight, Check, ChevronDown, ChevronUp, Compass, Lightbulb, X } from 'lucide-vue-next';
+import { ArrowDownRight, ArrowLeft, ArrowRight, Check, ChevronDown, ChevronUp, Compass, Lightbulb, X } from 'lucide-vue-next';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 /**
@@ -50,6 +50,40 @@ const bezig = computed(() => page.props.onboarding?.tour === true && stappen.val
 const index = ref(0);
 const doel = ref<DOMRect | null>(null);
 const ingeklapt = ref(false);
+
+/*
+ * Het welkom vooraf. Bij de eerste keer inloggen stond er meteen een kaartje
+ * rechtsonder, en dat viel niet op tussen alles wat er verder op het scherm
+ * staat. Daarom eerst één scherm in het midden: welkom, dit is de volgorde
+ * (kijken, rondleiding, inrichten, startlijst), en dan een wijzer naar het
+ * kaartje rechtsonder. Eén keer per school in deze browser.
+ */
+const WELKOM_SLEUTEL = 'pp.tour.welkom.' + (page.props.school?.id ?? 'x');
+const welkom = ref(false);
+const wijs = ref(false);
+const schoolNaam = computed(() => page.props.school?.name ?? 'je school');
+
+const welkomGezien = () => {
+    try {
+        return sessionStorage.getItem(WELKOM_SLEUTEL) === 'ja';
+    } catch {
+        return false;
+    }
+};
+
+const startNaWelkom = () => {
+    welkom.value = false;
+
+    try {
+        sessionStorage.setItem(WELKOM_SLEUTEL, 'ja');
+    } catch {
+        // Zonder opslag komt het welkom hooguit nog een keer.
+    }
+
+    wijs.value = true;
+    setTimeout(() => (wijs.value = false), 6000);
+    setTimeout(richt, 300);
+};
 
 const huidige = computed(() => stappen.value[index.value] ?? null);
 const laatste = computed(() => index.value >= stappen.value.length - 1);
@@ -199,6 +233,9 @@ const opToets = (event: KeyboardEvent) => {
 
 onMounted(() => {
     index.value = Math.min(onthouden() ?? page.props.onboarding?.tourStep ?? 0, Math.max(0, stappen.value.length - 1));
+
+    // Helemaal aan het begin, en nog nooit gezien: eerst het welkom.
+    welkom.value = bezig.value && index.value === 0 && onthouden() === null && !welkomGezien();
     window.addEventListener('resize', meet);
     window.addEventListener('scroll', meet, { capture: true, passive: true });
     document.addEventListener('keydown', opToets);
@@ -235,6 +272,61 @@ watch(bezig, (nu, eerst) => {
 <template>
     <Teleport to="body">
         <template v-if="bezig && huidige">
+            <!-- ===== Het welkom, één keer, in het midden ===== -->
+            <div v-if="welkom" class="fixed inset-0 z-[60] flex items-end justify-center bg-foreground/60 p-3 sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-label="Welkom">
+                <div class="w-full max-w-lg rounded-2xl border border-border bg-card p-5 shadow-2xl sm:p-7">
+                    <p class="text-xs font-semibold uppercase tracking-widest text-primary">Welkom</p>
+                    <h2 class="mt-1 text-2xl font-semibold leading-tight">Welkom, {{ schoolNaam }}</h2>
+                    <p class="mt-2 text-sm leading-relaxed text-muted-foreground">
+                        Je account staat klaar. Zo gaat het nu verder, in vier stappen. Niets hiervan is verplicht en alles kan later nog.
+                    </p>
+
+                    <ol class="mt-4 space-y-3">
+                        <li class="flex gap-3">
+                            <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">1</span>
+                            <p class="text-sm leading-relaxed">
+                                <span class="font-medium">Er staat al iets.</span> Vier voorbeeldspelers, een groep, twee trainingen en een aanbod, zodat je meteen ziet
+                                hoe het werkt. Ze staan overal met het label "voorbeeld" en gaan straks vanzelf weg.
+                            </p>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">2</span>
+                            <p class="text-sm leading-relaxed">
+                                <span class="font-medium">De rondleiding.</span> Een kaartje rechtsonder loopt met je mee door de app: wat je ziet en wat je ermee
+                                doet, ook hoe ouders zich inschrijven en betalen. Je kunt intussen gewoon overal klikken.
+                            </p>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">3</span>
+                            <p class="text-sm leading-relaxed">
+                                <span class="font-medium">Je eigen school inrichten.</span> Naam en logo, je aanbod, hoe je int, je groepen en trainers. Negen
+                                korte vragen, elk met een goede standaard.
+                            </p>
+                        </li>
+                        <li class="flex gap-3">
+                            <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">4</span>
+                            <p class="text-sm leading-relaxed">
+                                <span class="font-medium">De startlijst.</span> Wat er dan nog moet: je eerste speler, training en rapport. Daarna draait je school.
+                            </p>
+                        </li>
+                    </ol>
+
+                    <div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <button type="button" class="inline-flex min-h-11 items-center justify-center rounded-xl px-3 text-sm text-muted-foreground transition hover:text-foreground" @click="stop">
+                            Nu even niet
+                        </button>
+                        <button
+                            type="button"
+                            class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                            @click="startNaWelkom"
+                        >
+                            Start de rondleiding
+                            <ArrowDownRight class="size-4" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- De ring om het onderdeel waar deze stap over gaat. Laat klikken
                  door: het scherm eronder blijft van de gebruiker. -->
             <div
@@ -270,12 +362,18 @@ watch(bezig, (nu, eerst) => {
 
             <!-- ===== Op het scherm van de stap: het kaartje ===== -->
             <div
-                v-else-if="opHetScherm"
+                v-else-if="opHetScherm && !welkom"
                 class="fixed inset-x-3 bottom-[calc(var(--pp-tabbar)+0.75rem)] z-50 sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-[24rem]"
+                :class="{ 'pp-tour-wijs': wijs }"
                 role="complementary"
                 aria-label="Rondleiding"
             >
-                <div class="max-h-[60vh] overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl sm:max-h-[calc(100vh-6rem)]">
+                <!-- Net na het welkom: even zeggen dat dít het kaartje is. -->
+                <div v-if="wijs" class="pp-tour-wijzer absolute -top-12 right-2 flex items-center gap-2 rounded-full bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground shadow-lg">
+                    Hier loopt de rondleiding met je mee
+                    <ArrowDownRight class="size-4" />
+                </div>
+                <div class="max-h-[60vh] overflow-y-auto rounded-2xl border border-border bg-card shadow-2xl sm:max-h-[calc(100vh-6rem)]" :class="{ 'ring-4 ring-primary/50': wijs }">
                     <div class="p-4 sm:p-5">
                         <div class="flex items-center justify-between gap-2">
                             <p class="tabular text-xs font-medium text-muted-foreground">Stap {{ index + 1 }} van {{ stappen.length }}</p>
@@ -348,7 +446,7 @@ watch(bezig, (nu, eerst) => {
 
             <!-- ===== Op een ander scherm dan de stap: terug aanbieden ===== -->
             <div
-                v-else
+                v-else-if="!welkom"
                 class="fixed inset-x-3 bottom-[calc(var(--pp-tabbar)+0.75rem)] z-50 flex items-center gap-3 rounded-xl border border-border bg-card p-2 pl-4 shadow-lg sm:inset-x-auto sm:right-6 sm:bottom-6 sm:w-96"
             >
                 <Compass class="size-5 shrink-0 text-primary" />
@@ -393,8 +491,29 @@ watch(bezig, (nu, eerst) => {
     animation: pp-tour-adem 2s ease-in-out infinite;
 }
 
+/* Net na het welkom: het kaartje springt even naar voren, zodat je weet waar het staat. */
+@keyframes pp-tour-hup {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+.pp-tour-wijs {
+    animation: pp-tour-hup 0.9s ease-in-out 3;
+}
+
+.pp-tour-wijzer {
+    animation: pp-tour-hup 0.9s ease-in-out 3;
+}
+
 @media (prefers-reduced-motion: reduce) {
-    .pp-tour-ring {
+    .pp-tour-ring,
+    .pp-tour-wijs,
+    .pp-tour-wijzer {
         animation: none;
     }
 }

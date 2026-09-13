@@ -17,7 +17,7 @@ use App\Support\Features\Features;
  *
  * Zelfde afspraak als bij het hoofdmenu: de policies bepalen wat er staat, dus
  * er kan geen knop verschijnen die op een 403 uitloopt. Zijn er geen acties,
- * dan is er ook geen knop — een plus die een leeg lijstje opent is erger dan
+ * dan is er ook geen knop - een plus die een leeg lijstje opent is erger dan
  * geen plus.
  *
  * De volgorde is die van hoe vaak je het doet, niet die van het menu. Een

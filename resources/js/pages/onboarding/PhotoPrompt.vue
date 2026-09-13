@@ -10,7 +10,7 @@ import { Camera } from 'lucide-vue-next';
  * Eén scherm, meteen na het activeren van een account: zet een foto op de
  * kaart. Per kind (of jezelf) een kiezer; klaar is klaar, en "later" mag
  * altijd. Zolang de foto er niet is, blijft de herinnering op het dashboard
- * en op de kaart staan — dus hier hoeft niets afgedwongen te worden.
+ * en op de kaart staan - dus hier hoeft niets afgedwongen te worden.
  */
 defineProps<{
     players: { id: number; name: string; first_name: string; photo: string | null }[];

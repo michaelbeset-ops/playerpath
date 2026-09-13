@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 
 /**
- * Trainers en ouders uitnodigen — één tegelijk of een hele lijst.
+ * Trainers en ouders uitnodigen - één tegelijk of een hele lijst.
  *
  * Bulk is hier geen luxe: een school die overstapt heeft honderd ouders, en die
  * één voor één toevoegen is het soort werk waarna iemand besluit het toch maar
@@ -146,7 +146,7 @@ class InvitationController extends Controller
      * Ruwe regels naar naam en e-mailadres.
      *
      * Neemt "Naam <mail@x.nl>", "Naam, mail@x.nl", "Naam;mail@x.nl" en een kaal
-     * e-mailadres aan. Dat laatste levert een naam op uit het adres — beter een
+     * e-mailadres aan. Dat laatste levert een naam op uit het adres - beter een
      * naam die niet klopt dan een uitnodiging die niet verstuurd wordt omdat
      * iemand een lijst adressen plakte.
      *

@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\DB;
  * aankoop of het abonnement, met de eerste rekening.
  *
  * De school beslist wie er doorschuift. Automatisch de eerste van de lijst
- * pakken klinkt eerlijk, maar een school weet dingen die wij niet weten — dat
+ * pakken klinkt eerlijk, maar een school weet dingen die wij niet weten - dat
  * er al gebeld is, dat een gezin het inmiddels ergens anders heeft geregeld.
  */
 class PromoteParticipation

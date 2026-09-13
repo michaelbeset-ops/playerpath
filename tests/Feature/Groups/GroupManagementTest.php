@@ -83,7 +83,7 @@ class GroupManagementTest extends TestCase
     }
 
     /**
-     * Op de groep zelf zet je spelers erin en haal je ze eruit — meerdere
+     * Op de groep zelf zet je spelers erin en haal je ze eruit - meerdere
      * tegelijk, want een school die overstapt doet er twintig in één keer.
      */
     public function test_op_de_groep_zet_je_spelers_erin_en_haal_je_ze_eruit(): void

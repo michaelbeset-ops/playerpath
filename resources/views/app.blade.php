@@ -33,7 +33,7 @@
              JavaScript, dan ziet elke bezoeker eerst een flits PlayerPath-groen.
 
              Dit blok moet ná @vite staan. De tokens in app.css hangen ook aan
-             `:root`, dus bij gelijke specificiteit wint wie het laatst komt —
+             `:root`, dus bij gelijke specificiteit wint wie het laatst komt -
              stond dit erboven, dan overschreef app.css de merkkleur meteen weer
              en gebeurde er zichtbaar niets.
 

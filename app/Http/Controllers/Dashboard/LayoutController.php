@@ -73,8 +73,8 @@ class LayoutController extends Controller
      * Het aandacht-blok wegklikken.
      *
      * Wat er wordt opgeslagen is een vingerafdruk van wat er op dat moment in
-     * stond, niet "verborgen". Verandert er iets — een nieuwe mislukte betaling,
-     * een speler erbij zonder rapport — dan komt het blok vanzelf terug.
+     * stond, niet "verborgen". Verandert er iets - een nieuwe mislukte betaling,
+     * een speler erbij zonder rapport - dan komt het blok vanzelf terug.
      * "Voorgoed weg" zou betekenen dat een school een half jaar later niet weet
      * dat er zeven rekeningen openstaan omdat iemand ooit op een kruisje drukte.
      */

@@ -88,7 +88,7 @@ class ReportCelebrationTest extends TestCase
     {
         // Vlak onder zilver: dit rapport duwt hem eroverheen. Via de engine,
         // want `players.xp` is de som van de boekingen en wordt bij elke
-        // bijschrijving opnieuw uitgerekend — met de hand zetten houdt geen stand.
+        // bijschrijving opnieuw uitgerekend - met de hand zetten houdt geen stand.
         app(RatingEngine::class)->award($this->speler, 'attendance', 148, 'Trainingen tot nu toe');
 
         $this->rapporteer(7)->assertSessionHas('reportResult', function (array $result) {

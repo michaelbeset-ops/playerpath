@@ -18,7 +18,7 @@ use RuntimeException;
  *    kind op hetzelfde uur bij dezelfde trainer is geen privétraining meer.
  * 2. **Er ontstaat een echte training**, met de trainer erbij. Daardoor staat
  *    dit uur in de agenda en bij Mijn trainingen, en kan er gewoon aanwezigheid
- *    en een rapport bij — precies zoals bij elke andere training.
+ *    en een rapport bij - precies zoals bij elke andere training.
  * 3. **De rekening**, via dezelfde weg als de rest (SellProduct). Gratis is
  *    geen rekening; een kennismakingsles van nul euro hoort niet in het
  *    openstaande-overzicht.

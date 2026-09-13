@@ -9,7 +9,7 @@ import { computed } from 'vue';
  *
  * Het ontwikkelingsvak en het financiële vak zijn op een klein scherm te veel
  * en te lang: een eigenaar pakt zijn telefoon om te zien hoe het ervoor staat,
- * niet om te analyseren. Ze verdwijnen daar dus — maar niet zonder spoor, want
+ * niet om te analyseren. Ze verdwijnen daar dus - maar niet zonder spoor, want
  * dan weet hij niet meer waar hij moet kijken.
  *
  * Wat ervoor in de plaats komt is per blok één regel met het cijfer waar het om
@@ -36,7 +36,7 @@ const dekkingKleur = computed(() => toneFill[dekking.value?.tone ?? 'neutral']);
 
 // Alleen tonen als er iets te melden valt: nul openstaande rekeningen is goed
 // nieuws en geen regel waard, maar de omzet staat er wél als de eigenaar de
-// omzettegel heeft weggehaald — anders ziet hij hem nergens.
+// omzettegel heeft weggehaald - anders ziet hij hem nergens.
 const toonFinancieel = computed(
     () => props.finance !== null && props.finance !== undefined && (props.finance.outstandingCount > 0 || props.finance.revenue !== null),
 );

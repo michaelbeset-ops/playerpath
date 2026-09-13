@@ -16,8 +16,8 @@ use Inertia\Response;
  * moment waarop iemand zijn account net heeft aangemaakt is het moment waarop
  * hij er tijd voor heeft. Daarom staat dit scherm vóór het dashboard: één
  * keer, met de kinderen (of jezelf) zonder foto, en een knop om het later te
- * doen. Overslaan mag altijd — een verplichte foto is precies waar iemand
- * afhaakt — maar dan blijft er een herinnering staan op het dashboard en op de
+ * doen. Overslaan mag altijd - een verplichte foto is precies waar iemand
+ * afhaakt - maar dan blijft er een herinnering staan op het dashboard en op de
  * kaart, totdat de foto er is.
  */
 class PhotoPromptController extends Controller

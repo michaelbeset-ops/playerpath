@@ -25,7 +25,7 @@ use App\Support\Tenancy\Tenancy;
  * heeft geen mail nodig maar een telefoontje.
  *
  * Het rekent met dezelfde stappen als de startchecklist die de school
- * zelf ziet — en dus ook met dezelfde regel dat **voorbeelddata niet meetelt**.
+ * zelf ziet - en dus ook met dezelfde regel dat **voorbeelddata niet meetelt**.
  * Zou dat hier anders zijn, dan staat elke verse school hier op alles gedaan
  * en zie je nooit meer wie er hulp nodig heeft.
  *

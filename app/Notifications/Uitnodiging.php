@@ -12,24 +12,24 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
- * "Je bent uitgenodigd" — de eerste mail die iemand van deze school krijgt.
+ * "Je bent uitgenodigd" - de eerste mail die iemand van deze school krijgt.
  *
  * Hij komt uit naam van de school en niet van PlayerPath: een ouder heeft zijn
  * kind bij Keepersschool Rob aangemeld en kent ons niet. Staat er "PlayerPath"
- * boven, dan wordt de mail niet herkend en dus niet geopend — en dan is de hele
+ * boven, dan wordt de mail niet herkend en dus niet geopend - en dan is de hele
  * uitnodiging weg.
  *
  * Drie dingen die deze mail moet doen, en verder niets:
  *
- * 1. **Zeggen van wie hij komt** — logo en naam van de school bovenaan.
+ * 1. **Zeggen van wie hij komt** - logo en naam van de school bovenaan.
  * 2. **In twee zinnen zeggen wat je eraan hebt.** Niet wat het product allemaal
  *    kan; wat déze ontvanger krijgt. Voor een ouder is dat de kaart van zijn
  *    kind, voor een trainer zijn rooster.
  * 3. **Eén knop.** Twee knoppen betekent kiezen, en dan klikt een deel op geen
  *    van beide.
  *
- * Hij gaat naar een e-mailadres en niet naar een gebruiker — het account
- * bestaat immers nog niet — dus de school komt uit de uitnodiging en niet uit
+ * Hij gaat naar een e-mailadres en niet naar een gebruiker - het account
+ * bestaat immers nog niet - dus de school komt uit de uitnodiging en niet uit
  * `$notifiable`. Daarom gebruikt deze klasse `SendsFromSchool` níét.
  */
 class Uitnodiging extends Notification implements ShouldQueue
@@ -46,7 +46,7 @@ class Uitnodiging extends Notification implements ShouldQueue
     }
 
     /**
-     * De school komt hier uit de uitnodiging en niet uit de ontvanger — die
+     * De school komt hier uit de uitnodiging en niet uit de ontvanger - die
      * heeft nog geen account. Zonder dit staat de scope dicht in de worker en
      * levert `players()` niets op: dan noemt de mail "je kind" in plaats van de
      * naam van het kind, precies in het bericht dat vertrouwen moet wekken.

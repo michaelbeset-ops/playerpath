@@ -15,7 +15,7 @@ use App\Support\Rating\RatingEngine;
  * welke categorie omhoog ging, wat de kaart nu staat, hoeveel XP het opleverde
  * en of er een level bij kwam. Zonder dat is opslaan een formulier dat sluit.
  *
- * De cijfers komen uit dezelfde bron als de kaart zelf — `breakdown()` en dus
+ * De cijfers komen uit dezelfde bron als de kaart zelf - `breakdown()` en dus
  * `CalculatePlayerCard::afronden()`. Zou dit apart rekenen, dan zou de viering
  * "+3" zeggen waar de kaart "+2" laat zien, en dan gelooft niemand het meer.
  *

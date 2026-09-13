@@ -40,7 +40,7 @@ use App\Support\Tenancy\Tenancy;
  *    het blok af te komen: alle stappen doen, ook die je niet wilt.
  *
  * De volgorde is die van het fundament: eerst je schoolgegevens, dan waar je
- * traint (locatie), dan wie er samen traint (groep) — en pas daarna spelers
+ * traint (locatie), dan wie er samen traint (groep) - en pas daarna spelers
  * en trainingen. Andersom loop je vast: een training zonder groep kan niet, en
  * een speler zonder groep staat nergens op een lijst.
  */

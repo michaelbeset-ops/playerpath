@@ -12,13 +12,13 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 /**
- * Een betaalprovider die doet alsof — voor demo's en om de flow te laten zien.
+ * Een betaalprovider die doet alsof - voor demo's en om de flow te laten zien.
  *
  * Er wordt geen cent verplaatst. In plaats van naar iDEAL gaat de betaler
  * naar een eigen scherm (`/betalen/demo/{payment}`) dat op een bankkeuze
  * lijkt, met "DEMO" er groot op, en een knop "Betaal" of "Annuleer". Wat hij
  * daar kiest wordt via `SyncPayment` verwerkt, precies zoals een webhook van
- * Mollie dat zou doen — dus de rest van de app (order, inschrijving, mandaat,
+ * Mollie dat zou doen - dus de rest van de app (order, inschrijving, mandaat,
  * abonnement, mails) werkt zonder er iets van te weten.
  *
  * Alleen aan als `PAYMENTS_DEMO=true` én er geen Mollie-sleutel is; zie

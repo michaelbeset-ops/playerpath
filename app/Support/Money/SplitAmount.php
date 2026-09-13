@@ -7,7 +7,7 @@ use InvalidArgumentException;
 /**
  * Een bedrag in centen eerlijk in delen knippen.
  *
- * € 100,00 in 3 termijnen is niet 3 × € 33,33 — dan mist er een cent en klopt
+ * € 100,00 in 3 termijnen is niet 3 × € 33,33 - dan mist er een cent en klopt
  * de boekhouding niet. De restcenten gaan naar de eerste termijnen, zodat de
  * som altijd exact het oorspronkelijke bedrag is en de laatste termijn nooit
  * hoger uitvalt dan de eerste.

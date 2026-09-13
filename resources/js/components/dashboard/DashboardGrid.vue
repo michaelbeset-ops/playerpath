@@ -20,7 +20,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
  *    gekopieerd, dus wie halverwege van gedachten verandert raakt niets kwijt.
  * 3. **Op een telefoon is er geen raster.** Twaalf kolommen op 375 pixels zijn
  *    geen kolommen. Daar is het een gewone lijst onder elkaar, met de hoogte
- *    van de inhoud zelf in plaats van rijen van veertig pixels — en dus geen
+ *    van de inhoud zelf in plaats van rijen van veertig pixels - en dus geen
  *    gaten waar een onderdeel staat dat op een telefoon niet meedoet.
  * 4. **Bewerken gaat daar over volgorde en over aan of uit**, met pijltjes in
  *    plaats van slepen. Slepen in een lijst waarin je tegelijk wilt scrollen is
@@ -103,7 +103,7 @@ const opVolgorde = computed(() => [...plekken.value].sort((a, b) => a.y - b.y ||
 /**
  * Wat er op een telefoon daadwerkelijk getekend wordt.
  *
- * In bewerkmodus staat álles in de lijst — ook wat hier normaal niet meedoet —
+ * In bewerkmodus staat álles in de lijst - ook wat hier normaal niet meedoet -
  * want anders kun je die onderdelen op je telefoon nergens meer weghalen of
  * verplaatsen.
  */
@@ -190,7 +190,7 @@ const annuleer = () => {
 /**
  * Bewerkmodus sluiten en het scherm gelijkzetten met wat de server nu weet.
  *
- * De watch op de props slaat wijzigingen over zolang je aan het bewerken bent —
+ * De watch op de props slaat wijzigingen over zolang je aan het bewerken bent -
  * anders springt je indeling onder je handen weg. Bij het sluiten moet hij dus
  * één keer expliciet worden bijgetrokken, anders zie je na "Standaard
  * herstellen" nog steeds je oude indeling staan.
@@ -300,7 +300,7 @@ const laatLos = () => clearTimeout(timer);
         Op een telefoon staat "Indeling aanpassen" onderaan, niet boven de
         cijfers: het is iets wat je één keer doet, en de bovenste regel van dat
         scherm is de duurste plek die er is. In bewerkmodus gaat de balk wél
-        naar boven — dan is hij het onderwerp, en "Klaar" moet je kunnen vinden.
+        naar boven - dan is hij het onderwerp, en "Klaar" moet je kunnen vinden.
     -->
     <div class="flex flex-col" data-tour="dashboard">
         <div class="flex flex-wrap items-center justify-between gap-2" :class="bewerken ? 'order-1' : 'order-2 lg:order-1'">
@@ -387,7 +387,7 @@ const laatLos = () => clearTimeout(timer);
 
         <!-- ================= TELEFOON: een lijst, geen raster ================= -->
         <div v-if="smal" class="mt-2" :class="bewerken ? 'order-2' : 'order-1 lg:order-2'">
-            <!-- Bewerken: volgorde en aan/uit. Geen slepen — zie de uitleg boven. -->
+            <!-- Bewerken: volgorde en aan/uit. Geen slepen - zie de uitleg boven. -->
             <ul v-if="bewerken" class="space-y-2">
                 <li
                     v-for="(plek, index) in mobieleVolgorde"

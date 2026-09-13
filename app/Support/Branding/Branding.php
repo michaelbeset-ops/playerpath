@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Storage;
  *
  * 1. **De ingelogde gebruiker wint altijd.** Zijn school bepaalt wat hij ziet,
  *    ook als hij toevallig op het adres van een andere school binnenkomt. Dan
- *    ziet hij zijn eigen merk in plaats van dat van een vreemde — verwarrend
+ *    ziet hij zijn eigen merk in plaats van dat van een vreemde - verwarrend
  *    zou het pas worden als het andersom kon.
  * 2. **Anders het subdomein**, zodat de inlogpagina en het inschrijfformulier
  *    van een school er al uitzien als die school voordat er iemand inlogt.
@@ -21,14 +21,14 @@ use Illuminate\Support\Facades\Storage;
  *
  * Wat hier nadrukkelijk NIET gebeurt: het subdomein gebruiken om te bepalen
  * welke data iemand mag zien. Dat blijft `SetCurrentSchool` op basis van het
- * account, en dat mag nooit verschuiven — zie CLAUDE.md 3.1.
+ * account, en dat mag nooit verschuiven - zie CLAUDE.md 3.1.
  */
 class Branding
 {
     public function forRequest(Request $request): ?School
     {
         // De publiek gedeelde spelerskaart krijgt bewust géén huisstijl. Daar
-        // hoort niet te staan bij welke school het kind zit — niet met zoveel
+        // hoort niet te staan bij welke school het kind zit - niet met zoveel
         // woorden, en dus ook niet via een logo. Zie CLAUDE.md over de deel-link.
         if ($request->routeIs('players.shared')) {
             return null;

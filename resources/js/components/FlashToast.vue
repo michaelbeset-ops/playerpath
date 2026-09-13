@@ -8,12 +8,12 @@ import { onBeforeUnmount, ref, watch } from 'vue';
  * De bevestiging na een actie, als melding onderin het scherm.
  *
  * Hij stond eerst als regel bovenaan de pagina, maar de knop Opslaan staat
- * onderaan — en op een telefoon zie je de bovenkant dan niet. Een melding die
+ * onderaan - en op een telefoon zie je de bovenkant dan niet. Een melding die
  * even verschijnt waar je kijkt, en vanzelf weer weggaat, is wat je verwacht
  * na een tik op Opslaan. Hij staat in de schil, zodat élke opslag een
  * bevestiging geeft en niet alleen de pagina's die eraan gedacht hebben.
  *
- * Groen, want er is echt iets gebeurd — zie "groen betekent iets" in CLAUDE.md.
+ * Groen, want er is echt iets gebeurd - zie "groen betekent iets" in CLAUDE.md.
  * Boven de tabbalk, zodat hij er niet achter valt als de app als app draait.
  */
 const page = usePage<SharedData>();

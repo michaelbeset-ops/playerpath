@@ -4,13 +4,13 @@ import { Link } from '@inertiajs/vue3';
 import { Check, ClipboardList, MapPin } from 'lucide-vue-next';
 
 /**
- * "Je training is bijna klaar — vul de rapporten in."
+ * "Je training is bijna klaar - vul de rapporten in."
  *
  * Het moment waarop een trainer een rapport invult is het moment dat hij nog op
  * het veld staat. Vandaar dit blok bovenaan, in het venster rond de eindtijd.
  *
  * Eén tik per speler: van hier rechtstreeks naar zijn invulscherm. Wie al een
- * rapport heeft staat er grijs bij met een vinkje — je moet kunnen zien wie je
+ * rapport heeft staat er grijs bij met een vinkje - je moet kunnen zien wie je
  * nog mist zonder te tellen.
  */
 export interface Herinnering {

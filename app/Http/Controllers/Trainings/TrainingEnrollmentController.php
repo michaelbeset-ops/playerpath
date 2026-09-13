@@ -24,7 +24,7 @@ use Throwable;
  * Los inschrijven op een training, door de ouder.
  *
  * Eén scherm: voor welk kind, wat kost het, hoe betaal je, wat gebeurt er.
- * Wat niet kan staat er niet — een kind dat buiten de leeftijd valt is
+ * Wat niet kan staat er niet - een kind dat buiten de leeftijd valt is
  * uitgegrijsd met de reden erbij, en een betaalwijze die de school niet
  * aanbiedt (of die zonder provider niet bestaat) ontbreekt. De echte grens
  * ligt in EnrollInTraining; dit scherm laat hem alleen zien.

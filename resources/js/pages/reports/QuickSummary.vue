@@ -12,7 +12,7 @@ import { computed } from 'vue';
  * blok kijkt niemand na de tweede nog naar. Wel worden level-ups apart genoemd,
  * want dat is het bericht dat de trainer straks aan het kind vertelt.
  *
- * Groei wordt gevierd, achteruitgang niet weggepoetst — een scherm dat altijd
+ * Groei wordt gevierd, achteruitgang niet weggepoetst - een scherm dat altijd
  * juicht gelooft een trainer na twee keer niet meer.
  */
 interface Resultaat {
@@ -114,7 +114,7 @@ const mijlpalen = computed(() => props.results.filter((r) => r.badges.length));
                             </span>
 
                             <span class="tabular shrink-0 text-right">
-                                <span class="block text-base font-bold leading-none">{{ rij.overall.to ?? '—' }}</span>
+                                <span class="block text-base font-bold leading-none">{{ rij.overall.to ?? '-' }}</span>
                                 <span
                                     v-if="rij.overall.delta"
                                     class="flex items-center justify-end gap-0.5 text-xs font-medium"

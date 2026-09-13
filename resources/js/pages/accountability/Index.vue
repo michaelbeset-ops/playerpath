@@ -63,7 +63,7 @@ const toonVoor = (waarde: number | null, goed = 75, matig = 50): 'default' | 'wa
             </div>
 
             <!-- Periode kiezen: op een groot scherm gewoon in beeld, op een
-                 telefoon achter één knop — dezelfde als bij de agenda. -->
+                 telefoon achter één knop - dezelfde als bij de agenda. -->
             <form class="mt-4 flex flex-wrap items-end gap-3 print:hidden" @submit.prevent="toon">
                 <FilterSheet :count="0" label="Periode" title="Periode">
                     <div class="grid gap-2 sm:w-44">

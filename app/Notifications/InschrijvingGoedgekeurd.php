@@ -14,7 +14,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
- * "Je kind is ingeschreven" — met meteen de manier om te betalen.
+ * "Je kind is ingeschreven" - met meteen de manier om te betalen.
  *
  * Dit is het bericht waar een ouder op wacht, en het is ook het moment waarop
  * hij wil afrekenen. Hem daarvoor eerst laten inloggen betekent: wachtwoord

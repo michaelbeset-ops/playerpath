@@ -128,7 +128,7 @@ class EnrollmentSettingsController extends Controller
      * Overslaan mag: elke vraag heeft een bruikbare standaard, en wie er nu
      * geen antwoord op heeft moet verder kunnen in plaats van te stoppen. Het
      * scherm zegt erbij dat het later kan. Bij de laatste stap telt overslaan
-     * als afronden — anders blijft de wizard eeuwig "nog niet af".
+     * als afronden - anders blijft de wizard eeuwig "nog niet af".
      */
     public function skip(Request $request, int $stap): RedirectResponse
     {
@@ -498,7 +498,7 @@ class EnrollmentSettingsController extends Controller
             'kortingen' => ['Kortingen', 'Gezin, vroegboek, volume en codes'],
             'formulier' => ['Formulier', 'Wachtlijst, verplichte velden, toestemmingen'],
             'groepen' => ['Groepen', 'In welke groepen je traint, met leeftijdscategorie'],
-            'trainers' => ['Trainers', 'Wie er training geeft — ze krijgen een uitnodiging'],
+            'trainers' => ['Trainers', 'Wie er training geeft - ze krijgen een uitnodiging'],
         ];
 
         return collect(EnrollmentSettings::STAPPEN)->values()->map(fn (string $key, int $i) => [
@@ -598,7 +598,7 @@ class EnrollmentSettingsController extends Controller
     /**
      * Stap één: wie ben je.
      *
-     * Naam, logo, merkkleur en de eerste locatie. Meer niet — de rest kan later
+     * Naam, logo, merkkleur en de eerste locatie. Meer niet - de rest kan later
      * in de instellingen, en elke vraag die je hier stelt is een vraag waarop
      * iemand kan afhaken voordat hij het product heeft gezien.
      *

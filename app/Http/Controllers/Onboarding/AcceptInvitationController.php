@@ -22,7 +22,7 @@ use Inertia\Response;
  * Dit is de enige route waar iemand zonder inlog een account krijgt, en dat
  * mag alleen omdat de school hem persoonlijk heeft uitgenodigd. Wat het veilig
  * houdt: het token van 64 tekens is niet te raden, het verloopt, het is
- * eenmalig, en het bepaalt zelf bij welke school en welke rol het hoort — daar
+ * eenmalig, en het bepaalt zelf bij welke school en welke rol het hoort - daar
  * valt via het formulier niets aan te veranderen.
  *
  * Een ouder krijgt zijn kinderen meteen gekoppeld. Zonder dat zou de school na

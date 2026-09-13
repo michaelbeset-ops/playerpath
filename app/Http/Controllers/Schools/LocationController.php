@@ -18,7 +18,7 @@ use Inertia\Response;
  * dat "Sportpark De Vliert" één ding is in plaats van een tekst die elke keer
  * net anders wordt ingetikt.
  *
- * Verwijderen bestaat niet — een locatie die je niet meer gebruikt zet je op
+ * Verwijderen bestaat niet - een locatie die je niet meer gebruikt zet je op
  * niet-actief. Wat er in de agenda van vorig seizoen staat hoort te blijven
  * kloppen.
  */

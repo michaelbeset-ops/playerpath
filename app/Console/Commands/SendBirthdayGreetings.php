@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Notification;
  * 1. **De school zet hem zelf aan.** Standaard staat hij uit: het is een
  *    berichtje met de naam van de school eronder, en dat kiest zij.
  * 2. **Idempotent via `players.greeted_on`.** Twee keer draaien levert geen
- *    tweede felicitatie op — precies het soort fout dat je klanten opmerken.
+ *    tweede felicitatie op - precies het soort fout dat je klanten opmerken.
  * 3. **Op dag en maand, niet op datum.** Het jaar in `date_of_birth` is het
  *    geboortejaar.
  * 4. **Alleen actieve spelers.** Iemand die vorig seizoen is gestopt krijgt

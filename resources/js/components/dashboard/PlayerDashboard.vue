@@ -28,7 +28,7 @@ import { computed, ref } from 'vue';
  * Het staat op de **donkere kant** van het merk, net als de kaart zelf: dit is
  * het scherm van het kind, niet de werkvloer van de school. Speels betekent
  * hier: grote cijfers, één zin die zegt hoe het gaat, een level en een badge
- * om naartoe te werken, en één ding om aan te werken — geen lijst met zes
+ * om naartoe te werken, en één ding om aan te werken - geen lijst met zes
  * verbeterpunten, want die leest als kritiek en niemand begint eraan.
  *
  * Inschrijven en betalen staan er bewust niet: dat doen de ouders.
@@ -91,7 +91,7 @@ const kaartHref = computed(() => '/players/' + props.player.id + '/card');
 
 /*
  * Delen: de kaart als afbeelding, via het deelmenu van de telefoon. Dat is
- * wat een kind in de groepsapp zet — een plaatje, geen link. Of de deel-link
+ * wat een kind in de groepsapp zet - een plaatje, geen link. Of de deel-link
  * ook meegaat beslist een ouder of de school (zie PlayerPolicy::share); een
  * kind zet dat niet zelf aan. Zonder deelmenu wordt het een download.
  */
@@ -141,7 +141,7 @@ const voortgangHref = computed(() => '/players/' + props.player.id + '/progress'
                     <!-- Nog geen rapport: dan staat er een staalgrijze kaart
                          zonder cijfers, en dat leest als "er is niets". Eén
                          motiverende regel eronder zegt dat er iets komt en
-                         wanneer — dat is het verschil tussen leeg en beginnend. -->
+                         wanneer - dat is het verschil tussen leeg en beginnend. -->
                     <p v-if="card.overall === null" class="mx-auto mt-5 max-w-xs text-center text-sm text-muted-foreground">
                         Na je eerste training vult je trainer je rapport in, en verschijnt hier jouw kaart met je cijfers.
                     </p>
@@ -196,7 +196,7 @@ const voortgangHref = computed(() => '/players/' + props.player.id + '/progress'
                                 <span class="min-w-0 flex-1">
                                     <span class="block break-words text-xs leading-tight text-muted-foreground">{{ categorie.label }}</span>
                                     <span class="tabular block text-base font-bold leading-tight">
-                                        {{ categorie.last ?? '—' }}
+                                        {{ categorie.last ?? '-' }}
                                         <span v-if="categorie.delta" class="text-xs font-semibold" :class="trendKleur(categorie.trend)">
                                             {{ deltaTekst(categorie.delta) }}
                                         </span>
@@ -213,7 +213,7 @@ const voortgangHref = computed(() => '/players/' + props.player.id + '/progress'
                             <div class="min-w-0">
                                 <p class="flex items-center gap-1.5 text-base font-bold leading-tight">
                                     <Award class="size-5 shrink-0 text-gold" />
-                                    <span class="min-w-0 break-words">{{ quarter.best ?? '—' }}</span>
+                                    <span class="min-w-0 break-words">{{ quarter.best ?? '-' }}</span>
                                 </p>
                                 <p class="mt-1 text-xs text-muted-foreground">je sterkste kant</p>
                             </div>

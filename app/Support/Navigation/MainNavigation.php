@@ -21,7 +21,7 @@ use App\Support\Features\Features;
  * Het hoofdmenu, bepaald door wat je mag.
  *
  * Bewust server-side en op één plek: een menu-item dat je toch niet mag openen
- * is een dode klik. De policies zijn hier de enige bron — zo kan het menu niet
+ * is een dode klik. De policies zijn hier de enige bron - zo kan het menu niet
  * uit de pas lopen met de autorisatie.
  *
  * Het icoon gaat als naam mee; de Vue-kant zet dat om naar een component.
@@ -30,8 +30,8 @@ use App\Support\Features\Features;
  *
  * Het menu staat bovenin, in een balk, en daar passen geen vijftien items
  * naast elkaar. Vandaar groepen: een handvol woorden in de balk, met daaronder
- * een uitklap. De indeling volgt hoe iemand naar zijn school kijkt — de agenda,
- * de klanten, het geld — en niet hoe de code is ingedeeld.
+ * een uitklap. De indeling volgt hoe iemand naar zijn school kijkt - de agenda,
+ * de klanten, het geld - en niet hoe de code is ingedeeld.
  *
  * Twee regels die het menu eerlijk houden:
  *
@@ -65,7 +65,7 @@ class MainNavigation
     protected function groups(User $user): array
     {
         // Een trainer is personeel en ziet zijn eigen werk. Zijn menu is klein:
-        // trainingen, spelers, rapporten, verjaardagen — en zijn eigen account.
+        // trainingen, spelers, rapporten, verjaardagen - en zijn eigen account.
         // Geen Klanten, Financiën of Mijn bedrijf: dat is het bedrijf, en de
         // routes erachter weigeren hem sowieso (zie de policies).
         if ($user->isTrainer() && ! $user->isEigenaar()) {
@@ -185,8 +185,8 @@ class MainNavigation
     /**
      * Twee voorwaarden: mag deze rol het, en heeft deze school het.
      *
-     * Het menu is cosmetica — de routes zitten zelf dicht (zie RequireFeature)
-     * — maar een item dat naar een 404 wijst is een dode klik, en dat is
+     * Het menu is cosmetica - de routes zitten zelf dicht (zie RequireFeature)
+     * - maar een item dat naar een 404 wijst is een dode klik, en dat is
      * precies waarom dit menu server-side is.
      *
      * @param  array<string, mixed>  $item

@@ -40,7 +40,7 @@ class ProductionReadinessTest extends TestCase
 
     /**
      * De naam is van de school; de kleuren niet. De themakleur is de balk
-     * bovenin, zodat de statusbalk van de telefoon erop aansluit — de
+     * bovenin, zodat de statusbalk van de telefoon erop aansluit - de
      * merkkleur staat op knoppen, en een paarse streep boven een donkerblauwe
      * balk is precies wat "stuk" oogt.
      */

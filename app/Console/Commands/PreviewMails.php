@@ -38,7 +38,7 @@ use Throwable;
  * Mail is het enige deel van het product dat je niet in de app kunt
  * controleren: je ziet hem pas als hij verstuurd is, en dan is het te laat.
  * Deze opdracht zet ze allemaal naast elkaar met verzonnen gegevens, zodat een
- * wijziging aan de opmaak in één keer over de hele stapel te bekijken is —
+ * wijziging aan de opmaak in één keer over de hele stapel te bekijken is -
  * ook op een telefoonbreedte, want daar wordt hij gelezen.
  *
  * Alles gebeurt in een transactie die wordt teruggedraaid: er blijft geen
@@ -88,9 +88,9 @@ class PreviewMails extends Command
                     File::put($bestand, (string) $mail->render());
 
                     $overzicht[] = ['naam' => $naam, 'onderwerp' => $mail->subject, 'bestand' => basename($bestand)];
-                    $this->line("  <fg=green>✓</> {$naam} — {$mail->subject}");
+                    $this->line("  <fg=green>✓</> {$naam} - {$mail->subject}");
                 } catch (Throwable $e) {
-                    $this->line("  <fg=red>✗</> {$naam} — {$e->getMessage()}");
+                    $this->line("  <fg=red>✗</> {$naam} - {$e->getMessage()}");
                 }
             }
 

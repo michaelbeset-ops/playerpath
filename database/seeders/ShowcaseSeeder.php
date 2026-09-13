@@ -267,7 +267,7 @@ class ShowcaseSeeder extends Seeder
     /**
      * Drie rapporten per actieve speler. De laatste drie bepalen de kaart:
      * s-0,2 / s / s+0,2 middelt precies op s, en per categorie een vaste
-     * afwijking die samen nul is — zo komt de overall exact op het streefcijfer.
+     * afwijking die samen nul is - zo komt de overall exact op het streefcijfer.
      * 29 spelers kregen hun laatste rapport deze week.
      */
     protected function maakRapporten(): void

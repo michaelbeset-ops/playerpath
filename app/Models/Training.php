@@ -96,7 +96,7 @@ class Training extends Model
      * Dit is de ene plek waar "staat de knop er?" wordt beslist, voor de
      * detailpagina, de agenda en het overzicht tegelijk. Wie al is aangemeld
      * (aangevraagd, bevestigd of op de wachtlijst) of al in de groep zit, hoort
-     * geen knop Inschrijven meer te zien — de detailpagina toonde hem wel, en
+     * geen knop Inschrijven meer te zien - de detailpagina toonde hem wel, en
      * dan stuurt een ouder een tweede aanmelding in die de server weigert.
      *
      * @param  Collection<int, Player>  $kinderen
@@ -191,7 +191,7 @@ class Training extends Model
     /**
      * Bezette plekken: de groep plus de bevestigde losse aanmeldingen.
      *
-     * Geteld, niet opgeslagen — een opgeslagen "vol" blijft staan als iemand
+     * Geteld, niet opgeslagen - een opgeslagen "vol" blijft staan als iemand
      * zich afmeldt. Zonder capaciteit is er geen grens.
      */
     public function spotsTaken(): int

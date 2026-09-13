@@ -27,7 +27,7 @@ use Symfony\Component\HttpFoundation\Response as HttpResponse;
  * - de pagina vraagt zoekmachines om hem niet op te nemen.
  *
  * Wie mag delen: de eigenaar van de school en de ouders van dit kind. Een
- * trainer niet — die beslist niet over de zichtbaarheid van andermans kind.
+ * trainer niet - die beslist niet over de zichtbaarheid van andermans kind.
  */
 class SharedCardController extends Controller
 {

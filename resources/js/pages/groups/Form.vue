@@ -60,7 +60,7 @@ const verwijderen = () => {
                 <div class="grid gap-2">
                     <Label for="age_category">Leeftijdscategorie <span class="text-muted-foreground">(optioneel)</span></Label>
                     <Input id="age_category" v-model="form.age_category" placeholder="Onder 12" />
-                    <p class="text-xs text-muted-foreground">De categorie hoort bij de groep, niet bij de speler — die heeft een geboortedatum.</p>
+                    <p class="text-xs text-muted-foreground">De categorie hoort bij de groep, niet bij de speler - die heeft een geboortedatum.</p>
                     <InputError :message="form.errors.age_category" />
                 </div>
 

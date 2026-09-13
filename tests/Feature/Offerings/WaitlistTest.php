@@ -163,8 +163,8 @@ class WaitlistTest extends TestCase
 
         $nieuw = Player::where('first_name', 'Noud')->firstOrFail();
 
-        // De speler en de ouder ontstaan wel — anders kan de school niemand
-        // bereiken — maar betalen voor een plek die er niet is gebeurt nooit.
+        // De speler en de ouder ontstaan wel - anders kan de school niemand
+        // bereiken - maar betalen voor een plek die er niet is gebeurt nooit.
         $this->assertDatabaseHas('participations', [
             'product_id' => $this->blok->id,
             'player_id' => $nieuw->id,
@@ -196,7 +196,7 @@ class WaitlistTest extends TestCase
 
         $this->actingAs($this->eigenaar)->post("/aanbod/{$this->blok->id}/deelnemers/{$wachtend->id}/plek");
 
-        // Iemand die op een wachtlijst staat kijkt niet elke dag in de app —
+        // Iemand die op een wachtlijst staat kijkt niet elke dag in de app -
         // dat is precies waarom hij op een wachtlijst staat.
         Notification::assertSentTo($ouder, PlekVrijgekomen::class);
     }

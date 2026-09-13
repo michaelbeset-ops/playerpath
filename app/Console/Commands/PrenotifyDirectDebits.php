@@ -65,7 +65,7 @@ class PrenotifyDirectDebits extends Command
 
                     $afschrijving = $betaling->due_on->max(now()->addDays(self::DAGEN_VOORAF))->startOfDay();
 
-                    $this->line("  {$betaling->description} — ".Money::format($betaling->amount_cents).' — rond '.$afschrijving->format('d-m-Y'));
+                    $this->line("  {$betaling->description} - ".Money::format($betaling->amount_cents).' - rond '.$afschrijving->format('d-m-Y'));
 
                     if ($droog) {
                         continue;

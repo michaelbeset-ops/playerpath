@@ -11,7 +11,7 @@ use App\Support\Features\Features;
 use Illuminate\Support\Collection;
 
 /**
- * "Je training is bijna klaar — vul de rapporten in."
+ * "Je training is bijna klaar - vul de rapporten in."
  *
  * Het moment waarop een trainer een rapport invult is het moment dat hij nog
  * op het veld staat. Een uur later thuis weet hij niet meer wat hij zag, en
@@ -34,8 +34,8 @@ use Illuminate\Support\Collection;
  *
  * ## Wie krijgt het te zien
  *
- * De trainers die aan de training gekoppeld zijn. Is er niemand gekoppeld —
- * en dat is bij veel scholen zo, want koppelen is informatief — dan krijgen
+ * De trainers die aan de training gekoppeld zijn. Is er niemand gekoppeld -
+ * en dat is bij veel scholen zo, want koppelen is informatief - dan krijgen
  * alle trainers en de eigenaar het. Anders doet deze herinnering bij die
  * scholen simpelweg niets, en dat is erger dan hem aan één iemand te veel
  * laten zien.
@@ -45,7 +45,7 @@ use Illuminate\Support\Collection;
  * Als er voor die speler een rapport bestaat met `reported_on` op de dag van de
  * training. Rapporten hangen bewust niet aan een training: een trainer schrijft
  * over een speler, niet over een sessie. De datum is het enige eerlijke
- * verband, en het klopt in het geval waar het om gaat — de trainer die na
+ * verband, en het klopt in het geval waar het om gaat - de trainer die na
  * afloop op het veld zijn rapporten invult.
  */
 class ReportPrompts

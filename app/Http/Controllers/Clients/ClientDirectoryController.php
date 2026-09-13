@@ -21,7 +21,7 @@ use Inertia\Response;
  * Klanten: de spelers, met hun ouders eronder.
  *
  * "Klanten" en niet "Gebruikers", omdat een school in mensen denkt en niet in
- * accounts. Trainers horen hier niet bij; die staan onder Personeel — een
+ * accounts. Trainers horen hier niet bij; die staan onder Personeel - een
  * trainer is geen klant, en zoeken tussen de klanten naar je eigen collega's
  * is precies de verwarring die dat menu-item veroorzaakte.
  *
@@ -110,7 +110,7 @@ class ClientDirectoryController extends Controller
                 'email' => $player->user?->email,
                 'has_overdue_payment' => $betalingen && $player->overdue_count > 0,
                 // De ouders horen bij de klantrelatie, niet bij het trainen. Een
-                // trainer krijgt ze niet mee — ook niet onzichtbaar in de JSON.
+                // trainer krijgt ze niet mee - ook niet onzichtbaar in de JSON.
                 'guardians' => $trainer ? collect() : $player->guardians->map(fn (User $ouder) => [
                     'id' => $ouder->id,
                     'name' => $ouder->name,
@@ -123,7 +123,7 @@ class ClientDirectoryController extends Controller
         return Inertia::render('clients/Index', [
             'players' => $players,
             // Een trainer heeft geen klanten, hij heeft spelers. Zelfde scherm,
-            // ander woord — en zonder ouders uitklapbaar eronder.
+            // ander woord - en zonder ouders uitklapbaar eronder.
             'isTrainer' => $trainer,
             'staleAfterDays' => SchoolDashboard::AANDACHT_NA_DAGEN,
             'filters' => $filters,

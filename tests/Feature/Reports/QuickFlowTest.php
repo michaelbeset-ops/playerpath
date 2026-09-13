@@ -128,7 +128,7 @@ class QuickFlowTest extends TestCase
 
     /**
      * Het rapport krijgt de datum van de training, niet die van vandaag. Wie
-     * 's avonds laat afsluit hoort geen rapport van morgen te krijgen — en het
+     * 's avonds laat afsluit hoort geen rapport van morgen te krijgen - en het
      * is de datum waarop het herinneringsblok "gedaan" telt.
      */
     public function test_het_rapport_krijgt_de_datum_van_de_training(): void

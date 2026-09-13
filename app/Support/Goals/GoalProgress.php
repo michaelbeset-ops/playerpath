@@ -73,7 +73,7 @@ class GoalProgress
         $opKoers = $behaald || $voortgang >= $verwacht;
 
         // Drie woorden die een ouder snapt: behaald, op koers, net niet. En
-        // "achter" als het echt niet bijloopt — meer dan vijftien punten onder
+        // "achter" als het echt niet bijloopt - meer dan vijftien punten onder
         // waar je nu hoort te zijn.
         $spoor = match (true) {
             $behaald => ['achieved', 'Behaald'],

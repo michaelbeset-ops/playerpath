@@ -1,6 +1,6 @@
 {{--
     De uitnodigingsmail: de eerste keer dat iemand deze school in zijn inbox
-    ziet. Drie dingen en verder niets — van wie hij komt, wat je eraan hebt,
+    ziet. Drie dingen en verder niets - van wie hij komt, wat je eraan hebt,
     en één knop.
 
     Het logo staat niet meer hier maar in de gedeelde mailschil (zie

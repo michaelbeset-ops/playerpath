@@ -4,7 +4,7 @@ import { Cake } from 'lucide-vue-next';
 
 /**
  * Klein en bescheiden. Aardig om te weten, geen reden om een dashboard te
- * openen — vandaar onderaan.
+ * openen - vandaar onderaan.
  */
 defineProps<{
     data: { id: number; name: string; first_name: string; date: string; turns: number; today: boolean }[];

@@ -13,7 +13,7 @@ use Illuminate\Support\Collection;
  *
  * Een trainer is personeel, geen directie. Hij komt hier met twee vragen: waar
  * moet ik zijn, en wie moet ik nog beoordelen. Omzet, openstaande rekeningen en
- * schoolbrede instellingen staan er dus niet — dat is niet alleen "niet nuttig",
+ * schoolbrede instellingen staan er dus niet - dat is niet alleen "niet nuttig",
  * het is niet van hem.
  *
  * Twee afspraken die je niet moet omdraaien:

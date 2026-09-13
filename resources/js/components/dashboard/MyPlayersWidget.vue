@@ -8,7 +8,7 @@ import { ClipboardList } from 'lucide-vue-next';
  *
  * Gesorteerd op wie het langst niets kreeg, niet alfabetisch. Een alfabetische
  * lijst is een telefoonboek; deze lijst beantwoordt de vraag waarvoor je hem
- * opent — wie moet ik nog beoordelen.
+ * opent - wie moet ik nog beoordelen.
  *
  * De kleur is een signaal en geen versiering: recent beoordeeld is groen, langer
  * dan dertig dagen (of nooit) oranje. Dezelfde grens als het aandacht-blok op
@@ -72,7 +72,7 @@ const geleden = (speler: MijnSpeler) => {
 
                     <span class="tabular shrink-0 text-right">
                         <span class="block text-base font-bold leading-none" :class="speler.rating ? '' : 'text-muted-foreground'">
-                            {{ speler.rating ?? '—' }}
+                            {{ speler.rating ?? '-' }}
                         </span>
                         <span class="text-[10px] uppercase tracking-wide text-muted-foreground">rating</span>
                     </span>

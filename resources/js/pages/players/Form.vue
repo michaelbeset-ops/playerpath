@@ -103,7 +103,7 @@ const opslaan = () => {
                 <!-- De foto hoort bij het bewerken van een speler, niet bij het
                      bekijken. Hij gaat wel meteen weg als je hem kiest: uploaden
                      is één handeling en wacht niet op "Wijzigingen opslaan".
-                     Bij een nieuwe speler kan het nog niet — er is nog niets om
+                     Bij een nieuwe speler kan het nog niet - er is nog niets om
                      de foto aan te hangen. -->
                 <div v-if="bewerken" class="grid gap-2">
                     <Label>Pasfoto</Label>

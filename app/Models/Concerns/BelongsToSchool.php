@@ -17,7 +17,7 @@ use RuntimeException;
  * 2. school_id wordt bij het opslaan automatisch ingevuld;
  * 3. school_id kan daarna niet meer veranderen.
  *
- * Uitzondering: User gebruikt deze trait bewust NIET voor de global scope —
+ * Uitzondering: User gebruikt deze trait bewust NIET voor de global scope -
  * inloggen moet een gebruiker kunnen vinden vóórdat er een school bekend is.
  * Zie CLAUDE.md 3.1.
  */

@@ -24,7 +24,7 @@ use Inertia\Response;
  *
  * Zolang er geen provider is, is dit administratie: je legt vast wie waarop
  * zit en voor hoeveel. Zodra Mollie eraan hangt, wordt hier ook de incasso of
- * iDEAL-betaling gestart — dat is precies de plek waar de PaymentGateway
+ * iDEAL-betaling gestart - dat is precies de plek waar de PaymentGateway
  * straks meer methodes krijgt.
  */
 class SubscriptionController extends Controller
@@ -69,7 +69,7 @@ class SubscriptionController extends Controller
             // Op `is_active` filteren liet ook een kamp of een rittenkaart in
             // deze lijst komen, en die hebben geen interval: het scherm liep
             // stuk op `interval->label()` van null. Erger dan de fout is wat
-            // eronder zat — je kon een kamp als abonnement kiezen, en dan
+            // eronder zat - je kon een kamp als abonnement kiezen, en dan
             // brengt een blok van één week elke maand een rekening voort.
             // `recurring()` is dezelfde grens die de administratie gebruikt.
             'products' => Product::query()

@@ -7,7 +7,7 @@ import { Cake } from 'lucide-vue-next';
 /**
  * Wie er binnenkort jarig is: naam, datum, en hoe oud ze worden.
  *
- * De leeftijd is de leeftijd die het kind wórdt — dat is wat je in een
+ * De leeftijd is de leeftijd die het kind wórdt - dat is wat je in een
  * berichtje zet. Vandaag jarig staat bovenaan en groen: dat is de enige die nu
  * iets van je vraagt.
  */

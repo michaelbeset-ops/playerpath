@@ -92,7 +92,7 @@ final class MailBrand
             'url' => config('app.url'),
             // Wel of niet "Verstuurd met PlayerPath" onderaan: bij een school
             // wel (zij is de afzender, wij het gereedschap), bij PlayerPath
-            // zelf niet — dan staat er twee keer hetzelfde.
+            // zelf niet - dan staat er twee keer hetzelfde.
             'platform' => $school !== null,
         ];
     }
@@ -111,7 +111,7 @@ final class MailBrand
         return $merk ?? self::describe(null);
     }
 
-    /** Wit of bijna-zwart op deze kleur, als hex — een mail kent geen HSL-tokens. */
+    /** Wit of bijna-zwart op deze kleur, als hex - een mail kent geen HSL-tokens. */
     private static function leesbaar(BrandColor $kleur): string
     {
         return $kleur->readableForeground() === '0 0% 100%' ? '#FFFFFF' : '#0F172A';

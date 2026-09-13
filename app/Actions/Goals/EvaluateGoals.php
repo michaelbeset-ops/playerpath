@@ -10,7 +10,7 @@ use App\Models\Player;
  * Na elk rapport: is een doel gehaald, of is de tijd verstreken?
  *
  * Gehaald is gehaald: het cijfer is op of boven het streefcijfer. Dat wordt
- * meteen vastgelegd en gevierd, ook als het later weer zakt — een gehaald doel
+ * meteen vastgelegd en gevierd, ook als het later weer zakt - een gehaald doel
  * neem je een kind niet af.
  *
  * Een eigen doel ("Uitverdedigen links") heeft geen cijfer om aan af te meten

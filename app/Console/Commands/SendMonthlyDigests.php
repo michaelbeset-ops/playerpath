@@ -66,7 +66,7 @@ class SendMonthlyDigests extends Command
                         continue;
                     }
 
-                    $this->line("  {$speler->full_name} — {$inhoud['reports']} rapport(en), {$inhoud['attended']}x aanwezig");
+                    $this->line("  {$speler->full_name} - {$inhoud['reports']} rapport(en), {$inhoud['attended']}x aanwezig");
 
                     if ($droog) {
                         continue;

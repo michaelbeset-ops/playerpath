@@ -11,7 +11,7 @@ import { ref } from 'vue';
  *
  * Twee ingangen op een telefoon: de camera (een foto maken, hier en nu) en de
  * galerij. Wat je kiest snij je eerst vierkant uit (PhotoCrop), en daarna
- * gaat hij meteen weg — er is geen aparte opslaan-knop. Een foto uploaden is
+ * gaat hij meteen weg - er is geen aparte opslaan-knop. Een foto uploaden is
  * één handeling, en er tussenuit stappen om nog een keer op "opslaan" te
  * drukken is precies het soort stap dat mensen halverwege laat afhaken.
  */

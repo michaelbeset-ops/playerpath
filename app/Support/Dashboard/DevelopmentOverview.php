@@ -19,7 +19,7 @@ use Illuminate\Support\Collection;
  * staat, niet waar hij vandaan komt. Om te weten of iemand stijgt moet je twee
  * momenten vergelijken, en die staan in `reports` met hun `report_scores`.
  *
- * Het cijfer per rapport is het gemiddelde van de zes categorieën, maal tien —
+ * Het cijfer per rapport is het gemiddelde van de zes categorieën, maal tien -
  * dezelfde omrekening als op de kaart (zie CalculatePlayerCard), zodat een
  * stijging van "5" hier hetzelfde betekent als daar.
  */
@@ -57,7 +57,7 @@ class DevelopmentOverview
                 ->all(),
             'coverage' => $this->dekking(),
             // Wie het langst niets gehad heeft. Staat er niemand achteruit te
-            // gaan, dan is dit wél iets om vandaag te doen — beter dan een leeg
+            // gaan, dan is dit wél iets om vandaag te doen - beter dan een leeg
             // vak met "netjes" erin.
             'stalest' => $this->langstStil(),
             'averageChange' => $veranderingen->isEmpty()

@@ -8,7 +8,7 @@ use App\Models\User;
 
 /**
  * Doelen stelt de trainer (of de eigenaar). Zien mag iedereen die de speler
- * mag zien — dat regelt PlayerPolicy::view.
+ * mag zien - dat regelt PlayerPolicy::view.
  */
 class GoalPolicy
 {

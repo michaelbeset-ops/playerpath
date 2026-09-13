@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * Het gewone ritme van een trainer: "dinsdagavond kan ik".
  *
- * Een rij betekent beschikbaar. Wat er niet staat is dat niet — zo is invullen
+ * Een rij betekent beschikbaar. Wat er niet staat is dat niet - zo is invullen
  * aanvinken en niets anders. De uitzonderingen erop staan in
  * `AvailabilityException`.
  */

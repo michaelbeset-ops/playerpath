@@ -24,7 +24,7 @@ use Tests\TestCase;
  *
  * Het hart hiervan is de rittenkaart. Een kaart zonder afschrijven is een
  * prijslijst; wat hem een kaart maakt is dat er een beurt af gaat zodra een
- * trainer iemand aanwezig meldt — en dat die beurt terugkomt als hij zich
+ * trainer iemand aanwezig meldt - en dat die beurt terugkomt als hij zich
  * vergist.
  */
 class ProductTest extends TestCase

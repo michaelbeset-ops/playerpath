@@ -49,7 +49,7 @@ class GenerateSubscriptionPayments extends Command
                     }
 
                     foreach ($actie->handle($abonnement) as $betaling) {
-                        $this->line("  {$betaling->description} — {$abonnement->player?->full_name} — ".Money::format($betaling->amount_cents));
+                        $this->line("  {$betaling->description} - {$abonnement->player?->full_name} - ".Money::format($betaling->amount_cents));
                         $totaal++;
                     }
                 }

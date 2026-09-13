@@ -15,7 +15,7 @@ use Illuminate\Notifications\Notification;
  *
  * Gaat naar de ouders van de speler en naar de speler zelf, als die een eigen
  * account heeft. In de app én per e-mail, en altijd via de queue: het opslaan
- * van een rapport mag nooit wachten op een mailserver — dat scherm moet in
+ * van een rapport mag nooit wachten op een mailserver - dat scherm moet in
  * dertig seconden klaar zijn.
  */
 class NieuwRapport extends Notification implements ShouldQueue

@@ -31,13 +31,13 @@ class EnrollmentSettings
      *
      * `school`, `groepen` en `trainers` slaan niets in deze klasse op: die
      * stappen zetten de school zelf, haar groepen en haar uitnodigingen. Ze
-     * lopen wel mee in de wizard, want samen is dit "je school inrichten" — en
+     * lopen wel mee in de wizard, want samen is dit "je school inrichten" - en
      * een aparte intake-wizard ernaast zou betekenen dat er twee plekken zijn
      * waar je hetzelfde instelt. De eerste stap
      * zet de naam, het logo, de merkkleur en de eerste locatie, en die horen
      * bij de school zelf en niet bij "hoe schrijf je in". Hij loopt wel mee in
      * de wizard, want het is de eerste vraag die een nieuwe school hoort te
-     * krijgen — en een aparte intake-wizard ernaast zou betekenen dat er twee
+     * krijgen - en een aparte intake-wizard ernaast zou betekenen dat er twee
      * plekken zijn waar je hetzelfde instelt.
      */
     public const STAPPEN = ['school', 'aanbod', 'kosten', 'betalen', 'annuleren', 'kortingen', 'formulier', 'groepen', 'trainers'];

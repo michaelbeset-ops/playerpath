@@ -14,7 +14,7 @@ use Illuminate\Notifications\Notification;
 /**
  * De vooraankondiging van een incasso: wat er wordt afgeschreven, waarvoor,
  * en rond wanneer. Minstens veertien dagen vooraf, zodat een ouder kan
- * zorgen dat het er staat — of aan de bel kan trekken als het niet klopt.
+ * zorgen dat het er staat - of aan de bel kan trekken als het niet klopt.
  */
 class IncassoAankondiging extends Notification implements ShouldQueue
 {

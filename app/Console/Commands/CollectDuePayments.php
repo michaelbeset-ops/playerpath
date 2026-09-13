@@ -93,7 +93,7 @@ class CollectDuePayments extends Command
                             continue;
                         }
 
-                        $this->line("  {$betaling->description} — {$speler->full_name} — ".Money::format($betaling->amount_cents));
+                        $this->line("  {$betaling->description} - {$speler->full_name} - ".Money::format($betaling->amount_cents));
 
                         if ($droog) {
                             continue;

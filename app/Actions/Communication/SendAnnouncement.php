@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Notification;
  * schrijft, en een training die wordt afgezegd.
  *
  * Versturen gebeurt ná de transactie. Een mislukte opslag mag nooit alsnog
- * honderd mails opleveren — en die krijg je niet terug.
+ * honderd mails opleveren - en die krijg je niet terug.
  */
 class SendAnnouncement
 {

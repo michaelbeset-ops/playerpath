@@ -13,7 +13,7 @@ use Closure;
  * (`auth()->user()?->school`) levert niets op en staat de global scope
  * fail-closed dicht. Dat is voor de veiligheid precies goed en voor de inhoud
  * precies fout: een `toMail()` die iets opzoekt krijgt geen foutmelding maar
- * een leeg antwoord, en dus een mail waar de helft uit weg is — een
+ * een leeg antwoord, en dus een mail waar de helft uit weg is - een
  * inschrijfbevestiging zonder betaalknop, een uitnodiging die "je kind" zegt in
  * plaats van de naam.
  *
@@ -24,7 +24,7 @@ use Closure;
  *    `middleware()` per ontvanger aan, dus dat komt uit.
  * 2. **Alleen het id reist mee.** Een heel School-model in de payload is groot
  *    en veroudert; hier wordt hij opgehaald op het moment dat het werk draait.
- *    Bestaat de school niet meer, dan blijft de scope dicht — dan hoort er ook
+ *    Bestaat de school niet meer, dan blijft de scope dicht - dan hoort er ook
  *    geen mail meer uit te gaan.
  */
 class WithSchool

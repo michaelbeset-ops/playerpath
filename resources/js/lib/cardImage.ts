@@ -6,8 +6,8 @@ import type { Kaart } from '@/components/PlayerCardVisual.vue';
  * Getekend op een canvas, niet "gefotografeerd" uit de DOM: dat werkt op elke
  * telefoon hetzelfde (iOS Safari struikelt over foreignObject en webfonts) en
  * de uitkomst is altijd een scherpe PNG van dezelfde maat. De opbouw volgt de
- * kaart in de app — foto boven, cijfer groot, zes categorieën voluit, XP
- * onderaan — zodat wat je deelt is wat je in de app ziet.
+ * kaart in de app - foto boven, cijfer groot, zes categorieën voluit, XP
+ * onderaan - zodat wat je deelt is wat je in de app ziet.
  *
  * Er staat bewust hetzelfde op als op de kaart en niet meer: voornaam en
  * achternaam zoals de kaart ze toont, positie, cijfers, level en school.
@@ -200,7 +200,7 @@ export async function renderKaartStory(card: Kaart, opties: KaartAfbeeldingOptie
     ctx.textAlign = 'left';
     ctx.fillStyle = '#f1f5f9';
     ctx.font = `800 150px ${FONT}`;
-    ctx.fillText(card.overall === null ? '—' : String(card.overall), bx + 44, by + 170);
+    ctx.fillText(card.overall === null ? '-' : String(card.overall), bx + 44, by + 170);
 
     ctx.fillStyle = tint.accent;
     ctx.font = `700 34px ${FONT}`;
@@ -253,7 +253,7 @@ export async function renderKaartStory(card: Kaart, opties: KaartAfbeeldingOptie
             ctx.textAlign = 'right';
             ctx.fillStyle = '#f1f5f9';
             ctx.font = `800 40px ${FONT}`;
-            ctx.fillText(c.rating === null ? '—' : String(c.rating), x + kolomB, ry + 4);
+            ctx.fillText(c.rating === null ? '-' : String(c.rating), x + kolomB, ry + 4);
 
             afgerond(ctx, x, ry + 22, kolomB, 12, 6);
             ctx.fillStyle = '#25282d';

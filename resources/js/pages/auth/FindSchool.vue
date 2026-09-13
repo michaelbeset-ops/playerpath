@@ -9,7 +9,7 @@ import { ref, watch } from 'vue';
  * Zoek je school: van de inlogpagina naar de inschrijfpagina van een school.
  *
  * Zoeken gaat naar de server bij elke wijziging (met een korte pauze), zodat
- * je onder het typen de lijst ziet — een ouder die "keep" typt vindt zo
+ * je onder het typen de lijst ziet - een ouder die "keep" typt vindt zo
  * Keepersschool Rob zonder op een knop te drukken.
  */
 const props = defineProps<{

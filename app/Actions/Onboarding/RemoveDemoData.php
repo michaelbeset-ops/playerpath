@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\DB;
  * Drie eigenschappen:
  *
  * 1. **Alleen wat als voorbeeld is neergezet.** De filter is `is_demo`, en die
- *    vlag staat in geen enkel `$fillable` — hij kan dus niet per ongeluk op een
+ *    vlag staat in geen enkel `$fillable` - hij kan dus niet per ongeluk op een
  *    echte speler terechtkomen via een formulier.
  * 2. **De volgorde is van klein naar groot.** Eerst de rapporten en de
  *    trainingen, dan de spelers en de groep, dan de rest. De

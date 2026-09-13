@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Scope;
  * Filtert elke query op de actieve school.
  *
  * Bewust fail-closed: is er geen actieve school, dan levert de query niets op.
- * Dat is veiliger dan "alles teruggeven" — een vergeten middleware mag nooit
+ * Dat is veiliger dan "alles teruggeven" - een vergeten middleware mag nooit
  * per ongeluk de data van alle scholen openzetten.
  *
  * De enige uitzondering die over scholen heen kijkt is de beheeromgeving van

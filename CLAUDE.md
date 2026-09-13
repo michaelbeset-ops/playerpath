@@ -717,7 +717,18 @@ het trainingsformulier blokkeert zonder groep en waarschuwt zonder locatie.
 
 #### De rondleiding
 
-Veertien stappen door de echte app, alleen voor de eigenaar, vóór de wizard.
+Zestien stappen door de echte app, alleen voor de eigenaar, vóór de wizard.
+**Eerst een welkom in het midden van het scherm** (`AppTour.vue`): welkom
+met de schoolnaam, de vier stappen (er staat al iets, de rondleiding,
+inrichten, de startlijst) en een knop die het kaartje rechtsonder aanwijst.
+Een kaartje dat meteen rechtsonder verscheen viel niet op tussen alles wat
+er verder op het scherm stond. Twee stappen laten zien **hoe ouders
+inschrijven**: de echte inschrijfpagina in een kader
+(`/onboarding/aanmeldpagina`) en de trainingen zoals een ouder ze ziet, met
+een open voorbeeldtraining onder "Inschrijven"
+(`/onboarding/ouderweergave/trainingen`; `SeedDemoData::ensureOpenTraining`
+zet die alsnog neer bij een school die er nog geen had). In beide staat dat
+een ouder kiest tussen online betalen en contant bij de school.
 De stappen komen **van de server** (`Support\Onboarding\OnboardingTour`,
 gedeeld als `onboarding.tourSteps`): elke stap heeft een adres en een anker
 (`data-tour="…"`), en de rondleiding navigeert er zelf naartoe. Op de server,

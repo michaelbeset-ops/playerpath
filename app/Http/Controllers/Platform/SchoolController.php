@@ -30,7 +30,7 @@ use Inertia\Response;
  *
  * De school-scope staat hier open (zie EnterPlatform), dus tellingen als
  * "aantal spelers" gaan over alle scholen tegelijk en moeten expliciet per
- * school worden opgehaald — vandaar withCount en niet een losse query per rij.
+ * school worden opgehaald - vandaar withCount en niet een losse query per rij.
  */
 class SchoolController extends Controller
 {
@@ -308,7 +308,7 @@ class SchoolController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             // De slug wordt straks het subdomein, dus alleen kleine letters,
-            // cijfers en streepjes — en uniek over het hele platform.
+            // cijfers en streepjes - en uniek over het hele platform.
             'slug' => [
                 'required', 'string', 'max:63', 'regex:/^[a-z0-9]+(-[a-z0-9]+)*$/',
                 Rule::unique('schools', 'slug')->ignore($school?->id),

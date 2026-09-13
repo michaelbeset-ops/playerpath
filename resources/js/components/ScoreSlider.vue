@@ -37,7 +37,7 @@ const kleur = computed(() => {
 });
 
 // Nederlandse komma. "7.4" leest als een prijs, niet als een cijfer.
-const getoond = computed(() => (model.value === null ? '—' : model.value.toFixed(1).replace('.', ',')));
+const getoond = computed(() => (model.value === null ? '-' : model.value.toFixed(1).replace('.', ',')));
 
 const zet = (event: Event) => (model.value = Number((event.target as HTMLInputElement).value));
 

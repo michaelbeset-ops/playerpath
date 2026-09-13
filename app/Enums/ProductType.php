@@ -76,7 +76,7 @@ enum ProductType: string
     /**
      * Loopt dit tussen twee datums?
      *
-     * Een blok, een kamp en een small group hebben een begin en een eind — en
+     * Een blok, een kamp en een small group hebben een begin en een eind - en
      * dus ook een rooster, plekken en een groep die erbij hoort.
      */
     public function hasPeriod(): bool

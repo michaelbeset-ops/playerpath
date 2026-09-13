@@ -324,8 +324,8 @@ class TrainingEnrollmentTest extends TestCase
     }
 
     /**
-     * Eenmaal ingeschreven is de knop overal weg — ook op de detailpagina, waar
-     * hij bleef staan — en weigert de server een tweede aanmelding.
+     * Eenmaal ingeschreven is de knop overal weg - ook op de detailpagina, waar
+     * hij bleef staan - en weigert de server een tweede aanmelding.
      */
     public function test_een_ingeschreven_kind_krijgt_nergens_meer_een_inschrijfknop(): void
     {

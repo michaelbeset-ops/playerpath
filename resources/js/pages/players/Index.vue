@@ -129,7 +129,7 @@ const leegmaken = () => {
                         class="tabular flex size-11 shrink-0 items-center justify-center rounded-lg text-base font-bold"
                         :class="speler.overall_rating ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground'"
                     >
-                        {{ speler.overall_rating ?? '—' }}
+                        {{ speler.overall_rating ?? '-' }}
                     </div>
 
                     <div class="min-w-0 flex-1">

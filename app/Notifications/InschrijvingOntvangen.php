@@ -15,8 +15,8 @@ use Illuminate\Notifications\Notification;
 
 /**
  * De bevestiging aan de ouder direct na het indienen: wat er is aangemeld,
- * wat er nu gebeurt (wachten op de school, betalen, of rond) en — bij een
- * nieuw account — dat hij kan inloggen met het wachtwoord dat hij koos.
+ * wat er nu gebeurt (wachten op de school, betalen, of rond) en - bij een
+ * nieuw account - dat hij kan inloggen met het wachtwoord dat hij koos.
  */
 class InschrijvingOntvangen extends Notification implements ShouldQueue
 {

@@ -227,7 +227,7 @@ const verwijderen = () => {
                             class="tabular text-3xl font-bold leading-none"
                             :class="player.overall_rating ? 'text-primary' : 'text-muted-foreground/60'"
                         >
-                            {{ player.overall_rating ?? '—' }}
+                            {{ player.overall_rating ?? '-' }}
                         </p>
                     </div>
 
@@ -235,7 +235,7 @@ const verwijderen = () => {
                         <div v-for="categorie in categories" :key="categorie.category">
                             <div class="flex items-baseline justify-between text-sm">
                                 <span>{{ categorie.label }}</span>
-                                <span class="tabular font-semibold">{{ categorie.rating ?? '—' }}</span>
+                                <span class="tabular font-semibold">{{ categorie.rating ?? '-' }}</span>
                             </div>
                             <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-secondary">
                                 <div class="h-full rounded-full bg-primary" :style="{ width: (categorie.rating ?? 0) + '%' }"></div>

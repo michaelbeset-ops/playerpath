@@ -11,7 +11,7 @@ use App\Support\Features\Features;
  * Welke widgets er voor deze gebruiker bestaan, en waar ze standaard staan.
  *
  * Eén plek, zoals bij het menu en de functies per school. Een widget die je
- * niet mag zien bestaat hier niet — dan kan hij ook niet in een opgeslagen
+ * niet mag zien bestaat hier niet - dan kan hij ook niet in een opgeslagen
  * indeling opduiken en kan het scherm er niet per ongeluk cijfers voor
  * berekenen.
  *
@@ -39,8 +39,8 @@ class WidgetRegistry
     public function defaultLayout(?User $user = null): array
     {
         // Een trainer is personeel, geen directie. Zijn standaarddashboard
-        // beantwoordt zijn twee vragen — waar moet ik zijn, en wie moet ik nog
-        // beoordelen — en niet die van de eigenaar. Hij kan er alsnog cijfers
+        // beantwoordt zijn twee vragen - waar moet ik zijn, en wie moet ik nog
+        // beoordelen - en niet die van de eigenaar. Hij kan er alsnog cijfers
         // bij zetten; dit is waar hij mee begint.
         if ($user !== null && $user->isTrainer() && ! $user->isEigenaar()) {
             return $this->trainerLayout();
@@ -82,7 +82,7 @@ class WidgetRegistry
      * De indeling van deze gebruiker: de opgeslagen indeling, of de standaard.
      *
      * Widgets die deze gebruiker niet mag zien vallen eruit, en de gaten die
-     * dat achterlaat worden niet opgevuld — dat zou betekenen dat het scherm
+     * dat achterlaat worden niet opgevuld - dat zou betekenen dat het scherm
      * van een trainer er anders uitziet dan hij het heeft neergezet.
      *
      * @return list<array{key: string, size: int, height: int, x: int, y: int, mobile: bool, compact: bool}>
@@ -195,7 +195,7 @@ class WidgetRegistry
     }
 
     /**
-     * Hoort deze widget op een telefoon — voor déze gebruiker?
+     * Hoort deze widget op een telefoon - voor déze gebruiker?
      *
      * Verjaardagen staan bij de eigenaar niet op zijn telefoon (aardig om te
      * weten is geen reden om te scrollen), maar bij een trainer wel: die

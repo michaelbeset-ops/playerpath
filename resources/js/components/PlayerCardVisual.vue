@@ -32,7 +32,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
  * chroom voor zilver, een warme gloed voor goud en een iriserend, langzaam
  * bewegend frame voor elite. Eigen identiteit, geen FUT-kopie: geen schild,
  * geen vlag, geen clublogo. Wel een grote foto, een groot cijfer en de zes
- * categorieën voluit — een kind van acht hoort geen "INZ" te hoeven raden.
+ * categorieën voluit - een kind van acht hoort geen "INZ" te hoeven raden.
  *
  * Mobiel-first: maximaal 22.5rem breed en daaronder schaalt alles mee.
  */
@@ -314,7 +314,7 @@ const upgradeTekst = computed(() => {
                             <div class="pp-rapport-regel">
                                 <span class="tabular">{{ r.date }}</span>
                                 <span v-if="r.trainer" class="pp-rapport-trainer">{{ r.trainer }}</span>
-                                <span class="pp-rapport-cijfer tabular">{{ r.overall ?? '—' }}</span>
+                                <span class="pp-rapport-cijfer tabular">{{ r.overall ?? '-' }}</span>
                             </div>
                             <p v-if="r.note" class="pp-rapport-noot">{{ r.note }}</p>
                         </li>
@@ -379,7 +379,7 @@ const upgradeTekst = computed(() => {
                     <p class="pp-merk">PlayerPath</p>
 
                     <div class="pp-overall-blok">
-                        <p class="pp-overall tabular">{{ card.overall ?? '—' }}</p>
+                        <p class="pp-overall tabular">{{ card.overall ?? '-' }}</p>
                         <p class="pp-positie">
                             <Hand v-if="card.position_key === 'keeper'" class="size-3.5" aria-hidden="true" />
                             <Shirt v-else class="size-3.5" aria-hidden="true" />
@@ -421,7 +421,7 @@ const upgradeTekst = computed(() => {
                                     :title="'Sinds het vorige rapport'"
                                     >{{ deltaTekst(c.delta) }}</span
                                 >
-                                <span class="pp-stat-cijfer tabular">{{ c.rating ?? '—' }}</span>
+                                <span class="pp-stat-cijfer tabular">{{ c.rating ?? '-' }}</span>
                             </div>
                             <div class="pp-balk">
                                 <div class="pp-balk-vulling" :style="{ width: balk(c.rating) }"></div>

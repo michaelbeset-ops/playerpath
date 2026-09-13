@@ -9,7 +9,7 @@ import { ref } from 'vue';
  * Voorbeelddata is wat een lege omgeving draaglijk maakt, maar het is ook het
  * gevaarlijkste wat je in een product over kinderen kunt neerzetten: over een
  * half jaar staat er anders een verzonnen kind in een echt ledenbestand. Deze
- * balk is de tegenhanger die het verantwoord maakt — hij staat op elke pagina,
+ * balk is de tegenhanger die het verantwoord maakt - hij staat op elke pagina,
  * is niet weg te klikken, en heeft één knop.
  *
  * Verwijderen is definitief en vraagt daarom om een bevestiging waarin staat
@@ -44,7 +44,7 @@ const verwijder = () => {
                 <div class="min-w-0">
                     <p class="text-sm font-medium">Je kijkt naar voorbeelddata</p>
                     <p class="text-xs text-muted-foreground">
-                        Vier spelers met rapporten, twee trainingen, een aanbod en een bericht — zodat je meteen ziet hoe het werkt. Ze staan overal
+                        Vier spelers met rapporten, twee trainingen, een aanbod en een bericht - zodat je meteen ziet hoe het werkt. Ze staan overal
                         met het label <span class="font-medium">voorbeeld</span> erbij.
                     </p>
                 </div>

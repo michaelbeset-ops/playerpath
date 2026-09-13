@@ -9,7 +9,7 @@ import { computed } from 'vue';
  * De schil van de beheeromgeving.
  *
  * Bewust niet dezelfde als de app. Je moet in één oogopslag kunnen zien dat je
- * boven alle scholen staat en niet in één school werkt — anders wijzig je een
+ * boven alle scholen staat en niet in één school werkt - anders wijzig je een
  * keer iets bij de verkeerde. Vandaar de donkere balk met "Platformbeheer" en
  * geen schoolnaam of huisstijl van een school.
  */

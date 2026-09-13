@@ -4,7 +4,7 @@
  * Voor de momenten die er voor een kind toe doen: een nieuw level, de eerste
  * foto op de kaart. Bewust kort (anderhalve seconde) en zonder bibliotheek:
  * een canvas over de pagina dat zichzelf opruimt. Wie "minder beweging" heeft
- * aanstaan krijgt niets — dan is stilte het feestje.
+ * aanstaan krijgt niets - dan is stilte het feestje.
  */
 const KLEUREN = ['#22e06b', '#d4af37', '#f1f5f9', '#60a5fa', '#f472b6'];
 

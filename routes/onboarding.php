@@ -21,6 +21,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('onboarding/rondleiding/stap', [OnboardingController::class, 'tourStep'])->name('onboarding.tour.step');
     // Het ouderscherm zoals een ouder het ziet, voor de eigenaar.
     Route::get('onboarding/ouderweergave', [OnboardingController::class, 'parentPreview'])->name('onboarding.parent-preview');
+    // Hoe een ouder zich inschrijft: de echte inschrijfpagina in een kader,
+    // en de trainingen zoals een ouder ze ziet (met "Inschrijven").
+    Route::get('onboarding/aanmeldpagina', [OnboardingController::class, 'enrollPreview'])->name('onboarding.enroll-preview');
+    Route::get('onboarding/ouderweergave/trainingen', [OnboardingController::class, 'parentTrainingsPreview'])->name('onboarding.parent-trainings');
     Route::post('onboarding/welkom/gezien', [OnboardingController::class, 'dismissIntro'])->name('onboarding.intro.dismiss');
     // De foto, meteen na het activeren van een ouder- of speleraccount.
     Route::get('welkom/foto', [PhotoPromptController::class, 'show'])->name('onboarding.photo');

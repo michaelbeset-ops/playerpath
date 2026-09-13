@@ -19,7 +19,7 @@ use Illuminate\Support\Collection;
  *
  * Per kind per training is er één woord: `group` (zit in de groep, via een
  * abonnement of de indeling van de school), `confirmed`, `requested` of
- * `waitlisted` (los aangemeld), of niets — en dan kan het misschien nog
+ * `waitlisted` (los aangemeld), of niets - en dan kan het misschien nog
  * inschrijven. Of dat kan beslist de training zelf (acceptsPlayer), hier
  * wordt alleen gekeken.
  */
@@ -33,18 +33,33 @@ class FamilyTrainings
     /**
      * @return array{children: list<array<string, mixed>>, upcoming: list<array<string, mixed>>, enrollable: list<array<string, mixed>>, past: list<array<string, mixed>>}
      */
-    public function for(User $user): array
+    /**
+     * @param  list<int>|null  $kindIds  standaard de eigen kinderen; het ouderscherm
+     *                                   voor de eigenaar geeft de voorbeeldspelers mee
+     */
+    public function for(User $user, ?array $kindIds = null): array
     {
-        $kinderen = Player::whereIn('id', $user->visiblePlayerIds())->with('groups')->orderBy('first_name')->get();
+        $kinderen = Player::whereIn('id', $kindIds ?? $user->visiblePlayerIds())->with('groups')->orderBy('first_name')->get();
         $ids = $kinderen->pluck('id')->all();
 
-        $komend = $this->visible->query($user)
+        // Een ouder ziet via VisibleTrainings al alleen de trainingen van zijn
+        // kinderen. Kijkt de eigenaar mee (het voorbeeld voor de rondleiding),
+        // dan ziet hij álles; dan begrenzen we hier op wat déze kinderen
+        // aangaat, anders staat de open training al bij "komend" en nooit bij
+        // "inschrijven".
+        $basis = fn () => $kindIds === null
+            ? $this->visible->query($user)
+            : Training::query()->with('group')->where(fn ($q) => $q
+                ->whereIn('group_id', $kinderen->flatMap(fn (Player $k) => $k->groups->pluck('id'))->unique()->all())
+                ->orWhereHas('enrollments', fn ($e) => $e->whereIn('player_id', $ids)));
+
+        $komend = $basis()
             ->with(['trainers', 'attendances' => fn ($q) => $q->whereIn('player_id', $ids), 'enrollments' => fn ($q) => $q->whereIn('player_id', $ids)->with('payment')])
             ->upcoming()
             ->limit(50)
             ->get();
 
-        $geweest = $this->visible->query($user)
+        $geweest = $basis()
             ->with(['trainers', 'attendances' => fn ($q) => $q->whereIn('player_id', $ids)])
             ->past()
             ->limit(20)

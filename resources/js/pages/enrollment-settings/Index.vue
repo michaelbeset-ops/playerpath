@@ -57,7 +57,7 @@ const afwezigheid: Record<string, string> = { none: 'geen restitutie', refund: '
 const veldStand: Record<string, string> = { off: 'niet gevraagd', optional: 'optioneel', required: 'verplicht' };
 const veldNaam: Record<string, string> = { kledingmaat: 'Kledingmaat', positie: 'Positie', niveau: 'Niveau', medisch: 'Medisch' };
 
-/** "a, b en c" — een opsomming zoals je hem zou uitspreken. */
+/** "a, b en c" - een opsomming zoals je hem zou uitspreken. */
 const opsomming = (delen: string[]) =>
     delen.length <= 1 ? (delen[0] ?? '') : delen.slice(0, -1).join(', ') + ' en ' + delen[delen.length - 1];
 

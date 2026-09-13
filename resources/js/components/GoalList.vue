@@ -79,7 +79,7 @@ const chip = (doel: Doel) => {
 };
 
 /** Van 67 naar "6,7", voor het geval een oudere melding alleen het getal heeft. */
-const cijfer = (rating: number | null) => (rating === null ? '—' : (rating / 10).toFixed(1).replace('.', ','));
+const cijfer = (rating: number | null) => (rating === null ? '-' : (rating / 10).toFixed(1).replace('.', ','));
 </script>
 
 <template>

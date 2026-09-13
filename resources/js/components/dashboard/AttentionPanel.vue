@@ -10,7 +10,7 @@ import type { Component } from 'vue';
  * opent, dus je kunt het niet verplaatsen. Wegklikken kan wel, maar dat
  * betekent "gezien": zodra er iets verandert staat het er weer.
  *
- * **Is er niets, dan staat er één regel.** "Alles loopt — niks te doen" is het
+ * **Is er niets, dan staat er één regel.** "Alles loopt - niks te doen" is het
  * antwoord op de vraag waarvoor je het dashboard opende; zwijgen laat je
  * twijfelen of je iets mist. Het blijft één rustige regel, geen vak met een
  * kopje: dat leest als een fout.
@@ -69,7 +69,7 @@ const kleuren: Record<string, { rand: string; vlak: string; tekst: string }> = {
         data-tour="attention"
     >
         <CheckCircle2 class="size-4 shrink-0" />
-        Alles loopt — niks te doen.
+        Alles loopt - niks te doen.
     </p>
 
     <section v-else class="rounded-2xl border border-warning/30 bg-warning/5 p-3 sm:p-5" aria-label="Vraagt om aandacht" data-tour="attention">

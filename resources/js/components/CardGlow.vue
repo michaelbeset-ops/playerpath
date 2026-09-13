@@ -18,7 +18,7 @@ defineProps<{
 
 <template>
     <!-- overflow-hidden met wat lucht eromheen: de gloed mag buiten de kaart
-         vallen, maar nooit buiten het scherm — anders scrolt een telefoon
+         vallen, maar nooit buiten het scherm - anders scrolt een telefoon
          zijwaarts. -->
     <div class="relative -mx-4 overflow-hidden px-4 py-5" :class="'gloed-' + level">
         <div class="gloed pointer-events-none absolute inset-0 -z-0" aria-hidden="true"></div>

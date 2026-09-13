@@ -11,7 +11,7 @@ use RuntimeException;
  *
  * Dit is de enige plek waar "welke school zijn we nu?" wordt bijgehouden.
  * De global scope leest hem uit; de middleware zet hem. Zet hem nooit ergens
- * anders op basis van invoer van de gebruiker — altijd afgeleid van de
+ * anders op basis van invoer van de gebruiker - altijd afgeleid van de
  * ingelogde gebruiker.
  */
 class Tenancy
@@ -23,7 +23,7 @@ class Tenancy
      *
      * Nodig omdat route model binding eerder in de request draait dan de
      * SetCurrentSchool-middleware: zonder dit zou een URL met een {player}
-     * altijd een 404 geven. De bron blijft dezelfde — het ingelogde account.
+     * altijd een 404 geven. De bron blijft dezelfde - het ingelogde account.
      */
     protected ?Closure $resolver = null;
 
@@ -124,7 +124,7 @@ class Tenancy
 
     /**
      * Draai een stuk code zonder school-scope. Uitsluitend voor beheer-acties
-     * (seeders, migraties, platformbeheer) — nooit in een controller.
+     * (seeders, migraties, platformbeheer) - nooit in een controller.
      *
      * @template TReturn
      *

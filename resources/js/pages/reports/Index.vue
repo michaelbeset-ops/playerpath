@@ -87,7 +87,7 @@ const gefilterd = computed(() => {
                         class="tabular flex size-12 shrink-0 items-center justify-center rounded-lg text-lg font-bold"
                         :class="speler.overall_rating ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground'"
                     >
-                        {{ speler.overall_rating ?? '—' }}
+                        {{ speler.overall_rating ?? '-' }}
                     </div>
 
                     <div class="min-w-0 flex-1">

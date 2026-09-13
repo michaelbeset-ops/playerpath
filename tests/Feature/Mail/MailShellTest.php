@@ -146,8 +146,8 @@ class MailShellTest extends TestCase
     }
 
     /**
-     * Een mail zonder school komt van PlayerPath zelf — de platformbeheerder
-     * heeft geen school — en draagt dan ons logo, met een vaste breedte. Een
+     * Een mail zonder school komt van PlayerPath zelf - de platformbeheerder
+     * heeft geen school - en draagt dan ons logo, met een vaste breedte. Een
      * school zonder eigen logo krijgt dat logo juist níét, maar haar naam.
      */
     public function test_zonder_school_staat_het_logo_van_playerpath_erboven(): void

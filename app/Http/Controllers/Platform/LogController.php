@@ -15,7 +15,7 @@ use Inertia\Response;
  *
  * Twee bronnen naast elkaar. Beheeracties zijn losse gebeurtenissen op één
  * moment; een impersonatie is een sessie met een begin en een eind. Ze delen
- * geen vorm, dus ook geen tabel — maar je wilt ze wel op één plek terugzien.
+ * geen vorm, dus ook geen tabel - maar je wilt ze wel op één plek terugzien.
  */
 class LogController extends Controller
 {

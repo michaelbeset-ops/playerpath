@@ -19,7 +19,7 @@ use InvalidArgumentException;
  * De regels van de training bepalen wat er ontstaat:
  *
  * - past het kind niet (leeftijd, positie) of is de training dicht, dan
- *   gebeurt er niets — dat is de **server-side** controle; het scherm
+ *   gebeurt er niets - dat is de **server-side** controle; het scherm
  *   verbergt alleen wat toch niet kan;
  * - is het vol, dan komt het kind op de **wachtlijst**, zonder rekening;
  * - vraagt de training om goedkeuring, dan is het een **aanvraag**, ook

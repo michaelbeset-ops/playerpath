@@ -18,7 +18,7 @@ use Tests\TestCase;
  * Het aandacht-blok wegklikken.
  *
  * Wegklikken betekent "dit heb ik gezien", niet "waarschuw me nooit meer".
- * Zodra er iets verandert staat het blok er weer — anders weet een school een
+ * Zodra er iets verandert staat het blok er weer - anders weet een school een
  * half jaar later niet dat er zeven rekeningen openstaan omdat iemand ooit op
  * een kruisje drukte.
  */

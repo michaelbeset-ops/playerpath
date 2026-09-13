@@ -20,7 +20,7 @@ use Tests\TestCase;
  *
  * Hij is personeel, geen directie: waar moet ik zijn, en wie moet ik nog
  * beoordelen. Geen omzet, geen openstaande rekeningen, geen schoolbrede
- * instellingen — dat is niet alleen "niet nuttig", het is niet van hem.
+ * instellingen - dat is niet alleen "niet nuttig", het is niet van hem.
  */
 class TrainerDashboardTest extends TestCase
 {

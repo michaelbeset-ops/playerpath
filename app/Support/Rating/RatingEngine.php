@@ -13,15 +13,15 @@ use Illuminate\Support\Carbon;
  *
  * Drie getallen, en dit is de enige plek waar ze uit elkaar volgen:
  *
- * - **Rating** — hoe goed, relatief aan de leeftijdsgroep. Komt uit de
+ * - **Rating** - hoe goed, relatief aan de leeftijdsgroep. Komt uit de
  *   rapporten via CalculatePlayerCard en wordt naar boven afgerond. Het cijfer
  *   van de trainer wordt nooit achteraf gecorrigeerd op leeftijd: hij beoordeelt
  *   al relatief ("een goede 7 voor een O12"), en een kaart die afwijkt van wat
  *   hij opschreef vertrouwt niemand meer.
- * - **XP** — inzet. Daalt nooit. Komt uit aanwezig zijn en uit rapporten, en
+ * - **XP** - inzet. Daalt nooit. Komt uit aanwezig zijn en uit rapporten, en
  *   uit groei tussen twee rapporten. Trouw komen brengt je naar goud, ook zonder
  *   talent; dat is het stimuleringsdeel.
- * - **Level** — brons, zilver, goud, elite. Puur op XP, met per school
+ * - **Level** - brons, zilver, goud, elite. Puur op XP, met per school
  *   eventueel een minimale rating als extra eis (standaard uit). Het level zie
  *   je aan het frame van de kaart; de rating aan het getal.
  *
@@ -44,7 +44,7 @@ class RatingEngine
      * Het level bij deze XP, en eventueel deze rating.
      *
      * Het hoogste level waarvan de drempel is gehaald. Vereist een level ook
-     * een minimale rating en is die er niet, dan telt het niet — je zakt dan
+     * een minimale rating en is die er niet, dan telt het niet - je zakt dan
      * naar het level eronder, niet naar brons.
      *
      * @return array{key: string, label: string, xp: int, min_rating: int|null}
@@ -195,7 +195,7 @@ class RatingEngine
      *
      * Groei is het verschil in rapportgemiddelde met het vorige rapport, per
      * punt op de kaartschaal, met een plafond. Achteruitgang levert geen
-     * minpunten op — XP meet inzet, en een rapport invullen is inzet.
+     * minpunten op - XP meet inzet, en een rapport invullen is inzet.
      */
     public function xpForReport(?int $vorigGemiddelde, ?int $nieuwGemiddelde, RatingSettings $settings): array
     {
@@ -222,7 +222,7 @@ class RatingEngine
      * De categorie vaststellen, en bij een overgang de oude kaart bewaren.
      *
      * Een speler die van O12 naar O14 gaat krijgt een hogere lat. Zijn kaart
-     * stort niet in — de demping over de laatste rapporten vangt dat op — maar
+     * stort niet in - de demping over de laatste rapporten vangt dat op - maar
      * de oude kaart hoort niet te verdwijnen. Die wordt hier als seizoenskaart
      * weggeschreven, één keer, en daarna wisselt de categorie.
      *

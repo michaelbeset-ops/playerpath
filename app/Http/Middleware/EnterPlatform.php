@@ -29,7 +29,7 @@ class EnterPlatform
 
         // Eerst de impersonatie, dán de rol. Andersom zou deze controle nooit
         // afgaan: tijdens het bekijken ben je de schoolgebruiker en val je al
-        // op de rolcontrole af — met een 404 die niets uitlegt. Nu krijgt de
+        // op de rolcontrole af - met een 404 die niets uitlegt. Nu krijgt de
         // beheerder die per ongeluk terugklikt een melding waar hij iets aan
         // heeft, en blijft de scope net zo goed dicht.
         abort_if(
@@ -48,7 +48,7 @@ class EnterPlatform
     /**
      * Na afloop de scope weer dichtzetten.
      *
-     * In een gewone webrequest maakt dit niets uit — die krijgt toch een verse
+     * In een gewone webrequest maakt dit niets uit - die krijgt toch een verse
      * container. Maar in een langlevend proces (tests, Octane) zou de stand
      * blijven hangen, en dan draait het volgende stuk werk met de scope open.
      * Dat is precies het soort lek dat je pas ontdekt als er data van de

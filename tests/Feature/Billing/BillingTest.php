@@ -53,7 +53,7 @@ class BillingTest extends TestCase
         $this->assertSame('€ 12,50', Money::format(1250));
         $this->assertSame('€ 2.750,00', Money::format(275000));
         $this->assertSame('€ 0,00', Money::format(0));
-        $this->assertSame('—', Money::format(null));
+        $this->assertSame('-', Money::format(null));
     }
 
     public function test_een_bedrag_van_12_50_wordt_geen_1249_centen(): void
@@ -360,7 +360,7 @@ class BillingTest extends TestCase
 
         $this->assertDatabaseCount('subscriptions', 1);
 
-        // Er ontstaat wel een vordering — anders weet een school die per
+        // Er ontstaat wel een vordering - anders weet een school die per
         // overboeking int niet wie er nog moet betalen. Maar hij staat open:
         // er is geen cent verplaatst en niets doet alsof.
         $this->assertDatabaseCount('payments', 1);

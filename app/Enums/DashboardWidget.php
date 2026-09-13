@@ -132,7 +132,7 @@ enum DashboardWidget: string
      * Van de eigenaar; een trainer krijgt het niet eens aangeboden.
      *
      * Niet alleen geld: ook de schoolbrede cijfers en het ontwikkelingsoverzicht.
-     * Een trainer is personeel en ziet zijn eigen werk — hoeveel spelers de
+     * Een trainer is personeel en ziet zijn eigen werk - hoeveel spelers de
      * school heeft en wat het gemiddelde is, is informatie over het bedrijf.
      * Wat een trainer overhoudt: zijn trainingen, zijn spelers, en de
      * verjaardagen van zijn spelers.
@@ -151,7 +151,7 @@ enum DashboardWidget: string
      * Een eigenaar pakt zijn telefoon om in tien seconden te zien hoe het
      * ervoor staat en of er iets moet gebeuren; de analyse doet hij op zijn
      * laptop. Alles wat alleen informatie geeft zonder tot een handeling te
-     * leiden hoort daar dus niet op dat kleine scherm — niet omdat het
+     * leiden hoort daar dus niet op dat kleine scherm - niet omdat het
      * onbelangrijk is, maar omdat het de twee dingen wegdrukt die dat wel zijn.
      *
      * Wat hier op `false` staat verdwijnt niet: het staat op het grote scherm,
@@ -165,7 +165,7 @@ enum DashboardWidget: string
     public function onMobile(): bool
     {
         return match ($this) {
-            // "Hoeveel spelers heb ik" en "wat kwam er binnen" — de twee
+            // "Hoeveel spelers heb ik" en "wat kwam er binnen" - de twee
             // cijfers waar een eigenaar op stuurt.
             self::KpiPlayers, self::KpiRevenue => true,
             // "Wat staat er te gebeuren", en voor wie zelf traint: zijn werk.

@@ -11,7 +11,7 @@ import { computed } from 'vue';
  * Afrekenen via een link uit een e-mail, zonder in te loggen.
  *
  * Bewust kaal: één bedrag, één knop. Er staat niets op wat niet nodig is om te
- * betalen — geen achternaam, geen geboortedatum, geen andere rekeningen.
+ * betalen - geen achternaam, geen geboortedatum, geen andere rekeningen.
  */
 const props = defineProps<{
     payment: { description: string; amount: string; due_on: string; paid: boolean; player: string | null };

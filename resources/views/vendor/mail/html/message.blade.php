@@ -1,7 +1,7 @@
 @props(['merk' => null, 'preheader' => null])
 @php($m = \App\Support\Mail\MailBrand::resolve($merk))
 <x-mail::layout :preheader="$preheader">
-{{-- Kop: het logo van de school, of haar naam. Nooit dat van PlayerPath —
+{{-- Kop: het logo van de school, of haar naam. Nooit dat van PlayerPath -
      de ouder heeft zich bij haar aangemeld, niet bij ons. --}}
 <x-slot:header>
 <x-mail::header :url="$m['url']" :merk="$m">

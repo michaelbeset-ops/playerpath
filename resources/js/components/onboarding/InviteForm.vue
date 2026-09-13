@@ -9,7 +9,7 @@ import { computed, ref } from 'vue';
  *
  * Bulk is hier geen luxe. Een school die overstapt heeft honderd ouders, en die
  * één voor één toevoegen is het soort werk waarna iemand besluit het toch maar
- * niet te doen. Vandaar één tekstvak met een regel per persoon — dat is wat
+ * niet te doen. Vandaar één tekstvak met een regel per persoon - dat is wat
  * mensen tóch al plakken uit een spreadsheet of een groepsapp.
  *
  * Drie dingen die dit bruikbaar houden:
@@ -51,7 +51,7 @@ const form = useForm<{ role: string; recipients: string; player_ids: number[]; r
 });
 
 // Het gewone geval is één persoon: naam en e-mailadres, klaar. De lijst voor
-// meerdere tegelijk en de relatie zitten achter "Meer opties" — het formulier
+// meerdere tegelijk en de relatie zitten achter "Meer opties" - het formulier
 // nam een half scherm in voor iets wat meestal twee velden is.
 const naam = ref('');
 const email = ref('');

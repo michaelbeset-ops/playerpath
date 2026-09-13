@@ -8,7 +8,7 @@ use App\Models\User;
 /**
  * Je beschikbaarheid is van jou.
  *
- * De eigenaar mag hem inzien — hij maakt er zijn planning op — maar niemand
+ * De eigenaar mag hem inzien - hij maakt er zijn planning op - maar niemand
  * vult hem voor een ander in. "Jij kan die zaterdag wél" is geen mededeling die
  * een systeem hoort te doen.
  */

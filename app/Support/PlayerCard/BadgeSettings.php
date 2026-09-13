@@ -126,7 +126,7 @@ class BadgeSettings
 
     /**
      * Eigen mijlpalen opschonen: een naam is verplicht, en elke mijlpaal krijgt
-     * een vaste sleutel die hij daarna houdt — daar hangen de toekenningen aan.
+     * een vaste sleutel die hij daarna houdt - daar hangen de toekenningen aan.
      * Een mijlpaal hernoemen mag dus zonder dat iemand zijn badge kwijtraakt.
      *
      * @return list<array{key: string, label: string, description: string}>

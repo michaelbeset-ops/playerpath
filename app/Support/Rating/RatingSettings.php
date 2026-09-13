@@ -20,7 +20,7 @@ use App\Models\School;
  *
  * - **Aanwezig: 10 XP.** Wie een seizoen lang elke week komt zit rond de 400,
  *   en dat is precies goud. Trouw komen brengt je dus naar goud, ook zonder
- *   talent — dat is het stimuleringsdeel.
+ *   talent - dat is het stimuleringsdeel.
  * - **Rapport: 5 XP**, plus **2 XP per punt groei** ten opzichte van het vorige
  *   rapport, tot 30. Groei telt, maar niet zó zwaar dat één goede dag een level
  *   is.

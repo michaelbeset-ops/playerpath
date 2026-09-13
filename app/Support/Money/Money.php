@@ -3,7 +3,7 @@
 namespace App\Support\Money;
 
 /**
- * Bedragen zijn overal integers in centen — nooit floats. Zie CLAUDE.md 3.2.
+ * Bedragen zijn overal integers in centen - nooit floats. Zie CLAUDE.md 3.2.
  *
  * Deze klasse doet één ding: centen omzetten naar iets wat een mens leest, en
  * omgekeerd. Rekenen gebeurt altijd in centen; alleen de weergave is euro's.
@@ -14,7 +14,7 @@ class Money
     public static function format(?int $cents): string
     {
         if ($cents === null) {
-            return '—';
+            return '-';
         }
 
         $negatief = $cents < 0;

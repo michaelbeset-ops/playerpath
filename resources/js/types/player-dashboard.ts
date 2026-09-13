@@ -2,7 +2,7 @@
  * De vorm van het spelerdashboard.
  *
  * Eén bestand, gedeeld door de pagina die de props ontvangt en het blok dat ze
- * tekent — net als bij het ouder-dashboard.
+ * tekent - net als bij het ouder-dashboard.
  */
 import type { Kaart } from '@/components/PlayerCardVisual.vue';
 import type { FamilyTraining } from '@/types/family';

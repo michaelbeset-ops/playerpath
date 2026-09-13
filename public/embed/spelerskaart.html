@@ -12,7 +12,7 @@
  *
  * Gebruik: kopieer dit hele bestand, of alleen de <style>, de <script> en
  * een <div class="pp-kaart" data-kaart="..."></div>. De gegevens van een
- * kaart staan in het data-kaart-attribuut (JSON) — zie de voorbeelden
+ * kaart staan in het data-kaart-attribuut (JSON) - zie de voorbeelden
  * onderaan. Niets hiervan praat met PlayerPath: het zijn verzonnen kaarten
  * voor je site, geen echte kinderen.
  */
@@ -811,7 +811,7 @@
       var label = c[0], rating = c[1], delta = c[2] || 0;
       return '<div class="pp-stat"><div class="pp-stat-regel"><span class="pp-stat-label">' + esc(label) + '</span>' +
         (delta ? '<span class="pp-delta tabular ' + (delta > 0 ? 'pp-delta-op' : 'pp-delta-af') + '">' + (delta > 0 ? '▲' + delta : '▼' + Math.abs(delta)) + '</span>' : '') +
-        '<span class="pp-stat-cijfer tabular">' + (rating == null ? '—' : rating) + '</span></div>' +
+        '<span class="pp-stat-cijfer tabular">' + (rating == null ? '-' : rating) + '</span></div>' +
         '<div class="pp-balk"><div class="pp-balk-vulling" style="width:' + (rating || 0) + '%"></div></div></div>';
     }).join('');
     var badges = (k.badges || []).slice(0, 3).map(function (b) {
@@ -826,7 +826,7 @@
       '<div class="pp-binnen"><div class="pp-foto-vak">' +
       (k.photo ? '<img src="' + esc(k.photo) + '" alt="" class="pp-foto">' : '<div class="pp-silhouet"><span class="pp-silhouet-icoon">' + icon('user') + '</span></div>') +
       '<div class="pp-foto-fade" aria-hidden="true"></div><p class="pp-merk">PlayerPath</p>' +
-      '<div class="pp-overall-blok"><p class="pp-overall tabular">' + (k.overall == null ? '—' : k.overall) + '</p>' +
+      '<div class="pp-overall-blok"><p class="pp-overall tabular">' + (k.overall == null ? '-' : k.overall) + '</p>' +
       '<p class="pp-positie">' + icon(k.position === 'keeper' ? 'hand' : 'shirt') + (k.position === 'keeper' ? 'Keeper' : 'Veldspeler') + '</p>' +
       (k.age_category ? '<p class="pp-categorie">' + esc(k.age_category) + '</p>' : '') + '</div>' +
       (k.shirt_number ? '<p class="pp-rugnummer tabular">' + esc(k.shirt_number) + '</p>' : '') +

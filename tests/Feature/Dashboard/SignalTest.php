@@ -155,7 +155,7 @@ class SignalTest extends TestCase
             );
 
         // Haalt de eigenaar die tegel weg, dan verschijnt de omzet in het
-        // financiële vak — anders ziet hij hem nergens meer.
+        // financiële vak - anders ziet hij hem nergens meer.
         $this->actingAs($this->eigenaar)->patch('/dashboard/indeling', [
             'widgets' => [
                 ['key' => 'finance', 'x' => 0, 'y' => 0, 'w' => 6],

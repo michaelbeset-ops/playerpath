@@ -53,7 +53,7 @@ const openstaandKleur = computed(() => toneText[props.data.outstandingTone]);
 
             <div :class="data.revenue ? 'border-t border-border pt-3' : ''">
                 <p class="tabular text-xl font-bold leading-none" :class="data.outstandingCount ? openstaandKleur : 'text-muted-foreground/60'">
-                    {{ data.outstandingCount ? data.outstanding : '—' }}
+                    {{ data.outstandingCount ? data.outstanding : '-' }}
                 </p>
                 <p class="mt-1 text-xs text-muted-foreground">
                     openstaand<template v-if="data.outstandingCount">

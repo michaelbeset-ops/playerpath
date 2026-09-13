@@ -19,7 +19,7 @@ use Mollie\Api\Resources\Payment as MolliePayment;
  *
  * 1. **Het bedrag.** Mollie wil een string met twee decimalen ("12.50"), wij
  *    bewaren centen. Die omzetting gaat via intdiv en het rekenkundige restant,
- *    nooit via een float — 1250 / 100 is in floating point niet exact 12,50.
+ *    nooit via een float - 1250 / 100 is in floating point niet exact 12,50.
  * 2. **De status.** Mollie kent meer toestanden dan wij. Alles wat geen geld
  *    heeft opgeleverd en niet meer gaat opleveren (mislukt, verlopen,
  *    geannuleerd) valt bij ons onder "mislukt", zodat de eigenaar het terugziet
@@ -153,7 +153,7 @@ class MollieGateway implements PaymentGateway
         );
     }
 
-    /** 1250 => "12.50" — via centen, nooit via een float. */
+    /** 1250 => "12.50" - via centen, nooit via een float. */
     public static function toAmount(int $cents): string
     {
         return sprintf('%d.%02d', intdiv($cents, 100), abs($cents % 100));

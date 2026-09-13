@@ -18,7 +18,7 @@ use Tests\TestCase;
  *
  * Wie de foto van een kind mag zetten is hier de kern: de eigenaar, de ouders
  * van dít kind, en het kind zelf als het een eigen inlog heeft. Niemand
- * anders — een foto van een kind is niet iets wat je bij een ander neerzet.
+ * anders - een foto van een kind is niet iets wat je bij een ander neerzet.
  */
 class PhotoPromptTest extends TestCase
 {

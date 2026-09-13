@@ -20,7 +20,7 @@ const props = withDefaults(
         href?: string;
         /**
          * Wat de waarde betekent. Groen leest als "goed", dus een cijfer dat om
-         * actie vraagt mag nooit groen zijn — dan zegt kleur het tegendeel van
+         * actie vraagt mag nooit groen zijn - dan zegt kleur het tegendeel van
          * wat er staat.
          */
         tone?: 'default' | 'warning' | 'danger';
@@ -65,7 +65,7 @@ const kleuren = computed(() => {
                 <p class="text-xs font-medium leading-snug text-muted-foreground sm:text-sm">{{ label }}</p>
                 <!-- Nooit afbreken: "€ 806,50" viel op een telefoon in twee regels, met het euroteken alleen. -->
                 <p class="tabular mt-1.5 whitespace-nowrap text-2xl font-bold leading-none sm:mt-2 sm:text-3xl" :class="kleuren.tekst">
-                    {{ heeftWaarde ? value : '—' }}
+                    {{ heeftWaarde ? value : '-' }}
                 </p>
             </div>
 

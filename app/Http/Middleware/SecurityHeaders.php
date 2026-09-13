@@ -21,11 +21,11 @@ class SecurityHeaders
         $response = $next($request);
 
         // De app mag niet in een iframe van iemand anders staan: dat is hoe
-        // clickjacking werkt — een onzichtbare knop over die van jou heen.
+        // clickjacking werkt - een onzichtbare knop over die van jou heen.
         //
         // Eén uitzondering: de aanmeldpagina. Die is bedoeld om op de eigen
         // website van de school te zetten, en daar staat niets achter een
-        // sessie — geen inlog, geen gegevens van anderen, alleen een formulier
+        // sessie - geen inlog, geen gegevens van anderen, alleen een formulier
         // dat een inschrijving oplevert. Clickjacking valt daar niets mee te
         // winnen, en zonder deze uitzondering blijft het iframe leeg.
         if (! $request->routeIs('enroll.*')) {

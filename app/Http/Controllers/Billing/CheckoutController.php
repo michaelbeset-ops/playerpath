@@ -21,7 +21,7 @@ use Throwable;
  *
  * De keten is met opzet kort: wij maken een betaling bij de provider aan,
  * sturen de ouder daarheen, en wachten daarna op de webhook. Wat de browser
- * bij terugkomst zegt gebruiken we alleen om het scherm te verversen — nooit
+ * bij terugkomst zegt gebruiken we alleen om het scherm te verversen - nooit
  * om iets op betaald te zetten.
  */
 class CheckoutController extends Controller

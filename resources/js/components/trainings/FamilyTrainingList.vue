@@ -6,7 +6,7 @@ import { Banknote, CalendarPlus, ChevronRight, MapPin, UserCog, Users } from 'lu
 import { computed, ref } from 'vue';
 
 /**
- * De trainingen van een gezin: komend, inschrijven, geweest — per kind.
+ * De trainingen van een gezin: komend, inschrijven, geweest - per kind.
  *
  * Bij meer dan één kind staat er een wisselaar bovenaan; elke stapel is dan
  * de stapel van dát kind. Zo hoeft een ouder met twee kinderen op twee
@@ -59,10 +59,12 @@ const props = defineProps<{
     enrollable: GezinsTraining[];
     past: GezinsTraining[];
     canEnroll: boolean;
+    /** Welke stapel open staat bij het laden; de rondleiding opent "Inschrijven". */
+    startTab?: 'upcoming' | 'enrollable' | 'past';
 }>();
 
 const kind = ref<number>(props.children[0]?.id ?? 0);
-const tab = ref<'upcoming' | 'enrollable' | 'past'>('upcoming');
+const tab = ref<'upcoming' | 'enrollable' | 'past'>(props.startTab ?? 'upcoming');
 
 const voor = (t: GezinsTraining) => t.children.find((k) => k.id === kind.value);
 

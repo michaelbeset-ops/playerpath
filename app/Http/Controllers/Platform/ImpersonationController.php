@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Auth;
  *
  * Onmisbaar voor support: "het werkt niet bij mij" is pas op te lossen als je
  * ziet wat zij ziet. Maar het is ook het gevoeligste dat er in dit product zit
- * — je kijkt in de gegevens van andermans kinderen. Vandaar vier voorwaarden,
+ * - je kijkt in de gegevens van andermans kinderen. Vandaar vier voorwaarden,
  * en geen ervan is optioneel:
  *
  * 1. **Alleen de platformbeheerder** kan het starten.

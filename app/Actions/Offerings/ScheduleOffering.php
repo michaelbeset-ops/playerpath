@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
  * Hier zit de knoop tussen het nieuwe begrip "aanbod" en alles wat er al was.
  * Een blok, een kamp of een small group krijgt **een gewone groep**, en de
  * trainingen hangen daaronder. Daardoor blijven aanwezigheid, rapporten, de
- * agenda en Mijn trainingen werken zoals ze altijd al deden — er is geen tweede
+ * agenda en Mijn trainingen werken zoals ze altijd al deden - er is geen tweede
  * soort training bijgekomen die overal apart behandeld moet worden.
  *
  * Drie afspraken die je niet moet omdraaien:

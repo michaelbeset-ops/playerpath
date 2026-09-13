@@ -119,7 +119,7 @@ class Goal extends Model
     /**
      * "6,7" → 67. Een trainer denkt in rapportcijfers met één decimaal; de
      * kaart rekent in hele punten van 0 tot 100. Dat is precies maal tien, dus
-     * er gaat niets verloren — daarom hoeft de kolom niet decimaal te worden.
+     * er gaat niets verloren - daarom hoeft de kolom niet decimaal te worden.
      */
     public static function ratingFromGrade(string $cijfer): int
     {

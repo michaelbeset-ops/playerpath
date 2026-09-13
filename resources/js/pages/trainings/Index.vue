@@ -42,6 +42,8 @@ const props = defineProps<{
     isParticipant: boolean;
     /** Ouder: mag inschrijven. Een speler met eigen inlog kijkt alleen. */
     canEnroll?: boolean;
+    /** De eigenaar kijkt mee met een ouder (rondleiding). */
+    preview?: boolean;
     /** Alleen voor een gezin: de kinderen en wat er nog open staat. */
     children?: { id: number; first_name: string }[];
     enrollable?: GezinsTraining[];
@@ -159,15 +161,30 @@ const toonKlasse = (toon: 'goed' | 'aandacht' | 'rustig') =>
                 </Link>
             </div>
 
+            <!-- De eigenaar kijkt mee met een ouder: zeg dat erbij. -->
+            <div v-if="preview" class="mt-5 rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm">
+                <p class="font-medium">Zo ziet een ouder de trainingen</p>
+                <p class="text-xs text-muted-foreground">
+                    Drie stapels per kind: komend, waar je nog bij kunt, en geweest. Onder "Inschrijven" meldt een ouder zijn kind met één tik aan
+                    voor een losse training en kiest hij hoe hij betaalt: online of contant bij de school. Dit is een voorbeeld met de
+                    voorbeeldspelers; inschrijven zelf werkt hier niet.
+                </p>
+                <Link href="/dashboard" class="mt-2 inline-flex min-h-11 items-center text-xs font-medium text-primary underline underline-offset-4">
+                    Terug naar mijn dashboard
+                </Link>
+            </div>
+
             <!-- Ouder en speler: drie stapels per kind. Zie FamilyTrainingList. -->
-            <FamilyTrainingList
-                v-if="isParticipant"
-                :children="children ?? []"
-                :upcoming="upcoming as unknown as GezinsTraining[]"
-                :enrollable="enrollable ?? []"
-                :past="past as unknown as GezinsTraining[]"
-                :can-enroll="canEnroll ?? false"
-            />
+            <div v-if="isParticipant" data-tour="family-trainings" :class="{ 'pointer-events-none': preview }">
+                <FamilyTrainingList
+                    :children="children ?? []"
+                    :upcoming="upcoming as unknown as GezinsTraining[]"
+                    :enrollable="enrollable ?? []"
+                    :past="past as unknown as GezinsTraining[]"
+                    :can-enroll="canEnroll ?? false"
+                    :start-tab="preview && enrollable?.length ? 'enrollable' : undefined"
+                />
+            </div>
 
             <template v-else>
                 <!-- Komend / geweest -->

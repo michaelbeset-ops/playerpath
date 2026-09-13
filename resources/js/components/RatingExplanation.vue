@@ -4,11 +4,11 @@ import { Dialog, DialogDescription, DialogScrollContent, DialogTitle } from '@/c
 import { computed } from 'vue';
 
 /**
- * "Hoe werkt mijn rating?" — de uitleg bij de kaart.
+ * "Hoe werkt mijn rating?" - de uitleg bij de kaart.
  *
  * Geschreven voor een kind en zijn ouder, in korte alinea's. De trainer krijgt
- * er een blok bij over hoe hij scoort, want de belangrijkste regel — beoordeel
- * ten opzichte van wat normaal is voor deze leeftijd — is er een die hij elke
+ * er een blok bij over hoe hij scoort, want de belangrijkste regel - beoordeel
+ * ten opzichte van wat normaal is voor deze leeftijd - is er een die hij elke
  * keer opnieuw moet toepassen.
  *
  * Het paneel is bewust donker, ook binnen de lichte admin-schil: het hoort bij

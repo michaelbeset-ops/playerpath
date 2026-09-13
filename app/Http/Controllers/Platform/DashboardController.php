@@ -20,8 +20,8 @@ use Inertia\Response;
  * Dezelfde regel als op het schooldashboard: alleen cijfers die echt bestaan.
  *
  * De omzet is wat de pakketten van de *actieve* scholen per maand waard zijn,
- * exclusief btw. Dat is geen gefactureerd bedrag — PlayerPath stuurt zichzelf
- * nog geen rekeningen — maar wel een getal dat ergens op slaat: elke euro
+ * exclusief btw. Dat is geen gefactureerd bedrag - PlayerPath stuurt zichzelf
+ * nog geen rekeningen - maar wel een getal dat ergens op slaat: elke euro
  * erin hoort bij een school die bestaat en aan staat. Een school zonder
  * pakket telt voor niets mee en wordt apart genoemd, want anders zou het
  * cijfer stilzwijgend te laag zijn zonder dat je weet waarom.
@@ -32,7 +32,7 @@ class DashboardController extends Controller
     {
         $this->authorize('platform.access');
 
-        // In centen optellen, pas bij weergave naar euro's — zie CLAUDE.md 3.2.
+        // In centen optellen, pas bij weergave naar euro's - zie CLAUDE.md 3.2.
         $mrrCents = School::query()
             ->where('is_active', true)
             ->whereNotNull('package')
@@ -54,7 +54,7 @@ class DashboardController extends Controller
                 'withoutPackage' => School::where('is_active', true)->whereNull('package')->count(),
             ],
             // Scholen die opvallen: leeg, of al een tijd zonder rapport. Dat is
-            // waar je als platform iets aan hebt — een school die stilvalt zegt
+            // waar je als platform iets aan hebt - een school die stilvalt zegt
             // je meer dan een school die het goed doet.
             'attention' => School::query()
                 ->where('is_active', true)

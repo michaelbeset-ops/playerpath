@@ -106,7 +106,7 @@ class ExportWriter
             // De kop: school, titel en periode. Over de volle breedte, zodat
             // een lange schoolnaam niet in kolom A klem zit.
             $writer->addRow(Row::fromValuesWithStyle([$school ?? config('app.name')], $kop));
-            $writer->addRow(Row::fromValuesWithStyle([$export->title().' — '.$sheet->title.'  ·  '.$periode.'  ·  gemaakt op '.now()->format('d-m-Y H:i')], $subkop));
+            $writer->addRow(Row::fromValuesWithStyle([$export->title().' - '.$sheet->title.'  ·  '.$periode.'  ·  gemaakt op '.now()->format('d-m-Y H:i')], $subkop));
             $writer->addRow(Row::fromValues(['']));
 
             if ($aantalKolommen > 1) {

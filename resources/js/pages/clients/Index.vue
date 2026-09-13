@@ -176,7 +176,7 @@ const klap = (id: number) => {
                                 :class="speler.overall_rating ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground'"
                                 :title="speler.overall_rating ? 'Rating op de spelerskaart' : 'Nog geen rapport, dus nog geen rating'"
                             >
-                                {{ speler.overall_rating ?? '—' }}
+                                {{ speler.overall_rating ?? '-' }}
                             </span>
 
                             <span class="min-w-0 flex-1">
@@ -215,7 +215,7 @@ const klap = (id: number) => {
                                 class="tabular flex size-11 shrink-0 items-center justify-center rounded-lg text-base font-bold sm:hidden"
                                 :class="speler.overall_rating ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground'"
                             >
-                                {{ speler.overall_rating ?? '—' }}
+                                {{ speler.overall_rating ?? '-' }}
                             </span>
                         </Link>
 

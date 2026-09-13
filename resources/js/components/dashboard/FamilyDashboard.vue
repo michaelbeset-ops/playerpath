@@ -30,7 +30,7 @@ const levelRand: Record<string, string> = {
 <template>
     <!-- Alles leeg: dat is precies de eerste keer dat een ouder inlogt. Losse
          lege blokken laten we weg (dat is de regel), maar een scherm zonder
-         iets is geen scherm — dan staat er één regel die zegt wat er komt. -->
+         iets is geen scherm - dan staat er één regel die zegt wat er komt. -->
     <div
         v-if="!upcoming.length && !children.length && !offerings.length && !messages.length"
         class="rounded-2xl border border-border bg-card p-6 text-center shadow-sm"
@@ -131,7 +131,7 @@ const levelRand: Record<string, string> = {
                         </span>
 
                         <span class="shrink-0 text-right">
-                            <span class="tabular block text-2xl font-bold leading-none">{{ kind.overall ?? '—' }}</span>
+                            <span class="tabular block text-2xl font-bold leading-none">{{ kind.overall ?? '-' }}</span>
                             <span
                                 v-if="kind.growth !== null && kind.growth !== 0"
                                 class="tabular mt-0.5 flex items-center justify-end gap-0.5 text-xs font-medium"

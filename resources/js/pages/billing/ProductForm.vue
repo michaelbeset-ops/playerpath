@@ -185,9 +185,9 @@ const verwijderen = () => {
 };
 
 const btwTarieven = [
-    { waarde: 21, label: '21% — algemeen tarief' },
-    { waarde: 9, label: '9% — laag tarief, geldt vaak voor sportlessen' },
-    { waarde: 0, label: '0% — vrijgesteld' },
+    { waarde: 21, label: '21% - algemeen tarief' },
+    { waarde: 9, label: '9% - laag tarief, geldt vaak voor sportlessen' },
+    { waarde: 0, label: '0% - vrijgesteld' },
 ];
 
 const veldKlassen = 'h-11 w-full rounded-lg border border-input bg-background px-3 text-base outline-none focus:border-primary sm:text-sm';

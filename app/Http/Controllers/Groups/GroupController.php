@@ -18,7 +18,7 @@ use Inertia\Response;
  * Groepen: waar je op plant, afvinkt en beoordeelt.
  *
  * Een groep is de knoop tussen spelers en trainingen. De detailpagina is de
- * plek waar je spelers erin zet en eruit haalt — met zoeken en meerdere
+ * plek waar je spelers erin zet en eruit haalt - met zoeken en meerdere
  * tegelijk, want een school die overstapt zet er twintig in één keer in. Vanaf
  * de speler kan het ook (zijn bewerkscherm); allebei schrijven ze dezelfde
  * koppeltabel, dus er is geen tweede waarheid.

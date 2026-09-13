@@ -10,13 +10,13 @@ namespace App\Support\Exports;
  * knoppen en het schrijven naar CSV of Excel zijn generiek.
  *
  * Zo komt het betalingsoverzicht er later bij als één klasse, zodra Mollie
- * is aangesloten — zonder aan het scherm of de writer te hoeven zitten.
+ * is aangesloten - zonder aan het scherm of de writer te hoeven zitten.
  *
  * Regels voor rows():
  * - alleen data van de actieve school (de global scope regelt dat, maar
  *   gebruik geen withoutSchoolScope);
  * - geld altijd in centen ophalen en pas hier omzetten naar een bedrag in
- *   euro's als getal (12.5), nooit als tekst met een euroteken — anders kan
+ *   euro's als getal (12.5), nooit als tekst met een euroteken - anders kan
  *   Excel er niet mee rekenen;
  * - datums als d-m-Y, tijden als H:i.
  */

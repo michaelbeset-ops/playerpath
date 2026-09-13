@@ -7,7 +7,7 @@ import { MapPin, UserCog } from 'lucide-vue-next';
  *
  * Op een telefoon is dit het antwoord op "moet ik ergens zijn", en dan wil je
  * vier dingen zien zonder te tikken: wanneer, welke groep, waar, en wie erbij
- * staat. Dat laatste juist ook als het antwoord "geen trainer" is — dat is het
+ * staat. Dat laatste juist ook als het antwoord "geen trainer" is - dat is het
  * gat in de planning waar een eigenaar iets aan moet doen.
  *
  * De dag staat als blokje links in plaats van als zin in de regel eronder: zo

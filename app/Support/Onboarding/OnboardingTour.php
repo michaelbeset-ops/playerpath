@@ -9,12 +9,12 @@ use App\Models\Training;
 use App\Support\Features\Features;
 
 /**
- * De rondleiding: veertien schermen, één uitleg per scherm.
+ * De rondleiding: zestien schermen, één uitleg per scherm.
  *
  * Hij loopt door de echte app, niet door plaatjes ervan: elke stap heeft een
  * adres en een anker op dat scherm, en de voorbeelddata zorgt dat er iets te
  * zien is. Vandaar dat de stappen hier op de server worden opgebouwd en niet in
- * de browser — het adres van "een gevulde spelerskaart" is het adres van een
+ * de browser - het adres van "een gevulde spelerskaart" is het adres van een
  * echte voorbeeldspeler, en welke functies deze school heeft bepaalt welke
  * stappen er überhaupt zijn.
  *
@@ -56,7 +56,7 @@ class OnboardingTour
                 'url' => '/dashboard',
                 'anchor' => null,
                 'title' => 'Welkom bij PlayerPath',
-                'body' => 'Hier plan je trainingen, beoordelen je trainers de spelers, en zien ouders hoe hun kind vooruitgaat. In veertien korte stappen laten we zien waar alles staat.',
+                'body' => 'Hier plan je trainingen, beoordelen je trainers de spelers, en zien ouders hoe hun kind vooruitgaat. In een paar korte stappen laten we zien waar alles staat.',
                 'tip' => 'Je kunt tijdens de rondleiding gewoon klikken en scrollen. Dit kaartje blijft staan tot je op Volgende drukt, en met het pijltje klap je het even weg.',
             ],
             [
@@ -123,16 +123,33 @@ class OnboardingTour
                 'body' => 'Zo ziet een ouder de app: de eerstvolgende trainingen, het kaartje van zijn kind en wat er nog betaald moet worden. Geen instellingen, niets in te vullen. Dit is wat je laat zien als je ouders wilt overtuigen.',
                 'tip' => 'Dit is een voorbeeld, met de voorbeeldspelers als kinderen. Een echte ouder ziet alleen zijn eigen kind.',
             ],
+            [
+                'key' => 'ouder-trainingen',
+                'url' => '/onboarding/ouderweergave/trainingen',
+                'anchor' => 'family-trainings',
+                'title' => 'Zo schrijft een ouder in voor een training',
+                'body' => 'Een ouder ziet per kind drie stapels: komende trainingen, trainingen waar zijn kind nog bij kan, en wat geweest is. Onder "Inschrijven" meldt hij zijn kind met één tik aan voor een losse training en kiest hij hoe hij betaalt: online, of contant bij de school.',
+                'tip' => 'Per training bepaal jij of er los ingeschreven mag worden, voor welke leeftijd, hoeveel plekken er zijn en wat het kost. De standaard daarvoor stel je straks in de wizard in.',
+            ],
         ];
 
         if ($this->features->enabled(Feature::Inschrijvingen, $school)) {
+            $stappen[] = [
+                'key' => 'aanmeldpagina',
+                'url' => '/onboarding/aanmeldpagina',
+                'anchor' => 'enroll-page',
+                'title' => 'Je eigen inschrijfpagina',
+                'body' => 'Dit is de pagina die je op je website zet of aan ouders stuurt. Een ouder ziet je aanbod (blokken, abonnementen, kampen, een proefles), kiest er een, vult de gegevens van zijn kind in en kiest hoe hij betaalt: online, of contant bij de school. Daarna komt de aanmelding bij jou binnen.',
+                'tip' => 'Wat er op deze pagina staat, bepaal je zelf onder Mijn bedrijf → Aanbod. Zet er alvast een proefles op: dat is de laagste drempel voor een nieuwe ouder.',
+            ];
+
             $stappen[] = [
                 'key' => 'inschrijven',
                 'url' => '/enrollments',
                 'anchor' => 'enrollments',
                 'title' => 'Aanmeldingen',
-                'body' => 'Elke school krijgt een eigen aanmeldpagina. Daar ziet een ouder je aanbod — blokken, abonnementen, kampen — en meldt hij zijn kind aan. Hier komen die aanmeldingen binnen en keur je ze goed. Na je goedkeuring krijgt de ouder een betaalverzoek.',
-                'tip' => 'Je aanbod zelf, met prijzen en data, beheer je bovenin onder Mijn bedrijf → Aanbod.',
+                'body' => 'Hier komen de aanmeldingen van je inschrijfpagina binnen. Jij keurt ze goed; daarna krijgt de ouder een betaalverzoek (of rekent hij contant af bij de school, als hij dat koos) en staat het kind in de groep.',
+                'tip' => 'Wil je niet elke aanmelding zelf goedkeuren? In de wizard kun je dat op automatisch zetten: dan bevestigt de betaling de inschrijving.',
             ];
         }
 

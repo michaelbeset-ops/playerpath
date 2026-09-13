@@ -147,7 +147,7 @@ class EnrollmentSettingsTest extends TestCase
         ])->assertRedirect('/instellingen/inschrijven/stap/8');
 
         // Stap acht: groepen. Stap negen: trainers uitnodigen, en dat rondt af
-        // — naar het dashboard, want daar staat de startlijst.
+        // - naar het dashboard, want daar staat de startlijst.
         $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/8', [
             'groups' => [['name' => 'Keepers O12', 'age_category' => 'Onder 12'], ['name' => 'Veld O14', 'age_category' => '']],
         ])->assertRedirect('/instellingen/inschrijven/stap/9');

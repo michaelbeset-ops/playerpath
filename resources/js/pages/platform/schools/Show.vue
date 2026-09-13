@@ -273,15 +273,15 @@ const wissel = () => {
                 <dl class="mt-3 space-y-2 text-sm">
                     <div class="flex gap-2">
                         <dt class="w-28 shrink-0 text-muted-foreground">Contactpersoon</dt>
-                        <dd class="min-w-0">{{ school.contact_name ?? '—' }}</dd>
+                        <dd class="min-w-0">{{ school.contact_name ?? '-' }}</dd>
                     </div>
                     <div class="flex gap-2">
                         <dt class="w-28 shrink-0 text-muted-foreground">E-mail</dt>
-                        <dd class="min-w-0 break-words">{{ school.contact_email ?? '—' }}</dd>
+                        <dd class="min-w-0 break-words">{{ school.contact_email ?? '-' }}</dd>
                     </div>
                     <div class="flex gap-2">
                         <dt class="w-28 shrink-0 text-muted-foreground">Telefoon</dt>
-                        <dd class="min-w-0">{{ school.contact_phone ?? '—' }}</dd>
+                        <dd class="min-w-0">{{ school.contact_phone ?? '-' }}</dd>
                     </div>
                 </dl>
 

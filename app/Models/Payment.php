@@ -93,7 +93,7 @@ class Payment extends Model
     /**
      * Te laat is: de vervaldag is voorbij.
      *
-     * Op de dag zelf ben je niet te laat — `isPast()` zei van wel, want een
+     * Op de dag zelf ben je niet te laat - `isPast()` zei van wel, want een
      * datumkolom staat op middernacht. Dat gaf twee waarheden: het tabblad
      * "Te laat" (PaymentQuery) telde de dag zelf niet mee, deze methode wel.
      */

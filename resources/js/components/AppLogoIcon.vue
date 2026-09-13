@@ -15,7 +15,7 @@ defineProps<{
     streepje eronder.
 
     Het bestand zelf, niet een natekening ervan: een logo hoort overal precies
-    hetzelfde te zijn. De tegel hoort erbij — het teken staat op een beginscherm,
+    hetzelfde te zijn. De tegel hoort erbij - het teken staat op een beginscherm,
     in een tabblad en in een lichte balk, en zonder eigen achtergrond verdwijnt
     het daar.
 -->

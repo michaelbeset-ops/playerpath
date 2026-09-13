@@ -13,7 +13,7 @@ use Illuminate\Console\Command;
  * tekenprogramma te gaan zoeken.
  *
  * De bron is het merkteken zelf (`public/brand/mark-256.png`): de twee P's op
- * een donkere tegel. Alles wat hier gebeurt is schalen — zo staat op elk
+ * een donkere tegel. Alles wat hier gebeurt is schalen - zo staat op elk
  * beginscherm hetzelfde logo als in de app, en niet een benadering ervan.
  */
 class GenerateAppIcons extends Command

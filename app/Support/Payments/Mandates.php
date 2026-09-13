@@ -10,11 +10,11 @@ use App\Models\User;
 /**
  * Het incassomandaat per ouder: wie betaalt en tekent.
  *
- * Er staat alleen wat de betaalprovider ons teruggeeft — een klantkenmerk en
+ * Er staat alleen wat de betaalprovider ons teruggeeft - een klantkenmerk en
  * een mandaatkenmerk. **Nooit een IBAN.** De eerste betaling die een ouder
  * zelf doet (iDEAL, `sequenceType: first`) legt het mandaat vast; de
  * webhook geeft het kenmerk terug en dat wordt hier opgeslagen. Daarna
- * schrijft `payments:collect` af op dat mandaat — en vraagt bij elke ronde
+ * schrijft `payments:collect` af op dat mandaat - en vraagt bij elke ronde
  * opnieuw aan de provider of het nog geldig is.
  *
  * Eerder stond het klantkenmerk op de speler. Met orders die meerdere

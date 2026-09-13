@@ -28,7 +28,7 @@ use Tests\TestCase;
  * Daar is niemand ingelogd, dus de terugval in AppServiceProvider levert geen
  * school op en de global scope staat fail-closed dicht: elke query binnen
  * toMail() of toArray() geeft dan niets terug. Dat is voor de veiligheid
- * precies goed en voor de inhoud precies fout — je krijgt geen foutmelding,
+ * precies goed en voor de inhoud precies fout - je krijgt geen foutmelding,
  * je krijgt een mail waar de helft uit weg is.
  *
  * Support\Tenancy\WithSchool is daarom voor de wachtrij wat SetCurrentSchool

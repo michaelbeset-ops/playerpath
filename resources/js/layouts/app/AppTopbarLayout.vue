@@ -23,7 +23,7 @@ const page = usePage<SharedData>();
 /*
  * De weg terug. Op een telefoon is er geen broodkruimelpad en geen menu in
  * beeld, dus een scherm dat geen hoofdtabblad is heeft een knop linksboven
- * nodig — anders loop je vast.
+ * nodig - anders loop je vast.
  *
  * Twee gevallen. Heeft de pagina een pad van twee of meer kruimels, dan is de
  * weg terug de kruimel ervoor, met naam. Is het één kruimel maar staat het

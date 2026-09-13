@@ -552,7 +552,7 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                             </p>
                         </Link>
 
-                        <p v-if="!perDag[dag.iso]?.length" class="px-1 py-6 text-center text-xs text-muted-foreground/70">—</p>
+                        <p v-if="!perDag[dag.iso]?.length" class="px-1 py-6 text-center text-xs text-muted-foreground/70">-</p>
                     </div>
                 </div>
             </div>

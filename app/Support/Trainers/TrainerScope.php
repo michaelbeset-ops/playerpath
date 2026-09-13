@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Builder;
  * Wat van deze trainer is.
  *
  * Een trainer is personeel en ziet zijn eigen werk: de groepen waar hij voor
- * staat en de spelers daarin. Niet het hele ledenbestand — een trainer van de
+ * staat en de spelers daarin. Niet het hele ledenbestand - een trainer van de
  * keepers hoeft niet te weten welke veldspelers er op de school zitten, en al
  * helemaal niet wie hun ouders zijn.
  *
@@ -29,7 +29,7 @@ use Illuminate\Database\Eloquent\Builder;
  *
  * Dit staat náást de global scope, niet in plaats daarvan: de schoolgrens wordt
  * al door `SchoolScope` bewaakt. Dit gaat over wat er bínnen de school van hem
- * is. En het is één plek — de policies, de lijsten, het dashboard en de
+ * is. En het is één plek - de policies, de lijsten, het dashboard en de
  * verjaardagen lezen allemaal hieruit, zodat "mijn spelers" overal hetzelfde
  * betekent.
  */

@@ -22,7 +22,7 @@ use Tests\TestCase;
  *
  * De kern is dat een boeking een echte training oplevert. Daardoor staat dat
  * uur in de agenda van de trainer en kan er gewoon aanwezigheid en een rapport
- * bij — zonder dat er een tweede soort training bestaat die overal apart
+ * bij - zonder dat er een tweede soort training bestaat die overal apart
  * behandeld moet worden.
  */
 class PrivateTrainingTest extends TestCase

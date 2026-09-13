@@ -48,7 +48,7 @@ const dekkingKleur = computed(() => toneFill[props.data.coverage.tone ?? 'neutra
                 <p class="text-sm text-muted-foreground">Spelers met een actueel rapport</p>
                 <p class="tabular text-sm font-semibold">
                     <template v-if="data.coverage.percentage !== null">{{ data.coverage.percentage }}%</template>
-                    <template v-else>—</template>
+                    <template v-else>-</template>
                 </p>
             </div>
 

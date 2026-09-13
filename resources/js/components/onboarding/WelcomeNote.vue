@@ -11,7 +11,7 @@ import { computed, ref } from 'vue';
  * dashboard niet meteen snapt, is een tour het verkeerde antwoord op het
  * verkeerde probleem. Wat wél helpt is één zin die zegt wat hij hier vindt.
  *
- * Na sluiten komt hij niet terug — dat wordt per gebruiker onthouden, niet in
+ * Na sluiten komt hij niet terug - dat wordt per gebruiker onthouden, niet in
  * de browser: op je telefoon opnieuw hetzelfde regeltje krijgen leest als een
  * app die niet oplet.
  */

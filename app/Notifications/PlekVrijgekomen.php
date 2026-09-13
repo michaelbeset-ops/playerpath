@@ -12,7 +12,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
- * "Er is een plek vrijgekomen" — het bericht waar een gezin op wacht.
+ * "Er is een plek vrijgekomen" - het bericht waar een gezin op wacht.
  *
  * Gaat altijd uit, ook per mail: iemand die op een wachtlijst staat kijkt niet
  * elke dag in de app. Dat is precies waarom hij op een wachtlijst staat.
