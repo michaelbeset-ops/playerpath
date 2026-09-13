@@ -220,7 +220,18 @@ onBeforeUnmount(() => {
                     @pointercancel="stop"
                 >
                     <canvas ref="doek" :width="VAK * 2" :height="VAK * 2" class="block size-full"></canvas>
-                    <!-- Een rond venster laat zien hoe hij op het medaillon komt; de kaart toont het hele vierkant. -->
+                    <!--
+                        Het fotovak op de kaart is 3 bij 2 en toont de bovenkant
+                        (.pp-foto-vak, object-position top). Van dit vierkant staat
+                        dus alleen het bovenste deel op de kaart. Het onderste derde
+                        is donker, zodat je niet denkt dat het gezicht erop staat
+                        terwijl de kaart het er straks afsnijdt. Het medaillon en
+                        de lijsten gebruiken wel het hele vierkant.
+                    -->
+                    <div class="pointer-events-none absolute inset-x-0 bottom-0 flex h-1/3 items-end justify-center bg-black/55 pb-2">
+                        <span class="rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-medium text-white">Valt buiten de kaart</span>
+                    </div>
+                    <div class="pointer-events-none absolute inset-x-0 top-2/3 border-t-2 border-dashed border-white/80"></div>
                     <div class="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-foreground/10"></div>
                     <div v-if="laden" class="absolute inset-0 flex items-center justify-center bg-secondary">
                         <LoaderCircle class="size-6 animate-spin text-muted-foreground" />
@@ -228,12 +239,13 @@ onBeforeUnmount(() => {
                 </div>
 
                 <!-- Zo komt hij op de kaart: een klein kaartje dat meebeweegt
-                     met het schuiven. Op een telefoon staat de echte kaart
-                     achter dit venster, dus hier zie je het meteen. -->
+                     met het schuiven, met hetzelfde fotovak van 3 bij 2 als de
+                     echte kaart. Een vierkant kaartje liet meer zien dan de
+                     kaart straks doet, en dan leek het goed terwijl het niet zo was. -->
                 <div class="mt-3 flex items-center gap-3">
                     <div class="w-24 shrink-0 overflow-hidden rounded-xl border-2 border-[#8c96a3] bg-[#0a0f1c] text-[#f1f5f9] shadow-md">
-                        <div class="relative aspect-square bg-[#131c30]">
-                            <img v-if="voorbeeld" :src="voorbeeld" alt="" class="size-full object-cover" />
+                        <div class="relative aspect-[3/2] bg-[#131c30]">
+                            <img v-if="voorbeeld" :src="voorbeeld" alt="" class="size-full object-cover object-top" />
                             <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#0a0f1c] to-transparent"></div>
                             <p v-if="kaart" class="tabular absolute bottom-1 left-1.5 text-lg font-extrabold leading-none">{{ kaart.overall ?? '-' }}</p>
                         </div>

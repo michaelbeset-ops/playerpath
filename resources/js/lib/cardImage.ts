@@ -188,11 +188,14 @@ export async function renderKaartStory(card: Kaart, opties: KaartAfbeeldingOptie
     const foto = card.photo ? await laadAfbeelding(card.photo) : null;
 
     if (foto) {
-        // Cover: vul het vak, snij wat overblijft af rond het midden.
+        // Cover, en net als de kaart in de app (.pp-foto: object-position
+        // center top) vanaf de bovenkant: wat onder valt, valt weg. Rond het
+        // midden snijden gaf hier een andere uitsnede dan op de kaart, en
+        // dan staat het hoofd er op het plaatje half af.
         const schaal = Math.max(bw / foto.width, fotoH / foto.height);
         const fw = foto.width * schaal;
         const fh = foto.height * schaal;
-        ctx.drawImage(foto, bx + (bw - fw) / 2, by + (fotoH - fh) / 2, fw, fh);
+        ctx.drawImage(foto, bx + (bw - fw) / 2, by, fw, fh);
     } else {
         ctx.fillStyle = '#131c30';
         ctx.fillRect(bx, by, bw, fotoH);
