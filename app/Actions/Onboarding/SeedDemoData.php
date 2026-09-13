@@ -26,7 +26,7 @@ use Illuminate\Support\Facades\DB;
  * Een lege omgeving is de vijand. Wie voor het eerst inlogt en overal "nog
  * niets" ziet staan, weet niet wat het product doet en gaat het ook niet
  * uitzoeken. Daarom staat er vanaf de eerste seconde iets dat wérkt: vier
- * spelers met gevulde kaarten en zichtbare groei, twee trainingen in de agenda,
+ * spelers met gevulde kaarten en zichtbare groei, drie trainingen in de agenda,
  * een aanbod en een bericht.
  *
  * Vier regels die dit eerlijk houden:

@@ -574,6 +574,16 @@ class EnrollmentSettingsController extends Controller
      */
     protected function groepen(Request $request): void
     {
+        // Een lege regel (de invulregel die het formulier alvast klaarzet) is
+        // geen fout maar "geen groep": weglaten, niet weigeren. Anders zit
+        // wie nog geen groepen wil iets in te typen om verder te kunnen.
+        $request->merge([
+            'groups' => array_values(array_filter(
+                (array) $request->input('groups', []),
+                fn ($rij) => is_array($rij) && trim((string) ($rij['name'] ?? '')) !== '',
+            )),
+        ]);
+
         $data = $request->validate([
             'groups' => ['present', 'array', 'max:30'],
             'groups.*.name' => ['required', 'string', 'max:255'],

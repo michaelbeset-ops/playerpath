@@ -149,8 +149,10 @@ class EnrollmentSettingsTest extends TestCase
         // Stap acht: groepen. Stap negen: trainers uitnodigen, en dat rondt af
         // - naar het dashboard, want daar staat de startlijst.
         $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/8', [
-            'groups' => [['name' => 'Keepers O12', 'age_category' => 'Onder 12'], ['name' => 'Veld O14', 'age_category' => '']],
-        ])->assertRedirect('/instellingen/inschrijven/stap/9');
+            // Het formulier begint met een lege regel; wie die laat staan
+            // mag daar niet op vastlopen.
+            'groups' => [['name' => 'Keepers O12', 'age_category' => 'Onder 12'], ['name' => 'Veld O14', 'age_category' => ''], ['name' => '', 'age_category' => '']],
+        ])->assertSessionHasNoErrors()->assertRedirect('/instellingen/inschrijven/stap/9');
 
         app(Tenancy::class)->set($this->school);
         $this->assertSame(2, Group::count());

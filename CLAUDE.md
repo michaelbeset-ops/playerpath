@@ -633,7 +633,7 @@ was en niet opnieuw bij stap één.
 #### Voorbeelddata
 
 `Actions\Onboarding\SeedDemoData` zet bij het aanmaken van een school vier
-spelers met elk drie rapporten neer, plus een groep, twee trainingen, een
+spelers met elk drie rapporten neer, plus een groep, drie trainingen (één met los inschrijven), een
 aanbod, een locatie en een bericht. `RemoveDemoData` haalt het er in één keer
 weer uit. Vier regels:
 

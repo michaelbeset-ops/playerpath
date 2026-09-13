@@ -305,7 +305,7 @@ watch(bezig, (nu, eerst) => {
                         <li class="flex gap-3">
                             <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">1</span>
                             <p class="text-sm leading-relaxed">
-                                <span class="font-medium">Er staat al iets.</span> Vier voorbeeldspelers, een groep, twee trainingen en een aanbod, zodat je meteen ziet
+                                <span class="font-medium">Er staat al iets.</span> Vier voorbeeldspelers, een groep, drie trainingen en een aanbod, zodat je meteen ziet
                                 hoe het werkt. Ze staan overal met het label "voorbeeld" en gaan straks vanzelf weg.
                             </p>
                         </li>
