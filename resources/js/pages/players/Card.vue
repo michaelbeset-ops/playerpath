@@ -337,9 +337,9 @@ const sticker = computed(() => (viering.value?.level.up ? 'NIEUW LEVEL' : groeiS
                     Link voor {{ card.first_name }} zelf
                 </p>
                 <p class="mt-1 text-sm text-muted-foreground">
-                    Een eigen link waarmee {{ card.first_name }} zonder inloggen de kaart bekijkt, met naam, school, mijlpalen en de kaarten van
-                    vorige seizoenen. Zet hem op de tablet of telefoon van je kind; hij blijft werken en groeit mee. Wie de link heeft ziet de
-                    kaart met naam, dus geef hem alleen aan je kind.
+                    Een eigen link waarmee {{ card.first_name }} zonder wachtwoord op zijn eigen account komt: de kaart, de voortgang, Mijn kaarten
+                    en de meldingen, net als een speler met een eigen inlog. Open hem één keer op de tablet of telefoon van je kind; daarna blijft
+                    het ingelogd. Wie de link heeft komt op het account, dus geef hem alleen aan je kind.
                 </p>
 
                 <template v-if="childLink.url">
@@ -366,8 +366,8 @@ const sticker = computed(() => (viering.value?.level.up ? 'NIEUW LEVEL' : groeiS
                         <div class="text-sm">
                             <p class="flex items-center gap-2 font-medium"><QrCode class="size-4" /> Of scan hem</p>
                             <p class="mt-1 text-muted-foreground">
-                                Laat {{ card.first_name }} deze code scannen met de camera van de tablet. De kaart opent meteen, en met "Zet op
-                                je beginscherm" staat hij daarna als app-icoon.
+                                Laat {{ card.first_name }} deze code scannen met de camera van de tablet. Het account opent meteen, en met "Zet
+                                op je beginscherm" staat de app daarna als icoon.
                             </p>
                         </div>
                     </div>

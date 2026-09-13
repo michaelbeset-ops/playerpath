@@ -245,6 +245,12 @@ class User extends Authenticatable
      */
     public function wantsEmail(string $kind): bool
     {
+        // De hoofdschakelaar: een kind-account (zie EnsurePlayerAccount) heeft
+        // geen mailbox, dus daar gaat nooit iets heen, wat de soort ook is.
+        if (($this->notification_preferences['mail'] ?? true) === false) {
+            return false;
+        }
+
         return (bool) ($this->notification_preferences[$kind] ?? true);
     }
 }

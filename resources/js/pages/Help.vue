@@ -81,7 +81,7 @@ const startRondleiding = () => router.post('/onboarding/rondleiding/opnieuw');
             <template v-if="school">
                 <section class="mt-6 rounded-xl border border-border bg-card p-5 shadow-sm">
                     <p class="flex items-center gap-2 font-medium"><UserPlus class="size-4 text-primary" /> 1. Speler toevoegen</p>
-                    <p class="mt-2 text-sm text-muted-foreground">Een speler is een profiel van het kind: naam, geboortedatum, positie en groep. Een kind logt zelf niet in.</p>
+                    <p class="mt-2 text-sm text-muted-foreground">Een speler is een profiel van het kind: naam, geboortedatum, positie en groep. Een kind heeft geen wachtwoord nodig: de ouder geeft het een eigen link.</p>
                     <ul class="mt-2 list-disc space-y-1 pl-5 text-sm">
                         <li><span class="font-medium">Zelf toevoegen:</span> Klanten → Speler toevoegen. Voor kinderen die al trainen of bij een overstap.</li>
                         <li>
@@ -198,8 +198,9 @@ const startRondleiding = () => router.post('/onboarding/rondleiding/opnieuw');
                     <li class="flex items-start gap-2">
                         <Smile class="mt-0.5 size-4 shrink-0 text-muted-foreground" />
                         <span>
-                            <span class="font-medium">Link voor het kind zelf.</span> Een privélink met QR-code voor op de tablet of telefoon van je kind: de hele kaart, de
-                            uitleg en de verzameling, zonder inloggen. Daar zet je hem op het beginscherm als app-icoon.
+                            <span class="font-medium">Link voor het kind zelf.</span> Een privélink met QR-code die je kind zonder wachtwoord op zijn eigen account
+                            brengt: de kaart, de voortgang en Mijn kaarten. Eén keer openen op de tablet, dan blijft het ingelogd; zet de app daarna
+                            op het beginscherm.
                         </span>
                     </li>
                 </ul>

@@ -36,12 +36,7 @@ class PlayerCardPresenter
         protected GoalProgress $goals,
     ) {}
 
-    /**
-     * @param  bool  $public  De publieke deel-link: voornaam + initiaal, geen school.
-     * @param  bool  $child  De kind-link: alles van de kaart, maar zonder wat een
-     *                       trainer over het kind opschreef.
-     */
-    public function for(Player $player, bool $public = false, bool $child = false): array
+    public function for(Player $player, bool $public = false): array
     {
         $settings = $this->engine->settingsFor($player);
         $categorie = $player->age_category ?? $this->engine->categoryFor($player);
@@ -92,7 +87,7 @@ class PlayerCardPresenter
             // De achterkant van de kaart: de laatste rapporten en het doel.
             // Publiek zonder trainer en toelichting, en zonder doel: dat is
             // de opmerking van een trainer over een kind, niet voor internet.
-            'recent_reports' => $this->recenteRapporten($player, $public || $child),
+            'recent_reports' => $this->recenteRapporten($player, $public),
             'goal' => $public ? null : $this->doel($player),
         ];
     }

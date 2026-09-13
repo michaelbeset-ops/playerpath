@@ -2,8 +2,6 @@
 
 namespace Tests\Feature\Players;
 
-use App\Enums\PlayerPosition;
-use App\Enums\ReportCategory;
 use App\Enums\Role;
 use App\Models\Player;
 use App\Models\School;
@@ -14,9 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * De kind-link: de kaart voor het kind zelf, zonder inlog. Anders dan de
- * publieke deel-link staat hier de hele kaart op, maar niet wat een trainer
- * over het kind opschreef. Deze tests bewaken beide grenzen.
+ * De kind-link: het kind komt zonder wachtwoord op zijn eigen account.
  */
 class ChildCardTest extends TestCase
 {
@@ -34,7 +30,7 @@ class ChildCardTest extends TestCase
 
         $this->seed(RoleSeeder::class);
 
-        $this->school = School::factory()->create(['name' => 'Keepersschool Rob']);
+        $this->school = School::factory()->create();
 
         $this->eigenaar = User::factory()->for($this->school)->create();
         $this->eigenaar->assignRole(Role::Eigenaar->value);
@@ -45,18 +41,6 @@ class ChildCardTest extends TestCase
             'first_name' => 'Sem',
             'last_name' => 'de Vries',
         ]);
-
-        $trainer = User::factory()->for($this->school)->create();
-        $trainer->assignRole(Role::Trainer->value);
-
-        $this->actingAs($trainer)->post("/players/{$this->speler->id}/reports", [
-            'scores' => collect(ReportCategory::forPosition(PlayerPosition::Keeper))
-                ->mapWithKeys(fn (ReportCategory $c) => [$c->value => 8])
-                ->all(),
-            'note' => 'Interne notitie van de trainer.',
-        ]);
-
-        $this->speler->refresh();
     }
 
     public function test_de_kind_link_staat_standaard_uit(): void
@@ -69,7 +53,7 @@ class ChildCardTest extends TestCase
             ->assertInertia(fn ($page) => $page->where('childLink.can', true)->where('childLink.url', null));
     }
 
-    public function test_een_ouder_maakt_de_link_voor_het_eigen_kind_en_de_kaart_staat_er_helemaal_op(): void
+    public function test_de_link_logt_het_kind_in_op_een_eigen_speleraccount(): void
     {
         $ouder = User::factory()->for($this->school)->create();
         $ouder->assignRole(Role::Ouder->value);
@@ -80,44 +64,60 @@ class ChildCardTest extends TestCase
         $token = $this->speler->refresh()->child_token;
         $this->assertNotNull($token);
         $this->assertSame(48, strlen($token));
+        $this->assertNull($this->speler->user_id, 'Het account ontstaat pas als de link geopend wordt.');
 
-        // De deel-link blijft los hiervan uit.
-        $this->assertNull($this->speler->share_token);
+        // De link openen, zonder ingelogd te zijn: ingelogd als het kind.
+        $this->app['auth']->forgetGuards();
+        $this->get("/kind/{$token}")->assertRedirect('/dashboard');
 
-        $response = $this->get("/kind/{$token}");
+        $kind = $this->speler->refresh()->user;
+        $this->assertNotNull($kind);
+        $this->assertAuthenticatedAs($kind);
+        $this->assertTrue($kind->isSpeler());
+        $this->assertSame('Sem de Vries', $kind->name);
+        $this->assertSame($this->school->id, $kind->school_id);
+        $this->assertFalse($kind->wantsEmail('rapport'), 'Een kind zonder mailbox krijgt geen mail.');
 
-        $response->assertOk()->assertInertia(fn ($page) => $page
-            ->component('players/ChildCard')
-            ->where('card.name', 'Sem de Vries')
-            ->where('card.overall', 80)
-            ->where('card.school', 'Keepersschool Rob')
-            ->where('schoolName', 'Keepersschool Rob')
-            ->where('card.recent_reports.0.note', null)
-            ->where('card.recent_reports.0.trainer', null)
-            ->has('badges')
-            ->has('seasons')
-            ->where('manifestUrl', route('players.child.manifest', $token))
-            // Buiten de app: geen menu, geen ingelogde gebruiker.
-            ->where('auth.user', null)
-            ->where('nav', [])
-        );
+        // Het dashboard is dat van een speler, met zijn eigen kaart.
+        $this->get('/dashboard')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('view', 'speler'));
 
-        $response->assertDontSee('Interne notitie');
-        $response->assertHeader('X-Robots-Tag', 'noindex, nofollow, noarchive');
-        // Het eigen manifest staat in de kop, zodat "op het beginscherm" de kaart opent.
-        $response->assertSee('/kind/'.$token.'/manifest.webmanifest');
+        // Nog eens openen maakt geen tweede account.
+        $this->app['auth']->forgetGuards();
+        $this->get("/kind/{$token}")->assertRedirect('/dashboard');
+        $this->assertSame($kind->id, $this->speler->refresh()->user_id);
+        $this->assertSame(1, User::where('school_id', $this->school->id)->role(Role::Speler->value)->count());
     }
 
-    public function test_het_manifest_opent_op_de_kaart_van_het_kind(): void
+    public function test_een_kind_met_een_eigen_inlog_houdt_dat_account(): void
     {
+        $bestaand = User::factory()->for($this->school)->create();
+        $bestaand->assignRole(Role::Speler->value);
+        $this->speler->update(['user_id' => $bestaand->id]);
+
         $this->actingAs($this->eigenaar)->post("/players/{$this->speler->id}/kind-link");
         $token = $this->speler->refresh()->child_token;
 
-        $this->get("/kind/{$token}/manifest.webmanifest")
-            ->assertOk()
-            ->assertJsonPath('name', 'Kaart van Sem')
-            ->assertJsonPath('start_url', "/kind/{$token}")
-            ->assertJsonPath('display', 'standalone');
+        $this->app['auth']->forgetGuards();
+        $this->get("/kind/{$token}")->assertRedirect('/dashboard');
+
+        $this->assertAuthenticatedAs($bestaand);
+        $this->assertSame($bestaand->id, $this->speler->refresh()->user_id);
+    }
+
+    public function test_een_ingelogde_ouder_die_de_link_opent_wordt_het_kind(): void
+    {
+        $ouder = User::factory()->for($this->school)->create();
+        $ouder->assignRole(Role::Ouder->value);
+        $this->speler->guardians()->attach($ouder->id);
+
+        $this->actingAs($ouder)->post("/players/{$this->speler->id}/kind-link");
+        $token = $this->speler->refresh()->child_token;
+
+        $this->actingAs($ouder)->get("/kind/{$token}")->assertRedirect('/dashboard');
+
+        $this->assertAuthenticatedAs($this->speler->refresh()->user);
     }
 
     public function test_een_trainer_of_een_andere_ouder_mag_geen_kind_link_maken(): void
@@ -142,12 +142,15 @@ class ChildCardTest extends TestCase
         $tweede = $this->speler->refresh()->child_token;
 
         $this->assertNotSame($eerste, $tweede);
+
+        $this->app['auth']->forgetGuards();
         $this->get("/kind/{$eerste}")->assertNotFound();
-        $this->get("/kind/{$tweede}")->assertOk();
+        $this->assertGuest();
 
         $this->actingAs($this->eigenaar)->delete("/players/{$this->speler->id}/kind-link")->assertRedirect();
 
         $this->assertNull($this->speler->refresh()->child_token);
+        $this->app['auth']->forgetGuards();
         $this->get("/kind/{$tweede}")->assertNotFound();
     }
 
@@ -163,6 +166,8 @@ class ChildCardTest extends TestCase
 
         $this->assertNull($speler->refresh()->child_token);
         $this->assertNull($speler->share_token);
+
+        $this->app['auth']->forgetGuards();
         $this->get("/kind/{$kind}")->assertNotFound();
         $this->get("/kaart/{$deel}")->assertNotFound();
     }
@@ -170,6 +175,6 @@ class ChildCardTest extends TestCase
     public function test_een_onbekend_token_geeft_niets(): void
     {
         $this->get('/kind/'.str_repeat('a', 48))->assertNotFound();
-        $this->get('/kind/'.str_repeat('a', 48).'/manifest.webmanifest')->assertNotFound();
+        $this->assertGuest();
     }
 }

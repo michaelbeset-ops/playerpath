@@ -917,36 +917,36 @@ een kind. Wat die pagina veilig houdt, en dus niet weg mag:
 - wie mag delen: de **eigenaar** en de **ouders van dit kind**. De trainer niet —
   die beslist niet of andermans kind op internet komt.
 
-#### De kind-link: de kaart voor het kind zelf, zonder inlog
+#### De kind-link: het kind op zijn eigen account, zonder wachtwoord
 
 Een keeper van acht heeft geen e-mailadres en geen wachtwoord, maar het is
 wél zijn kaart. Daarom is er naast de publieke deel-link een **tweede link**
-(`players.child_token`, `/kind/{token}`, `ChildCardController` +
-`players/ChildCard.vue`): de ouder maakt hem op de kaartpagina (met een
-QR-code om van het scherm te scannen) en zet hem op de tablet van het kind.
-De pagina leest live uit de database, dus na elk rapport klopt hij vanzelf.
+(`players.child_token`, `/kind/{token}`, `ChildCardController`): de ouder
+maakt hem op de kaartpagina (met een QR-code om van het scherm te scannen)
+en opent hem één keer op de tablet van het kind. De link **logt het kind in
+op zijn eigen speleraccount** en onthoudt dat op dat apparaat; daarna opent
+de app gewoon op zijn dashboard, precies zoals een speler met eigen inlog.
+Een eigen kaartpagina buiten de app was er even, en is bewust weggehaald:
+het kind hoort hetzelfde te zien als elke speler, niet een tweede versie.
 
-- **Twee tokens, twee bedoelingen.** De deel-link is voor internet en bewust
-  kaal (voornaam + initiaal, geen school). De kind-link is voor het kind en
-  toont de hele kaart: volledige naam, rugnummer, school (logo en kleur via
-  `Branding::forRequest`), de achterkant, de levelbalk, alle mijlpalen en
-  Mijn kaarten. Ze staan los van elkaar aan of uit.
-- **Wat een trainer opschreef staat er niet op** (`PlayerCardPresenter::for`
-  met `child: true`): de toelichting en de naam van de trainer zijn voor
-  ouder en trainer.
-- **Hij verloopt niet.** "Link verlopen" na drie maanden snapt een kind niet.
-  Wel: intrekken door ouder of eigenaar (`PlayerPolicy::share`, dezelfde poort
-  als delen), opnieuw maken geeft een nieuw token en de oude link is dood, en
-  een speler op niet-actief zetten sluit beide links vanzelf (`Player::booted`).
-- **Een eigen manifest per link** (`/kind/{token}/manifest.webmanifest`,
-  via `withViewData` in `app.blade.php`): "Zet op je beginscherm" opent dan
-  de kaart van dít kind, met zijn naam eronder, niet het dashboard. De
-  pagina zegt dat zelf, meteen; Android met de knop, iOS met de twee stappen.
-- **Geen knoppen die het kind niet mag gebruiken**: geen foto wijzigen, geen
-  delen, geen rugnummer. Confetti bij een nieuw level sinds de vorige keer
-  kijken (onthouden in `localStorage`, want dit is zijn apparaat).
-- Zelfde regels als de deel-link: `X-Robots-Tag`, throttle, gedeelde props
-  leeg in `HandleInertiaRequests`, en zoeken op token met `withoutScope()`.
+- **Het account ontstaat bij het eerste openen** (`Actions\Players\
+  EnsurePlayerAccount`): naam van het kind, rol speler, een adres op
+  `kind.playerpath.nl` dat nergens heen gaat, een wachtwoord dat niemand
+  kent, en `notification_preferences.mail = false`. `User::wantsEmail` kent
+  die hoofdschakelaar: een kind zonder mailbox krijgt nooit mail, in de app
+  ziet het zijn meldingen wel. Heeft de speler al een eigen inlog, dan is
+  dat het account.
+- **De link is de sleutel.** Alleen de eigenaar en de ouders van dit kind
+  maken hem (`PlayerPolicy::share`, dezelfde poort als delen). Opnieuw
+  maken geeft een nieuw token en de oude link is dood; intrekken ook; een
+  speler op niet-actief zetten sluit beide links vanzelf (`Player::booted`).
+  Hij verloopt niet: "link verlopen" na drie maanden snapt een kind niet.
+- **Wie al ingelogd was wordt gewisseld naar het kind**: een ouder die de
+  link test moet niet op zijn eigen dashboard uitkomen en denken dat de
+  link niets doet.
+- Zelfde regels als de deel-link: `X-Robots-Tag`, throttle, zoeken op token
+  met `withoutScope()`. Alles daarna is gewoon de app, met de school uit
+  het account en de policies van een speler.
 
 ### De spelerskaart als verzamelkaart
 

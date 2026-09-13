@@ -114,13 +114,9 @@ Route::get('kaart/{token}', [SharedCardController::class, 'show'])
     ->name('players.shared')
     ->where('token', '[A-Za-z0-9]{48}');
 
-// De kind-link: de tweede route zonder inlog. Voor het kind zelf, met de hele
-// kaart; zie ChildCardController voor wat er wel en niet op staat.
+// De kind-link: logt het kind in op zijn eigen account, zonder wachtwoord.
+// Zie ChildCardController. Zonder inlog, want dat is precies het punt.
 Route::get('kind/{token}', [ChildCardController::class, 'show'])
-    ->middleware([PreventSearchIndexing::class, 'throttle:60,1'])
+    ->middleware([PreventSearchIndexing::class, 'throttle:20,1'])
     ->name('players.child')
-    ->where('token', '[A-Za-z0-9]{48}');
-Route::get('kind/{token}/manifest.webmanifest', [ChildCardController::class, 'manifest'])
-    ->middleware('throttle:60,1')
-    ->name('players.child.manifest')
     ->where('token', '[A-Za-z0-9]{48}');
