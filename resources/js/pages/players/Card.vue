@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import CardGlow from '@/components/CardGlow.vue';
+import CardPersonalise from '@/components/CardPersonalise.vue';
 import FlashMessage from '@/components/FlashMessage.vue';
 import CardShareActions from '@/components/CardShareActions.vue';
 import GoalList, { type Doel } from '@/components/GoalList.vue';
 import LevelProgress from '@/components/LevelProgress.vue';
-import PhotoUpload from '@/components/PhotoUpload.vue';
 import PlayerCardVisual, { type Kaart } from '@/components/PlayerCardVisual.vue';
 import ReportCelebration, { type RapportWijziging } from '@/components/ReportCelebration.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { groeiSticker } from '@/lib/cardImage';
 import { strooiConfetti } from '@/lib/confetti';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import QRCode from 'qrcode';
-import { Camera, Check, Copy, Layers, Link2, Lock, QrCode, Smile, TrendingUp, Trophy } from 'lucide-vue-next';
+import { Check, ChevronDown, Copy, Layers, Link2, Lock, Send, Smile, TrendingUp, Trophy } from 'lucide-vue-next';
 import { computed, onMounted, ref, watch } from 'vue';
 
 const props = defineProps<{
@@ -69,29 +69,20 @@ const vorigLevel = ref<string | null>(viering.value?.level.up ? viering.value.le
 const flits = ref(false);
 const levelUpZichtbaar = ref(false);
 
-// De foto: het vak onder de kaart. De knop op de kaart en de link
+// Foto en rugnummer: het vak onder de kaart. De knop op de kaart en de link
 // "Foto toevoegen" op het dashboard (#foto) komen hier allebei uit.
-const fotoBlok = ref<HTMLElement | null>(null);
-const fotoKiezer = ref<InstanceType<typeof PhotoUpload> | null>(null);
-
-const naarFoto = () => {
-    fotoBlok.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    fotoKiezer.value?.open();
-};
+const personaliseer = ref<InstanceType<typeof CardPersonalise> | null>(null);
+const naarFoto = () => personaliseer.value?.open();
 
 // Tijdens het uitsnijden beweegt de kaart mee: wat je schuift zie je meteen
 // op de echte kaart, niet pas na het opslaan.
 const voorbeeldFoto = ref<string | null>(null);
 
-// Het rugnummer: versiering van de eigen kaart, dus hier bij de foto en niet
-// alleen in het spelersformulier van de school.
-const rugnummer = useForm({ shirt_number: props.card.shirt_number ?? ('' as number | '') });
-const bewaarRugnummer = () => rugnummer.patch('/players/' + props.player.id + '/rugnummer', { preserveScroll: true });
 const kaartMetVoorbeeld = computed(() => (voorbeeldFoto.value ? { ...props.card, photo: voorbeeldFoto.value } : props.card));
 
 onMounted(() => {
     if (window.location.hash === '#foto') {
-        fotoBlok.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        document.getElementById('foto')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     if (!viering.value?.level.up) {
@@ -106,6 +97,10 @@ onMounted(() => {
         setTimeout(() => (flits.value = false), 1200);
     }, 900);
 });
+
+// De openbare deel-link klapt uit: dicht is hij één regel met zijn stand.
+// De kind-link staat altijd open: dat is de weg voor het kind zelf.
+const deelOpen = ref(false);
 
 // De deel-knop op de kaart brengt je naar het deel-vak hieronder.
 const deelVak = ref<HTMLElement | null>(null);
@@ -145,6 +140,30 @@ const kindLinkUit = () => {
     if (confirm('De link van ' + props.card.first_name + ' uitzetten? De kaart is daarna via die link niet meer te bekijken.')) {
         router.delete('/players/' + props.player.id + '/kind-link', { preserveScroll: true });
     }
+};
+
+// Sturen naar het kind: via het deelmenu van de telefoon (WhatsApp, sms,
+// AirDrop), anders kopiëren. "Deel dit met je kind" moet een knop zijn,
+// geen opdracht om zelf een link over te typen.
+const stuurNaarKind = async () => {
+    const url = props.childLink.url;
+
+    if (!url) {
+        return;
+    }
+
+    const tekst = 'Hoi ' + props.card.first_name + '! Dit is jouw spelerskaart. Open de link en zet hem op je beginscherm.';
+
+    if (navigator.share) {
+        try {
+            await navigator.share({ title: 'Kaart van ' + props.card.first_name, text: tekst, url });
+            return;
+        } catch {
+            // Geannuleerd of niet gelukt: dan kopiëren we hem.
+        }
+    }
+
+    await kopieer('kind', url);
 };
 
 const qr = ref<string | null>(null);
@@ -193,63 +212,16 @@ const sticker = computed(() => (viering.value?.level.up ? 'NIEUW LEVEL' : groeiS
             <!-- Waar je staat tussen brons en goud, met "Hoe werkt dit?" -->
             <LevelProgress class="mt-3" :card="card" />
 
-            <!-- De foto. Zonder foto valt het vak op (groene rand): dat is de
-                 blijvende herinnering. Met foto is het een rustig vak om hem
-                 te vervangen. -->
-            <div
+            <!-- Foto en rugnummer: valt op tot het af is, daarna één regel -->
+            <CardPersonalise
                 v-if="canPhoto"
-                id="foto"
-                ref="fotoBlok"
-                class="mt-4 rounded-xl border bg-card p-5 shadow-sm"
-                :class="player.photo ? 'border-border' : 'border-primary/50'"
-            >
-                <p class="flex items-center gap-2 font-medium">
-                    <Camera class="size-4 text-primary" />
-                    {{ player.photo ? 'Foto op de kaart' : 'Zet een foto op de kaart' }}
-                </p>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    {{
-                        player.photo
-                            ? 'Deze foto staat op de kaart, ook op een gedeelde kaart.'
-                            : 'Een kaart met een gezicht erop is de helft meer waard. Maak een foto of kies er een; je snijdt hem daarna uit.'
-                    }}
-                </p>
-                <PhotoUpload
-                    ref="fotoKiezer"
-                    class="mt-3"
-                    :name="player.name"
-                    :photo="player.photo"
-                    :action="'/players/' + player.id + '/photo'"
-                    :kaart="{ first_name: card.first_name, last_name: card.last_name, overall: card.overall, position: card.position }"
-                    @preview="voorbeeldFoto = $event"
-                    @uploaded="(eerste) => eerste && strooiConfetti()"
-                />
-
-                <form class="mt-4 flex flex-wrap items-end gap-2 border-t border-border pt-4" @submit.prevent="bewaarRugnummer">
-                    <div class="grid gap-1">
-                        <label for="rugnummer" class="text-sm font-medium">Rugnummer</label>
-                        <input
-                            id="rugnummer"
-                            v-model="rugnummer.shirt_number"
-                            type="number"
-                            inputmode="numeric"
-                            min="1"
-                            max="99"
-                            placeholder="10"
-                            class="tabular h-11 w-24 rounded-lg border border-input bg-background px-3 text-center text-lg font-semibold outline-none focus:border-primary"
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        class="inline-flex h-11 items-center rounded-lg border border-border bg-card px-4 text-sm font-medium transition hover:border-primary disabled:opacity-60"
-                        :disabled="rugnummer.processing"
-                    >
-                        Op de kaart zetten
-                    </button>
-                    <p class="basis-full text-xs text-muted-foreground">Staat groot op de foto, zoals op een shirt. Leeg laten mag.</p>
-                    <p v-if="rugnummer.errors.shirt_number" class="basis-full text-sm text-destructive">{{ rugnummer.errors.shirt_number }}</p>
-                </form>
-            </div>
+                ref="personaliseer"
+                class="mt-4"
+                :player="{ id: player.id, name: player.name, photo: player.photo }"
+                :card="card"
+                @preview="voorbeeldFoto = $event"
+                @uploaded="(eerste) => eerste && strooiConfetti()"
+            />
 
             <div v-if="goals.length" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
                 <p class="font-medium">Doelen</p>
@@ -317,135 +289,173 @@ const sticker = computed(() => (viering.value?.level.up ? 'NIEUW LEVEL' : groeiS
                 <p v-if="lastReport.note" class="mt-3 text-sm">{{ lastReport.note }}</p>
             </div>
 
-            <!-- Delen als afbeelding: voor iedereen die de kaart mag zien. Dit
-                 is wat een kind in de groepsapp zet: een plaatje, geen link. -->
-            <div v-if="player.overall_rating" ref="deelVak" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
-                <p class="font-medium">Kaart opslaan of delen</p>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    Een plaatje van de kaart in story-formaat, met het logo van de school. Er staat op wat je hier ziet: naam, positie, cijfers en
-                    level. Delen naar Snapchat gaat via je foto's: opslaan, Snapchat openen, kiezen uit je galerij.
-                </p>
+            <!-- Delen: één vak. Bovenaan de knop; daaronder de twee links als
+                 regels die uitklappen, zodat de pagina niet drie keer "delen" zegt. -->
+            <div v-if="player.overall_rating || childLink.can" ref="deelVak" class="mt-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                <div v-if="player.overall_rating" class="p-5">
+                    <p class="font-medium">Kaart delen</p>
+                    <p class="mt-1 text-sm text-muted-foreground">Een plaatje van de kaart in story-formaat, met het logo van de school.</p>
+                    <CardShareActions class="mt-3" :card="card" :link="share.url" :sticker="sticker" />
+                </div>
 
-                <CardShareActions class="mt-4" :card="card" :link="share.url" :sticker="sticker" />
-            </div>
-
-            <!-- De kind-link: de kaart voor het kind zelf, zonder inlog. Een
-                 kind van acht heeft geen wachtwoord; dit is zijn ingang. -->
-            <div v-if="childLink.can" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
-                <p class="flex items-center gap-2 font-medium">
-                    <Smile class="size-4 text-primary" />
-                    Link voor {{ card.first_name }} zelf
-                </p>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    Een eigen link waarmee {{ card.first_name }} zonder wachtwoord op zijn eigen account komt: de kaart, de voortgang, Mijn kaarten
-                    en de meldingen, net als een speler met een eigen inlog. Open hem één keer op de tablet of telefoon van je kind; daarna blijft
-                    het ingelogd. Wie de link heeft komt op het account, dus geef hem alleen aan je kind.
-                </p>
-
-                <template v-if="childLink.url">
-                    <div class="mt-4 flex flex-wrap items-center gap-2">
-                        <input
-                            :value="childLink.url"
-                            readonly
-                            class="min-h-11 min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-xs text-muted-foreground"
-                            @focus="($event.target as HTMLInputElement).select()"
-                        />
-                        <button
-                            type="button"
-                            class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition hover:border-primary"
-                            @click="kopieer('kind', childLink.url)"
-                        >
-                            <Check v-if="gekopieerd === 'kind'" class="size-4 text-primary" />
-                            <Copy v-else class="size-4" />
-                            {{ gekopieerd === 'kind' ? 'Gekopieerd' : 'Kopieer' }}
-                        </button>
-                    </div>
-
-                    <div v-if="qr" class="mt-4 flex flex-col items-center gap-3 rounded-xl border border-border bg-background p-4 sm:flex-row sm:items-start sm:gap-4">
-                        <img :src="qr" alt="QR-code van de link" class="size-40 shrink-0 rounded-lg bg-white p-1" />
-                        <div class="text-sm">
-                            <p class="flex items-center gap-2 font-medium"><QrCode class="size-4" /> Of scan hem</p>
-                            <p class="mt-1 text-muted-foreground">
-                                Laat {{ card.first_name }} deze code scannen met de camera van de tablet. Het account opent meteen, en met "Zet
-                                op je beginscherm" staat de app daarna als icoon.
+                <!-- De kind-link: de weg voor het kind zelf. Altijd open en in
+                     drie stappen, want "deel dit met je kind en zet het op het
+                     beginscherm" moet je niet hoeven uitzoeken. -->
+                <div v-if="childLink.can" class="bg-primary/5 p-5" :class="{ 'border-t border-border': player.overall_rating }">
+                    <div class="flex items-start gap-3">
+                        <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary"><Smile class="size-5" /></span>
+                        <div class="min-w-0">
+                            <p class="font-semibold">Deel de kaart met {{ card.first_name }}</p>
+                            <p class="mt-0.5 text-sm text-muted-foreground">
+                                Een eigen link voor de telefoon of tablet van je kind. Daarmee kan {{ card.first_name }} de kaart altijd bekijken, zonder
+                                wachtwoord, en ziet het na elke training wat er veranderd is.
                             </p>
                         </div>
                     </div>
 
-                    <div class="mt-3 flex flex-wrap gap-4">
-                        <button
-                            type="button"
-                            class="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4"
-                            @click="kindLinkVernieuw"
-                        >
+                    <ol class="mt-5 space-y-4">
+                        <!-- 1. Sturen -->
+                        <li class="flex gap-3">
+                            <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">1</span>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-medium">Stuur de link naar {{ card.first_name }}</p>
+
+                                <template v-if="childLink.url">
+                                    <div class="mt-2 flex flex-wrap gap-2">
+                                        <button
+                                            type="button"
+                                            class="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                                            @click="stuurNaarKind"
+                                        >
+                                            <Send class="size-4" />
+                                            Stuur naar {{ card.first_name }}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-medium transition hover:border-primary"
+                                            @click="kopieer('kind', childLink.url)"
+                                        >
+                                            <Check v-if="gekopieerd === 'kind'" class="size-4 text-primary" />
+                                            <Copy v-else class="size-4" />
+                                            {{ gekopieerd === 'kind' ? 'Gekopieerd' : 'Kopiëren' }}
+                                        </button>
+                                    </div>
+
+                                    <div v-if="qr" class="mt-3 flex items-center gap-3 rounded-xl border border-border bg-card p-3">
+                                        <img :src="qr" alt="QR-code van de link" class="size-24 shrink-0 rounded-lg bg-white p-1" />
+                                        <p class="text-xs text-muted-foreground">
+                                            Staat {{ card.first_name }} naast je? Laat de camera van de telefoon of tablet deze code scannen.
+                                        </p>
+                                    </div>
+                                </template>
+
+                                <button
+                                    v-else
+                                    type="button"
+                                    class="mt-2 inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                                    @click="kindLinkAan"
+                                >
+                                    <Link2 class="size-4" />
+                                    Link voor {{ card.first_name }} maken
+                                </button>
+                            </div>
+                        </li>
+
+                        <!-- 2. Openen -->
+                        <li class="flex gap-3">
+                            <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">2</span>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-medium">{{ card.first_name }} opent de link</p>
+                                <p class="mt-0.5 text-sm text-muted-foreground">
+                                    Meteen op het eigen account, en het blijft ingelogd. De kaart, de voortgang en Mijn kaarten zijn daarna altijd te
+                                    bekijken.
+                                </p>
+                            </div>
+                        </li>
+
+                        <!-- 3. Beginscherm -->
+                        <li class="flex gap-3">
+                            <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">3</span>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-medium">Zet de app op het beginscherm</p>
+                                <p class="mt-0.5 text-sm text-muted-foreground">
+                                    Dan staat de kaart als app tussen de andere apps en is hij met één tik open. De app vraagt het zelf zodra de link
+                                    geopend is.
+                                </p>
+                                <ul class="mt-2 space-y-1 text-xs text-muted-foreground">
+                                    <li><span class="font-medium text-foreground">iPhone of iPad:</span> tik op Deel, kies Zet op beginscherm</li>
+                                    <li><span class="font-medium text-foreground">Android:</span> tik op de drie puntjes, kies App installeren</li>
+                                </ul>
+                            </div>
+                        </li>
+                    </ol>
+
+                    <div v-if="childLink.url" class="mt-4 flex flex-wrap gap-4 border-t border-border pt-3">
+                        <button type="button" class="inline-flex min-h-11 items-center text-xs font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground" @click="kindLinkVernieuw">
                             Nieuwe link maken
                         </button>
-                        <button
-                            type="button"
-                            class="inline-flex min-h-11 items-center text-sm font-medium text-destructive underline underline-offset-4"
-                            @click="kindLinkUit"
-                        >
+                        <button type="button" class="inline-flex min-h-11 items-center text-xs font-medium text-destructive underline underline-offset-4" @click="kindLinkUit">
                             Link uitzetten
                         </button>
                     </div>
-                </template>
+                </div>
 
-                <button
-                    v-else
-                    type="button"
-                    class="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
-                    @click="kindLinkAan"
-                >
-                    <Link2 class="size-4" />
-                    Link voor {{ card.first_name }} maken
-                </button>
-            </div>
-
-            <!-- De deel-link: standaard uit, en met de gevolgen erbij -->
-            <div v-if="share.can && player.overall_rating" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
-                <p class="font-medium">Deel-link</p>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    Maak een link waarmee iemand zonder account deze kaart kan bekijken. Op die pagina staan alleen de voornaam met initiaal, de
-                    positie en de cijfers - geen achternaam, leeftijd, school of trainersnotities.
-                </p>
-
-                <template v-if="share.url">
-                    <div class="mt-4 flex flex-wrap items-center gap-2">
-                        <input
-                            :value="share.url"
-                            readonly
-                            class="min-h-11 min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-xs text-muted-foreground"
-                            @focus="($event.target as HTMLInputElement).select()"
-                        />
-                        <button
-                            type="button"
-                            class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition hover:border-primary"
-                            @click="kopieer('deel', share.url)"
+                <!-- De deel-link -->
+                <div v-if="share.can && player.overall_rating" class="border-t border-border">
+                    <button type="button" class="flex min-h-16 w-full items-center gap-3 px-5 py-3 text-left transition hover:bg-secondary/40" @click="deelOpen = !deelOpen">
+                        <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground"><Link2 class="size-4" /></span>
+                        <span class="min-w-0 flex-1">
+                            <span class="block text-sm font-medium">Openbare deel-link</span>
+                            <span class="block text-xs text-muted-foreground">Voornaam met initiaal en de cijfers, voor iedereen met de link</span>
+                        </span>
+                        <span
+                            class="shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold"
+                            :class="share.url ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground'"
+                            >{{ share.url ? 'Aan' : 'Uit' }}</span
                         >
-                            <Check v-if="gekopieerd === 'deel'" class="size-4 text-primary" />
-                            <Copy v-else class="size-4" />
-                            {{ gekopieerd === 'deel' ? 'Gekopieerd' : 'Kopieer' }}
+                        <ChevronDown class="size-4 shrink-0 text-muted-foreground transition" :class="{ 'rotate-180': deelOpen }" />
+                    </button>
+
+                    <div v-if="deelOpen" class="px-5 pb-5">
+                        <p class="text-sm text-muted-foreground">
+                            Iedereen met deze link ziet de kaart zonder account. Er staan alleen de voornaam met initiaal, de positie en de cijfers op: geen
+                            achternaam, leeftijd, school of notities van de trainer.
+                        </p>
+
+                        <template v-if="share.url">
+                            <div class="mt-4 flex flex-wrap items-center gap-2">
+                                <input
+                                    :value="share.url"
+                                    readonly
+                                    class="min-h-11 min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-xs text-muted-foreground"
+                                    @focus="($event.target as HTMLInputElement).select()"
+                                />
+                                <button
+                                    type="button"
+                                    class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition hover:border-primary"
+                                    @click="kopieer('deel', share.url)"
+                                >
+                                    <Check v-if="gekopieerd === 'deel'" class="size-4 text-primary" />
+                                    <Copy v-else class="size-4" />
+                                    {{ gekopieerd === 'deel' ? 'Gekopieerd' : 'Kopieer' }}
+                                </button>
+                            </div>
+                            <button type="button" class="mt-2 inline-flex min-h-11 items-center text-sm font-medium text-destructive underline underline-offset-4" @click="deelUit">
+                                Uitzetten
+                            </button>
+                        </template>
+
+                        <button
+                            v-else
+                            type="button"
+                            class="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl border border-border px-4 text-sm font-medium transition hover:border-primary"
+                            @click="deelAan"
+                        >
+                            <Link2 class="size-4" />
+                            Deel-link aanmaken
                         </button>
                     </div>
-
-                    <button
-                        type="button"
-                        class="mt-3 inline-flex min-h-11 items-center text-sm font-medium text-destructive underline underline-offset-4"
-                        @click="deelUit"
-                    >
-                        Delen stoppen
-                    </button>
-                </template>
-
-                <button
-                    v-else
-                    type="button"
-                    class="mt-4 inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-medium transition hover:border-primary"
-                    @click="deelAan"
-                >
-                    <Link2 class="size-4" />
-                    Deel-link aanmaken
-                </button>
+                </div>
             </div>
         </div>
     </AppLayout>

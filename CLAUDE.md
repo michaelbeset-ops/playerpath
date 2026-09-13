@@ -944,6 +944,15 @@ het kind hoort hetzelfde te zien als elke speler, niet een tweede versie.
 - **Wie al ingelogd was wordt gewisseld naar het kind**: een ouder die de
   link test moet niet op zijn eigen dashboard uitkomen en denken dat de
   link niets doet.
+- **Op de kaartpagina staat de kind-link in drie stappen**, altijd open:
+  stuur de link naar je kind (knop via het deelmenu van de telefoon, of
+  kopiëren, of de QR-code), je kind opent hem en kan de kaart daarna altijd
+  bekijken, zet de app op het beginscherm. Dat moet je niet hoeven
+  uitzoeken.
+- **Via de link komt meteen de vraag om de app op het beginscherm te
+  zetten** (`flash.kindWelkom` → `InstallPrompt`), ook als die vraag op dat
+  apparaat eerder is weggeklikt. Dat is het moment: de tablet van het kind
+  ligt in de hand.
 - Zelfde regels als de deel-link: `X-Robots-Tag`, throttle, zoeken op token
   met `withoutScope()`. Alles daarna is gewoon de app, met de school uit
   het account en de policies van een speler.
@@ -1017,6 +1026,15 @@ speler/ouder-kant van het merk (hoofdstuk 4).
   seizoenskaarten (`player_card_seasons`) als verzameling, elk getekend met
   dezelfde component uit de cijfers en het level van toen. Geen mijlpalen en
   geen achterkant op een oude kaart: die horen bij nu.
+- **Foto en rugnummer klappen in zodra ze er allebei staan**
+  (`CardPersonalise.vue`): tot dan een opvallend blok met "1 van 2", daarna
+  één regel met de foto, het nummer en "Aanpassen". Het rugnummer slaat
+  zichzelf op (plus, min of typen); een opslaan-knop naast één getal is een
+  stap die niemand verwacht.
+- **Delen is één knop** (`CardShareActions.vue`) met eronder: delen via
+  het deelmenu, naar Snapchat, opslaan als afbeelding, link kopiëren. De
+  kind-link en de openbare deel-link staan in hetzelfde vak als regels met
+  "Aan" of "Uit" die uitklappen, zodat de pagina niet drie keer delen zegt.
 - **De deel-afbeelding krijgt een sticker** als er iets te vieren is:
   "NIEUW LEVEL" na een level-up, anders "+X GEGROEID" als de gemiddelde
   groei van het laatste rapport minstens drie punten is (`groeiSticker()`).

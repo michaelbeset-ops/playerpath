@@ -98,6 +98,9 @@ class HandleInertiaRequests extends Middleware
                 'status' => fn () => $request->session()->get('status'),
                 // Wat een zojuist opgeslagen rapport veranderde; zie ReportOutcome.
                 'reportResult' => fn () => $request->session()->get('reportResult'),
+                // Net binnengekomen via de kind-link: dan vraagt de app meteen
+                // of de kaart op het beginscherm mag. Zie ChildCardController.
+                'kindWelkom' => fn () => (bool) $request->session()->get('kindWelkom', false),
             ],
         ]);
     }

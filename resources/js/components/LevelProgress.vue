@@ -94,7 +94,8 @@ const zin = computed(() => {
 
         <div class="mt-2 flex justify-between text-[11px] text-muted-foreground">
             <span v-for="(l, i) in levels" :key="l.key" :class="i === huidigIndex ? 'font-semibold text-foreground' : ''">
-                {{ l.label }}<template v-if="l.xp > 0"> {{ l.xp }}</template>
+                <span>{{ l.label }}</span>
+                <span v-if="l.xp > 0" class="tabular ml-1 opacity-70">{{ l.xp }}</span>
             </span>
         </div>
 

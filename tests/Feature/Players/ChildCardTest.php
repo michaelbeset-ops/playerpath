@@ -66,9 +66,10 @@ class ChildCardTest extends TestCase
         $this->assertSame(48, strlen($token));
         $this->assertNull($this->speler->user_id, 'Het account ontstaat pas als de link geopend wordt.');
 
-        // De link openen, zonder ingelogd te zijn: ingelogd als het kind.
+        // De link openen, zonder ingelogd te zijn: ingelogd als het kind, en
+        // meteen de vraag om de app op het beginscherm te zetten.
         $this->app['auth']->forgetGuards();
-        $this->get("/kind/{$token}")->assertRedirect('/dashboard');
+        $this->get("/kind/{$token}")->assertRedirect('/dashboard')->assertSessionHas('kindWelkom', true);
 
         $kind = $this->speler->refresh()->user;
         $this->assertNotNull($kind);

@@ -1,17 +1,22 @@
 <script setup lang="ts">
 import type { Kaart } from '@/components/PlayerCardVisual.vue';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { deelKaartAlsAfbeelding, slaKaartOp } from '@/lib/cardImage';
-import { Check, Copy, Ghost, ImageDown, Share2 } from 'lucide-vue-next';
+import { ChevronDown, Copy, Ghost, ImageDown, Share2, X } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 /**
- * De kaart delen: via het deelmenu, als opgeslagen afbeelding, of naar
- * Snapchat.
+ * De kaart delen: één knop, met de manieren eronder.
+ *
+ * Vier knoppen naast elkaar lieten je kiezen voordat je wist wat het
+ * verschil was. Nu is het "Delen", en daaronder: via het deelmenu van je
+ * telefoon (WhatsApp, Instagram), als afbeelding opslaan, naar Snapchat, of
+ * de link kopiëren.
  *
  * Snapchat pakt een afbeelding uit het deelmenu op veel telefoons niet goed
  * op. Daarom een eigen weg: de afbeelding opslaan, zeggen dat hij in je
  * foto's staat, en een knop die Snapchat opent; daar kies je hem uit je
- * galerij. Omslachtiger dan één tik, maar het werkt overal.
+ * galerij.
  */
 const props = defineProps<{
     card: Kaart;
@@ -19,19 +24,20 @@ const props = defineProps<{
     sticker?: string | null;
 }>();
 
-const bezig = ref<string | null>(null);
+const bezig = ref(false);
 const melding = ref<string | null>(null);
-const gekopieerd = ref(false);
 const snapchatKlaar = ref(false);
 
-const deel = async () => {
-    bezig.value = 'deel';
+const start = () => {
+    bezig.value = true;
     melding.value = null;
     snapchatKlaar.value = false;
+};
 
+const deel = async () => {
+    start();
     const uitkomst = await deelKaartAlsAfbeelding(props.card, props.link, props.sticker ?? null);
-
-    bezig.value = null;
+    bezig.value = false;
     melding.value = {
         gedeeld: null,
         geannuleerd: null,
@@ -41,23 +47,16 @@ const deel = async () => {
 };
 
 const bewaar = async () => {
-    bezig.value = 'bewaar';
-    melding.value = null;
-    snapchatKlaar.value = false;
-
+    start();
     const uitkomst = await slaKaartOp(props.card, props.link, props.sticker ?? null);
-
-    bezig.value = null;
+    bezig.value = false;
     melding.value = uitkomst === 'gedownload' ? 'Kaart opgeslagen in je foto’s of downloads.' : 'Het opslaan is niet gelukt. Probeer het nog eens.';
 };
 
 const naarSnapchat = async () => {
-    bezig.value = 'snapchat';
-    melding.value = null;
-
+    start();
     const uitkomst = await slaKaartOp(props.card, props.link, props.sticker ?? null);
-
-    bezig.value = null;
+    bezig.value = false;
 
     if (uitkomst !== 'gedownload') {
         melding.value = 'Het opslaan is niet gelukt. Probeer het nog eens.';
@@ -74,66 +73,72 @@ const kopieer = async () => {
     }
 
     await navigator.clipboard.writeText(props.link);
-    gekopieerd.value = true;
-    setTimeout(() => (gekopieerd.value = false), 2000);
+    snapchatKlaar.value = false;
+    melding.value = 'De link is gekopieerd.';
 };
 </script>
 
 <template>
     <div>
-        <div class="flex flex-wrap items-center gap-2">
+        <DropdownMenu>
+            <DropdownMenuTrigger as-child>
+                <button
+                    type="button"
+                    class="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+                    :disabled="bezig"
+                >
+                    <Share2 class="size-4" :class="{ 'animate-pulse': bezig }" />
+                    {{ bezig ? 'Even geduld…' : 'Delen' }}
+                    <ChevronDown class="size-4 opacity-80" />
+                </button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent align="start" class="w-64">
+                <DropdownMenuItem class="min-h-11 cursor-pointer gap-3" @click="deel">
+                    <Share2 class="size-4" />
+                    <span>
+                        <span class="block font-medium">Delen via…</span>
+                        <span class="block text-xs text-muted-foreground">WhatsApp, Instagram en meer</span>
+                    </span>
+                </DropdownMenuItem>
+                <DropdownMenuItem class="min-h-11 cursor-pointer gap-3" @click="naarSnapchat">
+                    <Ghost class="size-4" />
+                    <span class="font-medium">Naar Snapchat</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem class="min-h-11 cursor-pointer gap-3" @click="bewaar">
+                    <ImageDown class="size-4" />
+                    <span class="font-medium">Opslaan als afbeelding</span>
+                </DropdownMenuItem>
+                <template v-if="link">
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem class="min-h-11 cursor-pointer gap-3" @click="kopieer">
+                        <Copy class="size-4" />
+                        <span class="font-medium">Link kopiëren</span>
+                    </DropdownMenuItem>
+                </template>
+            </DropdownMenuContent>
+        </DropdownMenu>
+
+        <div v-if="melding" class="mt-3 flex items-start gap-3 rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm" role="status">
+            <div class="min-w-0 flex-1">
+                <p>{{ melding }}</p>
+                <a
+                    v-if="snapchatKlaar"
+                    href="snapchat://"
+                    class="mt-2 inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#FFFC00] px-4 text-sm font-semibold text-black"
+                >
+                    <Ghost class="size-4" />
+                    Open Snapchat
+                </a>
+            </div>
             <button
                 type="button"
-                class="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
-                :disabled="bezig !== null"
-                @click="deel"
+                class="-m-1 flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground"
+                aria-label="Sluiten"
+                @click="melding = null"
             >
-                <Share2 class="size-4" :class="{ 'animate-pulse': bezig === 'deel' }" />
-                Delen
+                <X class="size-4" />
             </button>
-
-            <button
-                type="button"
-                class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border px-4 text-sm font-medium transition hover:border-primary disabled:opacity-60"
-                :disabled="bezig !== null"
-                @click="bewaar"
-            >
-                <ImageDown class="size-4" :class="{ 'animate-pulse': bezig === 'bewaar' }" />
-                Opslaan als afbeelding
-            </button>
-
-            <button
-                type="button"
-                class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border px-4 text-sm font-medium transition hover:border-primary disabled:opacity-60"
-                :disabled="bezig !== null"
-                @click="naarSnapchat"
-            >
-                <Ghost class="size-4" :class="{ 'animate-pulse': bezig === 'snapchat' }" />
-                Delen naar Snapchat
-            </button>
-
-            <button
-                v-if="link"
-                type="button"
-                class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border px-4 text-sm font-medium transition hover:border-primary"
-                @click="kopieer"
-            >
-                <Check v-if="gekopieerd" class="size-4 text-primary" />
-                <Copy v-else class="size-4" />
-                {{ gekopieerd ? 'Link gekopieerd' : 'Link kopiëren' }}
-            </button>
-        </div>
-
-        <div v-if="melding" class="mt-3 rounded-xl border border-primary/30 bg-primary/5 p-3 text-sm" role="status">
-            <p>{{ melding }}</p>
-            <a
-                v-if="snapchatKlaar"
-                href="snapchat://"
-                class="mt-2 inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#FFFC00] px-4 text-sm font-semibold text-black"
-            >
-                <Ghost class="size-4" />
-                Open Snapchat
-            </a>
         </div>
     </div>
 </template>

@@ -64,7 +64,10 @@ class ChildCardController extends Controller
             $request->session()->regenerate();
         }
 
-        return redirect()->route('dashboard');
+        // Meteen de vraag om de app op het beginscherm te zetten: dit is het
+        // moment, met de tablet van het kind in de hand. Later komt hij niet
+        // meer als het al een app is.
+        return redirect()->route('dashboard')->with('kindWelkom', true);
     }
 
     /** Aanmaken, of vernieuwen: altijd een nieuw token, de oude link is dood. */
