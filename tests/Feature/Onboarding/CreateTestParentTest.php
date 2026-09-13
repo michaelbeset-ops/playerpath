@@ -70,6 +70,8 @@ class CreateTestParentTest extends TestCase
         User::factory()->for($this->school)->create(['email' => 'bezet@playerpath.nl'])->assignRole(Role::Ouder->value);
         $this->artisan('playerpath:test-ouder', ['school' => 'testschool', '--email' => 'bezet@playerpath.nl'])->assertFailed();
 
-        $this->artisan('playerpath:test-ouder')->assertFailed();
+        // Zonder school: de lijst met slugs, en dat is geen fout.
+        $this->artisan('playerpath:test-ouder')->expectsOutputToContain('testschool')->assertSuccessful();
+        $this->assertSame(1, User::count());
     }
 }

@@ -39,10 +39,12 @@ class CreateTestParent extends Command
         $slug = $this->argument('school');
 
         if ($slug === null) {
+            // Geen fout: dit is de manier om de slug op te zoeken. Een rode
+            // "Failed" in Forge zou lezen alsof er iets stuk is.
             $this->line('Welke school? Draai het opnieuw met een van deze slugs:');
             School::query()->orderBy('name')->get(['name', 'slug'])->each(fn (School $s) => $this->line("  {$s->slug}  ({$s->name})"));
 
-            return self::FAILURE;
+            return self::SUCCESS;
         }
 
         $school = School::where('slug', $slug)->first();
