@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import CardGlow from '@/components/CardGlow.vue';
+import CardHowItWorks from '@/components/CardHowItWorks.vue';
 import LevelProgress from '@/components/LevelProgress.vue';
 import PlayerCardVisual, { type Kaart } from '@/components/PlayerCardVisual.vue';
 import { useAppMode } from '@/composables/useAppMode';
@@ -91,8 +92,13 @@ onUnmounted(() => window.removeEventListener('beforeinstallprompt', onBeforeInst
                 <span>{{ schoolName }}</span>
             </div>
 
-            <h1 class="mt-3 text-center text-3xl font-bold tracking-tight">Hoi {{ card.first_name }}!</h1>
-            <p class="mt-1 text-center text-sm text-muted-foreground">Dit is jouw kaart. Hij verandert mee met elke training.</p>
+            <div class="relative mt-3 text-center">
+                <div class="pointer-events-none absolute inset-x-0 -top-10 mx-auto h-40 w-64 rounded-full bg-primary/20 blur-3xl" aria-hidden="true"></div>
+                <h1 class="relative text-4xl font-extrabold tracking-tight">Hoi {{ card.first_name }}!</h1>
+                <p class="relative mt-2 text-sm text-muted-foreground">
+                    Dit is jouw eigen spelerskaart. Elke training en elk rapport telt mee, en je ziet hem hier groeien.
+                </p>
+            </div>
 
             <div class="mt-6">
                 <CardGlow :level="card.overall === null ? 'geen' : card.level.key">
@@ -134,6 +140,8 @@ onUnmounted(() => window.removeEventListener('beforeinstallprompt', onBeforeInst
                     </li>
                 </ol>
             </div>
+
+            <CardHowItWorks class="mt-8" :card="card" />
 
             <!-- Mijlpalen: wat je hebt, en wat je nog kunt halen -->
             <div v-if="card.overall !== null && badges.length" class="mt-4 rounded-2xl border border-border bg-card p-4">
@@ -179,14 +187,21 @@ onUnmounted(() => window.removeEventListener('beforeinstallprompt', onBeforeInst
                     </div>
                 </div>
 
-                <p v-else class="mt-2 text-sm text-muted-foreground">
-                    Aan het eind van elk seizoen bewaren we je kaart. Zo bouw je een verzameling op.
-                </p>
+                <div v-else class="mt-3 rounded-2xl border border-dashed border-border bg-card p-4 text-sm text-muted-foreground">
+                    <p class="font-medium text-foreground">Nog geen oude kaarten</p>
+                    <p class="mt-1">
+                        Aan het eind van elk seizoen bewaren we je kaart zoals hij dan is: met je cijfers en je level. Daarna beginnen de punten
+                        opnieuw en spaar je voor de volgende. Zo bouw je een echte verzameling op.
+                    </p>
+                </div>
             </section>
 
-            <div class="mt-8 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                <AppLogoIcon class="size-4 rounded-sm" />
-                Spelerskaart van PlayerPath
+            <div class="mt-10 flex flex-col items-center gap-1 text-xs text-muted-foreground">
+                <div class="flex items-center gap-2">
+                    <AppLogoIcon class="size-4 rounded-sm" />
+                    Spelerskaart van PlayerPath
+                </div>
+                <p>Bewaar deze pagina: je kaart is hier altijd te vinden.</p>
             </div>
         </div>
     </div>
