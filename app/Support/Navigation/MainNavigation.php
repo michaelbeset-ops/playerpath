@@ -122,8 +122,12 @@ class MainNavigation
                 ],
             ],
             [
-                // Alles wat over de school zelf gaat en niet over een klant.
-                'title' => 'Mijn bedrijf', 'icon' => 'business', 'items' => [
+                // Voor de eigenaar: alles wat over de school zelf gaat en niet
+                // over een klant. Een ouder of kind heeft geen bedrijf; daar
+                // staat alleen wat over henzelf gaat, dus heet het zo.
+                'title' => $user->isEigenaar() ? 'Mijn bedrijf' : 'Mijn account',
+                'icon' => $user->isEigenaar() ? 'business' : 'settings',
+                'items' => [
                     ['title' => 'Personeel', 'href' => '/staff', 'icon' => 'staff', 'allowed' => $user->isEigenaar()],
                     // Je eigen beschikbaarheid vul je in; het overzicht van het
                     // hele team is van de eigenaar, die er zijn planning op maakt.
@@ -134,7 +138,10 @@ class MainNavigation
                     ['title' => 'Seizoen', 'href' => '/seizoen', 'icon' => 'calendar', 'allowed' => $user->isEigenaar()],
                     ['title' => 'Huisstijl', 'href' => '/branding', 'icon' => 'branding', 'allowed' => $user->isEigenaar()],
                     ['title' => 'Verantwoording', 'href' => '/verantwoording', 'icon' => 'accountability', 'allowed' => $user->isEigenaar()],
-                    ['title' => 'Instellingen', 'href' => '/settings/profile', 'icon' => 'settings', 'allowed' => true],
+                    // Een kind-account (via de link van de ouder) heeft geen
+                    // echt adres en geen wachtwoord dat iemand kent: daar valt
+                    // niets in te stellen. Dan blijft Help over als los item.
+                    ['title' => 'Instellingen', 'href' => '/settings/profile', 'icon' => 'settings', 'allowed' => ! $user->isKindAccount()],
                     ['title' => 'Help', 'href' => '/help', 'icon' => 'help', 'allowed' => true],
                 ],
             ],

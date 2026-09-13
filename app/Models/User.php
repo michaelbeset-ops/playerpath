@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Actions\Players\EnsurePlayerAccount;
 use App\Enums\Role as RoleEnum;
 use App\Support\Tenancy\Tenancy;
 use Database\Factories\UserFactory;
@@ -184,6 +185,16 @@ class User extends Authenticatable
     public function isSpeler(): bool
     {
         return $this->hasRole(RoleEnum::Speler->value);
+    }
+
+    /**
+     * Een account dat ontstond via de kind-link (EnsurePlayerAccount): geen
+     * echt e-mailadres, geen wachtwoord dat iemand kent. Herkend aan het
+     * adres, want dat is precies wat zo'n account anders maakt.
+     */
+    public function isKindAccount(): bool
+    {
+        return str_ends_with((string) $this->email, '@'.EnsurePlayerAccount::DOMEIN);
     }
 
     /**

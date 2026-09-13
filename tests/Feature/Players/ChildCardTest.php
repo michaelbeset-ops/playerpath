@@ -6,6 +6,7 @@ use App\Enums\Role;
 use App\Models\Player;
 use App\Models\School;
 use App\Models\User;
+use App\Support\Navigation\MainNavigation;
 use App\Support\Tenancy\Tenancy;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -89,6 +90,35 @@ class ChildCardTest extends TestCase
         $this->get("/kind/{$token}")->assertRedirect('/dashboard');
         $this->assertSame($kind->id, $this->speler->refresh()->user_id);
         $this->assertSame(1, User::where('school_id', $this->school->id)->role(Role::Speler->value)->count());
+    }
+
+    public function test_ouder_en_kind_zien_geen_mijn_bedrijf_en_het_kind_geen_instellingen(): void
+    {
+        $nav = app(MainNavigation::class);
+
+        // De eigenaar houdt Mijn bedrijf.
+        $this->assertContains('Mijn bedrijf', array_column($nav->for($this->eigenaar), 'title'));
+
+        // Een ouder niet: daar heet het Mijn account.
+        $ouder = User::factory()->for($this->school)->create();
+        $ouder->assignRole(Role::Ouder->value);
+        $titels = array_column($nav->for($ouder), 'title');
+        $this->assertNotContains('Mijn bedrijf', $titels);
+        $this->assertContains('Mijn account', $titels);
+
+        // Het kind via de link: geen Mijn bedrijf, geen Instellingen, wel Help.
+        $this->actingAs($this->eigenaar)->post("/players/{$this->speler->id}/kind-link");
+        $this->app['auth']->forgetGuards();
+        $this->get('/kind/'.$this->speler->refresh()->child_token);
+
+        $kind = $this->speler->refresh()->user;
+        $this->assertTrue($kind->isKindAccount());
+        $this->assertFalse($ouder->isKindAccount());
+
+        $menu = $nav->for($kind);
+        $this->assertNotContains('Mijn bedrijf', array_column($menu, 'title'));
+        $this->assertNotContains('/settings/profile', $this->navHrefs($menu));
+        $this->assertContains('/help', $this->navHrefs($menu));
     }
 
     public function test_een_kind_met_een_eigen_inlog_houdt_dat_account(): void
