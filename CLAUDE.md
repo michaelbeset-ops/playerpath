@@ -2245,9 +2245,12 @@ telefoonnummer en e-mailadres van die school als ze die heeft. Wij kennen
 het kind en de afspraken niet, de school wel.
 
 Een ouderaccount om zelf mee te testen, ook op productie:
-`php artisan playerpath:test-ouder {school-slug}`. Dat maakt een ouder met een
-wachtwoord dat alleen op het scherm verschijnt, gekoppeld aan de best gevulde
-speler (of een nieuw testkind), met de kind-link erbij. Nooit voor een echte
+`php artisan playerpath:test-ouder {school-slug} --email=… --wachtwoord=…`. Dat
+maakt een ouder, gekoppeld aan de best gevulde speler (of een nieuw testkind),
+met de kind-link erbij. Kies e-mail en wachtwoord zelf: dan ken je de login
+vooraf en hoef je hem niet uit de uitvoer van Forge te halen. Nog eens draaien
+met hetzelfde adres zet alleen het wachtwoord opnieuw. De uitvoer is gewone
+regels, geen tabel, en zonder school zegt hij dat er eerst een moet komen. Nooit voor een echte
 ouder: die krijgt een uitnodiging en kiest zelf een wachtwoord. Het vraagteken in de balk gaat hierheen, voor
 iedereen; de rondleiding opnieuw starten staat op deze pagina (eigenaar) en
 in het accountmenu. Het menu-item Help staat bij Mijn bedrijf / Mijn account. Het manifest

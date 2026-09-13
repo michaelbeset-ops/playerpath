@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 /**
@@ -17,8 +18,11 @@ use Illuminate\Support\Str;
  *
  * Zelfregistratie staat dicht en een uitnodiging vraagt een mailbox; voor
  * "even kijken hoe het er voor een ouder uitziet" is dat een omweg. Dit zet
- * in één keer neer: een ouder met een wachtwoord dat op het scherm komt, aan
- * een kind gekoppeld, met de kind-link erbij.
+ * in één keer neer: een ouder, aan een kind gekoppeld, met de kind-link erbij.
+ *
+ * Kies e-mail en wachtwoord zelf (--email, --wachtwoord): dan weet je de
+ * login vooraf en hoef je hem niet uit de uitvoer van Forge te halen. Bestaat
+ * het adres al als testouder, dan wordt alleen het wachtwoord opnieuw gezet.
  *
  * Het kind: met --speler een bestaande speler, anders de best gevulde echte
  * speler van de school, anders een voorbeeldspeler, en als er helemaal niets
@@ -30,6 +34,7 @@ class CreateTestParent extends Command
     protected $signature = 'playerpath:test-ouder
                             {school? : De slug van de school, bijvoorbeeld voetbalschool-playerpath}
                             {--email= : E-mailadres van de testouder (standaard een uniek testadres)}
+                            {--wachtwoord= : Het wachtwoord (standaard een willekeurig wachtwoord)}
                             {--speler= : Het id van de speler die het kind wordt}';
 
     protected $description = 'Maak een ouderaccount met kind en kind-link om mee te testen';
@@ -37,12 +42,19 @@ class CreateTestParent extends Command
     public function handle(Tenancy $tenancy): int
     {
         $slug = $this->argument('school');
+        $scholen = School::query()->orderBy('name')->get(['name', 'slug']);
+
+        if ($scholen->isEmpty()) {
+            $this->line('Er is nog geen school. Maak er eerst een met: php artisan school:create');
+
+            return self::FAILURE;
+        }
 
         if ($slug === null) {
             // Geen fout: dit is de manier om de slug op te zoeken. Een rode
             // "Failed" in Forge zou lezen alsof er iets stuk is.
             $this->line('Welke school? Draai het opnieuw met een van deze slugs:');
-            School::query()->orderBy('name')->get(['name', 'slug'])->each(fn (School $s) => $this->line("  {$s->slug}  ({$s->name})"));
+            $scholen->each(fn (School $s) => $this->line("  {$s->slug}  ({$s->name})"));
 
             return self::SUCCESS;
         }
@@ -50,40 +62,55 @@ class CreateTestParent extends Command
         $school = School::where('slug', $slug)->first();
 
         if ($school === null) {
-            $this->error("Er is geen school met slug '{$slug}'.");
+            $this->line("Er is geen school met slug '{$slug}'. Deze bestaan wel:");
+            $scholen->each(fn (School $s) => $this->line("  {$s->slug}  ({$s->name})"));
 
             return self::FAILURE;
         }
 
-        $email = $this->option('email') ?: 'testouder-'.Str::lower(Str::random(6)).'@playerpath.nl';
+        $email = Str::lower($this->option('email') ?: 'testouder-'.Str::lower(Str::random(6)).'@playerpath.nl');
+        $wachtwoord = $this->option('wachtwoord') ?: Str::password(14, symbols: false);
 
-        if (User::where('email', $email)->exists()) {
-            $this->error("Er is al een account met {$email}. Kies een ander adres met --email.");
+        if (mb_strlen($wachtwoord) < 8) {
+            $this->line('Kies een wachtwoord van minstens 8 tekens.');
+
+            return self::FAILURE;
+        }
+
+        $bestaand = User::where('email', $email)->first();
+
+        if ($bestaand !== null && ($bestaand->school_id !== $school->id || ! $bestaand->isOuder())) {
+            $this->line("Er is al een ander account met {$email}. Kies een ander adres met --email.");
 
             return self::FAILURE;
         }
 
         $tenancy->set($school);
 
-        $speler = $this->kind($school);
+        $speler = $this->kind();
 
         if ($speler === false) {
-            $this->error('Die speler bestaat niet in deze school.');
+            $this->line('Die speler bestaat niet in deze school.');
 
             return self::FAILURE;
         }
 
-        $wachtwoord = Str::password(14, symbols: false);
-
-        [$ouder, $speler] = DB::transaction(function () use ($school, $email, $wachtwoord, $speler) {
-            $ouder = User::create([
-                'school_id' => $school->id,
-                'name' => 'Testouder',
-                'email' => $email,
-                'password' => $wachtwoord,
-            ]);
-            $ouder->forceFill(['email_verified_at' => now()])->save();
-            $ouder->assignRole(Role::Ouder->value);
+        [$ouder, $speler] = DB::transaction(function () use ($school, $email, $wachtwoord, $speler, $bestaand) {
+            if ($bestaand !== null) {
+                // Opnieuw draaien met hetzelfde adres: het wachtwoord opnieuw zetten.
+                $ouder = $bestaand;
+                $ouder->forceFill(['password' => Hash::make($wachtwoord)])->save();
+                $speler ??= $ouder->children()->first();
+            } else {
+                $ouder = User::create([
+                    'school_id' => $school->id,
+                    'name' => 'Testouder',
+                    'email' => $email,
+                    'password' => $wachtwoord,
+                ]);
+                $ouder->forceFill(['email_verified_at' => now()])->save();
+                $ouder->assignRole(Role::Ouder->value);
+            }
 
             $speler ??= $this->nieuwKind();
             $speler->guardians()->syncWithoutDetaching([$ouder->id => ['relationship' => 'verzorger']]);
@@ -97,22 +124,23 @@ class CreateTestParent extends Command
 
         $url = rtrim((string) config('app.url'), '/');
 
-        $this->newLine();
-        $this->info("Testouder aangemaakt bij {$school->name}.");
-        $this->table(['', ''], [
-            ['Inloggen', $url.'/login'],
-            ['E-mail', $ouder->email],
-            ['Wachtwoord', $wachtwoord],
-            ['Kind', $speler->full_name.($speler->overall_rating ? " (rating {$speler->overall_rating})" : ' (nog geen rapport)')],
-            ['Kind-link', route('players.child', $speler->child_token)],
-        ]);
-        $this->line('Dit wachtwoord staat nergens anders. Haal het account weg als je klaar bent met testen.');
+        // Gewone regels, geen tabel: die leest in elk uitvoerscherm hetzelfde.
+        $this->line('');
+        $this->line("Testouder klaar bij {$school->name}.");
+        $this->line('');
+        $this->line('Inloggen:   '.$url.'/login');
+        $this->line('E-mail:     '.$ouder->email);
+        $this->line('Wachtwoord: '.$wachtwoord);
+        $this->line('Kind:       '.$speler->full_name.($speler->overall_rating ? " (rating {$speler->overall_rating})" : ' (nog geen rapport)'));
+        $this->line('Kind-link:  '.route('players.child', $speler->child_token));
+        $this->line('');
+        $this->line('Haal het account weg als je klaar bent met testen.');
 
         return self::SUCCESS;
     }
 
     /** @return Player|null|false false als --speler niet bestaat; null als er een nieuw kind moet komen */
-    protected function kind(School $school): Player|null|false
+    protected function kind(): Player|null|false
     {
         if ($id = $this->option('speler')) {
             return Player::whereKey($id)->first() ?? false;
