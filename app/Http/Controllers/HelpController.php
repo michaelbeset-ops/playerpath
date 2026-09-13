@@ -31,7 +31,11 @@ class HelpController extends Controller
                 default => 'speler',
             },
             'schoolName' => $user->school?->name,
-            'supportPhone' => EnrollmentSettingsController::SUPPORT_PHONE,
+            // Ons nummer is voor de school. Een ouder, kind of trainer belt
+            // zijn eigen voetbalschool; die kent het kind en de afspraken.
+            'supportPhone' => $user->isEigenaar() ? EnrollmentSettingsController::SUPPORT_PHONE : null,
+            'schoolPhone' => $user->school?->contact_phone,
+            'schoolEmail' => $user->school?->contact_email,
             // De eerste van de eigen kinderen, zodat "kaart delen" ergens
             // naartoe kan wijzen. Een ouder zonder kind ziet de knop niet.
             'firstChildId' => $user->isOuder() ? $user->children()->value('players.id') : null,

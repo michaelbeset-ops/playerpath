@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\Role;
+use App\Http\Controllers\Schools\EnrollmentSettingsController;
 use App\Models\Player;
 use App\Models\School;
 use App\Models\User;
@@ -54,7 +55,10 @@ class HelpTest extends TestCase
                 ->component('Help')
                 ->where('audience', $audience)
                 ->where('schoolName', $this->school->name)
-                ->has('supportPhone')
+                // Ons nummer alleen voor de eigenaar; de rest belt de school.
+                ->where('supportPhone', $rol === Role::Eigenaar ? EnrollmentSettingsController::SUPPORT_PHONE : null)
+                ->has('schoolPhone')
+                ->has('schoolEmail')
             );
 
         // En hij staat in het menu, voor iedereen.

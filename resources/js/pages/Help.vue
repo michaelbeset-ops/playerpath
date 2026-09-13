@@ -31,7 +31,10 @@ import { computed } from 'vue';
 const props = defineProps<{
     audience: 'eigenaar' | 'trainer' | 'ouder' | 'speler';
     schoolName: string | null;
-    supportPhone: string;
+    /** Ons nummer: alleen voor de eigenaar. */
+    supportPhone: string | null;
+    schoolPhone: string | null;
+    schoolEmail: string | null;
     firstChildId: number | null;
 }>();
 
@@ -222,13 +225,24 @@ const startRondleiding = () => router.post('/onboarding/rondleiding/opnieuw');
                 </button>
             </section>
 
-            <!-- Bellen -->
+            <!-- Hulp: de eigenaar belt ons, iedereen anders zijn eigen voetbalschool -->
             <section class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
                 <p class="flex items-center gap-2 font-medium"><Phone class="size-4 text-primary" /> Kom je er niet uit?</p>
-                <p class="mt-2 text-sm text-muted-foreground">
-                    {{ school ? 'Bel ons, dan lopen we het samen door.' : 'Vraag het aan je voetbalschool; die helpt je verder. Werkt er iets niet in de app, bel dan ons.' }}
-                </p>
-                <a :href="'tel:' + supportPhone.replace(/\s/g, '')" class="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-primary underline underline-offset-4">{{ supportPhone }}</a>
+
+                <template v-if="supportPhone">
+                    <p class="mt-2 text-sm text-muted-foreground">Bel ons, dan lopen we het samen door.</p>
+                    <a :href="'tel:' + supportPhone.replace(/\s/g, '')" class="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-primary underline underline-offset-4">{{ supportPhone }}</a>
+                </template>
+
+                <template v-else>
+                    <p class="mt-2 text-sm text-muted-foreground">
+                        Neem contact op met {{ schoolName ?? 'je voetbalschool' }}. Die kent je kind en de afspraken, en helpt je verder.
+                    </p>
+                    <div v-if="schoolPhone || schoolEmail" class="mt-2 flex flex-wrap gap-x-4">
+                        <a v-if="schoolPhone" :href="'tel:' + schoolPhone.replace(/\s/g, '')" class="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline underline-offset-4">{{ schoolPhone }}</a>
+                        <a v-if="schoolEmail" :href="'mailto:' + schoolEmail" class="inline-flex min-h-11 items-center text-sm font-semibold text-primary underline underline-offset-4">{{ schoolEmail }}</a>
+                    </div>
+                </template>
             </section>
         </div>
     </AppLayout>

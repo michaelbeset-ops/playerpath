@@ -2238,8 +2238,17 @@ haalt niemand over.
 `/help` (`HelpController` + `pages/Help.vue`): hoe het werkt, per rol, in
 de volgorde waarin je het tegenkomt. School: speler → ouder → inschrijven →
 rapport en kaart → delen. Ouder: je kind, inschrijven, hoe de kaart groeit,
-betalen, delen. Speler: de kaart. Bovenaan overal "zet op je beginscherm",
-onderaan het telefoonnummer. Het vraagteken in de balk gaat hierheen, voor
+betalen, delen. Speler: de kaart. Bovenaan overal "zet op je beginscherm".
+Onderaan staat **ons telefoonnummer alleen voor de eigenaar**; een ouder,
+kind of trainer krijgt "neem contact op met je voetbalschool", met het
+telefoonnummer en e-mailadres van die school als ze die heeft. Wij kennen
+het kind en de afspraken niet, de school wel.
+
+Een ouderaccount om zelf mee te testen, ook op productie:
+`php artisan playerpath:test-ouder {school-slug}`. Dat maakt een ouder met een
+wachtwoord dat alleen op het scherm verschijnt, gekoppeld aan de best gevulde
+speler (of een nieuw testkind), met de kind-link erbij. Nooit voor een echte
+ouder: die krijgt een uitnodiging en kiest zelf een wachtwoord. Het vraagteken in de balk gaat hierheen, voor
 iedereen; de rondleiding opnieuw starten staat op deze pagina (eigenaar) en
 in het accountmenu. Het menu-item Help staat bij Mijn bedrijf / Mijn account. Het manifest
 (`/manifest.webmanifest`) heeft naam, iconen, `start_url` en
