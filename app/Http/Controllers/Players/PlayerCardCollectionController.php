@@ -2,14 +2,9 @@
 
 namespace App\Http\Controllers\Players;
 
-use App\Enums\ReportCategory;
 use App\Http\Controllers\Controller;
 use App\Models\Player;
-use App\Models\PlayerCardSeason;
-use App\Support\PlayerCard\CalculatePlayerCard;
 use App\Support\PlayerCard\PlayerCardPresenter;
-use App\Support\Rating\AgeCategory;
-use App\Support\Rating\RatingEngine;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -26,7 +21,6 @@ class PlayerCardCollectionController extends Controller
 {
     public function __construct(
         protected PlayerCardPresenter $presenter,
-        protected RatingEngine $engine,
     ) {}
 
     public function index(Player $player): Response
@@ -34,12 +28,7 @@ class PlayerCardCollectionController extends Controller
         $this->authorize('view', $player);
 
         $huidig = $this->presenter->for($player);
-        $levels = $this->engine->settingsFor($player)->levels();
-
-        $seizoenen = $player->cardSeasons()
-            ->get()
-            ->map(fn (PlayerCardSeason $kaart) => $this->kaart($kaart, $player, $huidig, $levels))
-            ->values();
+        $seizoenen = $this->presenter->seasons($player, $huidig);
 
         return Inertia::render('players/Cards', [
             'player' => [
@@ -51,46 +40,5 @@ class PlayerCardCollectionController extends Controller
             'seasons' => $seizoenen,
             'isOwn' => auth()->user()->isSpeler() && $player->user_id === auth()->id(),
         ]);
-    }
-
-    /**
-     * Een seizoenskaart in de vorm van de kaart van nu, uit de bewaarde cijfers.
-     *
-     * @param  array<string, mixed>  $huidig
-     * @param  list<array{key: string, label: string, xp: int}>  $levels
-     * @return array<string, mixed>
-     */
-    protected function kaart(PlayerCardSeason $kaart, Player $player, array $huidig, array $levels): array
-    {
-        $ratings = $kaart->category_ratings ?? [];
-        $level = collect($levels)->firstWhere('key', $kaart->level) ?? ['key' => $kaart->level, 'label' => ucfirst((string) $kaart->level), 'xp' => 0];
-
-        return [
-            ...$huidig,
-            'age_category' => ['key' => $kaart->age_category, 'label' => AgeCategory::describe($kaart->age_category)],
-            'moved_up' => false,
-            'overall' => $kaart->overall_rating,
-            'categories' => array_map(fn (ReportCategory $c) => [
-                'category' => $c->value,
-                'label' => $c->label(),
-                'hint' => $c->hint(),
-                'rating' => CalculatePlayerCard::afronden($ratings[$c->value] ?? null),
-                'delta' => null,
-            ], $player->position->categories()),
-            'report_count' => $kaart->report_count,
-            'level' => [
-                'key' => $level['key'],
-                'label' => $level['label'],
-                'xp' => $kaart->xp,
-                'next' => null,
-                'progress' => 100,
-            ],
-            // Mijlpalen en de achterkant horen bij nu, niet bij toen.
-            'badges' => [],
-            'recent_reports' => null,
-            'goal' => null,
-            'season' => $kaart->season,
-            'archived' => true,
-        ];
     }
 }

@@ -44,6 +44,7 @@ class Player extends Model
             'overall_rating' => 'integer',
             'rated_at' => 'datetime',
             'shared_at' => 'datetime',
+            'child_link_at' => 'datetime',
             'deactivated_at' => 'datetime',
             'greeted_on' => 'date',
             'xp' => 'integer',
@@ -63,6 +64,15 @@ class Player extends Model
         static::saving(function (Player $player) {
             if ($player->isDirty('is_active')) {
                 $player->deactivated_at = $player->is_active ? null : now();
+
+                // Wie stopt, houdt geen open links: de deel-link en de
+                // kind-link gaan dicht zodra de speler op niet-actief gaat.
+                if (! $player->is_active) {
+                    $player->share_token = null;
+                    $player->shared_at = null;
+                    $player->child_token = null;
+                    $player->child_link_at = null;
+                }
             }
         });
     }
@@ -180,6 +190,12 @@ class Player extends Model
     public function isShared(): bool
     {
         return $this->share_token !== null;
+    }
+
+    /** Heeft dit kind een eigen link naar zijn kaart (zonder inlog)? */
+    public function hasChildLink(): bool
+    {
+        return $this->child_token !== null;
     }
 
     /**

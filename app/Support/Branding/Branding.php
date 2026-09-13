@@ -2,7 +2,9 @@
 
 namespace App\Support\Branding;
 
+use App\Models\Player;
 use App\Models\School;
+use App\Support\Tenancy\Tenancy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -32,6 +34,16 @@ class Branding
         // woorden, en dus ook niet via een logo. Zie CLAUDE.md over de deel-link.
         if ($request->routeIs('players.shared')) {
             return null;
+        }
+
+        // De kind-link is juist wél van de school: het kind kijkt naar zijn
+        // eigen kaart, en daar hoort de kleur en het logo van zijn school bij.
+        if ($request->routeIs('players.child')) {
+            $token = (string) $request->route('token');
+
+            return app(Tenancy::class)->withoutScope(
+                fn () => Player::where('child_token', $token)->first()?->school
+            );
         }
 
         // Het openbare inschrijfformulier haalt de school uit de URL; dat is

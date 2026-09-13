@@ -54,6 +54,12 @@ class PlayerCardController extends Controller
                 'can' => auth()->user()->can('share', $player),
                 'url' => $player->isShared() ? route('players.shared', $player->share_token) : null,
             ],
+            // De kind-link: dezelfde poort als delen (eigenaar en ouders),
+            // want ook hier beslis je wie de kaart zonder inlog te zien krijgt.
+            'childLink' => [
+                'can' => auth()->user()->can('share', $player),
+                'url' => $player->hasChildLink() ? route('players.child', $player->child_token) : null,
+            ],
             'badges' => $this->badges->for($player, $this->progress),
         ]);
     }

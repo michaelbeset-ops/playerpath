@@ -12,8 +12,9 @@ import { groeiSticker } from '@/lib/cardImage';
 import { strooiConfetti } from '@/lib/confetti';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import { Camera, Layers, Link2, Lock, TrendingUp, Trophy } from 'lucide-vue-next';
-import { computed, onMounted, ref } from 'vue';
+import QRCode from 'qrcode';
+import { Camera, Check, Copy, Layers, Link2, Lock, QrCode, Smile, TrendingUp, Trophy } from 'lucide-vue-next';
+import { computed, onMounted, ref, watch } from 'vue';
 
 const props = defineProps<{
     player: {
@@ -34,6 +35,8 @@ const props = defineProps<{
     canReport: boolean;
     badges: { key: string; label: string; description: string; earned: boolean }[];
     share: { can: boolean; url: string | null };
+    /** De kind-link: de kaart voor het kind zelf, zonder inlog. */
+    childLink: { can: boolean; url: string | null };
     goals: Doel[];
 }>();
 
@@ -115,6 +118,40 @@ const deelUit = () => {
         router.delete('/players/' + props.player.id + '/share', { preserveScroll: true });
     }
 };
+
+// Kopiëren, voor de deel-link en de kind-link. Eén teller: je kopieert er
+// maar een tegelijk.
+const gekopieerd = ref<string | null>(null);
+const kopieer = async (welke: string, url: string | null) => {
+    if (!url) {
+        return;
+    }
+    await navigator.clipboard.writeText(url);
+    gekopieerd.value = welke;
+    setTimeout(() => (gekopieerd.value = null), 2000);
+};
+
+// De kind-link: aanmaken (of vernieuwen) en intrekken. Een QR-code erbij,
+// want een kind zonder telefoon scant hem van het scherm van zijn ouder.
+const kindLinkAan = () => router.post('/players/' + props.player.id + '/kind-link', {}, { preserveScroll: true });
+
+const kindLinkVernieuw = () => {
+    if (confirm('Een nieuwe link maken? De oude link werkt daarna niet meer.')) {
+        router.post('/players/' + props.player.id + '/kind-link', {}, { preserveScroll: true });
+    }
+};
+
+const kindLinkUit = () => {
+    if (confirm('De link van ' + props.card.first_name + ' uitzetten? De kaart is daarna via die link niet meer te bekijken.')) {
+        router.delete('/players/' + props.player.id + '/kind-link', { preserveScroll: true });
+    }
+};
+
+const qr = ref<string | null>(null);
+const tekenQr = async () => {
+    qr.value = props.childLink.url ? await QRCode.toDataURL(props.childLink.url, { width: 320, margin: 1 }) : null;
+};
+watch(() => props.childLink.url, tekenQr, { immediate: true });
 
 // Net een level erbij? Dan zegt de sticker op de deel-afbeelding dat;
 // anders de groei van het laatste rapport, als die de moeite waard is.
@@ -292,6 +329,78 @@ const sticker = computed(() => (viering.value?.level.up ? 'NIEUW LEVEL' : groeiS
                 <CardShareActions class="mt-4" :card="card" :link="share.url" :sticker="sticker" />
             </div>
 
+            <!-- De kind-link: de kaart voor het kind zelf, zonder inlog. Een
+                 kind van acht heeft geen wachtwoord; dit is zijn ingang. -->
+            <div v-if="childLink.can" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+                <p class="flex items-center gap-2 font-medium">
+                    <Smile class="size-4 text-primary" />
+                    Link voor {{ card.first_name }} zelf
+                </p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    Een eigen link waarmee {{ card.first_name }} zonder inloggen de kaart bekijkt, met naam, school, mijlpalen en de kaarten van
+                    vorige seizoenen. Zet hem op de tablet of telefoon van je kind; hij blijft werken en groeit mee. Wie de link heeft ziet de
+                    kaart met naam, dus geef hem alleen aan je kind.
+                </p>
+
+                <template v-if="childLink.url">
+                    <div class="mt-4 flex flex-wrap items-center gap-2">
+                        <input
+                            :value="childLink.url"
+                            readonly
+                            class="min-h-11 min-w-0 flex-1 rounded-lg border border-input bg-background px-3 py-2 text-xs text-muted-foreground"
+                            @focus="($event.target as HTMLInputElement).select()"
+                        />
+                        <button
+                            type="button"
+                            class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition hover:border-primary"
+                            @click="kopieer('kind', childLink.url)"
+                        >
+                            <Check v-if="gekopieerd === 'kind'" class="size-4 text-primary" />
+                            <Copy v-else class="size-4" />
+                            {{ gekopieerd === 'kind' ? 'Gekopieerd' : 'Kopieer' }}
+                        </button>
+                    </div>
+
+                    <div v-if="qr" class="mt-4 flex flex-col items-center gap-3 rounded-xl border border-border bg-background p-4 sm:flex-row sm:items-start sm:gap-4">
+                        <img :src="qr" alt="QR-code van de link" class="size-40 shrink-0 rounded-lg bg-white p-1" />
+                        <div class="text-sm">
+                            <p class="flex items-center gap-2 font-medium"><QrCode class="size-4" /> Of scan hem</p>
+                            <p class="mt-1 text-muted-foreground">
+                                Laat {{ card.first_name }} deze code scannen met de camera van de tablet. De kaart opent meteen, en met "Zet op
+                                je beginscherm" staat hij daarna als app-icoon.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 flex flex-wrap gap-4">
+                        <button
+                            type="button"
+                            class="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4"
+                            @click="kindLinkVernieuw"
+                        >
+                            Nieuwe link maken
+                        </button>
+                        <button
+                            type="button"
+                            class="inline-flex min-h-11 items-center text-sm font-medium text-destructive underline underline-offset-4"
+                            @click="kindLinkUit"
+                        >
+                            Link uitzetten
+                        </button>
+                    </div>
+                </template>
+
+                <button
+                    v-else
+                    type="button"
+                    class="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                    @click="kindLinkAan"
+                >
+                    <Link2 class="size-4" />
+                    Link voor {{ card.first_name }} maken
+                </button>
+            </div>
+
             <!-- De deel-link: standaard uit, en met de gevolgen erbij -->
             <div v-if="share.can && player.overall_rating" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
                 <p class="font-medium">Deel-link</p>
@@ -311,11 +420,11 @@ const sticker = computed(() => (viering.value?.level.up ? 'NIEUW LEVEL' : groeiS
                         <button
                             type="button"
                             class="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 py-2 text-sm font-medium transition hover:border-primary"
-                            @click="kopieer"
+                            @click="kopieer('deel', share.url)"
                         >
-                            <Check v-if="gekopieerd" class="size-4 text-primary" />
+                            <Check v-if="gekopieerd === 'deel'" class="size-4 text-primary" />
                             <Copy v-else class="size-4" />
-                            {{ gekopieerd ? 'Gekopieerd' : 'Kopieer' }}
+                            {{ gekopieerd === 'deel' ? 'Gekopieerd' : 'Kopieer' }}
                         </button>
                     </div>
 

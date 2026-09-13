@@ -2,8 +2,10 @@
 
 namespace App\Support\PlayerCard;
 
+use App\Enums\ReportCategory;
 use App\Models\Goal;
 use App\Models\Player;
+use App\Models\PlayerCardSeason;
 use App\Models\Report;
 use App\Support\Goals\GoalProgress;
 use App\Support\Rating\AgeCategory;
@@ -34,7 +36,12 @@ class PlayerCardPresenter
         protected GoalProgress $goals,
     ) {}
 
-    public function for(Player $player, bool $public = false): array
+    /**
+     * @param  bool  $public  De publieke deel-link: voornaam + initiaal, geen school.
+     * @param  bool  $child  De kind-link: alles van de kaart, maar zonder wat een
+     *                       trainer over het kind opschreef.
+     */
+    public function for(Player $player, bool $public = false, bool $child = false): array
     {
         $settings = $this->engine->settingsFor($player);
         $categorie = $player->age_category ?? $this->engine->categoryFor($player);
@@ -85,9 +92,60 @@ class PlayerCardPresenter
             // De achterkant van de kaart: de laatste rapporten en het doel.
             // Publiek zonder trainer en toelichting, en zonder doel: dat is
             // de opmerking van een trainer over een kind, niet voor internet.
-            'recent_reports' => $this->recenteRapporten($player, $public),
+            'recent_reports' => $this->recenteRapporten($player, $public || $child),
             'goal' => $public ? null : $this->doel($player),
         ];
+    }
+
+    /**
+     * De bewaarde seizoenskaarten, in de vorm van de kaart van nu.
+     *
+     * Voor Mijn kaarten en de kind-link. Elke oude kaart wordt met dezelfde
+     * component getekend, uit de cijfers en het level van toen; mijlpalen en
+     * de achterkant horen bij nu en staan er dus niet op.
+     *
+     * @param  array<string, mixed>  $huidig
+     * @return list<array<string, mixed>>
+     */
+    public function seasons(Player $player, array $huidig): array
+    {
+        $levels = $this->engine->settingsFor($player)->levels();
+
+        return $player->cardSeasons()
+            ->get()
+            ->map(function (PlayerCardSeason $kaart) use ($player, $huidig, $levels) {
+                $ratings = $kaart->category_ratings ?? [];
+                $level = collect($levels)->firstWhere('key', $kaart->level) ?? ['key' => $kaart->level, 'label' => ucfirst((string) $kaart->level), 'xp' => 0];
+
+                return [
+                    ...$huidig,
+                    'age_category' => ['key' => $kaart->age_category, 'label' => AgeCategory::describe($kaart->age_category)],
+                    'moved_up' => false,
+                    'overall' => $kaart->overall_rating,
+                    'categories' => array_map(fn (ReportCategory $c) => [
+                        'category' => $c->value,
+                        'label' => $c->label(),
+                        'hint' => $c->hint(),
+                        'rating' => CalculatePlayerCard::afronden($ratings[$c->value] ?? null),
+                        'delta' => null,
+                    ], $player->position->categories()),
+                    'report_count' => $kaart->report_count,
+                    'level' => [
+                        'key' => $level['key'],
+                        'label' => $level['label'],
+                        'xp' => $kaart->xp,
+                        'next' => null,
+                        'progress' => 100,
+                    ],
+                    'badges' => [],
+                    'recent_reports' => null,
+                    'goal' => null,
+                    'season' => $kaart->season,
+                    'archived' => true,
+                ];
+            })
+            ->values()
+            ->all();
     }
 
     /** @return list<array<string, mixed>> */

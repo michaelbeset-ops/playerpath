@@ -1,0 +1,193 @@
+<script setup lang="ts">
+import AppLogoIcon from '@/components/AppLogoIcon.vue';
+import CardGlow from '@/components/CardGlow.vue';
+import LevelProgress from '@/components/LevelProgress.vue';
+import PlayerCardVisual, { type Kaart } from '@/components/PlayerCardVisual.vue';
+import { useAppMode } from '@/composables/useAppMode';
+import { strooiConfetti } from '@/lib/confetti';
+import { Head } from '@inertiajs/vue3';
+import { Download, Layers, Lock, Share, SquarePlus, Trophy } from 'lucide-vue-next';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
+
+/**
+ * De kaart voor het kind zelf, via de kind-link. Geen inlog, geen menu:
+ * alleen wat van hem is. De hele kaart, de balk naar het volgende level,
+ * de mijlpalen en de verzameling van vorige seizoenen.
+ *
+ * Wat er bewust niet staat: knoppen die het kind niet mag gebruiken (foto
+ * wijzigen, delen, rugnummer) en wat een trainer over hem opschreef.
+ */
+const props = defineProps<{
+    card: Kaart;
+    seasons: Kaart[];
+    badges: { key: string; label: string; description: string; earned: boolean }[];
+    schoolName: string | null;
+    schoolLogo: string | null;
+    manifestUrl: string;
+}>();
+
+const behaald = computed(() => props.badges.filter((b) => b.earned));
+const nogTeGaan = computed(() => props.badges.filter((b) => !b.earned));
+
+// Een nieuw level sinds de vorige keer kijken? Dan confetti. Onthouden op
+// dit apparaat, want dit is de tablet van het kind.
+const LEVEL_SLEUTEL = 'pp.kind.level.' + props.card.card_number;
+
+onMounted(() => {
+    try {
+        const vorige = localStorage.getItem(LEVEL_SLEUTEL);
+        const nu = props.card.overall === null ? '' : props.card.level.key;
+
+        if (vorige !== null && vorige !== '' && nu !== '' && vorige !== nu) {
+            const volgorde = props.card.levels.map((l) => l.key);
+            if (volgorde.indexOf(nu) > volgorde.indexOf(vorige)) {
+                setTimeout(strooiConfetti, 600);
+            }
+        }
+
+        localStorage.setItem(LEVEL_SLEUTEL, nu);
+    } catch {
+        // Geen opslag: dan geen confetti, meer niet.
+    }
+});
+
+// "Zet op je beginscherm": hier meteen, want dit is precies de link die op
+// de tablet als icoon hoort te staan. Android krijgt de echte knop, iOS de
+// twee stappen. Als het al een app is, staat er niets.
+const { isApp } = useAppMode();
+const installGebeurtenis = ref<any>(null);
+const isIos = computed(() => /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as Window & { MSStream?: unknown }).MSStream);
+
+const onBeforeInstall = (event: Event) => {
+    event.preventDefault();
+    installGebeurtenis.value = event;
+};
+
+const installeer = async () => {
+    const prompt = installGebeurtenis.value;
+    if (!prompt) {
+        return;
+    }
+    installGebeurtenis.value = null;
+    prompt.prompt();
+    await prompt.userChoice;
+};
+
+onMounted(() => window.addEventListener('beforeinstallprompt', onBeforeInstall));
+onUnmounted(() => window.removeEventListener('beforeinstallprompt', onBeforeInstall));
+</script>
+
+<template>
+    <Head :title="'Kaart van ' + card.first_name">
+        <meta name="robots" content="noindex, nofollow" />
+        <link rel="manifest" :href="manifestUrl" />
+    </Head>
+
+    <div class="theme-donker min-h-svh bg-background text-foreground">
+        <div class="mx-auto w-full max-w-md px-4 py-6">
+            <!-- De school van het kind: klein, bovenaan -->
+            <div v-if="schoolName" class="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                <img v-if="schoolLogo" :src="schoolLogo" alt="" class="size-6 rounded-md object-contain" />
+                <span>{{ schoolName }}</span>
+            </div>
+
+            <h1 class="mt-3 text-center text-3xl font-bold tracking-tight">Hoi {{ card.first_name }}!</h1>
+            <p class="mt-1 text-center text-sm text-muted-foreground">Dit is jouw kaart. Hij verandert mee met elke training.</p>
+
+            <div class="mt-6">
+                <CardGlow :level="card.overall === null ? 'geen' : card.level.key">
+                    <PlayerCardVisual :card="card" :shareable="false" audience="gezin" />
+                </CardGlow>
+            </div>
+
+            <p v-if="card.overall === null" class="mt-4 text-center text-sm text-muted-foreground">
+                Na je eerste rapport komt je kaart tot leven: dan staan hier je cijfers.
+            </p>
+
+            <LevelProgress v-if="card.overall !== null" class="mt-4" :card="card" />
+
+            <!-- Op het beginscherm: dit is de plek waar de link een icoon wordt -->
+            <div v-if="!isApp && (installGebeurtenis || isIos)" class="mt-4 rounded-2xl border border-border bg-card p-4">
+                <p class="flex items-center gap-2 text-sm font-semibold">
+                    <Download class="size-4 text-primary" />
+                    Zet je kaart op je beginscherm
+                </p>
+                <p class="mt-1 text-xs text-muted-foreground">Dan staat hij als een app tussen je andere apps, met één tik open.</p>
+
+                <button
+                    v-if="installGebeurtenis"
+                    type="button"
+                    class="mt-3 h-11 w-full rounded-xl bg-primary px-3 text-sm font-semibold text-primary-foreground"
+                    @click="installeer"
+                >
+                    Op beginscherm zetten
+                </button>
+
+                <ol v-else class="mt-3 space-y-1.5 text-xs">
+                    <li class="flex items-center gap-2">
+                        <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-secondary text-[10px] font-semibold">1</span>
+                        Tik onderin op <Share class="inline size-3.5" aria-label="Deel" /> <span class="font-medium">Deel</span>
+                    </li>
+                    <li class="flex items-center gap-2">
+                        <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-secondary text-[10px] font-semibold">2</span>
+                        Kies <SquarePlus class="inline size-3.5" aria-hidden="true" /> <span class="font-medium">Zet op beginscherm</span>
+                    </li>
+                </ol>
+            </div>
+
+            <!-- Mijlpalen: wat je hebt, en wat je nog kunt halen -->
+            <div v-if="card.overall !== null && badges.length" class="mt-4 rounded-2xl border border-border bg-card p-4">
+                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <p class="font-semibold">Mijn mijlpalen</p>
+                    <p class="tabular text-xs text-muted-foreground">{{ behaald.length }} van {{ badges.length }}</p>
+                </div>
+
+                <div class="mt-3 grid gap-2">
+                    <div v-for="badge in behaald" :key="badge.key" class="flex items-start gap-3 rounded-xl border border-gold/30 bg-gold/10 p-3">
+                        <Trophy class="mt-0.5 size-4 shrink-0 text-gold" />
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-gold">{{ badge.label }}</p>
+                            <p class="text-xs text-muted-foreground">{{ badge.description }}</p>
+                        </div>
+                    </div>
+
+                    <div v-for="badge in nogTeGaan" :key="badge.key" class="flex items-start gap-3 rounded-xl border border-border p-3 opacity-70">
+                        <Lock class="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                        <div class="min-w-0">
+                            <p class="text-sm font-medium">{{ badge.label }}</p>
+                            <p class="text-xs text-muted-foreground">{{ badge.description }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mijn kaarten: de verzameling -->
+            <section class="mt-8">
+                <h2 class="flex items-center gap-2 font-semibold">
+                    <Layers class="size-4 text-primary" />
+                    Mijn kaarten
+                </h2>
+
+                <div v-if="seasons.length" class="mt-3 grid gap-4">
+                    <div v-for="kaart in seasons" :key="kaart.season + (kaart.age_category?.key ?? '')">
+                        <p class="mb-2 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                            Seizoen {{ kaart.season }}<template v-if="kaart.age_category"> · {{ kaart.age_category.key }}</template>
+                        </p>
+                        <CardGlow :level="kaart.overall === null ? 'geen' : kaart.level.key">
+                            <PlayerCardVisual :card="kaart" :shareable="false" />
+                        </CardGlow>
+                    </div>
+                </div>
+
+                <p v-else class="mt-2 text-sm text-muted-foreground">
+                    Aan het eind van elk seizoen bewaren we je kaart. Zo bouw je een verzameling op.
+                </p>
+            </section>
+
+            <div class="mt-8 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                <AppLogoIcon class="size-4 rounded-sm" />
+                Spelerskaart van PlayerPath
+            </div>
+        </div>
+    </div>
+</template>

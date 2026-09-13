@@ -4,6 +4,7 @@ use App\Http\Controllers\Clients\ClientDirectoryController;
 use App\Http\Controllers\Goals\GoalController;
 use App\Http\Controllers\Groups\GroupController;
 use App\Http\Controllers\Media\PhotoController;
+use App\Http\Controllers\Players\ChildCardController;
 use App\Http\Controllers\Players\GuardianController;
 use App\Http\Controllers\Players\PlayerBadgeController;
 use App\Http\Controllers\Players\PlayerCardCollectionController;
@@ -57,6 +58,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // bewust buiten de auth-groep.
     Route::post('players/{player}/share', [SharedCardController::class, 'store'])->name('players.share');
     Route::delete('players/{player}/share', [SharedCardController::class, 'destroy'])->name('players.unshare');
+    // De kind-link: aanmaken (of vernieuwen) en intrekken. Zelfde poort als delen.
+    Route::post('players/{player}/kind-link', [ChildCardController::class, 'store'])->name('players.child-link.store');
+    Route::delete('players/{player}/kind-link', [ChildCardController::class, 'destroy'])->name('players.child-link.destroy');
 
     // Klanten: de spelers, met hun ouders uitklapbaar eronder. Eén lijst, want
     // een school denkt in een kind met iemand erbij die je belt.
@@ -108,4 +112,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::get('kaart/{token}', [SharedCardController::class, 'show'])
     ->middleware([PreventSearchIndexing::class, 'throttle:60,1'])
     ->name('players.shared')
+    ->where('token', '[A-Za-z0-9]{48}');
+
+// De kind-link: de tweede route zonder inlog. Voor het kind zelf, met de hele
+// kaart; zie ChildCardController voor wat er wel en niet op staat.
+Route::get('kind/{token}', [ChildCardController::class, 'show'])
+    ->middleware([PreventSearchIndexing::class, 'throttle:60,1'])
+    ->name('players.child')
+    ->where('token', '[A-Za-z0-9]{48}');
+Route::get('kind/{token}/manifest.webmanifest', [ChildCardController::class, 'manifest'])
+    ->middleware('throttle:60,1')
+    ->name('players.child.manifest')
     ->where('token', '[A-Za-z0-9]{48}');
