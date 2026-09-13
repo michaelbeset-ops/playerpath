@@ -2182,6 +2182,37 @@ krijgt de twee stappen: Deel → Zet op beginscherm. Het manifest
 (`/manifest.webmanifest`) heeft naam, iconen, `start_url` en
 `display: standalone`; de test `ProductionReadinessTest` bewaakt dat.
 
+### Seizoenen: de punten horen bij een blok
+
+`Support\Rating\SchoolSeason` (in `schools.rating_settings['season']`):
+naam, begin, eind, weken, `closed_at` en `xp_from`. De eigenaar stelt het
+in onder Mijn bedrijf → Seizoen (`/seizoen`), met 8/10/12/16 weken als
+knoppen en de einddatum die daaruit volgt. Vier regels:
+
+- **XP telt vanaf `xp_from`** (`RatingEngine::recalculate`). De boekingen
+  blijven allemaal staan (tijdlijn, historie); alleen de som op de speler is
+  seizoensgebonden. Zonder seizoen telt alles, zoals vroeger.
+- **Afsluiten** (`Actions\Seasons\CloseSeason`, dagelijks via
+  `seasons:close` de dag na de einddatum, of met de hand op de pagina):
+  elke speler met iets op zijn kaart krijgt een `PlayerCardSeason` met de
+  naam van het seizoen (de eindkaart), `xp_from` wordt de dag erna en de som
+  gaat opnieuw. **De rating blijft staan**: die zegt hoe goed iemand is.
+  Ouders en speler krijgen `SeizoenAfgesloten` met een knop naar Mijn kaarten.
+- **Idempotent**: een dicht seizoen sluit niet nog eens, een eindkaart wordt
+  bijgewerkt in plaats van verdubbeld.
+- **Levels: brons 0, zilver 251, goud 501, Special 751** (sleutel blijft
+  `elite`). Zo is goud binnen één blok haalbaar voor wie trouw komt en
+  groeit. `LevelProgress.vue` onder de kaart zegt "Nog 35 XP tot de Gouden
+  Kaart!" en heeft de (i) met `CardFaq.vue`: wanneer stijgt mijn kaart,
+  wanneer krijg ik een nieuwe, wat gebeurt er aan het eind van het seizoen.
+
+**Delen naar Snapchat** gaat via je foto's (`CardShareActions.vue`): de
+afbeelding opslaan, de melding "Kaart opgeslagen in je foto's! Open Snapchat
+en kies de foto uit je galerij", en een knop `snapchat://`. Het deelmenu
+van de telefoon geeft een afbeelding op veel toestellen niet goed aan
+Snapchat door. De deel-afbeelding draagt het logo van de school bovenaan
+(publiek niet) en het watermerk "PlayerPath.nl" rechtsonder.
+
 ### PWA en productie (Fase 12)
 
 - **De service worker bewaart geen enkel antwoord met gegevens.** Alleen
@@ -2232,6 +2263,12 @@ naar jeugdsport laat zien dat op beheersing gerichte feedback de motivatie
 verhoogt terwijl vergelijkende feedback het ego-gerichte klimaat versterkt, juist
 schadelijk bij minder ervaren sporters. Het is bovendien precies waar de sector
 publiek op wordt aangesproken.
+
+**Valkuil: een paginaprop met dezelfde naam als een gedeelde prop wint.**
+Een pagina die `school` als eigen prop meegeeft (een string) overschrijft de
+gedeelde `school` (`{id, name}`) voor die pagina; de rondleiding las daar het
+id uit en raakte zo op één scherm zijn stap kwijt. Noem paginaprops nooit
+`school`, `auth`, `nav`, `flash`, `features` of `onboarding`.
 
 **Valkuil: `reported_on` heeft een tijdcomponent.** De kolom is een `date`, maar
 wordt als `"2026-09-06 00:00:00"` opgeslagen. `whereBetween(...,

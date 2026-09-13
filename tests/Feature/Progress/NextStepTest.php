@@ -111,7 +111,7 @@ class NextStepTest extends TestCase
     public function test_de_tijdlijn_toont_wanneer_een_level_gehaald_is(): void
     {
         $engine = app(RatingEngine::class);
-        $engine->award($this->speler, 'attendance', 160, 'Trainingen');
+        $engine->award($this->speler, 'attendance', 260, 'Trainingen');
 
         $tijdlijn = app(PlayerTimeline::class)->for($this->speler->refresh());
         $levels = array_values(array_filter($tijdlijn, fn (array $item) => $item['type'] === 'level'));

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import CardGlow from '@/components/CardGlow.vue';
+import CardShareActions from '@/components/CardShareActions.vue';
+import LevelProgress from '@/components/LevelProgress.vue';
 import PlayerCardVisual from '@/components/PlayerCardVisual.vue';
-import { deelKaartAlsAfbeelding, groeiSticker } from '@/lib/cardImage';
+import { groeiSticker } from '@/lib/cardImage';
 import type { SpelerDashboardData, SpelerTrend } from '@/types/player-dashboard';
 import { Link } from '@inertiajs/vue3';
 import {
@@ -95,22 +97,12 @@ const kaartHref = computed(() => '/players/' + props.player.id + '/card');
  * ook meegaat beslist een ouder of de school (zie PlayerPolicy::share); een
  * kind zet dat niet zelf aan. Zonder deelmenu wordt het een download.
  */
-const deelMelding = ref<string | null>(null);
-const deelBezig = ref(false);
+const deelOpen = ref(false);
+const deelVak = ref<HTMLElement | null>(null);
 
-const deel = async () => {
-    deelBezig.value = true;
-    deelMelding.value = null;
-
-    const uitkomst = await deelKaartAlsAfbeelding(props.card, props.share?.url ?? null, groeiSticker(props.card));
-
-    deelBezig.value = false;
-    deelMelding.value = {
-        gedeeld: null,
-        geannuleerd: null,
-        gedownload: 'Je kaart is gedownload als afbeelding. Deel hem vanuit je galerij.',
-        mislukt: 'Het maken van de afbeelding is niet gelukt. Probeer het nog eens.',
-    }[uitkomst];
+const deel = () => {
+    deelOpen.value = true;
+    setTimeout(() => deelVak.value?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
 };
 
 const behaald = computed(() => props.badges.filter((b) => b.earned));
@@ -146,9 +138,17 @@ const voortgangHref = computed(() => '/players/' + props.player.id + '/progress'
                         Na je eerste training vult je trainer je rapport in, en verschijnt hier jouw kaart met je cijfers.
                     </p>
 
-                    <p v-if="deelMelding" class="mx-auto mt-4 max-w-xs text-center text-sm text-muted-foreground" role="status">
-                        {{ deelMelding }}
+                </div>
+
+                <!-- Waar je staat tussen brons en goud, met "Hoe werkt dit?" -->
+                <LevelProgress class="mt-3" :card="card" />
+
+                <div v-if="deelOpen" ref="deelVak" class="mt-3 rounded-2xl border border-border bg-card p-4">
+                    <p class="text-sm font-medium">Je kaart delen</p>
+                    <p class="mt-1 text-xs text-muted-foreground">
+                        Als plaatje, met het logo van je school. Voor Snapchat: opslaan, Snapchat openen en kiezen uit je galerij.
                     </p>
+                    <CardShareActions class="mt-3" :card="card" :link="share?.url ?? null" :sticker="groeiSticker(card)" />
                 </div>
 
                 <div class="mt-4 grid grid-cols-2 gap-2">

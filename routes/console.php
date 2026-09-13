@@ -40,3 +40,6 @@ Schedule::command('enrollments:lifecycle')->dailyAt('04:00');
 // Leeftijdscategorieen vaststellen. Bijna altijd verandert er niets; rond de
 // jaarwisseling gaat een deel omhoog en wordt hun oude kaart bewaard.
 Schedule::command('players:categories')->dailyAt('03:00');
+
+// Seizoenen sluiten de dag na hun einddatum: kaart bewaren, punten opnieuw.
+Schedule::command('seasons:close')->dailyAt('02:30');

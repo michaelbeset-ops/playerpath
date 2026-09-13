@@ -118,17 +118,34 @@ export async function renderKaartStory(card: Kaart, opties: KaartAfbeeldingOptie
     ctx.fillStyle = gloed;
     ctx.fillRect(0, 0, BREEDTE, HOOGTE);
 
-    // --- Kop: merk en school ---
+    // --- Kop: het logo van de school (of de naam), met PlayerPath klein eronder ---
     ctx.textBaseline = 'alphabetic';
-    ctx.fillStyle = '#f1f5f9';
-    ctx.font = `800 44px ${FONT}`;
     ctx.textAlign = 'center';
-    ctx.fillText('PlayerPath', BREEDTE / 2, 150);
 
-    if (card.school) {
-        ctx.fillStyle = '#99a3b3';
-        ctx.font = `500 34px ${FONT}`;
-        ctx.fillText(passend(ctx, card.school, 900), BREEDTE / 2, 205);
+    const logo = card.school_logo ? await laadAfbeelding(card.school_logo) : null;
+
+    if (logo) {
+        // Past in een vak van 420 × 120, in verhouding.
+        const schaal = Math.min(420 / logo.width, 120 / logo.height, 1);
+        const lw = logo.width * schaal;
+        const lh = logo.height * schaal;
+        ctx.drawImage(logo, (BREEDTE - lw) / 2, 70 + (120 - lh) / 2, lw, lh);
+
+        if (card.school) {
+            ctx.fillStyle = '#99a3b3';
+            ctx.font = `500 30px ${FONT}`;
+            ctx.fillText(passend(ctx, card.school, 900), BREEDTE / 2, 232);
+        }
+    } else {
+        ctx.fillStyle = '#f1f5f9';
+        ctx.font = `800 44px ${FONT}`;
+        ctx.fillText(card.school ? passend(ctx, card.school, 900) : 'PlayerPath', BREEDTE / 2, 150);
+
+        if (card.school) {
+            ctx.fillStyle = '#99a3b3';
+            ctx.font = `500 30px ${FONT}`;
+            ctx.fillText('Spelerskaart', BREEDTE / 2, 205);
+        }
     }
 
     // --- Het frame: metaal met een facet, dan de donkere binnenkant ---
@@ -309,7 +326,7 @@ export async function renderKaartStory(card: Kaart, opties: KaartAfbeeldingOptie
     ctx.fillStyle = '#99a3b3';
     ctx.font = `600 26px ${FONT}`;
     ctx.textAlign = 'left';
-    ctx.fillText(`Seizoen ${card.season}` + (card.overall !== null ? `  ·  Level ${card.level.label}` : ''), bx + 48, voetY);
+    ctx.fillText((card.season_label ?? `Seizoen ${card.season}`) + (card.overall !== null ? `  ·  Level ${card.level.label}` : ''), bx + 48, voetY);
 
     const rechts = [card.school ? passend(ctx, card.school, 320) : null, card.card_number ?? null].filter(Boolean).join('  ·  ');
 
@@ -343,7 +360,13 @@ export async function renderKaartStory(card: Kaart, opties: KaartAfbeeldingOptie
     ctx.textAlign = 'center';
     ctx.fillStyle = '#99a3b3';
     ctx.font = `500 28px ${FONT}`;
-    ctx.fillText(opties.voet ? passend(ctx, opties.voet, 900) : 'Gemaakt met PlayerPath', BREEDTE / 2, HOOGTE - 110);
+    ctx.fillText(opties.voet ? passend(ctx, opties.voet, 900) : 'Gemaakt met PlayerPath', BREEDTE / 2, HOOGTE - 130);
+
+    // Het watermerk: klein, rechtsonder, altijd.
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(241, 245, 249, 0.55)';
+    ctx.font = `600 26px ${FONT}`;
+    ctx.fillText('PlayerPath.nl', BREEDTE - 60, HOOGTE - 60);
 
     return new Promise((ok, fout) => {
         canvas.toBlob((blob) => (blob ? ok(blob) : fout(new Error('Kon de afbeelding niet maken.'))), 'image/png');
@@ -351,6 +374,33 @@ export async function renderKaartStory(card: Kaart, opties: KaartAfbeeldingOptie
 }
 
 export type DeelUitkomst = 'gedeeld' | 'gedownload' | 'geannuleerd' | 'mislukt';
+
+const bestandsnaam = (card: Kaart) => `spelerskaart-${card.first_name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`;
+
+const download = (blob: Blob, naam: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = naam;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+};
+
+/**
+ * De kaart opslaan als afbeelding, zonder deelmenu: voor "Opslaan" en voor
+ * de weg naar Snapchat (opslaan, dan daar uit je galerij kiezen).
+ */
+export async function slaKaartOp(card: Kaart, link: string | null, sticker: string | null = null): Promise<DeelUitkomst> {
+    try {
+        download(await renderKaartStory(card, { voet: link, sticker }), bestandsnaam(card));
+
+        return 'gedownload';
+    } catch {
+        return 'mislukt';
+    }
+}
 
 /**
  * De kaart delen als afbeelding: via het deelmenu van de telefoon als dat
@@ -365,7 +415,7 @@ export async function deelKaartAlsAfbeelding(card: Kaart, link: string | null, s
         return 'mislukt';
     }
 
-    const naam = `spelerskaart-${card.first_name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.png`;
+    const naam = bestandsnaam(card);
     const bestand = new File([blob], naam, { type: 'image/png' });
     const tekst = `De spelerskaart van ${card.first_name}` + (card.overall !== null ? ` · rating ${card.overall}` : '') + (link ? `\n${link}` : '');
 
@@ -384,14 +434,7 @@ export async function deelKaartAlsAfbeelding(card: Kaart, link: string | null, s
         }
     }
 
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = naam;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    download(blob, naam);
 
     return 'gedownload';
 }

@@ -134,9 +134,11 @@ class OnboardingController extends Controller
 
         $school = $request->user()->school;
 
+        // Niet 'school': dat is de gedeelde prop met id en naam, en die zou
+        // hier overschreven worden. De rondleiding leest daar het id uit.
         return Inertia::render('onboarding/EnrollPreview', [
             'url' => route('enroll.show', $school->slug),
-            'school' => $school->name,
+            'schoolName' => $school->name,
         ]);
     }
 

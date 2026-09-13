@@ -18,14 +18,17 @@ use App\Models\School;
  *
  * ## De standaarden, en waarom
  *
- * - **Aanwezig: 10 XP.** Wie een seizoen lang elke week komt zit rond de 400,
- *   en dat is precies goud. Trouw komen brengt je dus naar goud, ook zonder
- *   talent - dat is het stimuleringsdeel.
+ * - **Aanwezig: 10 XP.** Wie een blok van twaalf weken elke week komt en
+ *   telkens een rapport krijgt, zit rond de 250 en heeft dan zilver; wie
+ *   ook groeit, komt in een seizoen bij goud. Trouw komen brengt je dus
+ *   omhoog, ook zonder talent - dat is het stimuleringsdeel.
  * - **Rapport: 5 XP**, plus **2 XP per punt groei** ten opzichte van het vorige
  *   rapport, tot 30. Groei telt, maar niet zó zwaar dat één goede dag een level
  *   is.
- * - **Levels op 0 / 150 / 400 / 900.** Zilver na een paar maanden, goud na een
- *   seizoen, elite na twee. Elk level moet haalbaar voelen én iets betekenen.
+ * - **Levels op 0 / 251 / 501 / 751.** Brons tot 250, zilver tot 500, goud tot
+ *   750, daarboven Special. De punten zijn seizoensgebonden (zie
+ *   SchoolSeason), dus elk blok begint iedereen weer bij brons en is goud
+ *   binnen één seizoen haalbaar voor wie trouw komt en groeit.
  * - **Minimale rating per level staat uit.** Een school die vindt dat goud ook
  *   een zekere rating vereist kan dat aanzetten; standaard leggen we dat niet op,
  *   want het level is er om inzet te belonen en de rating staat er al naast.
@@ -41,9 +44,11 @@ class RatingSettings
         'reports_in_average' => 3,
         'levels' => [
             ['key' => 'brons', 'label' => 'Brons', 'xp' => 0, 'min_rating' => null],
-            ['key' => 'zilver', 'label' => 'Zilver', 'xp' => 150, 'min_rating' => null],
-            ['key' => 'goud', 'label' => 'Goud', 'xp' => 400, 'min_rating' => null],
-            ['key' => 'elite', 'label' => 'Elite', 'xp' => 900, 'min_rating' => null],
+            ['key' => 'zilver', 'label' => 'Zilver', 'xp' => 251, 'min_rating' => null],
+            ['key' => 'goud', 'label' => 'Goud', 'xp' => 501, 'min_rating' => null],
+            // De sleutel blijft 'elite' (die staat in opgeslagen seizoenskaarten
+            // en in de kleuren van het frame); het label is "Special".
+            ['key' => 'elite', 'label' => 'Special', 'xp' => 751, 'min_rating' => null],
         ],
         // Het seizoen loopt van augustus tot juli, zoals in het Nederlandse voetbal.
         'season_start_month' => 8,

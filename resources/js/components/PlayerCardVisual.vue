@@ -63,7 +63,15 @@ export interface Kaart {
     levels: { key: string; label: string; xp: number }[];
     badges: { key: string; label: string; description: string }[];
     season: string;
+    /** "Najaar 2026" of "Seizoen 2026/27": wat er onderaan de kaart staat. */
+    season_label?: string;
+    /** Wanneer het seizoen eindigt (d-m-Y), of null zonder ingesteld seizoen. */
+    season_ends?: string | null;
+    /** "week 3 van 12" tijdens een lopend seizoen. */
+    season_week?: string | null;
     school: string | null;
+    /** Het logo van de school, voor op de deel-afbeelding; publiek null. */
+    school_logo?: string | null;
     /** De achterkant: de laatste rapporten. Publiek zonder trainer en toelichting. */
     recent_reports?: { date: string; overall: number | null; trainer: string | null; note: string | null }[] | null;
     /** Een bewaarde seizoenskaart: de stand van toen, er groeit niets meer. */
@@ -351,7 +359,7 @@ const upgradeTekst = computed(() => {
                     </template>
 
                     <div class="pp-voet pp-achter-voet">
-                        <p class="pp-voet-regel">Seizoen {{ card.season }}</p>
+                        <p class="pp-voet-regel">{{ card.season_label ?? 'Seizoen ' + card.season }}</p>
                         <p v-if="card.school" class="pp-school">{{ card.school }}</p>
                     </div>
                 </div>
@@ -444,7 +452,7 @@ const upgradeTekst = computed(() => {
 
                     <div class="pp-voet">
                         <p class="pp-voet-regel">
-                            Seizoen {{ card.season }}
+                            {{ card.season_label ?? 'Seizoen ' + card.season }}
                             <template v-if="card.overall !== null"> &middot; Level {{ card.level.label }}</template>
                         </p>
                         <p v-if="card.school || card.card_number" class="pp-school">

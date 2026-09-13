@@ -156,7 +156,20 @@ const bewaar = (stap: number) => {
         // Geen opslag: dan valt hij terug op de server, en dat is ook goed.
     }
 
-    router.post('/onboarding/rondleiding/stap', { step: stap }, { preserveScroll: true, preserveState: true, only: [] });
+    // Niet via de Inertia-router: die breekt dit verzoek af zodra "Volgende"
+    // meteen naar het volgende scherm navigeert, en dan wist de server nooit
+    // waar je was. Een los verzoek met keepalive overleeft de navigatie.
+    const token = decodeURIComponent(document.cookie.split('; ').find((c) => c.startsWith('XSRF-TOKEN='))?.split('=')[1] ?? '');
+
+    fetch('/onboarding/rondleiding/stap', {
+        method: 'POST',
+        credentials: 'same-origin',
+        keepalive: true,
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-XSRF-TOKEN': token, 'X-Requested-With': 'XMLHttpRequest' },
+        body: JSON.stringify({ step: stap }),
+    }).catch(() => {
+        // Dan onthoudt de browser het wel.
+    });
 };
 
 const onthouden = (): number | null => {
@@ -250,10 +263,17 @@ onBeforeUnmount(() => {
     document.removeEventListener('keydown', opToets);
 });
 
-// Na navigeren (Volgende naar een ander scherm) of opnieuw starten: opnieuw
-// richten op het anker van de huidige stap.
+// Na navigeren (Volgende naar een ander scherm) of opnieuw starten: de stap
+// uit de browser overnemen (de schil kan tussen twee pagina's opnieuw zijn
+// opgebouwd) en opnieuw richten op het anker van de huidige stap.
 watch(pad, () => {
     if (bezig.value) {
+        const bewaard = onthouden();
+
+        if (bewaard !== null && bewaard !== index.value) {
+            index.value = Math.min(bewaard, Math.max(0, stappen.value.length - 1));
+        }
+
         setTimeout(richt, 500);
     }
 });

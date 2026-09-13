@@ -15,6 +15,7 @@ use App\Http\Controllers\Players\PlayerDataController;
 use App\Http\Controllers\Pwa\ManifestController;
 use App\Http\Controllers\Schools\EnrollmentSettingsController;
 use App\Http\Controllers\Schools\LocationController;
+use App\Http\Controllers\Schools\SeasonController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -76,6 +77,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('mijlpalen', [BadgeSettingsController::class, 'update'])->name('badges.update');
 
     // Fase 11: eigen logo en kleur. Alleen de eigenaar.
+    // Het seizoen: begin, eind, weken; en nu afsluiten. Van de eigenaar.
+    Route::get('seizoen', [SeasonController::class, 'edit'])->name('season.edit');
+    Route::post('seizoen', [SeasonController::class, 'update'])->name('season.update');
+    Route::post('seizoen/afsluiten', [SeasonController::class, 'close'])->name('season.close');
+
     Route::get('branding', [BrandingController::class, 'edit'])->name('branding.edit');
     Route::post('branding', [BrandingController::class, 'update'])->name('branding.update');
 

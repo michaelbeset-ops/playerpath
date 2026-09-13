@@ -4,8 +4,10 @@ namespace App\Support\Rating;
 
 use App\Models\Player;
 use App\Models\PlayerCardSeason;
+use App\Models\School;
 use App\Models\XpEvent;
 use App\Support\PlayerCard\CalculatePlayerCard;
+use App\Support\Tenancy\Tenancy;
 use Illuminate\Support\Carbon;
 
 /**
@@ -180,14 +182,35 @@ class RatingEngine
             ->exists();
     }
 
-    /** De som opnieuw uitrekenen en op de speler zetten. */
+    /**
+     * De som opnieuw uitrekenen en op de speler zetten.
+     *
+     * Seizoensgebonden: alleen boekingen vanaf `xp_from` van het seizoen van
+     * de school tellen mee (zie SchoolSeason). Zonder seizoen telt alles, zoals
+     * vroeger. De boekingen zelf blijven altijd staan: dat is de historie.
+     */
     public function recalculate(Player $player): int
     {
-        $som = (int) XpEvent::query()->where('player_id', $player->id)->sum('points');
+        $vanaf = SchoolSeason::for($player->school)->xpFrom;
+
+        $som = (int) XpEvent::query()
+            ->where('player_id', $player->id)
+            ->when($vanaf !== null, fn ($q) => $q->whereDate('occurred_on', '>=', $vanaf->toDateString()))
+            ->sum('points');
 
         $player->forceFill(['xp' => $som])->save();
 
         return $som;
+    }
+
+    /** Alle spelers van een school opnieuw optellen, na een seizoenswissel. */
+    public function recalculateAll(School $school): void
+    {
+        app(Tenancy::class)->forSchool($school, function () {
+            foreach (Player::query()->cursor() as $speler) {
+                $this->recalculate($speler);
+            }
+        });
     }
 
     /**

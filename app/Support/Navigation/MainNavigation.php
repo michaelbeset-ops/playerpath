@@ -131,6 +131,7 @@ class MainNavigation
                     ['title' => 'Beschikbaarheid team', 'href' => '/personeel/beschikbaarheid', 'icon' => 'availability', 'allowed' => $user->can('viewTeam', AvailabilityException::class)],
                     ['title' => 'Locaties', 'href' => '/locaties', 'icon' => 'locations', 'allowed' => $user->can('viewAny', Location::class)],
                     ['title' => 'Inschrijven en betalen', 'href' => '/instellingen/inschrijven', 'icon' => 'enrollments', 'allowed' => $user->isEigenaar()],
+                    ['title' => 'Seizoen', 'href' => '/seizoen', 'icon' => 'calendar', 'allowed' => $user->isEigenaar()],
                     ['title' => 'Huisstijl', 'href' => '/branding', 'icon' => 'branding', 'allowed' => $user->isEigenaar()],
                     ['title' => 'Verantwoording', 'href' => '/verantwoording', 'icon' => 'accountability', 'allowed' => $user->isEigenaar()],
                     ['title' => 'Instellingen', 'href' => '/settings/profile', 'icon' => 'settings', 'allowed' => true],

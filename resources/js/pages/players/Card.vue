@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import CardGlow from '@/components/CardGlow.vue';
 import FlashMessage from '@/components/FlashMessage.vue';
+import CardShareActions from '@/components/CardShareActions.vue';
 import GoalList, { type Doel } from '@/components/GoalList.vue';
+import LevelProgress from '@/components/LevelProgress.vue';
 import PhotoUpload from '@/components/PhotoUpload.vue';
 import PlayerCardVisual, { type Kaart } from '@/components/PlayerCardVisual.vue';
 import ReportCelebration, { type RapportWijziging } from '@/components/ReportCelebration.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { deelKaartAlsAfbeelding, groeiSticker } from '@/lib/cardImage';
+import { groeiSticker } from '@/lib/cardImage';
 import { strooiConfetti } from '@/lib/confetti';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
-import { Camera, Check, Copy, ImageDown, Layers, Link2, Lock, Share2, TrendingUp, Trophy } from 'lucide-vue-next';
+import { Camera, Layers, Link2, Lock, TrendingUp, Trophy } from 'lucide-vue-next';
 import { computed, onMounted, ref } from 'vue';
 
 const props = defineProps<{
@@ -102,8 +104,6 @@ onMounted(() => {
     }, 900);
 });
 
-const gekopieerd = ref(false);
-
 // De deel-knop op de kaart brengt je naar het deel-vak hieronder.
 const deelVak = ref<HTMLElement | null>(null);
 const naarDelen = () => deelVak.value?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -116,38 +116,9 @@ const deelUit = () => {
     }
 };
 
-const kopieer = async () => {
-    if (!props.share.url) {
-        return;
-    }
-
-    await navigator.clipboard.writeText(props.share.url);
-    gekopieerd.value = true;
-    setTimeout(() => (gekopieerd.value = false), 2000);
-};
-
-// De kaart als afbeelding, in story-formaat: via het deelmenu van de
-// telefoon, en anders als download. De link gaat mee als hij aanstaat.
-const deelBezig = ref(false);
-const deelMelding = ref<string | null>(null);
-
-const deelAfbeelding = async () => {
-    deelBezig.value = true;
-    deelMelding.value = null;
-
-    // Net een level erbij? Dan zegt de sticker dat; anders de groei van het
-    // laatste rapport, als die de moeite waard is.
-    const sticker = viering.value?.level.up ? 'NIEUW LEVEL' : groeiSticker(props.card);
-    const uitkomst = await deelKaartAlsAfbeelding(props.card, props.share.url, sticker);
-
-    deelBezig.value = false;
-    deelMelding.value = {
-        gedeeld: null,
-        geannuleerd: null,
-        gedownload: 'De afbeelding is gedownload. Deel hem vanuit je galerij of downloads.',
-        mislukt: 'Het maken van de afbeelding is niet gelukt. Probeer het nog eens.',
-    }[uitkomst];
-};
+// Net een level erbij? Dan zegt de sticker op de deel-afbeelding dat;
+// anders de groei van het laatste rapport, als die de moeite waard is.
+const sticker = computed(() => (viering.value?.level.up ? 'NIEUW LEVEL' : groeiSticker(props.card)));
 </script>
 
 <template>
@@ -181,6 +152,9 @@ const deelAfbeelding = async () => {
                     Bijgewerkt op {{ player.rated_at }} &middot; gemiddelde van de laatste 3 rapporten
                 </p>
             </div>
+
+            <!-- Waar je staat tussen brons en goud, met "Hoe werkt dit?" -->
+            <LevelProgress class="mt-3" :card="card" />
 
             <!-- De foto. Zonder foto valt het vak op (groene rand): dat is de
                  blijvende herinnering. Met foto is het een rustig vak om hem
@@ -309,36 +283,13 @@ const deelAfbeelding = async () => {
             <!-- Delen als afbeelding: voor iedereen die de kaart mag zien. Dit
                  is wat een kind in de groepsapp zet: een plaatje, geen link. -->
             <div v-if="player.overall_rating" ref="deelVak" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
-                <p class="font-medium">Kaart delen als afbeelding</p>
+                <p class="font-medium">Kaart opslaan of delen</p>
                 <p class="mt-1 text-sm text-muted-foreground">
-                    Een plaatje van de kaart in story-formaat, voor WhatsApp of Instagram. Er staat op wat je hier ziet: naam, positie, cijfers en level.
+                    Een plaatje van de kaart in story-formaat, met het logo van de school. Er staat op wat je hier ziet: naam, positie, cijfers en
+                    level. Delen naar Snapchat gaat via je foto's: opslaan, Snapchat openen, kiezen uit je galerij.
                 </p>
 
-                <div class="mt-4 flex flex-wrap items-center gap-2">
-                    <button
-                        type="button"
-                        class="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
-                        :disabled="deelBezig"
-                        @click="deelAfbeelding"
-                    >
-                        <Share2 v-if="!deelBezig" class="size-4" />
-                        <ImageDown v-else class="size-4 animate-pulse" />
-                        {{ deelBezig ? 'Afbeelding maken…' : 'Deel als afbeelding' }}
-                    </button>
-
-                    <button
-                        v-if="share.url"
-                        type="button"
-                        class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border px-4 text-sm font-medium transition hover:border-primary"
-                        @click="kopieer"
-                    >
-                        <Check v-if="gekopieerd" class="size-4 text-primary" />
-                        <Copy v-else class="size-4" />
-                        {{ gekopieerd ? 'Link gekopieerd' : 'Link kopiëren' }}
-                    </button>
-                </div>
-
-                <p v-if="deelMelding" class="mt-3 text-sm text-muted-foreground" role="status">{{ deelMelding }}</p>
+                <CardShareActions class="mt-4" :card="card" :link="share.url" :sticker="sticker" />
             </div>
 
             <!-- De deel-link: standaard uit, en met de gevolgen erbij -->

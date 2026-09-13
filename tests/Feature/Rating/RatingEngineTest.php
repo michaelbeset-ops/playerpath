@@ -243,17 +243,17 @@ class RatingEngineTest extends TestCase
         $settings = RatingSettings::for($this->school);
 
         $this->assertSame('brons', $this->engine->level(0, null, $settings)['key']);
-        $this->assertSame('brons', $this->engine->level(149, 90, $settings)['key']);
-        $this->assertSame('zilver', $this->engine->level(150, null, $settings)['key']);
-        $this->assertSame('goud', $this->engine->level(400, null, $settings)['key']);
-        $this->assertSame('elite', $this->engine->level(900, null, $settings)['key']);
+        $this->assertSame('brons', $this->engine->level(250, 90, $settings)['key']);
+        $this->assertSame('zilver', $this->engine->level(251, null, $settings)['key']);
+        $this->assertSame('goud', $this->engine->level(501, null, $settings)['key']);
+        $this->assertSame('elite', $this->engine->level(751, null, $settings)['key']);
     }
 
     public function test_het_volgende_level_zegt_hoeveel_er_nog_nodig_is(): void
     {
         $settings = RatingSettings::for($this->school);
 
-        $volgende = $this->engine->nextLevel(120, $settings);
+        $volgende = $this->engine->nextLevel(221, $settings);
         $this->assertSame('zilver', $volgende['key']);
         $this->assertSame(30, $volgende['remaining']);
 
@@ -305,7 +305,7 @@ class RatingEngineTest extends TestCase
                 ->where('card.level.key', 'brons')
                 ->where('card.level.xp', 5)
                 ->where('card.level.next.key', 'zilver')
-                ->where('card.level.next.remaining', 145)
+                ->where('card.level.next.remaining', 246)
                 ->where('card.age_category.key', 'O12')
                 ->where('card.season', '2026/27')
             );

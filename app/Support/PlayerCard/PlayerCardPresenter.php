@@ -8,6 +8,8 @@ use App\Models\Report;
 use App\Support\Goals\GoalProgress;
 use App\Support\Rating\AgeCategory;
 use App\Support\Rating\RatingEngine;
+use App\Support\Rating\SchoolSeason;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Alles wat de spelerskaart nodig heeft, in één pakket.
@@ -36,6 +38,7 @@ class PlayerCardPresenter
     {
         $settings = $this->engine->settingsFor($player);
         $categorie = $player->age_category ?? $this->engine->categoryFor($player);
+        $seizoen = SchoolSeason::for($player->school);
 
         return [
             'first_name' => $player->first_name,
@@ -70,7 +73,15 @@ class PlayerCardPresenter
                 fn (array $badge) => $badge['earned'],
             )),
             'season' => AgeCategory::seasonLabel(now(), $settings->seasonStartMonth()),
+            // Het seizoen van de school: de naam op de kaart, wanneer het
+            // eindigt en in welke week we zitten. Voor de balk en de uitleg.
+            'season_label' => $seizoen->isSet() ? $seizoen->label() : 'Seizoen '.AgeCategory::seasonLabel(now(), $settings->seasonStartMonth()),
+            'season_ends' => $seizoen->isSet() ? $seizoen->endsOn?->format('d-m-Y') : null,
+            'season_week' => $seizoen->currentWeek() !== null ? 'week '.$seizoen->currentWeek().' van '.$seizoen->totalWeeks() : null,
             'school' => $public ? null : $player->school?->name,
+            // Het logo van de school, voor op de deel-afbeelding. Publiek niet:
+            // een logo verraadt net zo goed als een naam waar het kind zit.
+            'school_logo' => $public || $player->school?->logo_path === null ? null : Storage::url($player->school->logo_path),
             // De achterkant van de kaart: de laatste rapporten en het doel.
             // Publiek zonder trainer en toelichting, en zonder doel: dat is
             // de opmerking van een trainer over een kind, niet voor internet.

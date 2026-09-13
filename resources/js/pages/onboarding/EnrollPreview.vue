@@ -11,7 +11,7 @@ import { ExternalLink } from 'lucide-vue-next';
  */
 const props = defineProps<{
     url: string;
-    school: string;
+    schoolName: string;
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -28,7 +28,7 @@ const breadcrumbs: BreadcrumbItem[] = [
             <div class="rounded-xl border border-primary/30 bg-primary/5 p-4 text-sm">
                 <p class="font-medium">Zo schrijft een ouder zich in</p>
                 <p class="mt-1 text-muted-foreground">
-                    Dit is de echte inschrijfpagina van {{ school }}. Een ouder kiest een aanbod, vult de gegevens van zijn kind in, kiest hoe hij
+                    Dit is de echte inschrijfpagina van {{ schoolName }}. Een ouder kiest een aanbod, vult de gegevens van zijn kind in, kiest hoe hij
                     betaalt (online of contant bij de school) en bevestigt. De aanmelding komt daarna bij jou binnen onder Klanten, waar je hem
                     goedkeurt.
                 </p>

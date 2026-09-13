@@ -229,13 +229,13 @@ class ProgressAndNotificationTest extends TestCase
 
         $this->assertSame('brons', $badges->level($this->speler)['key']);
 
-        $this->speler->forceFill(['xp' => 150])->save();
+        $this->speler->forceFill(['xp' => 251])->save();
         $this->assertSame('zilver', $badges->level($this->speler->fresh())['key']);
 
-        $this->speler->forceFill(['xp' => 400])->save();
+        $this->speler->forceFill(['xp' => 501])->save();
         $this->assertSame('goud', $badges->level($this->speler->fresh())['key']);
 
-        $this->speler->forceFill(['xp' => 900])->save();
+        $this->speler->forceFill(['xp' => 751])->save();
         $this->assertSame('elite', $badges->level($this->speler->fresh())['key']);
     }
 
