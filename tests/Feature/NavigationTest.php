@@ -165,7 +165,7 @@ class NavigationTest extends TestCase
             '/reports', '/mijlpalen',
             '/payments', '/subscriptions', '/aanbod', '/exports',
             '/announcements', '/announcements/verjaardagen',
-            '/staff', '/beschikbaarheid', '/personeel/beschikbaarheid', '/locaties', '/instellingen/inschrijven', '/seizoen', '/branding', '/verantwoording', '/settings/profile',
+            '/staff', '/beschikbaarheid', '/personeel/beschikbaarheid', '/locaties', '/instellingen/inschrijven', '/seizoen', '/branding', '/verantwoording', '/settings/profile', '/help',
         ], $hrefs);
     }
 

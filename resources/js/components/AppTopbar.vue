@@ -199,16 +199,14 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                 <!-- De rondleiding opnieuw. Alleen voor wie de school bedient;
                      een ouder krijgt er geen, dus een vraagteken zou hem naar
                      iets wijzen dat niet bestaat. -->
-                <button
-                    v-if="page.props.onboarding?.canRestartTour"
-                    type="button"
+                <Link
+                    href="/help"
                     class="hidden items-center px-3 text-foreground/75 transition hover:bg-foreground/10 hover:text-foreground sm:flex"
-                    aria-label="Rondleiding opnieuw starten"
-                    title="Rondleiding opnieuw starten"
-                    @click="startRondleiding"
+                    aria-label="Help"
+                    title="Help: zo werkt het"
                 >
                     <CircleHelp class="size-5" />
-                </button>
+                </Link>
 
                 <Link
                     href="/notifications"

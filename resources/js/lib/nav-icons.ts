@@ -1,5 +1,6 @@
 import {
     Award,
+    CircleHelp,
     Building2,
     Cake,
     CalendarCheck,
@@ -56,6 +57,7 @@ export const navIconen: Record<string, LucideIcon> = {
     locations: MapPin,
     availability: CalendarCheck,
     settings: Settings,
+    help: CircleHelp,
 };
 
 export const navIcoon = (naam: string): LucideIcon => navIconen[naam] ?? LayoutGrid;

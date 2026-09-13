@@ -2205,11 +2205,25 @@ afbeelding" + "Link kopiëren") en de deelknop op het spelerdashboard.
 
 ### "Zet op je beginscherm"
 
-`components/InstallPrompt.vue`: niet als het al een app is (`useAppMode`),
-pas vanaf het tweede bezoek op een andere dag of na drie minuten, en
-wegklikken is nee — onthouden op dit apparaat (`localStorage`). Android en
-desktop krijgen de echte knop (`beforeinstallprompt`); iOS heeft dat niet en
-krijgt de twee stappen: Deel → Zet op beginscherm. Het manifest
+Iedereen hoort de app op zijn beginscherm te hebben. `composables/useInstall.ts`
+is de enige plek die weet wat er kan: de echte knop op Android en desktop
+(`beforeinstallprompt`), de twee stappen op iOS (Deel → Zet op beginscherm),
+niets als het al een app is (`useAppMode`). `components/InstallSteps.vue`
+tekent dat, op de hulppagina en op de kind-link.
+`components/InstallPrompt.vue` is de balk onderin: na een halve minuut, ook
+bij het eerste bezoek; "niet nu" stelt een week uit, "nee" op de echte knop
+een maand (`localStorage`). Niet voorgoed weg: een balk die nooit meer komt
+haalt niemand over.
+
+### Help
+
+`/help` (`HelpController` + `pages/Help.vue`): hoe het werkt, per rol, in
+de volgorde waarin je het tegenkomt. School: speler → ouder → inschrijven →
+rapport en kaart → delen. Ouder: je kind, inschrijven, hoe de kaart groeit,
+betalen, delen. Speler: de kaart. Bovenaan overal "zet op je beginscherm",
+onderaan het telefoonnummer. Het vraagteken in de balk gaat hierheen, voor
+iedereen; de rondleiding opnieuw starten staat op deze pagina (eigenaar) en
+in het accountmenu. Het menu-item Help staat bij Mijn bedrijf / Mijn account. Het manifest
 (`/manifest.webmanifest`) heeft naam, iconen, `start_url` en
 `display: standalone`; de test `ProductionReadinessTest` bewaakt dat.
 

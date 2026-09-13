@@ -8,6 +8,7 @@ use App\Http\Controllers\Dashboard\AccountabilityController;
 use App\Http\Controllers\Dashboard\LayoutController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\HelpController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Players\BadgeSettingsController;
 use App\Http\Controllers\Players\BirthdayController;
@@ -48,6 +49,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Het aandacht-blok wegklikken. Komt terug zodra er iets verandert.
     Route::post('dashboard/aandacht/gezien', [LayoutController::class, 'dismissAttention'])->name('dashboard.attention.dismiss');
+
+    // Hulp: hoe het werkt, per rol. Voor iedereen die is ingelogd.
+    Route::get('help', HelpController::class)->name('help');
 
     Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('notifications/read', [NotificationController::class, 'readAll'])->name('notifications.read');

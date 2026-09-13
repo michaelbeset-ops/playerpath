@@ -4,11 +4,12 @@ import CardGlow from '@/components/CardGlow.vue';
 import CardHowItWorks from '@/components/CardHowItWorks.vue';
 import LevelProgress from '@/components/LevelProgress.vue';
 import PlayerCardVisual, { type Kaart } from '@/components/PlayerCardVisual.vue';
-import { useAppMode } from '@/composables/useAppMode';
+import InstallSteps from '@/components/InstallSteps.vue';
+import { useInstall } from '@/composables/useInstall';
 import { strooiConfetti } from '@/lib/confetti';
 import { Head } from '@inertiajs/vue3';
-import { Download, Layers, Lock, Share, SquarePlus, Trophy } from 'lucide-vue-next';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { Download, Layers, Lock, Trophy } from 'lucide-vue-next';
+import { computed, onMounted } from 'vue';
 
 /**
  * De kaart voor het kind zelf, via de kind-link. Geen inlog, geen menu:
@@ -53,29 +54,8 @@ onMounted(() => {
 });
 
 // "Zet op je beginscherm": hier meteen, want dit is precies de link die op
-// de tablet als icoon hoort te staan. Android krijgt de echte knop, iOS de
-// twee stappen. Als het al een app is, staat er niets.
-const { isApp } = useAppMode();
-const installGebeurtenis = ref<any>(null);
-const isIos = computed(() => /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as Window & { MSStream?: unknown }).MSStream);
-
-const onBeforeInstall = (event: Event) => {
-    event.preventDefault();
-    installGebeurtenis.value = event;
-};
-
-const installeer = async () => {
-    const prompt = installGebeurtenis.value;
-    if (!prompt) {
-        return;
-    }
-    installGebeurtenis.value = null;
-    prompt.prompt();
-    await prompt.userChoice;
-};
-
-onMounted(() => window.addEventListener('beforeinstallprompt', onBeforeInstall));
-onUnmounted(() => window.removeEventListener('beforeinstallprompt', onBeforeInstall));
+// de tablet als icoon hoort te staan. Als het al een app is, staat er niets.
+const { kan } = useInstall();
 </script>
 
 <template>
@@ -113,32 +93,13 @@ onUnmounted(() => window.removeEventListener('beforeinstallprompt', onBeforeInst
             <LevelProgress v-if="card.overall !== null" class="mt-4" :card="card" />
 
             <!-- Op het beginscherm: dit is de plek waar de link een icoon wordt -->
-            <div v-if="!isApp && (installGebeurtenis || isIos)" class="mt-4 rounded-2xl border border-border bg-card p-4">
+            <div v-if="kan" class="mt-4 rounded-2xl border border-border bg-card p-4">
                 <p class="flex items-center gap-2 text-sm font-semibold">
                     <Download class="size-4 text-primary" />
                     Zet je kaart op je beginscherm
                 </p>
                 <p class="mt-1 text-xs text-muted-foreground">Dan staat hij als een app tussen je andere apps, met één tik open.</p>
-
-                <button
-                    v-if="installGebeurtenis"
-                    type="button"
-                    class="mt-3 h-11 w-full rounded-xl bg-primary px-3 text-sm font-semibold text-primary-foreground"
-                    @click="installeer"
-                >
-                    Op beginscherm zetten
-                </button>
-
-                <ol v-else class="mt-3 space-y-1.5 text-xs">
-                    <li class="flex items-center gap-2">
-                        <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-secondary text-[10px] font-semibold">1</span>
-                        Tik onderin op <Share class="inline size-3.5" aria-label="Deel" /> <span class="font-medium">Deel</span>
-                    </li>
-                    <li class="flex items-center gap-2">
-                        <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-secondary text-[10px] font-semibold">2</span>
-                        Kies <SquarePlus class="inline size-3.5" aria-hidden="true" /> <span class="font-medium">Zet op beginscherm</span>
-                    </li>
-                </ol>
+                <InstallSteps class="mt-3" :naam="'je kaart'" />
             </div>
 
             <CardHowItWorks class="mt-8" :card="card" />

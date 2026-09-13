@@ -1,37 +1,37 @@
 <script setup lang="ts">
-import { useAppMode } from '@/composables/useAppMode';
+import { useInstall } from '@/composables/useInstall';
 import { Download, Share, SquarePlus, X } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 /**
  * "Zet PlayerPath op je beginscherm."
  *
- * Vier regels die dit dragelijk houden:
+ * Iedereen hoort de app op zijn beginscherm te hebben: een ouder die hem
+ * elke week opent, een trainer die na de training zijn rapporten invult.
+ * Daarom komt de vraag vroeg en komt hij terug, maar niet vervelend:
  *
- * 1. **Niet als het al een app is.** Wie hem al op zijn beginscherm heeft
- *    hoort dit nooit te zien (`useAppMode`).
- * 2. **Niet bij het eerste bezoek.** Pas vanaf het tweede bezoek (een andere
- *    dag), of na een paar minuten in de app. Wie net voor het eerst inlogt
- *    heeft andere dingen aan zijn hoofd.
- * 3. **Wegklikken is nee**, en dat onthouden we op dit apparaat. Een balk die
- *    elke week terugkomt is precies waarom mensen apps wantrouwen.
+ * 1. **Niet als het al een app is.** Wie hem al heeft ziet dit nooit
+ *    (`useAppMode`).
+ * 2. **Na een halve minuut, ook bij het eerste bezoek.** Wie net inlogt
+ *    krijgt eerst zijn scherm; daarna komt de vraag.
+ * 3. **Wegklikken is "niet nu", en dat onthouden we een week.** Een balk
+ *    die elke dag terugkomt leer je wegklikken; een balk die nooit meer
+ *    komt haalt niemand over. Na "Nee, bedankt" op de echte knop blijft
+ *    hij een maand weg.
  * 4. **Android krijgt de echte knop, iOS de stappen.** Chrome/Android geeft
  *    `beforeinstallprompt`; Safari op iOS heeft dat niet, daar staat de weg
  *    beschreven: Deel → Zet op beginscherm.
  */
-const AFGEWEZEN = 'playerpath.install-afgewezen';
-const BEZOEKEN = 'playerpath.install.bezoeken';
-const MINUTEN = 3;
+const UITGESTELD = 'playerpath.install-uitgesteld';
+const SECONDEN = 30;
+const WEEK = 7 * 24 * 60 * 60 * 1000;
 
-const { isApp } = useAppMode();
+const { isApp, isIos, kanKnop, installeer } = useInstall();
 
-const gebeurtenis = ref<any>(null);
 const rijp = ref(false);
-const afgewezen = ref(false);
+const uitgesteld = ref(false);
 
-const isIos = computed(() => /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as Window & { MSStream?: unknown }).MSStream);
-
-const zichtbaar = computed(() => !isApp.value && !afgewezen.value && rijp.value && (gebeurtenis.value !== null || isIos.value));
+const zichtbaar = computed(() => !isApp.value && !uitgesteld.value && rijp.value && (kanKnop.value || isIos.value));
 
 const lees = (sleutel: string): string | null => {
     try {
@@ -45,65 +45,35 @@ const schrijf = (sleutel: string, waarde: string) => {
     try {
         localStorage.setItem(sleutel, waarde);
     } catch {
-        // Privémodus of geblokkeerde opslag: dan vragen we hooguit nog een keer.
+        // Privémodus of geblokkeerde opslag: dan vragen we het gewoon nog eens.
     }
 };
 
-/** Het tweede bezoek op een andere dag telt; vandaag nog eens openen niet. */
-const telBezoek = (): number => {
-    const vandaag = new Date().toISOString().slice(0, 10);
-    const dagen = (lees(BEZOEKEN) ?? '').split(',').filter(Boolean);
-
-    if (!dagen.includes(vandaag)) {
-        dagen.push(vandaag);
-        schrijf(BEZOEKEN, dagen.slice(-10).join(','));
-    }
-
-    return dagen.length;
+const stelUit = (dagen: number) => {
+    uitgesteld.value = true;
+    schrijf(UITGESTELD, String(Date.now() + dagen * (WEEK / 7)));
 };
 
-const onBeforeInstall = (event: Event) => {
-    event.preventDefault();
-    gebeurtenis.value = event;
-};
+const klik = async () => {
+    const uitkomst = await installeer();
 
-const installeer = async () => {
-    if (!gebeurtenis.value) {
-        return;
+    if (uitkomst === 'dismissed') {
+        stelUit(30);
+    } else {
+        uitgesteld.value = true;
     }
-
-    const prompt = gebeurtenis.value;
-    gebeurtenis.value = null;
-    prompt.prompt();
-
-    const keuze = await prompt.userChoice;
-
-    if (keuze?.outcome === 'dismissed') {
-        sluit();
-    }
-};
-
-const sluit = () => {
-    afgewezen.value = true;
-    schrijf(AFGEWEZEN, new Date().toISOString());
 };
 
 let timer: ReturnType<typeof setTimeout> | null = null;
 
 onMounted(() => {
-    afgewezen.value = lees(AFGEWEZEN) !== null;
-    window.addEventListener('beforeinstallprompt', onBeforeInstall);
+    const tot = Number(lees(UITGESTELD) ?? 0);
+    uitgesteld.value = tot > Date.now();
 
-    if (telBezoek() >= 2) {
-        rijp.value = true;
-    } else {
-        timer = setTimeout(() => (rijp.value = true), MINUTEN * 60 * 1000);
-    }
+    timer = setTimeout(() => (rijp.value = true), SECONDEN * 1000);
 });
 
 onUnmounted(() => {
-    window.removeEventListener('beforeinstallprompt', onBeforeInstall);
-
     if (timer) {
         clearTimeout(timer);
     }
@@ -124,10 +94,10 @@ onUnmounted(() => {
 
             <div class="min-w-0 flex-1">
                 <p class="text-sm font-medium">Zet PlayerPath op je beginscherm</p>
-                <p class="text-xs text-muted-foreground">Dan opent hij als een app, zonder adresbalk, met één tik.</p>
+                <p class="text-xs text-muted-foreground">Dan opent hij als een app, zonder adresbalk, met één tik. Zo gebruik je hem het makkelijkst.</p>
 
                 <!-- iOS: geen knop mogelijk, wel de twee stappen -->
-                <ol v-if="!gebeurtenis && isIos" class="mt-2 space-y-1 text-xs">
+                <ol v-if="!kanKnop && isIos" class="mt-2 space-y-1 text-xs">
                     <li class="flex items-center gap-2">
                         <span class="flex size-5 shrink-0 items-center justify-center rounded-full bg-secondary text-[10px] font-semibold">1</span>
                         Tik onderin op <Share class="inline size-3.5" aria-label="Deel" /> <span class="font-medium">Deel</span>
@@ -143,20 +113,20 @@ onUnmounted(() => {
                 type="button"
                 class="-m-1 flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground"
                 aria-label="Niet nu"
-                @click="sluit"
+                @click="stelUit(7)"
             >
                 <X class="size-4" />
             </button>
         </div>
 
-        <div v-if="gebeurtenis" class="mt-3 flex gap-2">
-            <button type="button" class="h-11 flex-1 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground" @click="installeer">
+        <div v-if="kanKnop" class="mt-3 flex gap-2">
+            <button type="button" class="h-11 flex-1 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground" @click="klik">
                 Op beginscherm zetten
             </button>
-            <button type="button" class="h-11 rounded-lg border border-border px-3 text-sm font-medium" @click="sluit">Nee, bedankt</button>
+            <button type="button" class="h-11 rounded-lg border border-border px-3 text-sm font-medium" @click="stelUit(7)">Niet nu</button>
         </div>
         <div v-else class="mt-3">
-            <button type="button" class="h-11 w-full rounded-lg border border-border px-3 text-sm font-medium" @click="sluit">Begrepen</button>
+            <button type="button" class="h-11 w-full rounded-lg border border-border px-3 text-sm font-medium" @click="stelUit(7)">Begrepen</button>
         </div>
     </div>
 </template>

@@ -135,6 +135,7 @@ class MainNavigation
                     ['title' => 'Huisstijl', 'href' => '/branding', 'icon' => 'branding', 'allowed' => $user->isEigenaar()],
                     ['title' => 'Verantwoording', 'href' => '/verantwoording', 'icon' => 'accountability', 'allowed' => $user->isEigenaar()],
                     ['title' => 'Instellingen', 'href' => '/settings/profile', 'icon' => 'settings', 'allowed' => true],
+                    ['title' => 'Help', 'href' => '/help', 'icon' => 'help', 'allowed' => true],
                 ],
             ],
         ];
@@ -247,6 +248,7 @@ class MainNavigation
                 'title' => 'Mijn account', 'icon' => 'settings', 'items' => [
                     ['title' => 'Mijn beschikbaarheid', 'href' => '/beschikbaarheid', 'icon' => 'availability', 'allowed' => $user->can('viewAny', AvailabilityException::class)],
                     ['title' => 'Instellingen', 'href' => '/settings/profile', 'icon' => 'settings', 'allowed' => true],
+                    ['title' => 'Help', 'href' => '/help', 'icon' => 'help', 'allowed' => true],
                 ],
             ],
         ];
