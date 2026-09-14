@@ -5,6 +5,7 @@ namespace App\Notifications;
 use App\Models\Player;
 use App\Models\Report;
 use App\Notifications\Concerns\SendsFromSchool;
+use App\Support\Rating\Grade;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -47,12 +48,24 @@ class NieuwRapport extends Notification implements ShouldQueue
             ->greeting("Nieuw rapport voor {$naam}")
             ->line('De trainer heeft na de training zijn beoordeling ingevuld.');
 
-        if ($this->overallRating !== null) {
-            $bericht->line("De spelerskaart staat nu op **{$this->overallRating}**.");
-        }
+        // In kleuren: geen getal in de mail, alleen de kleur. Een getal in een
+        // inbox is precies wat een school die in kleuren werkt niet wil.
+        if (Grade::usesColors($this->player->school)) {
+            if ($this->overallRating !== null) {
+                $bericht->line('De spelerskaart laat nu zien: **'.Grade::labelFor($this->overallRating).'**.');
+            }
 
-        if ($this->groei !== null && $this->groei > 0) {
-            $bericht->line("Dat is {$this->groei} punten hoger dan het vorige rapport. Mooi bezig!");
+            if ($this->groei !== null && $this->groei > 0) {
+                $bericht->line('Er is groei te zien ten opzichte van het vorige rapport. Mooi bezig!');
+            }
+        } else {
+            if ($this->overallRating !== null) {
+                $bericht->line("De spelerskaart staat nu op **{$this->overallRating}**.");
+            }
+
+            if ($this->groei !== null && $this->groei > 0) {
+                $bericht->line("Dat is {$this->groei} punten hoger dan het vorige rapport. Mooi bezig!");
+            }
         }
 
         return $bericht
@@ -69,8 +82,10 @@ class NieuwRapport extends Notification implements ShouldQueue
             'player_id' => $this->player->id,
             'player_name' => $this->player->full_name,
             'report_id' => $this->report->id,
-            'overall_rating' => $this->overallRating,
-            'groei' => $this->groei,
+            // In kleuren geen getal in de melding: de lijst toont dan het label.
+            'overall_rating' => Grade::usesColors($this->player->school) ? null : $this->overallRating,
+            'groei' => Grade::usesColors($this->player->school) ? null : $this->groei,
+            'grade' => Grade::usesColors($this->player->school) ? Grade::labelFor($this->overallRating) : null,
             'title' => "Nieuw rapport voor {$this->player->first_name}",
             'url' => "/players/{$this->player->id}/card",
         ];

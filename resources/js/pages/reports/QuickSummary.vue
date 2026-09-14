@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import GradeChip from '@/components/GradeChip.vue';
+import { useGrading } from '@/lib/grade';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
@@ -42,6 +44,8 @@ const gestegen = computed(() => props.results.filter((r) => (r.overall.delta ?? 
 const gedaald = computed(() => props.results.filter((r) => (r.overall.delta ?? 0) < 0));
 const levelUps = computed(() => props.results.filter((r) => r.level.up));
 const mijlpalen = computed(() => props.results.filter((r) => r.badges.length));
+
+const { kleuren } = useGrading();
 </script>
 
 <template>
@@ -106,7 +110,7 @@ const mijlpalen = computed(() => props.results.filter((r) => r.badges.length));
                                     {{
                                         rij.categories
                                             .slice(0, 3)
-                                            .map((c) => c.label + ' ' + (c.delta > 0 ? '+' : '') + c.delta)
+                                            .map((c) => c.label + ' ' + (kleuren ? (c.delta > 0 ? '▲' : '▼') : (c.delta > 0 ? '+' : '') + c.delta))
                                             .join(' · ')
                                     }}
                                 </span>
@@ -114,9 +118,11 @@ const mijlpalen = computed(() => props.results.filter((r) => r.badges.length));
                             </span>
 
                             <span class="tabular shrink-0 text-right">
-                                <span class="block text-base font-bold leading-none">{{ rij.overall.to ?? '-' }}</span>
+                                <GradeChip :rating="rij.overall.to" size="sm">
+                                    <span class="block text-base font-bold leading-none">{{ rij.overall.to ?? '-' }}</span>
+                                </GradeChip>
                                 <span
-                                    v-if="rij.overall.delta"
+                                    v-if="rij.overall.delta && !kleuren"
                                     class="flex items-center justify-end gap-0.5 text-xs font-medium"
                                     :class="rij.overall.delta > 0 ? 'text-primary' : 'text-warning'"
                                 >
@@ -124,7 +130,7 @@ const mijlpalen = computed(() => props.results.filter((r) => r.badges.length));
                                     <TrendingDown v-else class="size-3" />
                                     {{ rij.overall.delta > 0 ? '+' : '' }}{{ rij.overall.delta }}
                                 </span>
-                                <span v-else class="block text-xs text-muted-foreground">gelijk</span>
+                                <span v-else-if="!kleuren" class="block text-xs text-muted-foreground">gelijk</span>
                             </span>
                         </Link>
                     </li>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { kleurVan, useGrading } from '@/lib/grade';
 import FlashMessage from '@/components/FlashMessage.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
@@ -50,6 +51,9 @@ const leegmaken = () => {
     filters.group = null;
     filters.status = 'active';
 };
+
+// In kleuren een gekleurde stip in plaats van het cijfer.
+const { kleuren, niveauVoor } = useGrading();
 </script>
 
 <template>
@@ -129,7 +133,7 @@ const leegmaken = () => {
                         class="tabular flex size-11 shrink-0 items-center justify-center rounded-lg text-base font-bold"
                         :class="speler.overall_rating ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground'"
                     >
-                        {{ speler.overall_rating ?? '-' }}
+                        <template v-if="!kleuren">{{ speler.overall_rating ?? '-' }}</template><span v-else class="size-4 rounded-full" :style="{ backgroundColor: kleurVan(niveauVoor(speler.overall_rating)?.key, niveauVoor(speler.overall_rating) ? 1 : 0.25) }" :title="niveauVoor(speler.overall_rating)?.label ?? 'Nog geen rapport'"></span>
                     </div>
 
                     <div class="min-w-0 flex-1">

@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import Avatar from '@/components/Avatar.vue';
 import InputError from '@/components/InputError.vue';
+import GradeChip from '@/components/GradeChip.vue';
+import GradePicker from '@/components/GradePicker.vue';
 import ScoreSlider from '@/components/ScoreSlider.vue';
+import { useGrading } from '@/lib/grade';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
@@ -84,6 +87,9 @@ watch(
 
 const actieveRij = ref(0);
 
+// In kleuren: vier knoppen, toetsen 1 tot 4. In cijfers: de schuif, toetsen 1 tot 9 en 0.
+const { kleuren, niveaus, niveauVoor } = useGrading();
+
 const ingevuld = computed(() => props.categories.filter((c) => form.scores[c.category] !== null).length);
 const compleet = computed(() => ingevuld.value === props.categories.length);
 
@@ -122,10 +128,13 @@ const opToets = (event: KeyboardEvent) => {
         return;
     }
 
-    if (event.key >= '1' && event.key <= '9') {
+    if (kleuren.value && event.key >= '1' && event.key <= '4') {
+        zet(categorie.category, niveaus.value[Number(event.key) - 1].score, actieveRij.value);
+        event.preventDefault();
+    } else if (!kleuren.value && event.key >= '1' && event.key <= '9') {
         zet(categorie.category, Number(event.key), actieveRij.value);
         event.preventDefault();
-    } else if (event.key === '0') {
+    } else if (!kleuren.value && event.key === '0') {
         zet(categorie.category, 10, actieveRij.value);
         event.preventDefault();
     } else if (event.key === 'ArrowDown') {
@@ -196,7 +205,7 @@ const sla = () => {
                         <h1 class="truncate text-xl font-semibold leading-tight tracking-tight">{{ player.name }}</h1>
                         <p class="truncate text-xs text-muted-foreground">
                             {{ player.position }}<span v-if="player.age"> &middot; {{ player.age }} jaar</span>
-                            <span v-if="player.overall_rating"> &middot; nu {{ player.overall_rating }}</span>
+                            <span v-if="player.overall_rating && !kleuren"> &middot; nu {{ player.overall_rating }}</span>
                         </p>
                     </div>
                 </div>
@@ -224,9 +233,11 @@ const sla = () => {
                 </p>
                 <p class="shrink-0 text-right">
                     <span class="block text-[10px] uppercase tracking-wide text-muted-foreground">Wordt</span>
-                    <span class="tabular block text-2xl font-bold leading-none" :class="gemiddelde ? 'text-primary' : 'text-muted-foreground'">
-                        {{ gemiddelde ?? '-' }}
-                    </span>
+                    <GradeChip :rating="gemiddelde" size="lg">
+                        <span class="tabular block text-2xl font-bold leading-none" :class="gemiddelde ? 'text-primary' : 'text-muted-foreground'">
+                            {{ gemiddelde ?? '-' }}
+                        </span>
+                    </GradeChip>
                 </p>
             </div>
 
@@ -251,13 +262,28 @@ const sla = () => {
                                 :class="goals[categorie.category].on_track ? 'bg-primary/10 text-primary' : 'bg-warning/10 text-warning'"
                                 :title="goals[categorie.category].on_track ? 'Op koers' : 'Achter op schema'"
                             >
-                                doel {{ (goals[categorie.category].target / 10).toFixed(1).replace('.', ',') }}
+                                doel {{
+                                    kleuren
+                                        ? niveauVoor(goals[categorie.category].target)?.label
+                                        : (goals[categorie.category].target / 10).toFixed(1).replace('.', ',')
+                                }}
                             </span>
-                            <p v-if="categorie.rating !== null" class="tabular text-muted-foreground">nu {{ categorie.rating }}</p>
+                            <GradeChip v-if="categorie.rating !== null" :rating="categorie.rating" size="sm"
+                                ><p class="tabular text-muted-foreground">nu {{ categorie.rating }}</p></GradeChip
+                            >
                         </div>
                     </div>
 
+                    <!-- In kleuren vier knoppen, anders de schuif van 1 tot 10. -->
+                    <GradePicker
+                        v-if="kleuren"
+                        :id="'kleur-' + categorie.category"
+                        v-model="form.scores[categorie.category]"
+                        class="mt-3"
+                        :label="categorie.label"
+                    />
                     <ScoreSlider
+                        v-else
                         :id="'score-' + categorie.category"
                         v-model="form.scores[categorie.category]"
                         class="mt-3"

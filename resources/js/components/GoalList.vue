@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import GradeChip from '@/components/GradeChip.vue';
 import { CheckCircle2, Target, XCircle } from 'lucide-vue-next';
 
 /**
@@ -92,7 +93,10 @@ const cijfer = (rating: number | null) => (rating === null ? '-' : (rating / 10)
                     <Target v-else class="size-4 text-primary" />
                     {{ doel.label
                     }}<template v-if="doel.target !== null">
-                        naar <span class="tabular">{{ doel.target_grade ?? cijfer(doel.target) }}</span></template
+                        naar
+                        <GradeChip :rating="doel.target" size="sm"
+                            ><span class="tabular">{{ doel.target_grade ?? cijfer(doel.target) }}</span></GradeChip
+                        ></template
                     >
                 </p>
                 <span class="rounded-md px-2 py-0.5 text-xs font-medium" :class="chip(doel).klas">{{ chip(doel).tekst }}</span>
@@ -115,8 +119,11 @@ const cijfer = (rating: number | null) => (rating === null ? '-' : (rating / 10)
 
             <p class="tabular mt-1.5 flex flex-wrap justify-between gap-x-3 text-xs text-muted-foreground">
                 <span v-if="!doel.is_custom"
-                    >Nu <span class="font-medium text-foreground">{{ doel.current_grade ?? cijfer(doel.current) }}</span> · gestart op
-                    {{ cijfer(doel.start) }}</span
+                    >Nu
+                    <GradeChip :rating="doel.current" size="sm"
+                        ><span class="font-medium text-foreground">{{ doel.current_grade ?? cijfer(doel.current) }}</span></GradeChip
+                    >
+                    · gestart op <GradeChip :rating="doel.start" size="sm">{{ cijfer(doel.start) }}</GradeChip></span
                 >
                 <span v-else>Eigen doel<template v-if="doel.target !== null"> · richtpunt {{ doel.target_grade ?? cijfer(doel.target) }}</template></span>
                 <span v-if="doel.status === 'achieved'">Gehaald op {{ doel.achieved_at }}</span>

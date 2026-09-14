@@ -15,6 +15,8 @@ interface Melding {
     player_name: string | null;
     overall_rating: number | null;
     groei: number | null;
+    /** In kleuren: het label in plaats van het getal. */
+    grade?: string | null;
     read: boolean;
     when: string;
 }
@@ -75,6 +77,9 @@ const nieuw = computed(() => props.notifications.filter((m) => !m.read).length);
                         <p v-if="melding.overall_rating !== null" class="tabular mt-1 text-sm text-muted-foreground">
                             De kaart staat nu op <span class="font-semibold text-foreground">{{ melding.overall_rating }}</span>
                             <span v-if="melding.groei !== null && melding.groei > 0" class="text-primary"> (+{{ melding.groei }})</span>
+                        </p>
+                        <p v-else-if="melding.grade" class="mt-1 text-sm text-muted-foreground">
+                            De kaart laat nu zien: <span class="font-semibold text-foreground">{{ melding.grade }}</span>
                         </p>
                     </div>
                 </component>

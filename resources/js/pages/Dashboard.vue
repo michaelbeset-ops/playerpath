@@ -18,12 +18,16 @@ import type { FamilyAanbod, FamilyBericht, FamilyKind, FamilyTraining } from '@/
 import type { SpelerDashboardData } from '@/types/player-dashboard';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { CalendarDays, CalendarPlus, ClipboardList, Euro, Star, UserPlus, Users } from 'lucide-vue-next';
+import { useGrading } from '@/lib/grade';
 import { computed, defineAsyncComponent } from 'vue';
 
 // Elke rol ziet één van deze drie, nooit meer. Apart laden scheelt een ouder
 // op zijn telefoon het sleepraster van de eigenaar (grid-layout-plus), en de
 // eigenaar de spelerskaart met zijn canvas-code. Dat was een bundel van
 // 200 KB voor iedereen.
+// In kleuren is de rating-tegel een kleur, zonder getal en zonder trend in punten.
+const { kleuren, niveauVoor } = useGrading();
+
 const DashboardGrid = defineAsyncComponent(() => import('@/components/dashboard/DashboardGrid.vue'));
 const FamilyDashboard = defineAsyncComponent(() => import('@/components/dashboard/FamilyDashboard.vue'));
 const PlayerDashboard = defineAsyncComponent(() => import('@/components/dashboard/PlayerDashboard.vue'));
@@ -216,9 +220,9 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
                             <template #kpi_rating>
                                 <KpiWidget
                                     v-if="widgets?.kpi_rating"
-                                    label="Gemiddelde rating"
-                                    :value="widgets.kpi_rating.value"
-                                    :change="widgets.kpi_rating.change"
+                                    :label="kleuren ? 'Gemiddelde kleur' : 'Gemiddelde rating'"
+                                    :value="kleuren ? (niveauVoor(widgets.kpi_rating.value as number | null)?.label ?? null) : widgets.kpi_rating.value"
+                                    :change="kleuren ? null : widgets.kpi_rating.change"
                                     :unit="widgets.kpi_rating.unit"
                                     :hint="widgets.kpi_rating.hint"
                                     :tone="widgets.kpi_rating.tone"

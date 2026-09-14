@@ -183,7 +183,9 @@ class ProgressAndNotificationTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('notifications/Index')
                 ->count('notifications', 1)
-                ->where('notifications.0.overall_rating', 80)
+                // In kleuren (de standaard) geen getal in de melding, wel de kleur.
+                ->where('notifications.0.overall_rating', null)
+                ->where('notifications.0.grade', 'Goed')
                 ->where('notifications.0.read', false)
                 ->where('unreadNotifications', 0)
             );

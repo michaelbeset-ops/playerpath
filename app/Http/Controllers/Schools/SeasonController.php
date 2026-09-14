@@ -6,6 +6,7 @@ use App\Actions\Seasons\CloseSeason;
 use App\Http\Controllers\Controller;
 use App\Models\Player;
 use App\Models\PlayerCardSeason;
+use App\Support\Rating\Grade;
 use App\Support\Rating\RatingEngine;
 use App\Support\Rating\RatingSettings;
 use App\Support\Rating\SchoolSeason;
@@ -51,6 +52,7 @@ class SeasonController extends Controller
             'archived' => PlayerCardSeason::query()->count(),
             // Een voorstel voor de naam, zodat het veld niet leeg begint.
             'suggestion' => $this->voorstel(),
+            'grading' => Grade::mode($school),
         ]);
     }
 
@@ -98,6 +100,30 @@ class SeasonController extends Controller
         return back()->with('status', $nieuw
             ? "Het seizoen \"{$data['name']}\" staat ingesteld. De punten tellen vanaf {$start->format('d-m-Y')}."
             : 'Het seizoen is bijgewerkt.');
+    }
+
+    /**
+     * Beoordelen in kleuren of in cijfers.
+     *
+     * Wisselen verandert geen rapport: onder de motorkap is het altijd een
+     * getal (zie Grade). Alleen wat trainers invullen en ouders zien wisselt.
+     */
+    public function grading(Request $request): RedirectResponse
+    {
+        abort_unless($request->user()->isEigenaar(), 403);
+
+        $data = $request->validate([
+            'mode' => ['required', 'in:'.Grade::KLEUREN.','.Grade::CIJFERS],
+        ], [], ['mode' => 'De manier van beoordelen']);
+
+        $school = $request->user()->school;
+        $school->forceFill([
+            'rating_settings' => array_merge($school->rating_settings ?? [], ['grading' => $data['mode']]),
+        ])->save();
+
+        return back()->with('status', $data['mode'] === Grade::KLEUREN
+            ? 'Er wordt nu beoordeeld in kleuren. Ouders en spelers zien geen cijfers meer.'
+            : 'Er wordt nu beoordeeld in cijfers van 1 tot 10.');
     }
 
     /** Nu afsluiten, zonder op de einddatum te wachten. */

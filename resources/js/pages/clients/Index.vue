@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { kleurVan, useGrading } from '@/lib/grade';
 import Avatar from '@/components/Avatar.vue';
 import FilterSheet from '@/components/FilterSheet.vue';
 import FlashMessage from '@/components/FlashMessage.vue';
@@ -87,6 +88,9 @@ const uitgeklapt = ref<number[]>([]);
 const klap = (id: number) => {
     uitgeklapt.value = uitgeklapt.value.includes(id) ? uitgeklapt.value.filter((x) => x !== id) : [...uitgeklapt.value, id];
 };
+
+// In kleuren een gekleurde stip in plaats van het cijfer.
+const { kleuren, niveauVoor } = useGrading();
 </script>
 
 <template>
@@ -101,7 +105,9 @@ const klap = (id: number) => {
                 <span class="tabular">{{ counts.players }}</span> actieve {{ counts.players === 1 ? 'speler' : 'spelers' }} en
                 <span class="tabular">{{ counts.guardians }}</span>
                 {{ counts.guardians === 1 ? 'ouder' : 'ouders' }}. Klap een speler uit om te zien wie je belt.
-                <span v-if="players.length" class="hidden sm:inline">Het groene getal is de rating op de spelerskaart.</span>
+                <span v-if="players.length" class="hidden sm:inline">{{
+                    kleuren ? 'De stip is de kleur op de spelerskaart.' : 'Het groene getal is de rating op de spelerskaart.'
+                }}</span>
             </p>
 
             <div class="mt-5 flex flex-wrap items-center justify-between gap-3">
@@ -176,7 +182,7 @@ const klap = (id: number) => {
                                 :class="speler.overall_rating ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground'"
                                 :title="speler.overall_rating ? 'Rating op de spelerskaart' : 'Nog geen rapport, dus nog geen rating'"
                             >
-                                {{ speler.overall_rating ?? '-' }}
+                                <template v-if="!kleuren">{{ speler.overall_rating ?? '-' }}</template><span v-else class="size-4 rounded-full" :style="{ backgroundColor: kleurVan(niveauVoor(speler.overall_rating)?.key, niveauVoor(speler.overall_rating) ? 1 : 0.25) }" :title="niveauVoor(speler.overall_rating)?.label ?? 'Nog geen rapport'"></span>
                             </span>
 
                             <span class="min-w-0 flex-1">
@@ -215,7 +221,7 @@ const klap = (id: number) => {
                                 class="tabular flex size-11 shrink-0 items-center justify-center rounded-lg text-base font-bold sm:hidden"
                                 :class="speler.overall_rating ? 'bg-primary/10 text-primary' : 'bg-secondary text-muted-foreground'"
                             >
-                                {{ speler.overall_rating ?? '-' }}
+                                <template v-if="!kleuren">{{ speler.overall_rating ?? '-' }}</template><span v-else class="size-4 rounded-full" :style="{ backgroundColor: kleurVan(niveauVoor(speler.overall_rating)?.key, niveauVoor(speler.overall_rating) ? 1 : 0.25) }" :title="niveauVoor(speler.overall_rating)?.label ?? 'Nog geen rapport'"></span>
                             </span>
                         </Link>
 

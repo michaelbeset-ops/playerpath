@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import GoalList, { type Doel } from '@/components/GoalList.vue';
+import GradeChart from '@/components/GradeChart.vue';
+import GradeChip from '@/components/GradeChip.vue';
 import LineChart from '@/components/LineChart.vue';
 import type { Kaart } from '@/components/PlayerCardVisual.vue';
 import RatingExplanation from '@/components/RatingExplanation.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { useGrading } from '@/lib/grade';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
 import { CalendarCheck, CircleHelp, ClipboardList, IdCard, Minus, Sparkles, Target, TrendingDown, TrendingUp, Trophy } from 'lucide-vue-next';
@@ -57,6 +60,9 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 const labels = computed(() => props.progress.points.map((p) => p.label));
 
+// In kleuren: een grafiek van werkpunt naar top, en nergens een getal.
+const { kleuren, niveauVoor } = useGrading();
+
 // Een tabelweergave hoort erbij: de cijfers mogen nooit alleen in een plaatje
 // zitten. Zie de datavisualisatie-richtlijnen.
 const toonTabel = ref(false);
@@ -85,8 +91,10 @@ const kop = computed(() => {
     if (groei > 0) {
         return {
             toon: 'goed',
-            tekst: `+${groei} gegroeid in drie\u00a0maanden\u00a0🎉`,
-            sub: `${props.player.first_name} staat nu op ${props.progress.overall.last ?? '-'}.`,
+            tekst: kleuren.value ? 'Gegroeid in drie\u00a0maanden\u00a0🎉' : `+${groei} gegroeid in drie\u00a0maanden\u00a0🎉`,
+            sub: kleuren.value
+                ? `${props.player.first_name} staat nu op ${niveauVoor(props.progress.overall.last)?.label ?? '-'}.`
+                : `${props.player.first_name} staat nu op ${props.progress.overall.last ?? '-'}.`,
         };
     }
 
@@ -96,7 +104,7 @@ const kop = computed(() => {
 
     return {
         toon: 'aandacht',
-        tekst: `${groei} punten ten opzichte van drie maanden geleden`,
+        tekst: kleuren.value ? 'Iets minder dan drie maanden geleden' : `${groei} punten ten opzichte van drie maanden geleden`,
         sub: 'Dat hoort bij leren. Een paar goede trainingen en de lijn draait weer.',
     };
 });
@@ -215,7 +223,11 @@ const tijdlijnZichtbaar = computed(() => (tijdlijnUit.value ? props.timeline : p
                 <div
                     class="mt-4 flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
                 >
-                    <p class="min-w-0 flex-1 text-sm text-muted-foreground">
+                    <p v-if="kleuren" class="min-w-0 flex-1 text-sm text-muted-foreground">
+                        De kleuren laten zien hoe {{ player.first_name }} groeit, van werkpunt naar top. Het gaat om de eigen ontwikkeling, niet om
+                        een vergelijking met anderen.
+                    </p>
+                    <p v-else class="min-w-0 flex-1 text-sm text-muted-foreground">
                         Deze cijfers gaan over hoe {{ player.first_name }} het doet vergeleken met andere spelers van
                         <span class="font-medium text-foreground">{{ card.age_category?.label ?? 'dezelfde leeftijd' }}</span
                         >. Een hoog cijfer betekent dus: goed voor deze leeftijd.
@@ -235,8 +247,10 @@ const tijdlijnZichtbaar = computed(() => (tijdlijnUit.value ? props.timeline : p
                 <div class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
                     <div class="flex flex-wrap items-baseline justify-between gap-3">
                         <div>
-                            <p class="font-medium">Overall rating</p>
-                            <p class="text-xs text-muted-foreground">Het gemiddelde per rapport, over {{ progress.points.length }} rapporten</p>
+                            <p class="font-medium">{{ kleuren ? 'Zo gaat het in het algemeen' : 'Overall rating' }}</p>
+                            <p class="text-xs text-muted-foreground">
+                                {{ kleuren ? 'De kleur per rapport' : 'Het gemiddelde per rapport' }}, over {{ progress.points.length }} rapporten
+                            </p>
                         </div>
                         <p
                             v-if="progress.overall.trend"
@@ -251,19 +265,24 @@ const tijdlijnZichtbaar = computed(() => (tijdlijnUit.value ? props.timeline : p
                     <!-- Begin en eind als getal: een lijn zonder cijfers laat je raden -->
                     <div class="mt-4 flex items-end justify-between gap-4">
                         <div>
-                            <p class="tabular text-2xl font-bold leading-none text-muted-foreground">{{ progress.overall.first ?? '-' }}</p>
+                            <GradeChip :rating="progress.overall.first" size="lg">
+                                <p class="tabular text-2xl font-bold leading-none text-muted-foreground">{{ progress.overall.first ?? '-' }}</p>
+                            </GradeChip>
                             <p class="mt-1 text-xs text-muted-foreground">eerste rapport</p>
                         </div>
-                        <p v-if="progress.overall.delta !== null" class="tabular text-sm font-semibold" :class="trendKleur(progress.overall.trend)">
+                        <p v-if="progress.overall.delta !== null && !kleuren" class="tabular text-sm font-semibold" :class="trendKleur(progress.overall.trend)">
                             {{ deltaTekst(progress.overall.delta) }}
                         </p>
                         <div class="text-right">
-                            <p class="tabular text-3xl font-bold leading-none text-primary">{{ progress.overall.last ?? '-' }}</p>
+                            <GradeChip :rating="progress.overall.last" size="lg">
+                                <p class="tabular text-3xl font-bold leading-none text-primary">{{ progress.overall.last ?? '-' }}</p>
+                            </GradeChip>
                             <p class="mt-1 text-xs text-muted-foreground">nu</p>
                         </div>
                     </div>
 
-                    <LineChart class="mt-3" :series="progress.overall.series" :labels="labels" :height="200" />
+                    <GradeChart v-if="kleuren" class="mt-4" :series="progress.overall.series" :labels="labels" />
+                    <LineChart v-else class="mt-3" :series="progress.overall.series" :labels="labels" :height="200" />
                 </div>
 
                 <!-- Eén ding om aan te werken. Bewust één: een lijstje met zes
@@ -279,8 +298,14 @@ const tijdlijnZichtbaar = computed(() => (tijdlijnUit.value ? props.timeline : p
 
                             <p class="mt-1 text-sm">
                                 <span class="font-semibold">{{ nextStep.label }}</span>
-                                <template v-if="nextStep.from !== null"> van {{ nextStep.from }} </template>
-                                naar <span class="font-semibold text-primary">{{ nextStep.to }}</span>
+                                <template v-if="kleuren">
+                                    <template v-if="nextStep.from !== null"> van <GradeChip :rating="nextStep.from" size="sm" /> </template>
+                                    naar <GradeChip :rating="nextStep.to" size="sm" />
+                                </template>
+                                <template v-else>
+                                    <template v-if="nextStep.from !== null"> van {{ nextStep.from }} </template>
+                                    naar <span class="font-semibold text-primary">{{ nextStep.to }}</span>
+                                </template>
                             </p>
 
                             <p v-if="nextStep.type === 'goal'" class="mt-1 text-sm text-muted-foreground">
@@ -302,7 +327,9 @@ const tijdlijnZichtbaar = computed(() => (tijdlijnUit.value ? props.timeline : p
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <div>
                             <p class="font-medium">Per categorie</p>
-                            <p class="text-xs text-muted-foreground">Elke grafiek staat op dezelfde schaal van 0 tot 100.</p>
+                            <p class="text-xs text-muted-foreground">
+                                {{ kleuren ? 'Van werkpunt (onder) naar top (boven), één stip per rapport.' : 'Elke grafiek staat op dezelfde schaal van 0 tot 100.' }}
+                            </p>
                         </div>
 
                         <button
@@ -322,7 +349,12 @@ const tijdlijnZichtbaar = computed(() => (tijdlijnUit.value ? props.timeline : p
                         >
                             <p class="text-sm font-medium">{{ categorie.label }}</p>
 
-                            <div class="mt-2 flex items-end justify-between gap-2">
+                            <p v-if="kleuren" class="mt-2 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
+                                <GradeChip :rating="categorie.first" size="sm" />
+                                <span aria-hidden="true">&rarr;</span>
+                                <GradeChip :rating="categorie.last" size="sm" />
+                            </p>
+                            <div v-else class="mt-2 flex items-end justify-between gap-2">
                                 <p class="tabular text-3xl font-bold leading-none" :class="trendKleur(categorie.trend)">
                                     {{ categorie.delta === null ? '-' : deltaTekst(categorie.delta) }}
                                 </p>
@@ -336,7 +368,8 @@ const tijdlijnZichtbaar = computed(() => (tijdlijnUit.value ? props.timeline : p
                                 {{ categorie.trend.label }}
                             </p>
 
-                            <LineChart class="mt-2" :series="categorie.series" :labels="labels" :height="86" :show-end-label="false" />
+                            <GradeChart v-if="kleuren" class="mt-3" :series="categorie.series" :labels="labels" compact />
+                            <LineChart v-else class="mt-2" :series="categorie.series" :labels="labels" :height="86" :show-end-label="false" />
                         </div>
                     </div>
 
@@ -355,7 +388,7 @@ const tijdlijnZichtbaar = computed(() => (tijdlijnUit.value ? props.timeline : p
                                 <tr v-for="categorie in progress.categories" :key="categorie.category" class="border-b border-border last:border-0">
                                     <td class="whitespace-nowrap p-3">{{ categorie.label }}</td>
                                     <td v-for="(waarde, i) in categorie.series" :key="i" class="tabular p-3 text-right">
-                                        {{ waarde ?? '-' }}
+                                        <GradeChip :rating="waarde" size="sm">{{ waarde ?? '-' }}</GradeChip>
                                     </td>
                                 </tr>
                             </tbody>
@@ -404,11 +437,12 @@ const tijdlijnZichtbaar = computed(() => (tijdlijnUit.value ? props.timeline : p
 
                             <p v-if="item.value !== null" class="tabular mt-1 flex items-center gap-2 text-sm">
                                 <span
-                                    >Gemiddelde <span class="font-semibold">{{ item.value }}</span></span
+                                    ><template v-if="kleuren">Kleur <GradeChip :rating="item.value" size="sm" /></template
+                                    ><template v-else>Gemiddelde <span class="font-semibold">{{ item.value }}</span></template></span
                                 >
 
                                 <span
-                                    v-if="item.delta !== null && item.delta !== 0"
+                                    v-if="!kleuren && item.delta !== null && item.delta !== 0"
                                     class="inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-xs font-semibold"
                                     :class="item.delta > 0 ? 'bg-primary/10 text-primary' : 'bg-warning/10 text-warning'"
                                 >

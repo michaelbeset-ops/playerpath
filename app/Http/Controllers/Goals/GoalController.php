@@ -8,6 +8,7 @@ use App\Enums\ReportCategory;
 use App\Http\Controllers\Controller;
 use App\Models\Goal;
 use App\Models\Player;
+use App\Support\Rating\Grade;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -74,7 +75,9 @@ class GoalController extends Controller
         $huidig = ($player->category_ratings ?? [])[$validated['category']] ?? 0;
 
         if ($huidig >= $streef) {
-            return back()->withErrors(['target' => 'Het huidige cijfer is al '.Goal::gradeFromRating((int) round($huidig)).'. Kies een hoger streefcijfer.']);
+            return back()->withErrors(['target' => Grade::usesColors($player->school)
+                ? 'Deze categorie staat al op '.Grade::labelFor($huidig).'. Kies een hogere kleur.'
+                : 'Het huidige cijfer is al '.Goal::gradeFromRating((int) round($huidig)).'. Kies een hoger streefcijfer.']);
         }
 
         // Eén actief doel per categorie: anders wordt "op koers" onleesbaar.

@@ -1,3 +1,4 @@
+import { niveauVoor, STANDAARD_NIVEAUS } from '@/lib/grade';
 import type { Kaart } from '@/components/PlayerCardVisual.vue';
 
 /**
@@ -88,6 +89,9 @@ export function groeiSticker(card: Kaart): string | null {
 
     return gemiddeld >= 3 ? `+${gemiddeld} GEGROEID` : null;
 }
+
+/** In kleuren: de tinten op de donkere afbeelding, dezelfde als op de kaart. */
+const KAARTKLEUR: Record<string, string> = { rood: '#f87171', oranje: '#fb923c', groen: '#22e06b', blauw: '#60a5fa' };
 
 export async function renderKaartStory(card: Kaart, opties: KaartAfbeeldingOpties = {}): Promise<Blob> {
     // Zonder dit tekent Safari de eerste keer met de terugvalfont.
@@ -219,8 +223,18 @@ export async function renderKaartStory(card: Kaart, opties: KaartAfbeeldingOptie
     // --- Overall, linksboven op de foto ---
     ctx.textAlign = 'left';
     ctx.fillStyle = '#f1f5f9';
-    ctx.font = `800 150px ${FONT}`;
-    ctx.fillText(card.overall === null ? '-' : String(card.overall), bx + 44, by + 170);
+    const kleuren = card.grading === 'kleuren';
+
+    if (kleuren) {
+        // Geen getal op een afbeelding die de groepsapp in gaat: de kleur.
+        const niveau = niveauVoor(card.overall);
+        ctx.fillStyle = niveau ? KAARTKLEUR[niveau.key] : '#94a3b8';
+        ctx.font = `900 92px ${FONT}`;
+        ctx.fillText(niveau?.label ?? 'Nieuw', bx + 44, by + 150);
+    } else {
+        ctx.font = `800 150px ${FONT}`;
+        ctx.fillText(card.overall === null ? '-' : String(card.overall), bx + 44, by + 170);
+    }
 
     ctx.fillStyle = tint.accent;
     ctx.font = `700 34px ${FONT}`;
@@ -272,8 +286,28 @@ export async function renderKaartStory(card: Kaart, opties: KaartAfbeeldingOptie
 
             ctx.textAlign = 'right';
             ctx.fillStyle = '#f1f5f9';
-            ctx.font = `800 40px ${FONT}`;
-            ctx.fillText(c.rating === null ? '-' : String(c.rating), x + kolomB, ry + 4);
+            if (kleuren) {
+                const niveau = niveauVoor(c.rating);
+                ctx.fillStyle = niveau ? KAARTKLEUR[niveau.key] : '#94a3b8';
+                ctx.font = `800 30px ${FONT}`;
+                ctx.fillText(niveau?.label ?? '-', x + kolomB, ry + 4);
+            } else {
+                ctx.font = `800 40px ${FONT}`;
+                ctx.fillText(c.rating === null ? '-' : String(c.rating), x + kolomB, ry + 4);
+            }
+
+            if (kleuren) {
+                // Vier blokjes, van werkpunt naar top.
+                const index = STANDAARD_NIVEAUS.findIndex((n) => n.key === niveauVoor(c.rating)?.key);
+                const blok = (kolomB - 18) / 4;
+                STANDAARD_NIVEAUS.forEach((n, b) => {
+                    afgerond(ctx, x + b * (blok + 6), ry + 22, blok, 12, 6);
+                    ctx.fillStyle = index >= 0 && b <= index ? KAARTKLEUR[STANDAARD_NIVEAUS[index].key] : '#25282d';
+                    ctx.fill();
+                });
+
+                return;
+            }
 
             afgerond(ctx, x, ry + 22, kolomB, 12, 6);
             ctx.fillStyle = '#25282d';
@@ -420,7 +454,7 @@ export async function deelKaartAlsAfbeelding(card: Kaart, link: string | null, s
 
     const naam = bestandsnaam(card);
     const bestand = new File([blob], naam, { type: 'image/png' });
-    const tekst = `De spelerskaart van ${card.first_name}` + (card.overall !== null ? ` · rating ${card.overall}` : '') + (link ? `\n${link}` : '');
+    const tekst = `De spelerskaart van ${card.first_name}` + (card.overall !== null && card.grading !== 'kleuren' ? ` · rating ${card.overall}` : '') + (link ? `\n${link}` : '');
 
     const nav = navigator as Navigator & { canShare?: (data: ShareData) => boolean };
 

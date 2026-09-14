@@ -52,6 +52,10 @@ class RatingSettings
         ],
         // Het seizoen loopt van augustus tot juli, zoals in het Nederlandse voetbal.
         'season_start_month' => 8,
+        // Wat ouders, spelers en trainers zien: vier kleuren of cijfers. Zie Grade.
+        // Kleuren als standaard: de meeste voetbal- en keepersscholen willen een
+        // kind niet met een getal beoordelen.
+        'grading' => 'kleuren',
     ];
 
     /** @var array<string, mixed> */
@@ -90,6 +94,12 @@ class RatingSettings
     public function reportsInAverage(): int
     {
         return max(1, (int) $this->waarden['reports_in_average']);
+    }
+
+    /** 'kleuren' of 'cijfers'; zie Grade. */
+    public function grading(): string
+    {
+        return $this->waarden['grading'] === Grade::CIJFERS ? Grade::CIJFERS : Grade::KLEUREN;
     }
 
     public function seasonStartMonth(): int

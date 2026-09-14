@@ -30,6 +30,8 @@ class NotificationController extends Controller
                 'player_name' => $melding->data['player_name'] ?? null,
                 'overall_rating' => $melding->data['overall_rating'] ?? null,
                 'groei' => $melding->data['groei'] ?? null,
+                // In kleuren staat hier het label en is het getal leeg.
+                'grade' => $melding->data['grade'] ?? null,
                 'read' => $melding->read_at !== null,
                 'when' => $melding->created_at->diffForHumans(),
             ]);

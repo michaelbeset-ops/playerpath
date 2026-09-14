@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import GradeChip from '@/components/GradeChip.vue';
+import GradePicker from '@/components/GradePicker.vue';
+import { kleurVan, useGrading } from '@/lib/grade';
 import Avatar from '@/components/Avatar.vue';
 import FlashMessage from '@/components/FlashMessage.vue';
 import GoalList, { type Doel } from '@/components/GoalList.vue';
@@ -162,6 +165,14 @@ const verwijderen = () => {
         router.delete('/players/' + props.player.id);
     }
 };
+
+// Kleuren of cijfers. In kleuren is een streefdoel een kleur en de balk vier stappen.
+const { kleuren, niveaus, niveauVoor } = useGrading();
+const kleurStappen = (rating: number | null) => (niveaus.value.findIndex((n) => n.key === niveauVoor(rating)?.key) + 1) * 25 + '%';
+const streefScore = computed<number | null>({
+    get: () => parseFloat(String(doelForm.target).replace(',', '.')) || null,
+    set: (waarde) => (doelForm.target = waarde === null ? '' : waarde.toFixed(1).replace('.', ',')),
+});
 </script>
 
 <template>
@@ -223,22 +234,33 @@ const verwijderen = () => {
                 <div class="rounded-xl border border-border bg-card p-5 shadow-sm">
                     <div class="flex items-baseline justify-between">
                         <p class="font-medium">Huidige cijfers</p>
-                        <p
-                            class="tabular text-3xl font-bold leading-none"
-                            :class="player.overall_rating ? 'text-primary' : 'text-muted-foreground/60'"
-                        >
-                            {{ player.overall_rating ?? '-' }}
-                        </p>
+                        <GradeChip :rating="player.overall_rating" size="lg">
+                            <p
+                                class="tabular text-3xl font-bold leading-none"
+                                :class="player.overall_rating ? 'text-primary' : 'text-muted-foreground/60'"
+                            >
+                                {{ player.overall_rating ?? '-' }}
+                            </p>
+                        </GradeChip>
                     </div>
 
                     <div v-if="player.overall_rating" class="mt-4 space-y-3">
                         <div v-for="categorie in categories" :key="categorie.category">
                             <div class="flex items-baseline justify-between text-sm">
                                 <span>{{ categorie.label }}</span>
-                                <span class="tabular font-semibold">{{ categorie.rating ?? '-' }}</span>
+                                <GradeChip :rating="categorie.rating" size="sm"
+                                    ><span class="tabular font-semibold">{{ categorie.rating ?? '-' }}</span></GradeChip
+                                >
                             </div>
                             <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-secondary">
-                                <div class="h-full rounded-full bg-primary" :style="{ width: (categorie.rating ?? 0) + '%' }"></div>
+                                <div
+                                    class="h-full rounded-full bg-primary"
+                                    :style="
+                                        kleuren
+                                            ? { width: kleurStappen(categorie.rating), backgroundColor: kleurVan(niveauVoor(categorie.rating)?.key) }
+                                            : { width: (categorie.rating ?? 0) + '%' }
+                                    "
+                                ></div>
                             </div>
                         </div>
                         <p class="pt-1 text-xs text-muted-foreground">
@@ -324,10 +346,13 @@ const verwijderen = () => {
 
                     <div class="grid gap-2">
                         <Label for="goal_target">
-                            Streefcijfer
-                            <span class="text-muted-foreground">{{ eigenDoel ? '(optioneel, als richtpunt)' : '(op de kaart wordt dit maal tien)' }}</span>
+                            {{ kleuren ? 'Naar welke kleur?' : 'Streefcijfer' }}
+                            <span class="text-muted-foreground">{{
+                                eigenDoel ? '(optioneel, als richtpunt)' : kleuren ? '' : '(op de kaart wordt dit maal tien)'
+                            }}</span>
                         </Label>
-                        <div class="flex items-center gap-2">
+                        <GradePicker v-if="kleuren" id="goal_target" v-model="streefScore" label="Naar welke kleur?" />
+                        <div v-else class="flex items-center gap-2">
                             <button
                                 type="button"
                                 class="flex size-11 shrink-0 items-center justify-center rounded-lg border border-border text-lg font-semibold transition hover:border-primary"

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useGrading } from '@/lib/grade';
 import CardGlow from '@/components/CardGlow.vue';
 import CardShareActions from '@/components/CardShareActions.vue';
 import LevelProgress from '@/components/LevelProgress.vue';
@@ -55,7 +56,7 @@ const kop = computed(() => {
     if (groei > 0) {
         return {
             toon: 'goed',
-            tekst: `+${groei} gegroeid in drie maanden 🎉`,
+            tekst: kleuren.value ? 'Gegroeid in drie maanden 🎉' : `+${groei} gegroeid in drie maanden 🎉`,
             sub: 'Lekker bezig. Zo ga je omhoog.',
         };
     }
@@ -66,7 +67,7 @@ const kop = computed(() => {
 
     return {
         toon: 'aandacht',
-        tekst: `${groei} sinds drie maanden geleden`,
+        tekst: kleuren.value ? 'Iets minder dan drie maanden geleden' : `${groei} sinds drie maanden geleden`,
         sub: 'Dat hoort bij leren. Een paar goede trainingen en de lijn draait weer.',
     };
 });
@@ -108,6 +109,8 @@ const deel = () => {
 const behaald = computed(() => props.badges.filter((b) => b.earned));
 const nogTeHalen = computed(() => props.badges.filter((b) => !b.earned));
 const voortgangHref = computed(() => '/players/' + props.player.id + '/progress');
+
+const { kleuren } = useGrading();
 </script>
 
 <template>

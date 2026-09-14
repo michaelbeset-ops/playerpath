@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import InputError from '@/components/InputError.vue';
+import GradeChip from '@/components/GradeChip.vue';
+import GradePicker from '@/components/GradePicker.vue';
 import ScoreSlider from '@/components/ScoreSlider.vue';
+import { useGrading } from '@/lib/grade';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
@@ -45,6 +48,9 @@ const form = useForm<{ scores: Record<string, number | null>; note: string }>({
 // springen door naar de volgende, zodat het scherm ook zonder muis snel is.
 const actieveRij = ref(0);
 
+// In kleuren: vier knoppen, toetsen 1 tot 4. In cijfers: de schuif, toetsen 1 tot 9 en 0.
+const { kleuren, niveaus, niveauVoor } = useGrading();
+
 const ingevuld = computed(() => props.categories.filter((c) => form.scores[c.category] !== null).length);
 const compleet = computed(() => ingevuld.value === props.categories.length);
 
@@ -83,10 +89,13 @@ const opToets = (event: KeyboardEvent) => {
         return;
     }
 
-    if (event.key >= '1' && event.key <= '9') {
+    if (kleuren.value && event.key >= '1' && event.key <= '4') {
+        zet(categorie.category, niveaus.value[Number(event.key) - 1].score, actieveRij.value);
+        event.preventDefault();
+    } else if (!kleuren.value && event.key >= '1' && event.key <= '9') {
         zet(categorie.category, Number(event.key), actieveRij.value);
         event.preventDefault();
-    } else if (event.key === '0') {
+    } else if (!kleuren.value && event.key === '0') {
         zet(categorie.category, 10, actieveRij.value);
         event.preventDefault();
     } else if (event.key === 'ArrowDown') {
@@ -120,16 +129,23 @@ const opslaan = () => form.post('/players/' + props.player.id + '/reports');
                 </div>
 
                 <div class="text-right">
-                    <p class="text-xs uppercase tracking-wide text-muted-foreground">Nieuw gemiddelde</p>
-                    <p class="tabular text-3xl font-bold leading-none" :class="gemiddelde ? 'text-primary' : 'text-muted-foreground'">
-                        {{ gemiddelde ?? '-' }}
-                    </p>
+                    <p class="text-xs uppercase tracking-wide text-muted-foreground">{{ kleuren ? 'Wordt' : 'Nieuw gemiddelde' }}</p>
+                    <GradeChip :rating="gemiddelde" size="lg">
+                        <p class="tabular text-3xl font-bold leading-none" :class="gemiddelde ? 'text-primary' : 'text-muted-foreground'">
+                            {{ gemiddelde ?? '-' }}
+                        </p>
+                    </GradeChip>
                 </div>
             </div>
 
             <p v-if="previousReportedOn" class="mt-4 rounded-lg bg-secondary px-3 py-2 text-xs text-muted-foreground">
-                De cijfers van het vorige rapport staan al ingevuld. Pas alleen aan wat veranderd is; met de cijfertoetsen 1 tot 9 en 0 vul je een
-                hele rij in één tik.
+                <template v-if="kleuren">
+                    De kleuren van het vorige rapport staan al ingevuld. Pas alleen aan wat veranderd is; met de toetsen 1 tot 4 kies je een kleur.
+                </template>
+                <template v-else>
+                    De cijfers van het vorige rapport staan al ingevuld. Pas alleen aan wat veranderd is; met de cijfertoetsen 1 tot 9 en 0 vul je
+                    een hele rij in één tik.
+                </template>
             </p>
 
             <!-- De zes categorieen. Eén tik per rij. -->
@@ -154,9 +170,15 @@ const opslaan = () => form.post('/players/' + props.player.id + '/reports');
                                 :class="goals[categorie.category].on_track ? 'bg-primary/10 text-primary' : 'bg-warning/10 text-warning'"
                                 :title="goals[categorie.category].on_track ? 'Op koers' : 'Achter op schema'"
                             >
-                                doel {{ (goals[categorie.category].target / 10).toFixed(1).replace('.', ',') }}
+                                doel {{
+                                    kleuren
+                                        ? niveauVoor(goals[categorie.category].target)?.label
+                                        : (goals[categorie.category].target / 10).toFixed(1).replace('.', ',')
+                                }}
                             </span>
-                            <p v-if="categorie.rating !== null" class="tabular text-muted-foreground">nu {{ categorie.rating }}</p>
+                            <GradeChip v-if="categorie.rating !== null" :rating="categorie.rating" size="sm"
+                                ><p class="tabular text-muted-foreground">nu {{ categorie.rating }}</p></GradeChip
+                            >
                         </div>
                     </div>
 
@@ -165,7 +187,22 @@ const opslaan = () => form.post('/players/' + props.player.id + '/reports');
                          zeven" en "een goeie zeven" kwijt kan. De cijfertoetsen
                          blijven werken: op een laptop is tikken sneller dan
                          slepen, en dat rapport moet in dertig seconden klaar. -->
+                    <GradePicker
+
+                        v-if="kleuren"
+
+                        :id="'kleur-' + categorie.category"
+
+                        v-model="form.scores[categorie.category]"
+
+                        class="mt-3"
+
+                        :label="categorie.label"
+
+                    />
                     <ScoreSlider
+
+                        v-else
                         :id="'score-' + categorie.category"
                         v-model="form.scores[categorie.category]"
                         class="mt-3"

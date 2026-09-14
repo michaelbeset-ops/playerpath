@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import GradeChip from '@/components/GradeChip.vue';
 import Avatar from '@/components/Avatar.vue';
 import { Link } from '@inertiajs/vue3';
 import { ClipboardList } from 'lucide-vue-next';
@@ -71,10 +72,12 @@ const geleden = (speler: MijnSpeler) => {
                     </span>
 
                     <span class="tabular shrink-0 text-right">
-                        <span class="block text-base font-bold leading-none" :class="speler.rating ? '' : 'text-muted-foreground'">
-                            {{ speler.rating ?? '-' }}
-                        </span>
-                        <span class="text-[10px] uppercase tracking-wide text-muted-foreground">rating</span>
+                        <GradeChip :rating="speler.rating" size="sm">
+                            <span class="block text-base font-bold leading-none" :class="speler.rating ? '' : 'text-muted-foreground'">
+                                {{ speler.rating ?? '-' }}
+                            </span>
+                            <span class="text-[10px] uppercase tracking-wide text-muted-foreground">rating</span>
+                        </GradeChip>
                     </span>
 
                     <ClipboardList class="size-4 shrink-0 text-muted-foreground" />

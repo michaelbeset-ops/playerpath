@@ -56,6 +56,12 @@
         --destructive-foreground: 0 0% 100%;
         --warning: 32 95% 38%;
         --warning-foreground: 0 0% 100%;
+        /* Beoordelen in kleuren (Support\Rating\Grade): van werkpunt naar top.
+           Als tekst op de lichte werkvloer minstens 4,5:1. */
+        --grade-rood: 0 72% 42%;
+        --grade-oranje: 26 90% 38%;
+        --grade-groen: 143 75% 29%;
+        --grade-blauw: 214 80% 42%;
         --success: 143 75% 32%;
         --success-foreground: 0 0% 100%;
 
@@ -124,6 +130,10 @@
         --destructive-foreground: 210 40% 96%;
         --warning: 38 92% 50%;
         --warning-foreground: 225 12% 6%;
+        --grade-rood: 0 84% 66%;
+        --grade-oranje: 30 95% 58%;
+        --grade-groen: 143 75% 51%;
+        --grade-blauw: 212 92% 66%;
         --success: 143 75% 51%;
         --success-foreground: 225 12% 6%;
 

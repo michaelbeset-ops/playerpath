@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import GradeChip from '@/components/GradeChip.vue';
+import { useGrading } from '@/lib/grade';
 import Avatar from '@/components/Avatar.vue';
 import type { FamilyAanbod, FamilyBericht, FamilyKind, FamilyTraining } from '@/types/family';
 import { Link } from '@inertiajs/vue3';
@@ -25,6 +27,9 @@ const levelRand: Record<string, string> = {
     goud: 'border-gold/50',
     elite: 'border-primary/50',
 };
+
+// Kleuren of cijfers: in kleuren geen getal en geen "+3" bij het kind.
+const { kleuren } = useGrading();
 </script>
 
 <template>
@@ -131,9 +136,11 @@ const levelRand: Record<string, string> = {
                         </span>
 
                         <span class="shrink-0 text-right">
-                            <span class="tabular block text-2xl font-bold leading-none">{{ kind.overall ?? '-' }}</span>
+                            <GradeChip :rating="kind.overall">
+                                <span class="tabular block text-2xl font-bold leading-none">{{ kind.overall ?? '-' }}</span>
+                            </GradeChip>
                             <span
-                                v-if="kind.growth !== null && kind.growth !== 0"
+                                v-if="!kleuren && kind.growth !== null && kind.growth !== 0"
                                 class="tabular mt-0.5 flex items-center justify-end gap-0.5 text-xs font-medium"
                                 :class="kind.growth > 0 ? 'text-success' : 'text-muted-foreground'"
                             >

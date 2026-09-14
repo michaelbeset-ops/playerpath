@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Kaart } from '@/components/PlayerCardVisual.vue';
 import { Dialog, DialogDescription, DialogScrollContent, DialogTitle } from '@/components/ui/dialog';
+import { kleurVan, STANDAARD_NIVEAUS } from '@/lib/grade';
 import { computed } from 'vue';
 
 /**
@@ -28,20 +29,46 @@ const categorie = computed(() => props.card.age_category?.label ?? 'zijn leeftij
 // De levels zoals de school ze heeft ingesteld, zodat de uitleg klopt met de
 // drempels die deze kaart echt gebruikt.
 const levels = computed(() => props.card.levels.filter((l) => l.xp > 0));
+
+// Kleuren of cijfers: in kleuren gaat de uitleg nergens over getallen.
+const kleuren = computed(() => props.card.grading === 'kleuren');
+const niveaus = STANDAARD_NIVEAUS;
 </script>
 
 <template>
     <Dialog v-model:open="open">
         <DialogScrollContent class="theme-donker max-w-md rounded-2xl bg-background text-foreground sm:rounded-2xl">
             <div class="space-y-1">
-                <DialogTitle class="text-lg font-bold">Hoe werkt mijn rating?</DialogTitle>
+                <DialogTitle class="text-lg font-bold">{{ kleuren ? 'Hoe werkt mijn kaart?' : 'Hoe werkt mijn rating?' }}</DialogTitle>
                 <DialogDescription class="text-sm text-muted-foreground">
-                    Wat de getallen op de kaart van {{ voornaam }} betekenen.
+                    {{ kleuren ? 'Wat de kleuren op de kaart van ' + voornaam + ' betekenen.' : 'Wat de getallen op de kaart van ' + voornaam + ' betekenen.' }}
                 </DialogDescription>
             </div>
 
             <div class="space-y-5 text-sm leading-relaxed">
-                <section>
+                <!-- In kleuren: geen getal, vier kleuren -->
+                <section v-if="kleuren">
+                    <h3 class="font-semibold text-gold">De kleuren</h3>
+                    <p class="mt-1 text-muted-foreground">
+                        Na de training kiest de trainer per onderdeel een kleur. Het gaat om <strong class="text-foreground">jouw eigen groei</strong>,
+                        niet om wie de beste is.
+                    </p>
+                    <ul class="mt-2 space-y-1.5">
+                        <li v-for="n in niveaus" :key="n.key" class="flex items-center gap-2">
+                            <span class="inline-block size-3 shrink-0 rounded-full" :style="{ backgroundColor: kleurVan(n.key) }"></span>
+                            <strong class="text-foreground">{{ n.label }}</strong>
+                            <span class="text-muted-foreground">
+                                {{ { rood: 'hier gaan we samen aan werken', oranje: 'je bent op weg', groen: 'dit gaat goed', blauw: 'dit is echt top' }[n.key] }}
+                            </span>
+                        </li>
+                    </ul>
+                    <p class="mt-2 text-muted-foreground">
+                        De grote kleur op de kaart is hoe het in het algemeen gaat. De laatste drie trainingen tellen mee, dus één mindere dag
+                        verandert je kaart niet meteen.
+                    </p>
+                </section>
+
+                <section v-else>
                     <h3 class="font-semibold text-gold">Het grote getal</h3>
                     <p class="mt-1 text-muted-foreground">
                         Dat is je rating: hoe goed je bent <strong class="text-foreground">vergeleken met andere spelers van {{ categorie }}</strong
@@ -58,7 +85,10 @@ const levels = computed(() => props.card.levels.filter((l) => l.xp > 0));
                     <h3 class="font-semibold text-gold">Zo ga je omhoog</h3>
                     <ul class="mt-1 list-disc space-y-1 pl-5 text-muted-foreground">
                         <li><strong class="text-foreground">Vaak trainen.</strong> Elke training waar je bent levert XP op.</li>
-                        <li><strong class="text-foreground">Beter worden.</strong> Groeit je rating tussen twee rapporten, dan krijg je extra XP.</li>
+                        <li>
+                            <strong class="text-foreground">Beter worden.</strong>
+                            {{ kleuren ? 'Ga je vooruit tussen twee trainingen, dan krijg je extra XP.' : 'Groeit je rating tussen twee rapporten, dan krijg je extra XP.' }}
+                        </li>
                         <li>Elk rapport dat de trainer invult levert ook XP op.</li>
                     </ul>
                 </section>
@@ -83,7 +113,7 @@ const levels = computed(() => props.card.levels.filter((l) => l.xp > 0));
                                 }}<strong class="text-foreground">{{ l.label }}</strong> vanaf {{ l.xp }} XP</span
                             >.
                         </template>
-                        XP gaat nooit omlaag. Wie trouw komt trainen haalt goud, ook als de rating nog niet zo hoog is.
+                        XP gaat nooit omlaag. Wie trouw komt trainen haalt goud, ook als {{ kleuren ? 'nog niet alles groen is' : 'de rating nog niet zo hoog is' }}.
                     </p>
                     <p class="mt-2 text-muted-foreground">
                         Badges zijn mijlpalen: je eerste rapport, vijf trainingen aanwezig, tien punten gegroeid. De laatste drie staan op je kaart.
@@ -94,7 +124,15 @@ const levels = computed(() => props.card.levels.filter((l) => l.xp > 0));
                     </p>
                 </section>
 
-                <section>
+                <section v-if="kleuren">
+                    <h3 class="font-semibold text-gold">Kan een kleur ook terug?</h3>
+                    <p class="mt-1 text-muted-foreground">
+                        Ja, dat kan, en dat is niet erg. Een mindere periode hoort bij leren. Je XP en je level blijven gewoon staan, en een paar
+                        goede trainingen maken het weer goed.
+                    </p>
+                </section>
+
+                <section v-else>
                     <h3 class="font-semibold text-gold">Waarom kan mijn rating dalen?</h3>
                     <p class="mt-1 text-muted-foreground">
                         Omdat de laatste drie rapporten tellen. Een mindere training weegt dus even mee, en verdwijnt weer zodra er nieuwe rapporten
@@ -103,7 +141,19 @@ const levels = computed(() => props.card.levels.filter((l) => l.xp > 0));
                     </p>
                 </section>
 
-                <section v-if="audience === 'trainer'" class="rounded-xl border border-border bg-card p-4">
+                <section v-if="audience === 'trainer' && kleuren" class="rounded-xl border border-border bg-card p-4">
+                    <h3 class="font-semibold text-primary">Voor trainers: zo kies je een kleur</h3>
+                    <ul class="mt-1 list-disc space-y-1 pl-5 text-muted-foreground">
+                        <li>
+                            <strong class="text-foreground">Kijk naar het kind zelf.</strong> Groen is "gaat goed voor waar dit kind nu staat", blauw
+                            is "valt echt op", oranje is "op weg", rood is "hier gaan we aan werken".
+                        </li>
+                        <li>Wees consequent: dezelfde training, dezelfde kleur. Kinderen en ouders zien geen cijfers, alleen de kleuren.</li>
+                        <li>Een toelichting erbij maakt een kleur pas echt waardevol voor ouders.</li>
+                    </ul>
+                </section>
+
+                <section v-if="audience === 'trainer' && !kleuren" class="rounded-xl border border-border bg-card p-4">
                     <h3 class="font-semibold text-primary">Voor trainers: zo geef je een cijfer</h3>
                     <ul class="mt-1 list-disc space-y-1 pl-5 text-muted-foreground">
                         <li>

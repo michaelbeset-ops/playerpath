@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import RatingExplanation from '@/components/RatingExplanation.vue';
+import { niveauVoor, STANDAARD_NIVEAUS } from '@/lib/grade';
 import { Link } from '@inertiajs/vue3';
 import {
     Award,
@@ -50,6 +51,12 @@ export interface Kaart {
     age_category: { key: string; label: string } | null;
     moved_up: boolean;
     overall: number | null;
+    /**
+     * Kleuren of cijfers (Support\Rating\Grade). In kleuren staat er nergens
+     * een getal: het grote cijfer wordt een kleur, de categorieën ook.
+     */
+    grading?: 'kleuren' | 'cijfers';
+    grade?: { key: string; label: string } | null;
     /** `delta` is wat het laatste rapport aan deze categorie veranderde; null zonder vorige stand. */
     categories: { category: string; label: string; hint?: string; rating: number | null; delta?: number | null }[];
     report_count: number;
@@ -236,7 +243,28 @@ const kaartStijl = computed(() => ({
     '--pp-licht': String(licht.value),
 }));
 
-const deltaTekst = (delta: number) => (delta > 0 ? '▲' + delta : '▼' + Math.abs(delta));
+/*
+ * Kleuren in plaats van cijfers. De FIFA-kaart blijft, maar zonder getal: het
+ * grote cijfer wordt de kleur van het kind, elke categorie een kleur met vier
+ * blokjes, en een pijltje zegt of het omhoog ging - zonder "+3". Een kleur
+ * vergelijk je minder snel met je teamgenoot dan een 74 met een 81.
+ */
+const kleuren = computed(() => props.card.grading === 'kleuren');
+
+// Op de donkere kaart vaste tinten; de tokens van de werkvloer zijn te donker.
+const KAARTKLEUR: Record<string, string> = { rood: '#f87171', oranje: '#fb923c', groen: '#22e06b', blauw: '#60a5fa' };
+
+const kleurVoor = (rating: number | null | undefined) => KAARTKLEUR[niveauVoor(rating)?.key ?? ''] ?? '#94a3b8';
+const niveauIndex = (rating: number | null | undefined) => STANDAARD_NIVEAUS.findIndex((n) => n.key === niveauVoor(rating)?.key);
+
+// Waar het kind het sterkst in is: iets om trots op te zijn, niets om mee te vergelijken.
+const sterkste = computed(() => {
+    const gevuld = props.card.categories.filter((c) => c.rating !== null);
+
+    return gevuld.length ? gevuld.reduce((a, b) => ((b.rating ?? 0) > (a.rating ?? 0) ? b : a)).label : null;
+});
+
+const deltaTekst = (delta: number) => (kleuren.value ? (delta > 0 ? '▲' : '▼') : delta > 0 ? '▲' + delta : '▼' + Math.abs(delta));
 
 // Zonder rapport is er nog geen level: dan een neutraal, stalen frame.
 const tier = computed(() => {
@@ -322,7 +350,10 @@ const upgradeTekst = computed(() => {
                             <div class="pp-rapport-regel">
                                 <span class="tabular">{{ r.date }}</span>
                                 <span v-if="r.trainer" class="pp-rapport-trainer">{{ r.trainer }}</span>
-                                <span class="pp-rapport-cijfer tabular">{{ r.overall ?? '-' }}</span>
+                                <span v-if="kleuren" class="pp-rapport-kleur" :style="{ color: kleurVoor(r.overall) }">{{
+                                    niveauVoor(r.overall)?.label ?? '-'
+                                }}</span>
+                                <span v-else class="pp-rapport-cijfer tabular">{{ r.overall ?? '-' }}</span>
                             </div>
                             <p v-if="r.note" class="pp-rapport-noot">{{ r.note }}</p>
                         </li>
@@ -387,7 +418,13 @@ const upgradeTekst = computed(() => {
                     <p class="pp-merk">PlayerPath</p>
 
                     <div class="pp-overall-blok">
-                        <p class="pp-overall tabular">{{ card.overall ?? '-' }}</p>
+                        <template v-if="kleuren">
+                            <p class="pp-overall-kleur" :style="{ '--pp-kleur': kleurVoor(card.overall) }">
+                                {{ card.overall === null ? 'Nieuw' : niveauVoor(card.overall)?.label }}
+                            </p>
+                            <p v-if="sterkste" class="pp-sterk">Sterk in {{ sterkste }}</p>
+                        </template>
+                        <p v-else class="pp-overall tabular">{{ card.overall ?? '-' }}</p>
                         <p class="pp-positie">
                             <Hand v-if="card.position_key === 'keeper'" class="size-3.5" aria-hidden="true" />
                             <Shirt v-else class="size-3.5" aria-hidden="true" />
@@ -429,9 +466,22 @@ const upgradeTekst = computed(() => {
                                     :title="'Sinds het vorige rapport'"
                                     >{{ deltaTekst(c.delta) }}</span
                                 >
-                                <span class="pp-stat-cijfer tabular">{{ c.rating ?? '-' }}</span>
+                                <span v-if="kleuren" class="pp-stat-kleur" :style="{ color: kleurVoor(c.rating) }">{{
+                                    niveauVoor(c.rating)?.label ?? '-'
+                                }}</span>
+                                <span v-else class="pp-stat-cijfer tabular">{{ c.rating ?? '-' }}</span>
                             </div>
-                            <div class="pp-balk">
+                            <!-- In kleuren vier blokjes, van werkpunt naar top: een balk van
+                                 0 tot 100 zou het getal alsnog laten zien. -->
+                            <div v-if="kleuren" class="pp-blokjes" :aria-label="niveauVoor(c.rating)?.label ?? 'Nog geen'">
+                                <span
+                                    v-for="(n, i) in STANDAARD_NIVEAUS"
+                                    :key="n.key"
+                                    class="pp-blokje"
+                                    :style="i <= niveauIndex(c.rating) ? { background: kleurVoor(c.rating) } : undefined"
+                                ></span>
+                            </div>
+                            <div v-else class="pp-balk">
                                 <div class="pp-balk-vulling" :style="{ width: balk(c.rating) }"></div>
                             </div>
                         </div>
@@ -469,7 +519,7 @@ const upgradeTekst = computed(() => {
         <div class="pp-acties">
             <button type="button" class="pp-actie" @click="uitlegOpen = true">
                 <CircleHelp class="size-4" aria-hidden="true" />
-                Hoe werkt mijn rating?
+                {{ kleuren ? 'Hoe werkt mijn kaart?' : 'Hoe werkt mijn rating?' }}
             </button>
             <button v-if="heeftAchterkant" type="button" class="pp-actie" :aria-pressed="kant === 'achter'" @click="draai">
                 <RotateCw class="size-4" aria-hidden="true" />
@@ -951,6 +1001,59 @@ const upgradeTekst = computed(() => {
     font-size: 0.75rem;
     font-weight: 500;
     color: var(--pp-tekst-zacht);
+}
+
+/* In kleuren: het label in plaats van het cijfer, en vier blokjes als balk. */
+.pp-stat-kleur {
+    font-size: 0.75rem;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.pp-blokjes {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.15rem;
+    margin-top: 0.3rem;
+}
+
+.pp-blokje {
+    height: 0.2rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.09);
+    transition: background 0.6s ease;
+}
+
+.pp-rapport-kleur {
+    margin-left: auto;
+    font-size: 0.8rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+/* Het grote cijfer als kleur: kleiner dan een getal, want het is een woord. */
+.pp-overall-kleur {
+    max-width: 9rem;
+    font-size: 1.75rem;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 0.95;
+    color: var(--pp-kleur);
+    text-shadow:
+        0 2px 12px rgba(0, 0, 0, 0.7),
+        0 0 24px color-mix(in srgb, var(--pp-kleur) 45%, transparent);
+}
+
+.pp-sterk {
+    margin-top: 0.3rem;
+    max-width: 9rem;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #f1f5f9;
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
 }
 
 .pp-stat-cijfer {

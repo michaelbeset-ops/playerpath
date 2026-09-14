@@ -9,6 +9,7 @@ use App\Models\PlayerCardSeason;
 use App\Models\Report;
 use App\Support\Goals\GoalProgress;
 use App\Support\Rating\AgeCategory;
+use App\Support\Rating\Grade;
 use App\Support\Rating\RatingEngine;
 use App\Support\Rating\SchoolSeason;
 use Illuminate\Support\Facades\Storage;
@@ -61,9 +62,17 @@ class PlayerCardPresenter
             ],
             'moved_up' => $this->engine->recentlyMovedUp($player),
             'overall' => $player->overall_rating,
+            // Kleuren of cijfers, en de kleur bij het overall-cijfer. De kaart
+            // is ook publiek te zien, zonder gedeelde props: daarom reist het
+            // hier mee in plaats van alleen via de gedeelde prop.
+            'grading' => Grade::mode($player->school),
+            'grade' => Grade::forRating($player->overall_rating),
             // Per categorie ook wat het laatste rapport veranderde: een pijltje
             // op de kaart maakt groei voelbaar in plaats van alleen een stand.
-            'categories' => $this->metDeltas($player),
+            'categories' => array_map(
+                fn (array $c) => [...$c, 'grade' => Grade::forRating($c['rating'])],
+                $this->metDeltas($player),
+            ),
             'report_count' => $player->reports()->count(),
             'level' => $this->badges->level($player),
             'levels' => array_map(
@@ -168,6 +177,7 @@ class PlayerCardPresenter
                 return [
                     'date' => $report->reported_on->format('d-m-Y'),
                     'overall' => $scores === [] ? null : CalculatePlayerCard::afronden(array_sum($scores) / count($scores) * 10),
+                    'grade' => $scores === [] ? null : Grade::forRating(CalculatePlayerCard::afronden(array_sum($scores) / count($scores) * 10)),
                     'trainer' => $public ? null : $report->trainer?->name,
                     'note' => $public ? null : $report->note,
                 ];

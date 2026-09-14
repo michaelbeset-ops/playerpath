@@ -10,6 +10,7 @@ use App\Support\Onboarding\OnboardingState;
 use App\Support\Onboarding\OnboardingTour;
 use App\Support\Payments\DemoGateway;
 use App\Support\Payments\PaymentGateway;
+use App\Support\Rating\Grade;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -84,6 +85,9 @@ class HandleInertiaRequests extends Middleware
             // Welke functies deze school heeft, zodat een scherm niet naar iets
             // hoeft te verwijzen dat achter een 404 zit.
             'features' => fn () => app(Features::class)->map(),
+            // Beoordelen in kleuren of cijfers, met de grenzen. Eén plek: elk
+            // scherm dat een rating toont vraagt hier of het een getal mag zijn.
+            'grading' => fn () => Grade::share(app(Tenancy::class)->school()),
             // De balk die laat zien dat je als iemand anders kijkt. Zonder dit
             // is impersonatie onzichtbaar, en dat is precies wat het niet mag zijn.
             'impersonating' => fn () => $request->session()->has(ImpersonationController::SESSIE)

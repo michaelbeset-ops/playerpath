@@ -85,6 +85,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('seizoen', [SeasonController::class, 'edit'])->name('season.edit');
     Route::post('seizoen', [SeasonController::class, 'update'])->name('season.update');
     Route::post('seizoen/afsluiten', [SeasonController::class, 'close'])->name('season.close');
+    Route::post('seizoen/beoordelen', [SeasonController::class, 'grading'])->name('season.grading');
 
     Route::get('branding', [BrandingController::class, 'edit'])->name('branding.edit');
     Route::post('branding', [BrandingController::class, 'update'])->name('branding.update');

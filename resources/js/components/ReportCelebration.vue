@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useGrading } from '@/lib/grade';
 import { Link } from '@inertiajs/vue3';
 import { ArrowRight, Sparkles, Trophy, X } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
@@ -87,6 +88,15 @@ onMounted(() => {
 onBeforeUnmount(() => window.removeEventListener('keydown', opToets));
 
 const teken = (waarde: number) => (waarde > 0 ? '+' + waarde : String(waarde));
+
+// In kleuren: "Op weg → Goed" in plaats van "+3".
+const { kleuren, niveauVoor } = useGrading();
+const kleurStap = (c: { from: number; to: number; delta: number }) => {
+    const van = niveauVoor(c.from)?.label;
+    const tot = niveauVoor(c.to)?.label;
+
+    return van === tot ? (c.delta > 0 ? '▲ ' : '▼ ') + tot : van + ' → ' + tot;
+};
 </script>
 
 <template>
@@ -112,7 +122,7 @@ const teken = (waarde: number) => (waarde > 0 ? '+' + waarde : String(waarde));
             <ul class="rc-lijst">
                 <li v-for="(c, i) in categorieen" :key="c.category" class="rc-regel" :style="{ '--rc-vertraging': i * 90 + 'ms' }">
                     <span class="rc-label">{{ c.label }}</span>
-                    <span class="rc-delta" :class="c.delta > 0 ? 'rc-op' : 'rc-neer'">{{ teken(c.delta) }}</span>
+                    <span class="rc-delta" :class="c.delta > 0 ? 'rc-op' : 'rc-neer'">{{ kleuren ? kleurStap(c) : teken(c.delta) }}</span>
                 </li>
 
                 <li v-if="rest" class="rc-regel rc-stil" :style="{ '--rc-vertraging': '270ms' }">
@@ -127,7 +137,8 @@ const teken = (waarde: number) => (waarde > 0 ? '+' + waarde : String(waarde));
             <div class="rc-cijfers">
                 <div class="rc-vak">
                     <p class="rc-vak-label">Overall</p>
-                    <p class="rc-vak-waarde tabular">
+                    <p v-if="kleuren" class="rc-vak-waarde">{{ niveauVoor(result.overall.to)?.label ?? '—' }}</p>
+                    <p v-else class="rc-vak-waarde tabular">
                         <span v-if="result.overall.from !== null && result.overall.delta" class="rc-vorig">{{ result.overall.from }} &rarr; </span>
                         <template v-if="result.overall.to === null">&mdash;</template>
                         <template v-else>{{ geteld }}</template>
