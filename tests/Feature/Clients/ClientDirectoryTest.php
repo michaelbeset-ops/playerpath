@@ -2,18 +2,19 @@
 
 namespace Tests\Feature\Clients;
 
-use App\Enums\Role;
 use App\Enums\PaymentStatus;
+use App\Enums\Role;
 use App\Models\Group;
+use App\Models\Invitation;
 use App\Models\Payment;
 use App\Models\Player;
 use App\Models\Report;
 use App\Models\School;
 use App\Models\Training;
 use App\Models\User;
+use App\Notifications\Uitnodiging;
 use App\Support\Tenancy\Tenancy;
 use Database\Seeders\RoleSeeder;
-use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
@@ -219,13 +220,15 @@ class ClientDirectoryTest extends TestCase
             ->post('/staff/trainers', ['name' => 'Nieuwe Trainer', 'email' => 'trainer@voorbeeld.nl'])
             ->assertRedirect();
 
-        $trainer = User::where('email', 'trainer@voorbeeld.nl')->firstOrFail();
+        // Een uitnodiging met een welkomstmail; het account ontstaat pas bij
+        // activeren, en dan kiest hij zelf een wachtwoord.
+        $this->assertDatabaseMissing('users', ['email' => 'trainer@voorbeeld.nl']);
 
-        $this->assertSame($this->school->id, $trainer->school_id);
-        $this->assertTrue($trainer->isTrainer());
+        $uitnodiging = Invitation::withoutSchoolScope()->where('email', 'trainer@voorbeeld.nl')->firstOrFail();
+        $this->assertSame($this->school->id, $uitnodiging->school_id);
+        $this->assertSame(Role::Trainer->value, $uitnodiging->role);
 
-        // Geen wachtwoord dat iemand anders kent: hij kiest er zelf een.
-        Notification::assertSentTo($trainer, ResetPassword::class);
+        Notification::assertSentOnDemand(Uitnodiging::class, fn ($melding, $kanalen, $ontvanger) => $ontvanger->routes['mail'] === 'trainer@voorbeeld.nl');
     }
 
     public function test_een_trainer_mag_zelf_geen_trainers_uitnodigen(): void

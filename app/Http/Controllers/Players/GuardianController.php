@@ -2,23 +2,22 @@
 
 namespace App\Http\Controllers\Players;
 
+use App\Actions\Onboarding\SendInvitation;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Player;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 /**
  * Ouders koppelen aan hun kind.
  *
- * Zelfregistratie staat dicht, dus de eigenaar maakt het ouder-account aan.
- * We zetten daarbij geen wachtwoord: de ouder krijgt een e-mail om er zelf
- * een te kiezen, via dezelfde route als "wachtwoord vergeten". Zo staat er
- * nergens een wachtwoord dat iemand anders kent.
+ * Zelfregistratie staat dicht, dus de school nodigt de ouder uit. Er wordt
+ * geen account aangemaakt en geen wachtwoord gezet: de ouder krijgt een
+ * welkomstmail uit naam van de school, activeert zijn account en kiest daar
+ * zelf een wachtwoord. Het kind wordt bij het activeren meteen gekoppeld.
  */
 class GuardianController extends Controller
 {
@@ -48,8 +47,14 @@ class GuardianController extends Controller
         return back()->with('status', 'De ouder is gekoppeld aan deze speler.');
     }
 
-    /** Maak een nieuw ouder-account en koppel het meteen. */
-    public function invite(Request $request, Player $player): RedirectResponse
+    /**
+     * Een nieuwe ouder uitnodigen voor dit kind.
+     *
+     * Dit maakte vroeger meteen een account en stuurde de mail "Kies een nieuw
+     * wachtwoord". Nu is het een gewone uitnodiging (SendInvitation), zoals
+     * het formulier op de pagina van het kind al deed.
+     */
+    public function invite(Request $request, Player $player, SendInvitation $uitnodigen): RedirectResponse
     {
         $this->authorize('update', $player);
 
@@ -65,24 +70,19 @@ class GuardianController extends Controller
             'relationship' => 'De relatie',
         ]);
 
-        $ouder = User::create([
-            'school_id' => $player->school_id,
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Str::password(32),
-        ]);
-
-        $ouder->assignRole(Role::Ouder->value);
-
-        $player->guardians()->syncWithoutDetaching([
-            $ouder->id => ['relationship' => $validated['relationship'] ?? null],
-        ]);
-
-        Password::sendResetLink(['email' => $ouder->email]);
+        $uitnodigen->handle(
+            $player->school,
+            $validated['name'],
+            $validated['email'],
+            Role::Ouder->value,
+            $request->user(),
+            [$player->id],
+            $validated['relationship'] ?? null,
+        );
 
         return back()->with(
             'status',
-            "{$ouder->name} is gekoppeld en heeft een e-mail gekregen om een wachtwoord in te stellen."
+            "{$validated['name']} krijgt een welkomstmail om het account te activeren. {$player->first_name} wordt daarbij meteen gekoppeld."
         );
     }
 

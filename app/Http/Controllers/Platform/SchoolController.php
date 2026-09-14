@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Platform;
 
 use App\Actions\Onboarding\SeedDemoData;
+use App\Actions\Onboarding\SendInvitation;
 use App\Actions\Platform\DeleteSchool;
 use App\Enums\Package;
 use App\Enums\Role;
@@ -18,8 +19,6 @@ use App\Support\Tenancy\Tenancy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -117,21 +116,6 @@ class SchoolController extends Controller
                     : null,
             ]);
 
-            // Meteen een eigenaar erbij, als die is opgegeven. Zonder eigenaar
-            // kan er niemand in, en dan is een school niet meer dan een rij.
-            if (! empty($validated['owner_email'])) {
-                $eigenaar = User::create([
-                    'school_id' => $school->id,
-                    'name' => $validated['owner_name'],
-                    'email' => $validated['owner_email'],
-                    // Nooit een wachtwoord dat iemand anders kent: hij kiest er
-                    // zelf een via wachtwoord-vergeten.
-                    'password' => Str::password(32),
-                ]);
-
-                $eigenaar->assignRole(Role::Eigenaar->value);
-            }
-
             return $school;
         });
 
@@ -146,15 +130,25 @@ class SchoolController extends Controller
             'package' => $school->package,
         ]);
 
+        // De eigenaar krijgt een uitnodiging, geen account met een reset-link:
+        // een welkomstmail, veertien dagen geldig, en het account ontstaat pas
+        // als hij hem activeert. "Kies een nieuw wachtwoord" voor iemand die
+        // nog nooit een wachtwoord had leest als een fout, en verloopt na een uur.
         if (! empty($validated['owner_email'])) {
-            Password::sendResetLink(['email' => $validated['owner_email']]);
+            app(SendInvitation::class)->handle(
+                $school,
+                $validated['owner_name'],
+                $validated['owner_email'],
+                Role::Eigenaar->value,
+                $request->user(),
+            );
         }
 
         return redirect()
             ->route('platform.schools.show', $school)
             ->with('status', empty($validated['owner_email'])
                 ? "{$school->name} is aangemaakt. Voeg nog een eigenaar toe voordat iemand kan inloggen."
-                : "{$school->name} is aangemaakt. De eigenaar krijgt een e-mail om een wachtwoord te kiezen.");
+                : "{$school->name} is aangemaakt. De eigenaar krijgt een welkomstmail om het account te activeren.");
     }
 
     public function show(Request $request, School $school): Response

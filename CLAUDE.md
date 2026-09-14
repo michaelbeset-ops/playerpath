@@ -780,6 +780,16 @@ die kan die twee dingen niet.
 - **Een account ontstaat pas bij activatie.** Tot die tijd is er alleen een
   uitnodiging; anders staat er een half ledenbestand met mensen die nooit hebben
   ingelogd, en telt de school ze wel mee.
+- **Elke weg om iemand toe te voegen is een uitnodiging**
+  (`Actions\Onboarding\SendInvitation`): het formulier op Personeel en bij
+  het kind, de oude routes `guardians.invite` en `trainers.store`, en in
+  platformbeheer een eigenaar bij een nieuwe school of een account voor een
+  school. Die laatste maakten eerst meteen een account en stuurden "Kies een
+  nieuw wachtwoord": dat leest als een fout voor iemand die nog nooit een
+  wachtwoord had, en die reset-link verloopt na een uur. De mail heet nu
+  "Welkom bij …" en heeft een eigen tekst voor een eigenaar. De knop
+  "wachtwoord resetten" in platformbeheer blijft wel een reset-mail: daar
+  vraag je er ook om.
 - **Opnieuw versturen maakt een nieuw token**, en de oude link is dan dood.
 - **De mail komt van de school**, met haar logo en naam (`mail.uitnodiging`).
   Een ouder heeft zijn kind bij Keepersschool Rob aangemeld en kent ons niet.

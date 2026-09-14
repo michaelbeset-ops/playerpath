@@ -8,13 +8,17 @@
     keer, en zou een merkwijziging op twee plekken moeten gebeuren.
 --}}
 <x-mail::message :merk="$merk" :preheader="$school->name.' nodigt je uit voor je eigen account.'">
-# Hallo {{ $naam }}
+# Welkom, {{ $naam }}
 
 @if ($isOuder)
 @php($wie = $kinderen ? implode(' en ', $kinderen) : 'je kind')
 {{ $school->name }} gebruikt PlayerPath om de ontwikkeling van spelers bij te houden. In je eigen account zie je de spelerskaart en de voortgang van {{ $wie }}, wanneer de trainingen zijn en wat er nog openstaat.
 
 Klik hieronder om je account te activeren en een wachtwoord te kiezen.
+@elseif (($rol ?? null) === 'eigenaar')
+Je account voor {{ $school->name }} op PlayerPath staat klaar. Daar plan je trainingen, beoordelen je trainers de spelers en zien ouders de spelerskaart van hun kind groeien.
+
+Klik hieronder om je account te activeren en een wachtwoord te kiezen. Daarna laten we je in een paar minuten zien hoe alles werkt.
 @else
 {{ $school->name }} gebruikt PlayerPath om trainingen te plannen en spelers te beoordelen. Met je eigen account zie je jouw trainingen, vink je aanwezigheid af en vul je na afloop in een halve minuut de rapporten in.
 

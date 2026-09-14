@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import PlatformLayout from '@/layouts/PlatformLayout.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { Eye, KeyRound, UserPlus } from 'lucide-vue-next';
+import { Eye, KeyRound, Mail, UserPlus } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 const props = defineProps<{
@@ -18,6 +18,15 @@ const props = defineProps<{
         is_active: boolean;
         verified: boolean;
         deactivated_at: string | null;
+    }[];
+    /** Uitgenodigd maar nog niet geactiveerd: die hebben nog geen account. */
+    invitations: {
+        id: number;
+        name: string;
+        email: string;
+        role: string;
+        status: string;
+        expires_on: string;
     }[];
     roles: Record<string, string>;
 }>();
@@ -65,19 +74,22 @@ const bekijkAls = (id: number) => {
         <div class="mt-2 flex flex-wrap items-start justify-between gap-3">
             <div>
                 <h1 class="text-2xl font-semibold tracking-tight">Gebruikers</h1>
-                <p class="tabular text-sm text-muted-foreground">{{ users.length }} accounts bij {{ school.name }}</p>
+                <p class="tabular text-sm text-muted-foreground">
+                    {{ users.length }} accounts bij {{ school.name }}<template v-if="invitations.length"> &middot; {{ invitations.length }} uitgenodigd</template>
+                </p>
             </div>
 
             <Button v-if="!toonFormulier" @click="toonFormulier = true">
                 <UserPlus class="mr-2 size-4" />
-                Account toevoegen
+                Iemand uitnodigen
             </Button>
         </div>
 
         <form v-if="toonFormulier" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm" @submit.prevent="voegToe">
-            <p class="font-medium">Nieuw account</p>
+            <p class="font-medium">Iemand uitnodigen</p>
             <p class="mt-1 text-sm text-muted-foreground">
-                Hij krijgt een e-mail om zelf een wachtwoord te kiezen. Jij bedenkt er dus geen en kent hem nooit.
+                Hij krijgt een welkomstmail uit naam van {{ school.name }}, activeert daarmee zijn account en kiest zelf een wachtwoord. De
+                uitnodiging is veertien dagen geldig; het account ontstaat pas bij activeren.
             </p>
 
             <div class="mt-4 grid gap-4 sm:grid-cols-3">
@@ -107,12 +119,38 @@ const bekijkAls = (id: number) => {
             </div>
 
             <div class="mt-4 flex items-center gap-3">
-                <Button type="submit" :disabled="form.processing">Account aanmaken</Button>
+                <Button type="submit" :disabled="form.processing">Uitnodiging sturen</Button>
                 <button type="button" class="text-sm text-muted-foreground underline underline-offset-4" @click="toonFormulier = false">
                     Annuleren
                 </button>
             </div>
         </form>
+
+        <!-- Uitgenodigd, nog niet geactiveerd -->
+        <div v-if="invitations.length" class="mt-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+            <p class="border-b border-border px-4 py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Uitgenodigd</p>
+            <div
+                v-for="(rij, index) in invitations"
+                :key="rij.id"
+                class="flex flex-col gap-1 p-4 sm:flex-row sm:items-center sm:gap-4"
+                :class="index > 0 ? 'border-t border-border' : ''"
+            >
+                <div class="min-w-0 flex-1">
+                    <p class="flex flex-wrap items-center gap-2 font-medium">
+                        <Mail class="size-4 text-muted-foreground" />
+                        {{ rij.name }}
+                        <span class="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">{{ rij.role }}</span>
+                        <span
+                            class="rounded px-1.5 py-0.5 text-[10px] font-medium"
+                            :class="rij.status === 'verlopen' ? 'bg-warning/15 text-warning' : 'bg-primary/10 text-primary'"
+                        >
+                            {{ rij.status === 'verlopen' ? 'verlopen' : 'wacht op activeren' }}
+                        </span>
+                    </p>
+                    <p class="break-all text-xs text-muted-foreground">{{ rij.email }} &middot; geldig tot {{ rij.expires_on }}</p>
+                </div>
+            </div>
+        </div>
 
         <div v-if="users.length" class="mt-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
             <div
@@ -173,9 +211,9 @@ const bekijkAls = (id: number) => {
             </div>
         </div>
 
-        <div v-else class="mt-4 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
+        <div v-else-if="!invitations.length" class="mt-4 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
             <p class="font-medium">Nog geen accounts</p>
-            <p class="mt-1 text-sm text-muted-foreground">Voeg een eigenaar toe zodat deze school kan beginnen.</p>
+            <p class="mt-1 text-sm text-muted-foreground">Nodig een eigenaar uit zodat deze school kan beginnen.</p>
         </div>
     </PlatformLayout>
 </template>

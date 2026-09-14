@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Onboarding;
 
+use App\Actions\Onboarding\SendInvitation;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Invitation;
@@ -10,7 +11,6 @@ use App\Notifications\Uitnodiging;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 
@@ -39,7 +39,10 @@ use Illuminate\Validation\Rule;
  */
 class InvitationController extends Controller
 {
-    public function __construct(protected Tenancy $tenancy) {}
+    public function __construct(
+        protected Tenancy $tenancy,
+        protected SendInvitation $uitnodigen,
+    ) {}
 
     public function store(Request $request): RedirectResponse
     {
@@ -65,7 +68,6 @@ class InvitationController extends Controller
         }
 
         $school = $request->user()->school;
-        $dagen = (int) ($school->invitation_valid_days ?: 14);
 
         $verstuurd = [];
         $overgeslagen = [];
@@ -77,34 +79,22 @@ class InvitationController extends Controller
                 continue;
             }
 
-            $uitnodiging = DB::transaction(function () use ($naam, $email, $data, $request, $dagen) {
-                // Een openstaande uitnodiging voor hetzelfde adres wordt
-                // vervangen, niet verdubbeld: twee mails met twee links is
-                // verwarrend en de tweede werkt toch alleen.
-                Invitation::where('email', $email)->pending()->delete();
-
-                $rij = new Invitation;
-                $rij->forceFill([
-                    'name' => $naam,
-                    'email' => $email,
-                    'role' => $data['role'],
-                    'token' => Invitation::nieuwToken(),
-                    'player_ids' => $data['role'] === Role::Ouder->value ? ($data['player_ids'] ?? []) : null,
-                    'relationship' => $data['relationship'] ?? null,
-                    'invited_by' => $request->user()->id,
-                    'expires_at' => now()->addDays($dagen),
-                    'last_sent_at' => now(),
-                    'sent_count' => 1,
-                ])->save();
-
-                return $rij;
-            });
-
-            $verstuurd[] = $uitnodiging;
+            // Aanmaken zonder te versturen: de mails gaan pas de deur uit als
+            // alle uitnodigingen er staan (regel 4 hierboven).
+            $verstuurd[] = $this->uitnodigen->handle(
+                $school,
+                $naam,
+                $email,
+                $data['role'],
+                $request->user(),
+                $data['player_ids'] ?? [],
+                $data['relationship'] ?? null,
+                send: false,
+            );
         }
 
         foreach ($verstuurd as $uitnodiging) {
-            Notification::route('mail', $uitnodiging->email)->notify(new Uitnodiging($uitnodiging));
+            $this->uitnodigen->send($uitnodiging);
         }
 
         return back()->with('status', $this->melding(count($verstuurd), $overgeslagen));

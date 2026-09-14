@@ -5,11 +5,13 @@ namespace Tests\Feature\Platform;
 use App\Enums\Feature;
 use App\Enums\Role;
 use App\Models\Impersonation;
+use App\Models\Invitation;
 use App\Models\Payment;
 use App\Models\Player;
 use App\Models\School;
 use App\Models\Subscription;
 use App\Models\User;
+use App\Notifications\Uitnodiging;
 use App\Support\Features\Features;
 use App\Support\Tenancy\Tenancy;
 use Database\Seeders\RoleSeeder;
@@ -175,9 +177,19 @@ class PlatformControlTest extends TestCase
             ])
             ->assertRedirect();
 
-        $user = User::where('email', 'trainer@rob.nl')->firstOrFail();
-        $this->assertSame($this->school->id, $user->school_id);
-        $this->assertTrue($user->isTrainer());
+        // Een uitnodiging met een welkomstmail, zichtbaar in de lijst tot hij
+        // geactiveerd is.
+        $this->assertDatabaseMissing('users', ['email' => 'trainer@rob.nl']);
+
+        $uitnodiging = Invitation::withoutSchoolScope()->where('email', 'trainer@rob.nl')->firstOrFail();
+        $this->assertSame($this->school->id, $uitnodiging->school_id);
+        $this->assertSame('trainer', $uitnodiging->role);
+
+        Notification::assertSentOnDemand(Uitnodiging::class, fn ($melding, $kanalen, $ontvanger) => $ontvanger->routes['mail'] === 'trainer@rob.nl');
+
+        $this->actingAs($this->beheerder)
+            ->get("/beheer/scholen/{$this->school->id}/gebruikers")
+            ->assertInertia(fn ($pagina) => $pagina->has('invitations', 1)->where('invitations.0.email', 'trainer@rob.nl'));
     }
 
     public function test_een_platformbeheerder_is_geen_rol_die_je_hier_kunt_uitdelen(): void

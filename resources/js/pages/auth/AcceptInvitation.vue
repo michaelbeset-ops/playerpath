@@ -41,6 +41,12 @@ const belofte = computed(() => {
         return '';
     }
 
+    // Een eigenaar komt via platformbeheer: die richt de school in, en krijgt
+    // na het activeren meteen het welkom en de rondleiding.
+    if (props.invitation.role === 'eigenaar') {
+        return 'Je school staat klaar. Kies een wachtwoord, dan laten we je in een paar minuten zien hoe alles werkt.';
+    }
+
     if (!isOuder.value) {
         return 'Je ziet je eigen trainingen, vinkt aanwezigheid af en vult na afloop de rapporten in.';
     }

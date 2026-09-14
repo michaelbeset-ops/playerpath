@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Platform;
 
+use App\Actions\Onboarding\SendInvitation;
 use App\Enums\Feature;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
+use App\Models\Invitation;
 use App\Models\School;
 use App\Models\User;
 use App\Support\Features\Features;
@@ -12,7 +14,6 @@ use App\Support\Platform\PlatformAudit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -50,6 +51,21 @@ class SchoolUserController extends Controller
                     'verified' => $user->email_verified_at !== null,
                     'deactivated_at' => $user->deactivated_at?->format('d-m-Y'),
                 ]),
+            // Wie is uitgenodigd maar nog niet heeft geactiveerd. Die staat nog
+            // niet bij de accounts; zonder deze lijst lijkt de uitnodiging weg.
+            'invitations' => Invitation::withoutSchoolScope()
+                ->where('school_id', $school->id)
+                ->pending()
+                ->orderByDesc('created_at')
+                ->get()
+                ->map(fn (Invitation $rij) => [
+                    'id' => $rij->id,
+                    'name' => $rij->name,
+                    'email' => $rij->email,
+                    'role' => $rij->role,
+                    'status' => $rij->status(),
+                    'expires_on' => $rij->expires_at->format('d-m-Y'),
+                ]),
             'roles' => collect(Role::schoolRoles())
                 ->mapWithKeys(fn (Role $rol) => [$rol->value => $rol->label()])
                 ->all(),
@@ -73,20 +89,19 @@ class SchoolUserController extends Controller
             'role' => 'De rol',
         ]);
 
-        $user = User::create([
-            'school_id' => $school->id,
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Str::password(32),
-        ]);
+        // Een uitnodiging met een welkomstmail, geen account met een
+        // reset-link: het account ontstaat bij het activeren.
+        app(SendInvitation::class)->handle(
+            $school,
+            $validated['name'],
+            $validated['email'],
+            $validated['role'],
+            $request->user(),
+        );
 
-        $user->assignRole($validated['role']);
+        $this->audit->log('user.invited', "{$validated['name']} <{$validated['email']}> uitgenodigd als {$validated['role']}", $school);
 
-        Password::sendResetLink(['email' => $user->email]);
-
-        $this->audit->log('user.created', "Account {$this->audit->describeUser($user)} aangemaakt als {$validated['role']}", $school);
-
-        return back()->with('status', "{$user->name} is toegevoegd en krijgt een e-mail om een wachtwoord te kiezen.");
+        return back()->with('status', "{$validated['name']} krijgt een welkomstmail om het account te activeren.");
     }
 
     /**

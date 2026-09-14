@@ -2,24 +2,25 @@
 
 namespace App\Http\Controllers\Staff;
 
+use App\Actions\Onboarding\SendInvitation;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 /**
  * Trainers uitnodigen en verwijderen.
  *
- * Net als bij ouders zet de eigenaar geen wachtwoord: de trainer krijgt een
- * e-mail om er zelf een te kiezen. Zo kent niemand andermans wachtwoord.
+ * Net als bij ouders zet de eigenaar geen wachtwoord en maakt hij geen account
+ * aan: de trainer krijgt een welkomstmail uit naam van de school, activeert
+ * zijn account en kiest zelf een wachtwoord. Zo kent niemand andermans
+ * wachtwoord.
  */
 class TrainerController extends Controller
 {
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, SendInvitation $uitnodigen): RedirectResponse
     {
         $this->authorize('create', User::class);
 
@@ -33,20 +34,17 @@ class TrainerController extends Controller
             'email' => 'Het e-mailadres',
         ]);
 
-        $trainer = User::create([
-            'school_id' => $request->user()->school_id,
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Str::password(32),
-        ]);
-
-        $trainer->assignRole(Role::Trainer->value);
-
-        Password::sendResetLink(['email' => $trainer->email]);
+        $uitnodigen->handle(
+            $request->user()->school,
+            $validated['name'],
+            $validated['email'],
+            Role::Trainer->value,
+            $request->user(),
+        );
 
         return back()->with(
             'status',
-            "{$trainer->name} is toegevoegd als trainer en heeft een e-mail gekregen om een wachtwoord in te stellen."
+            "{$validated['name']} krijgt een welkomstmail om het trainersaccount te activeren."
         );
     }
 

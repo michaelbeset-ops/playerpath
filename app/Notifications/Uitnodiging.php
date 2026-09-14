@@ -67,7 +67,9 @@ class Uitnodiging extends Notification implements ShouldQueue
 
         $bericht = (new MailMessage)
             ->from(config('mail.from.address'), $school->name)
-            ->subject($school->name.' nodigt je uit');
+            ->subject($this->invitation->role === Role::Eigenaar->value
+                ? 'Welkom bij PlayerPath: '.$school->name.' staat klaar'
+                : 'Welkom bij '.$school->name);
 
         // Antwoorden hoort bij de school te komen: iemand die op een
         // uitnodiging reageert schrijft aan zijn voetbalschool.
@@ -80,6 +82,7 @@ class Uitnodiging extends Notification implements ShouldQueue
             'school' => $school,
             'naam' => $this->invitation->name,
             'isOuder' => $isOuder,
+            'rol' => $this->invitation->role,
             'kinderen' => $kinderen,
             'url' => url('/uitnodiging/'.$this->invitation->token),
             'verlooptOp' => $this->invitation->expires_at->translatedFormat('j F Y'),

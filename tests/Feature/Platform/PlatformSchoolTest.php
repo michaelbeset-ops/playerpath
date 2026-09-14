@@ -3,9 +3,11 @@
 namespace Tests\Feature\Platform;
 
 use App\Enums\Role;
+use App\Models\Invitation;
 use App\Models\Player;
 use App\Models\School;
 use App\Models\User;
+use App\Notifications\Uitnodiging;
 use App\Support\Tenancy\Tenancy;
 use Database\Seeders\RoleSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -148,6 +150,24 @@ class PlatformSchoolTest extends TestCase
         $school = School::where('slug', 'keepersschool-rob')->firstOrFail();
         $this->assertTrue($school->is_active);
         $this->assertSame('#7B1FA2', $school->brand_color);
+
+        // De eigenaar krijgt een welkomstmail, geen reset-link. Het account
+        // ontstaat pas bij activeren.
+        $this->assertDatabaseMissing('users', ['email' => 'rob@rob.nl']);
+
+        $uitnodiging = Invitation::withoutSchoolScope()->where('email', 'rob@rob.nl')->firstOrFail();
+        $this->assertSame($school->id, $uitnodiging->school_id);
+        $this->assertSame('eigenaar', $uitnodiging->role);
+        $this->assertTrue($uitnodiging->expires_at->isAfter(now()->addDays(13)));
+
+        Notification::assertSentOnDemand(Uitnodiging::class, fn ($melding, $kanalen, $ontvanger) => $ontvanger->routes['mail'] === 'rob@rob.nl');
+
+        // Activeren maakt het eigenaaraccount, bij deze school.
+        $this->app['auth']->forgetGuards();
+        $this->post('/uitnodiging/'.$uitnodiging->token, [
+            'password' => 'Welkom-Rob-2026!',
+            'password_confirmation' => 'Welkom-Rob-2026!',
+        ])->assertRedirect('/dashboard');
 
         $eigenaar = User::where('email', 'rob@rob.nl')->firstOrFail();
         $this->assertSame($school->id, $eigenaar->school_id);
