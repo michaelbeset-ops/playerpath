@@ -192,6 +192,46 @@ class PlatformControlTest extends TestCase
             ->assertInertia(fn ($pagina) => $pagina->has('invitations', 1)->where('invitations.0.email', 'trainer@rob.nl'));
     }
 
+    public function test_een_niet_geactiveerd_account_wordt_opnieuw_uitgenodigd_en_een_actief_account_niet(): void
+    {
+        Notification::fake();
+
+        // Zoals platformbeheer hem vroeger aanmaakte: een account, nooit geactiveerd.
+        $oud = User::factory()->for($this->school)->create(['name' => 'Goat', 'email' => 'info@goat.nl', 'email_verified_at' => null]);
+        $oud->assignRole('eigenaar');
+
+        $this->actingAs($this->beheerder)
+            ->post("/beheer/scholen/{$this->school->id}/gebruikers/{$oud->id}/opnieuw-uitnodigen")
+            ->assertRedirect()
+            ->assertSessionHas('status');
+
+        // Het lege account is weg, er staat een uitnodiging als eigenaar, en de welkomstmail is verstuurd.
+        $this->assertDatabaseMissing('users', ['email' => 'info@goat.nl']);
+
+        $uitnodiging = Invitation::withoutSchoolScope()->where('email', 'info@goat.nl')->firstOrFail();
+        $this->assertSame($this->school->id, $uitnodiging->school_id);
+        $this->assertSame('eigenaar', $uitnodiging->role);
+        $this->assertSame('Goat', $uitnodiging->name);
+
+        Notification::assertSentOnDemand(Uitnodiging::class, fn ($melding, $kanalen, $ontvanger) => $ontvanger->routes['mail'] === 'info@goat.nl');
+
+        // Activeren kan nu, en logt meteen in als eigenaar.
+        $this->app['auth']->forgetGuards();
+        $this->post('/uitnodiging/'.$uitnodiging->token, [
+            'password' => 'Welkom-Goat-2026!',
+            'password_confirmation' => 'Welkom-Goat-2026!',
+        ])->assertRedirect('/dashboard');
+        $this->assertTrue(User::where('email', 'info@goat.nl')->firstOrFail()->isEigenaar());
+
+        // Een account dat in gebruik is, wordt nooit weggehaald.
+        $this->app['auth']->forgetGuards();
+        $this->actingAs($this->beheerder)
+            ->post("/beheer/scholen/{$this->school->id}/gebruikers/{$this->eigenaar->id}/opnieuw-uitnodigen")
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('users', ['id' => $this->eigenaar->id]);
+    }
+
     public function test_een_platformbeheerder_is_geen_rol_die_je_hier_kunt_uitdelen(): void
     {
         $this->actingAs($this->beheerder)

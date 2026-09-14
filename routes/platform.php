@@ -44,6 +44,8 @@ Route::middleware(['auth', 'verified', EnterPlatform::class])
         Route::post('scholen/{school}/gebruikers', [SchoolUserController::class, 'store'])->name('schools.users.store');
         Route::patch('scholen/{school}/gebruikers/{user}/status', [SchoolUserController::class, 'toggle'])->name('schools.users.toggle');
         Route::post('scholen/{school}/gebruikers/{user}/wachtwoord', [SchoolUserController::class, 'reset'])->name('schools.users.reset');
+        // Een account dat nooit is geactiveerd vervangen door een echte uitnodiging.
+        Route::post('scholen/{school}/gebruikers/{user}/opnieuw-uitnodigen', [SchoolUserController::class, 'reinvite'])->name('schools.users.reinvite');
 
         // Bekijken als een gebruiker van die school. De uitgang staat hier
         // bewust niet: zie hieronder.

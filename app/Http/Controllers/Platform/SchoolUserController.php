@@ -13,6 +13,7 @@ use App\Support\Features\Features;
 use App\Support\Platform\PlatformAudit;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -141,6 +142,64 @@ class SchoolUserController extends Controller
         $this->audit->log('user.password_reset', 'Wachtwoordreset gestuurd naar '.$this->audit->describeUser($user), $school);
 
         return back()->with('status', "Er is een e-mail naar {$user->email} gestuurd om een wachtwoord te kiezen.");
+    }
+
+    /**
+     * Opnieuw uitnodigen: een account dat nooit is geactiveerd vervangen door
+     * een echte uitnodiging.
+     *
+     * Accounts die platformbeheer vroeger aanmaakte kregen alleen een
+     * reset-link van een uur. Een uitnodiging mag niet naar een adres dat al
+     * een account heeft, dus zonder dit zat zo iemand vast. Dit haalt het lege
+     * account weg (met zijn reset-link en meldingen) en stuurt de welkomstmail;
+     * het account ontstaat opnieuw bij activeren, en dan logt hij meteen in.
+     *
+     * Alleen voor wie nog niet geactiveerd is: een account dat in gebruik is
+     * haal je hier nooit weg. Voor hem is er de wachtwoordmail.
+     */
+    public function reinvite(Request $request, School $school, User $user): RedirectResponse
+    {
+        $this->authorize('platform.manageSchools');
+
+        abort_unless($user->school_id === $school->id, 404);
+
+        if ($user->email_verified_at !== null) {
+            return back()->with('status', "{$user->name} heeft het account al geactiveerd. Komt hij er niet in, stuur dan een wachtwoordmail.");
+        }
+
+        $naam = $user->name;
+        $email = $user->email;
+        $rol = $user->getRoleNames()->first() ?? Role::Eigenaar->value;
+
+        // Een ouder houdt zijn kinderen: die gaan mee in de uitnodiging en
+        // worden bij activeren weer gekoppeld.
+        $kinderen = $user->children()->withoutGlobalScopes()->get(['players.id']);
+        $relatie = $kinderen->first()?->pivot?->relationship;
+
+        DB::transaction(function () use ($user, $email) {
+            DB::table('password_reset_tokens')->where('email', $email)->delete();
+            DB::table('notifications')
+                ->where('notifiable_type', User::class)
+                ->where('notifiable_id', $user->id)
+                ->delete();
+
+            $user->roles()->detach();
+            $user->delete();
+        });
+
+        app(SendInvitation::class)->handle(
+            $school,
+            $naam,
+            $email,
+            $rol,
+            $request->user(),
+            $kinderen->pluck('id')->all(),
+            $relatie,
+        );
+
+        $this->audit->log('user.reinvited', "{$naam} <{$email}> opnieuw uitgenodigd als {$rol}; het niet-geactiveerde account is vervangen door een uitnodiging", $school);
+
+        return back()->with('status', "{$naam} krijgt een nieuwe welkomstmail, veertien dagen geldig. Het account ontstaat opnieuw bij activeren.");
     }
 
     /** De functies van deze school aan- of uitzetten. */

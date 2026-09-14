@@ -798,6 +798,13 @@ die kan die twee dingen niet.
   en "vraag Keepersschool Rob om een nieuwe uitnodiging" is voor de
   eigenaar van Keepersschool Rob een doodlopende weg. Ouders en trainers
   houden de mail van de school.
+- **Opnieuw uitnodigen** (platformbeheer → Gebruikers, `SchoolUserController::reinvite`):
+  alleen bij een account dat nooit is geactiveerd (`email_verified_at` leeg).
+  Een uitnodiging mag niet naar een adres met een account, dus zo'n account
+  (vaak nog uit de tijd van de reset-link) wordt weggehaald, met zijn
+  reset-link en meldingen, en vervangen door een uitnodiging met de
+  welkomstmail. Een ouder houdt zijn kinderen in de uitnodiging. Een account
+  dat in gebruik is haal je hier nooit weg.
 - **Een wachtwoordlink is twee dagen geldig** (`auth.passwords.users.expire`,
   standaard 2880 minuten, `AUTH_PASSWORD_RESET_TOKEN_EXPIRE`), en eenmalig.
   Een uur was te kort voor iemand die door platformbeheer een link kreeg en

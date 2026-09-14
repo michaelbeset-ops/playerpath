@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import PlatformLayout from '@/layouts/PlatformLayout.vue';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { Eye, KeyRound, Mail, UserPlus } from 'lucide-vue-next';
+import { Eye, KeyRound, Mail, Send, UserPlus } from 'lucide-vue-next';
 import { ref } from 'vue';
 
 const props = defineProps<{
@@ -56,6 +56,18 @@ const reset = (id: number, email: string) => {
     }
 };
 
+// Een account dat nooit is geactiveerd vervangen door een echte uitnodiging
+// met de welkomstmail. Zie SchoolUserController::reinvite.
+const opnieuwUitnodigen = (id: number, naam: string, email: string) => {
+    if (
+        confirm(
+            `${naam} opnieuw uitnodigen?\n\nHet huidige account (nog niet geactiveerd) wordt vervangen door een uitnodiging. ${email} krijgt een welkomstmail die veertien dagen geldig is. Heeft hij al een wachtwoord gekozen, dan vervalt dat.`,
+        )
+    ) {
+        router.post(`/beheer/scholen/${props.school.id}/gebruikers/${id}/opnieuw-uitnodigen`, {}, { preserveScroll: true });
+    }
+};
+
 const bekijkAls = (id: number) => {
     if (confirm('Je gaat de app bekijken als deze gebruiker. Dit wordt vastgelegd.')) {
         router.post('/beheer/gebruikers/' + id + '/bekijken');
@@ -88,8 +100,8 @@ const bekijkAls = (id: number) => {
         <form v-if="toonFormulier" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm" @submit.prevent="voegToe">
             <p class="font-medium">Iemand uitnodigen</p>
             <p class="mt-1 text-sm text-muted-foreground">
-                Hij krijgt een welkomstmail uit naam van {{ school.name }}, activeert daarmee zijn account en kiest zelf een wachtwoord. De
-                uitnodiging is veertien dagen geldig; het account ontstaat pas bij activeren.
+                Hij krijgt een welkomstmail, activeert daarmee zijn account en kiest zelf een wachtwoord. De uitnodiging is veertien dagen geldig;
+                het account ontstaat pas bij activeren.
             </p>
 
             <div class="mt-4 grid gap-4 sm:grid-cols-3">
@@ -182,6 +194,17 @@ const bekijkAls = (id: number) => {
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2">
+                    <!-- Nog nooit geactiveerd: de welkomstmail opnieuw, in plaats van een wachtwoordmail. -->
+                    <button
+                        v-if="!user.verified"
+                        type="button"
+                        class="inline-flex h-8 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+                        @click="opnieuwUitnodigen(user.id, user.name, user.email)"
+                    >
+                        <Send class="size-3.5" />
+                        Opnieuw uitnodigen
+                    </button>
+
                     <button
                         v-if="user.is_active"
                         type="button"
