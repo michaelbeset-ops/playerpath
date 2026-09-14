@@ -2221,6 +2221,40 @@ deel-link gaat als tekst mee als hij aanstaat. Op de kaart staat wat de kaart
 in de app toont en niets meer. Knoppen: op de kaartpagina ("Deel als
 afbeelding" + "Link kopiëren") en de deelknop op het spelerdashboard.
 
+### Snelheid (gemeten, niet aangenomen)
+
+De server is niet het probleem: lokaal duurt elke pagina 9 tot 37 ms, met
+11 tot 60 databasevragen (13-9-2026, eigenaar, trainer en ouder). Wat een
+gebruiker als traag voelt, zit in de browser en in het wachten op de klik.
+
+- **Het menu laadt vooraf** (`prefetch` bij aanwijzen en aantikken, vijf
+  seconden bewaard) in `AppTopbar` en `AppTabbar`. Niet op de meldingen: die
+  pagina markeert alles als gelezen zodra hij laadt, en dan zou aanwijzen al
+  lezen zijn. `app.ts` gooit de voorraad weg bij elke wijziging (elke visit
+  die geen GET is), anders zie je na opslaan nog de oude stand.
+- **Het dashboard laadt per rol** (`defineAsyncComponent` in `Dashboard.vue`):
+  het sleepraster van de eigenaar, het spelerdashboard en het gezinsdashboard
+  komen alleen binnen bij wie ze ziet. Het was één bundel van 200 KB voor
+  iedereen.
+- **Op productie**: `playerpath:check` waarschuwt als de queue op `sync` staat.
+  Dan wacht elke opslag op de mailserver, en dat is precies wat als traag
+  voelt.
+
+### De profielfoto en de kaart
+
+Het fotovak op de kaart is **3 bij 2 en toont de bovenkant** (`.pp-foto-vak`,
+`object-position: center top`); de opgeslagen foto is vierkant, omdat het
+medaillon en de lijsten dat nodig hebben. Van het vierkant valt op de kaart
+dus het onderste derde weg. Daarom:
+
+- `PhotoCrop` maakt dat onderste derde donker met "Valt buiten de kaart", en
+  het kaartje in het venster heeft hetzelfde fotovak als de echte kaart. Een
+  vierkant kaartje liet meer zien dan de kaart straks doet.
+- `cardImage.ts` lijnt de foto op de deel-afbeelding ook bovenaan uit. Rond
+  het midden snijden gaf een derde, andere uitsnede.
+
+Verander je de verhouding van het fotovak, verander dan alle drie.
+
 ### "Zet op je beginscherm"
 
 Iedereen hoort de app op zijn beginscherm te hebben. `composables/useInstall.ts`

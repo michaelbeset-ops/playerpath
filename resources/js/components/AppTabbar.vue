@@ -129,6 +129,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                             <Link
                                 v-if="groep.href"
                                 :href="groep.href"
+                                :prefetch="['hover', 'click']"
+                                cache-for="5s"
                                 class="mt-1 flex min-h-12 items-center gap-3 rounded-lg px-3 text-sm font-medium"
                                 :class="isActief(groep) ? 'bg-primary/15 text-primary' : 'text-foreground/80'"
                                 @click="sluit"
@@ -142,6 +144,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                                 v-else
                                 :key="item.href"
                                 :href="item.href"
+                                :prefetch="['hover', 'click']"
+                                cache-for="5s"
                                 class="mt-1 flex min-h-12 items-center gap-3 rounded-lg px-3 text-sm"
                                 :class="raakt(item.href) ? 'bg-primary/15 text-primary' : 'text-foreground/80'"
                                 @click="sluit"

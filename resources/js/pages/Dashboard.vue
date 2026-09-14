@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import AttentionPanel, { type AandachtItem } from '@/components/dashboard/AttentionPanel.vue';
 import BirthdaysWidget from '@/components/dashboard/BirthdaysWidget.vue';
-import DashboardGrid, { type Beschikbaar, type Plek } from '@/components/dashboard/DashboardGrid.vue';
+import type { Beschikbaar, Plek } from '@/components/dashboard/DashboardGrid.vue';
 import DevelopmentWidget from '@/components/dashboard/DevelopmentWidget.vue';
-import FamilyDashboard from '@/components/dashboard/FamilyDashboard.vue';
 import FinanceWidget from '@/components/dashboard/FinanceWidget.vue';
 import KpiWidget from '@/components/dashboard/KpiWidget.vue';
 import MobileSummary from '@/components/dashboard/MobileSummary.vue';
 import MyPlayersWidget from '@/components/dashboard/MyPlayersWidget.vue';
 import MyTrainingsWidget from '@/components/dashboard/MyTrainingsWidget.vue';
-import PlayerDashboard from '@/components/dashboard/PlayerDashboard.vue';
 import ReportPrompt, { type Herinnering } from '@/components/dashboard/ReportPrompt.vue';
 import TrainingsWidget from '@/components/dashboard/TrainingsWidget.vue';
 import SetupChecklist from '@/components/onboarding/SetupChecklist.vue';
@@ -20,9 +18,17 @@ import type { FamilyAanbod, FamilyBericht, FamilyKind, FamilyTraining } from '@/
 import type { SpelerDashboardData } from '@/types/player-dashboard';
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { CalendarDays, CalendarPlus, ClipboardList, Euro, Star, UserPlus, Users } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { computed, defineAsyncComponent } from 'vue';
 
-const props = defineProps<{
+// Elke rol ziet één van deze drie, nooit meer. Apart laden scheelt een ouder
+// op zijn telefoon het sleepraster van de eigenaar (grid-layout-plus), en de
+// eigenaar de spelerskaart met zijn canvas-code. Dat was een bundel van
+// 200 KB voor iedereen.
+const DashboardGrid = defineAsyncComponent(() => import('@/components/dashboard/DashboardGrid.vue'));
+const FamilyDashboard = defineAsyncComponent(() => import('@/components/dashboard/FamilyDashboard.vue'));
+const PlayerDashboard = defineAsyncComponent(() => import('@/components/dashboard/PlayerDashboard.vue'));
+
+defineProps<{
     view: 'school' | 'gezin' | 'speler';
     /** Het antwoord op "wat moet ik doen?". Staat vast bovenaan. */
     /** Rapporten die nu ingevuld kunnen worden; zie ReportPrompts. */

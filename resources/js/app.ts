@@ -1,6 +1,6 @@
 import '../css/app.css';
 
-import { createInertiaApp } from '@inertiajs/vue3';
+import { createInertiaApp, router } from '@inertiajs/vue3';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import type { DefineComponent } from 'vue';
 import { createApp, h } from 'vue';
@@ -49,3 +49,15 @@ if ('serviceWorker' in navigator && (window.isSecureContext || location.hostname
         });
     });
 }
+
+/*
+ * Het menu laadt pagina's vooraf zodra je een link aanwijst of aantikt
+ * (prefetch, vijf seconden bewaard). Dat maakt klikken direct. Maar wie iets
+ * opslaat en daarna via het menu verdergaat, hoort de nieuwe stand te zien en
+ * niet de pagina van vlak ervoor: bij elke wijziging gaat de voorraad weg.
+ */
+router.on('before', (event) => {
+    if (event.detail.visit.method !== 'get') {
+        router.flushAll();
+    }
+});

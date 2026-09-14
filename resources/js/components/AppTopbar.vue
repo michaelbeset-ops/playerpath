@@ -128,6 +128,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
         <div class="flex h-14 w-full min-w-0 items-center">
             <Link
                 href="/dashboard"
+                :prefetch="['hover', 'click']"
+                cache-for="5s"
                 class="flex h-full shrink-0 items-center px-3 sm:px-4"
                 :title="page.props.branding?.name ?? undefined"
                 @click="sluit"
@@ -141,6 +143,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                     <Link
                         v-if="groep.href"
                         :href="groep.href"
+                        :prefetch="['hover', 'click']"
+                        cache-for="5s"
                         :data-tour="groep.tour"
                         class="flex min-h-11 items-center rounded-lg px-3 py-2 text-sm font-medium transition"
                         :class="
@@ -177,6 +181,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                                 v-for="item in groep.items"
                                 :key="item.href"
                                 :href="item.href"
+                                :prefetch="['hover', 'click']"
+                                cache-for="5s"
                                 class="flex items-center gap-3 px-3 py-2.5 text-sm transition"
                                 :class="raakt(item.href) ? 'bg-primary/10 text-primary' : 'hover:bg-foreground/10'"
                                 @click="sluit"
@@ -201,6 +207,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                      iets wijzen dat niet bestaat. -->
                 <Link
                     href="/help"
+                    :prefetch="['hover', 'click']"
+                    cache-for="5s"
                     class="hidden items-center px-3 text-foreground/75 transition hover:bg-foreground/10 hover:text-foreground sm:flex"
                     aria-label="Help"
                     title="Help: zo werkt het"
@@ -344,6 +352,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                 <Link
                     v-if="groep.href"
                     :href="groep.href"
+                    :prefetch="['hover', 'click']"
+                    cache-for="5s"
                     class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium"
                     :class="isActief(groep) ? 'bg-foreground/10' : 'text-foreground/75'"
                     @click="sluit"
@@ -361,6 +371,8 @@ onBeforeUnmount(() => document.removeEventListener('keydown', opToets));
                         v-for="item in groep.items"
                         :key="item.href"
                         :href="item.href"
+                        :prefetch="['hover', 'click']"
+                        cache-for="5s"
                         class="mt-1 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm"
                         :class="raakt(item.href) ? 'bg-primary/10 text-primary' : 'text-foreground/75'"
                         @click="sluit"
