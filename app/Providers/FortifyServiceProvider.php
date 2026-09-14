@@ -82,17 +82,27 @@ class FortifyServiceProvider extends ServiceProvider
     protected function authMails(): void
     {
         ResetPassword::toMailUsing(function (object $notifiable, string $token) {
-            $minuten = config('auth.passwords.'.config('auth.defaults.passwords').'.expire', 60);
+            $minuten = (int) config('auth.passwords.'.config('auth.defaults.passwords').'.expire', 60);
 
+            // "2 dagen" leest beter dan "2880 minuten".
+            $geldig = match (true) {
+                $minuten >= 1440 && $minuten % 1440 === 0 => ($minuten / 1440).' '.($minuten === 1440 ? 'dag' : 'dagen'),
+                $minuten >= 60 && $minuten % 60 === 0 => ($minuten / 60).' uur',
+                default => $minuten.' minuten',
+            };
+
+            // Neutraal: deze mail gaat ook naar iemand die niet zelf op
+            // "wachtwoord vergeten" drukte, maar door de school of platformbeheer
+            // een nieuwe link kreeg. "Je hebt gevraagd" klopt dan niet.
             return MailBrand::apply(new MailMessage, $notifiable->school ?? null)
-                ->subject('Kies een nieuw wachtwoord')
-                ->greeting('Kies een nieuw wachtwoord')
-                ->line('Je hebt gevraagd om je wachtwoord opnieuw in te stellen. Klik hieronder om een nieuw wachtwoord te kiezen.')
-                ->action('Nieuw wachtwoord kiezen', url(route('password.reset', [
+                ->subject('Kies je wachtwoord')
+                ->greeting('Kies je wachtwoord')
+                ->line('Klik hieronder om een wachtwoord te kiezen voor je account'.($notifiable->school?->name ? ' bij '.$notifiable->school->name : '').'. Daarna log je meteen in.')
+                ->action('Wachtwoord kiezen', url(route('password.reset', [
                     'token' => $token,
                     'email' => $notifiable->getEmailForPasswordReset(),
                 ], absolute: false)))
-                ->line("Deze link is {$minuten} minuten geldig.")
+                ->line("Deze link is {$geldig} geldig en werkt één keer.")
                 ->line('Heb je hier niet om gevraagd? Dan hoef je niets te doen; je wachtwoord blijft zoals het was.')
                 ->salutation('Met vriendelijke groet, '.($notifiable->school?->name ?? config('app.name')));
         });

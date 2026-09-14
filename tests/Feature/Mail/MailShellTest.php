@@ -130,7 +130,8 @@ class MailShellTest extends TestCase
         $reset = (new ResetPassword('een-token'))->toMail($this->ouder);
 
         $this->assertSame('Keepersschool Rob', $reset->from[1]);
-        $this->assertSame('Kies een nieuw wachtwoord', $reset->subject);
+        // Neutraal: hij gaat ook naar wie niet zelf op wachtwoord vergeten drukte.
+        $this->assertSame('Kies je wachtwoord', $reset->subject);
         $this->assertStringContainsString('/reset-password/een-token', (string) $reset->actionUrl);
 
         $html = (string) $reset->render();

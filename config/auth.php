@@ -96,7 +96,10 @@ return [
         'users' => [
             'provider' => 'users',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
-            'expire' => 60,
+            // Twee dagen, niet een uur: deze link gaat ook naar iemand die door
+            // de school of platformbeheer is toegevoegd en de mail pas 's avonds
+            // opent. De link blijft eenmalig; na gebruik werkt hij niet meer.
+            'expire' => (int) env('AUTH_PASSWORD_RESET_TOKEN_EXPIRE', 2880),
             'throttle' => 60,
         ],
     ],

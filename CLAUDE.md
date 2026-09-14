@@ -790,6 +790,12 @@ die kan die twee dingen niet.
   "Welkom bij …" en heeft een eigen tekst voor een eigenaar. De knop
   "wachtwoord resetten" in platformbeheer blijft wel een reset-mail: daar
   vraag je er ook om.
+- **Een wachtwoordlink is twee dagen geldig** (`auth.passwords.users.expire`,
+  standaard 2880 minuten, `AUTH_PASSWORD_RESET_TOKEN_EXPIRE`), en eenmalig.
+  Een uur was te kort voor iemand die door platformbeheer een link kreeg en
+  de mail pas 's avonds opent. De mail is neutraal ("Kies je wachtwoord"),
+  zonder "je hebt gevraagd": hij gaat ook naar wie niet zelf op wachtwoord
+  vergeten drukte.
 - **Opnieuw versturen maakt een nieuw token**, en de oude link is dan dood.
 - **De mail komt van de school**, met haar logo en naam (`mail.uitnodiging`).
   Een ouder heeft zijn kind bij Keepersschool Rob aangemeld en kent ons niet.
