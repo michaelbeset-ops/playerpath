@@ -227,6 +227,35 @@ class InzetkaartTest extends TestCase
         $this->assertSame(15, $this->speler->refresh()->xp);
     }
 
+    public function test_het_kind_ziet_op_zijn_dashboard_geen_cijfers(): void
+    {
+        // Rapporten van vroeger, van toen de school nog de prestatiekaart had.
+        app(ChangeCardMode::class)->handle($this->school, RatingSettings::PRESTATIE);
+        $scores = collect(ReportCategory::forPosition(PlayerPosition::Keeper))->mapWithKeys(fn (ReportCategory $c) => [$c->value => 7])->all();
+        $this->actingAs($this->eigenaar)->post("/players/{$this->speler->id}/reports", ['scores' => $scores]);
+        $this->actingAs($this->eigenaar)->post("/players/{$this->speler->id}/reports", ['scores' => array_map(fn () => 8, $scores)]);
+        app(ChangeCardMode::class)->handle($this->school, RatingSettings::INZET);
+
+        $kind = User::factory()->for($this->school)->create();
+        $kind->assignRole(Role::Speler->value);
+        $this->speler->forceFill(['user_id' => $kind->id])->save();
+
+        $this->actingAs($kind)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('card.card_mode', 'inzet')
+                ->where('card.overall', null)
+                ->where('categories', [])
+                ->where('hasEnoughData', false)
+                ->where('nextStep', null)
+            );
+
+        $this->actingAs($this->ouder)
+            ->get("/players/{$this->speler->id}/card")
+            ->assertInertia(fn ($page) => $page->where('lastReport', null)->where('goals', []));
+    }
+
     public function test_level_en_mijlpalen_groeien_mee_met_inzet(): void
     {
         foreach (range(1, 7) as $dag) {

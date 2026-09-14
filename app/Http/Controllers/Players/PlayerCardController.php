@@ -24,7 +24,9 @@ class PlayerCardController extends Controller
     {
         $this->authorize('view', $player);
 
-        $laatste = $player->reports()->newestFirst()->with('trainer')->first();
+        // De inzetkaart: rapporten en doelen horen niet op deze pagina.
+        $inzet = \App\Support\Rating\RatingSettings::for($player->school)->usesEffort();
+        $laatste = $inzet ? null : $player->reports()->newestFirst()->with('trainer')->first();
 
         return Inertia::render('players/Card', [
             'player' => [
@@ -49,7 +51,7 @@ class PlayerCardController extends Controller
                 'note' => $laatste->note,
             ] : null,
             'canReport' => auth()->user()->can('createReport', $player),
-            'goals' => $this->goals->forPlayer($player),
+            'goals' => $inzet ? [] : $this->goals->forPlayer($player),
             'share' => [
                 'can' => auth()->user()->can('share', $player),
                 'url' => $player->isShared() ? route('players.shared', $player->share_token) : null,

@@ -196,7 +196,7 @@ const startRondleiding = () => router.post('/onboarding/rondleiding/opnieuw');
                     </li>
                     <li class="flex items-start gap-2">
                         <Link2 class="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                        <span><span class="font-medium">Deel-link.</span> Voor internet, bewust kaal: alleen voornaam met initiaal en de cijfers. Aan- en uitzetten wanneer je wilt.</span>
+                        <span><span class="font-medium">Deel-link.</span> Voor internet, bewust kaal: alleen voornaam met initiaal en wat er op de kaart staat. Aan- en uitzetten wanneer je wilt.</span>
                     </li>
                     <li class="flex items-start gap-2">
                         <Smile class="mt-0.5 size-4 shrink-0 text-muted-foreground" />

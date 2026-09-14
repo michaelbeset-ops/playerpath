@@ -291,8 +291,8 @@ const sticker = computed(() => (viering.value?.level.up ? 'NIEUW LEVEL' : groeiS
 
             <!-- Delen: één vak. Bovenaan de knop; daaronder de twee links als
                  regels die uitklappen, zodat de pagina niet drie keer "delen" zegt. -->
-            <div v-if="player.overall_rating || childLink.can" ref="deelVak" class="mt-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-                <div v-if="player.overall_rating" class="p-5">
+            <div v-if="player.overall_rating || card.card_mode === 'inzet' || childLink.can" ref="deelVak" class="mt-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                <div v-if="player.overall_rating || card.card_mode === 'inzet'" class="p-5">
                     <p class="font-medium">Kaart delen</p>
                     <p class="mt-1 text-sm text-muted-foreground">Een plaatje van de kaart in story-formaat, met het logo van de school.</p>
                     <CardShareActions class="mt-3" :card="card" :link="share.url" :sticker="sticker" />
@@ -401,12 +401,12 @@ const sticker = computed(() => (viering.value?.level.up ? 'NIEUW LEVEL' : groeiS
                 </div>
 
                 <!-- De deel-link -->
-                <div v-if="share.can && player.overall_rating" class="border-t border-border">
+                <div v-if="share.can && (player.overall_rating || card.card_mode === 'inzet')" class="border-t border-border">
                     <button type="button" class="flex min-h-16 w-full items-center gap-3 px-5 py-3 text-left transition hover:bg-secondary/40" @click="deelOpen = !deelOpen">
                         <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground"><Link2 class="size-4" /></span>
                         <span class="min-w-0 flex-1">
                             <span class="block text-sm font-medium">Openbare deel-link</span>
-                            <span class="block text-xs text-muted-foreground">Voornaam met initiaal en de cijfers, voor iedereen met de link</span>
+                            <span class="block text-xs text-muted-foreground">Voornaam met initiaal en {{ card.card_mode === 'inzet' ? 'de punten' : 'de cijfers' }}, voor iedereen met de link</span>
                         </span>
                         <span
                             class="shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold"
@@ -418,7 +418,7 @@ const sticker = computed(() => (viering.value?.level.up ? 'NIEUW LEVEL' : groeiS
 
                     <div v-if="deelOpen" class="px-5 pb-5">
                         <p class="text-sm text-muted-foreground">
-                            Iedereen met deze link ziet de kaart zonder account. Er staan alleen de voornaam met initiaal, de positie en de cijfers op: geen
+                            Iedereen met deze link ziet de kaart zonder account. Er staan alleen de voornaam met initiaal, de positie en {{ card.card_mode === 'inzet' ? 'het level en de punten' : 'de cijfers' }} op: geen
                             achternaam, leeftijd, school of notities van de trainer.
                         </p>
 

@@ -44,6 +44,10 @@ class PlayerDashboard
         $mijlpalen = $this->badges->for($speler, $this->progress);
         $trainingen = $this->family->upcomingTrainings($user, [$speler->id]);
 
+        // De inzetkaart: geen categoriecijfers, geen "van 74 naar 79" en geen
+        // sterkste kant. Het kind ziet zijn punten, level en mijlpalen.
+        $inzet = \App\Support\Rating\RatingSettings::for($speler->school)->usesEffort();
+
         return [
             'player' => [
                 'id' => $speler->id,
@@ -51,15 +55,15 @@ class PlayerDashboard
             ],
             'card' => $this->presenter->for($speler),
             'quarter' => $this->timeline->quarterSummary($speler),
-            'categories' => array_map(fn (array $categorie) => [
+            'categories' => $inzet ? [] : array_map(fn (array $categorie) => [
                 'category' => $categorie['category'],
                 'label' => $categorie['label'],
                 'last' => $categorie['last'],
                 'delta' => $categorie['delta'],
                 'trend' => $categorie['trend'],
             ], $voortgang['categories']),
-            'hasEnoughData' => $voortgang['hasEnoughData'],
-            'nextStep' => $this->nextStep->for($speler, $doelen),
+            'hasEnoughData' => ! $inzet && $voortgang['hasEnoughData'],
+            'nextStep' => $inzet ? null : $this->nextStep->for($speler, $doelen),
             // De eerstvolgende badge die nog niet binnen is: iets om naartoe
             // te werken, naast het level.
             'nextBadge' => collect($mijlpalen)->first(fn (array $badge) => ! $badge['earned']),

@@ -167,7 +167,7 @@ const verwijderen = () => {
 };
 
 // Kleuren of cijfers. In kleuren is een streefdoel een kleur en de balk vier stappen.
-const { kleuren, niveaus, niveauVoor } = useGrading();
+const { kleuren, niveaus, niveauVoor, inzet } = useGrading();
 const kleurStappen = (rating: number | null) => (niveaus.value.findIndex((n) => n.key === niveauVoor(rating)?.key) + 1) * 25 + '%';
 const streefScore = computed<number | null>({
     get: () => parseFloat(String(doelForm.target).replace(',', '.')) || null,
@@ -210,7 +210,7 @@ const streefScore = computed<number | null>({
                     </Link>
 
                     <Link
-                        v-if="can.report"
+                        v-if="can.report && !inzet"
                         :href="'/players/' + player.id + '/reports/create'"
                         class="inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
                     >
@@ -532,8 +532,8 @@ const streefScore = computed<number | null>({
                 </div>
             </div>
 
-            <!-- Laatste rapporten -->
-            <div class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+            <!-- Laatste rapporten (niet bij de inzetkaart) -->
+            <div v-if="!inzet" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
                 <p class="font-medium">Laatste rapporten</p>
 
                 <div v-if="reports.length" class="mt-3 space-y-2">
