@@ -71,7 +71,7 @@ class EnrollmentSettingsTest extends TestCase
                 ->component('enrollment-settings/Wizard')
                 ->where('step', 1)
                 ->where('completed', false)
-                ->count('steps', 9)
+                ->count('steps', 10)
             );
     }
 
@@ -146,13 +146,21 @@ class EnrollmentSettingsTest extends TestCase
             'development' => false,
         ])->assertRedirect('/instellingen/inschrijven/stap/8');
 
-        // Stap acht: groepen. Stap negen: trainers uitnodigen, en dat rondt af
-        // - naar het dashboard, want daar staat de startlijst.
-        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/8', [
+        // Stap acht: de spelerskaart. Stap negen: groepen. Stap tien: trainers
+        // uitnodigen, en dat rondt af.
+        $this->actingAs($this->eigenaar)->get('/instellingen/inschrijven/stap/8')
+            ->assertInertia(fn ($page) => $page->where('cardMode', 'inzet'));
+
+        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/8', ['card_mode' => 'inzet'])
+            ->assertRedirect('/instellingen/inschrijven/stap/9');
+
+        $this->assertSame('inzet', \App\Support\Rating\RatingSettings::for($this->school->refresh())->cardMode());
+
+        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/9', [
             // Het formulier begint met een lege regel; wie die laat staan
             // mag daar niet op vastlopen.
             'groups' => [['name' => 'Keepers O12', 'age_category' => 'Onder 12'], ['name' => 'Veld O14', 'age_category' => ''], ['name' => '', 'age_category' => '']],
-        ])->assertSessionHasNoErrors()->assertRedirect('/instellingen/inschrijven/stap/9');
+        ])->assertSessionHasNoErrors()->assertRedirect('/instellingen/inschrijven/stap/10');
 
         app(Tenancy::class)->set($this->school);
         $this->assertSame(2, Group::count());
@@ -160,7 +168,7 @@ class EnrollmentSettingsTest extends TestCase
 
         // De laatste stap rondt af en komt uit op de samenvatting in gewone
         // taal, niet op het dashboard.
-        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/9', [])
+        $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/10', [])
             ->assertRedirect('/instellingen/inschrijven')
             ->assertSessionHas('wizardCompleted', true);
 

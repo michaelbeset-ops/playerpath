@@ -49,7 +49,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                     <p class="text-xs text-muted-foreground">Seizoen {{ current.season }}<template v-if="current.age_category"> · {{ current.age_category.key }}</template></p>
                 </div>
                 <div class="theme-donker mt-3 overflow-hidden rounded-3xl bg-background p-4 text-foreground sm:p-8">
-                    <CardGlow :level="current.overall === null ? 'geen' : current.level.key">
+                    <CardGlow :level="current.overall === null && current.card_mode !== 'inzet' ? 'geen' : current.level.key">
                         <PlayerCardVisual :card="current" :shareable="false" />
                     </CardGlow>
                 </div>
@@ -70,7 +70,7 @@ const breadcrumbs: BreadcrumbItem[] = [
                         <p class="mb-3 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                             Seizoen {{ kaart.season }}<template v-if="kaart.age_category"> · {{ kaart.age_category.key }}</template>
                         </p>
-                        <CardGlow :level="kaart.overall === null ? 'geen' : kaart.level.key">
+                        <CardGlow :level="kaart.overall === null && kaart.card_mode !== 'inzet' ? 'geen' : kaart.level.key">
                             <PlayerCardVisual :card="kaart" :shareable="false" />
                         </CardGlow>
                     </div>

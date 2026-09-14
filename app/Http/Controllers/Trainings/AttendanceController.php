@@ -2,22 +2,22 @@
 
 namespace App\Http\Controllers\Trainings;
 
-use App\Actions\Products\ConsumeCredit;
+use App\Actions\Trainings\RecordAttendance;
 use App\Enums\AttendanceStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Player;
 use App\Models\Training;
-use App\Support\Rating\RatingEngine;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 /**
- * De trainer vinkt af wie er was.
+ * De trainer vinkt af wie er was. Wat eraan hangt (rittenkaart, XP,
+ * inzetpunten) staat in RecordAttendance.
  */
 class AttendanceController extends Controller
 {
-    public function __construct(protected ConsumeCredit $credits, protected RatingEngine $engine) {}
+    public function __construct(protected RecordAttendance $record) {}
 
     public function update(Request $request, Training $training, Player $player): RedirectResponse
     {
@@ -33,31 +33,7 @@ class AttendanceController extends Controller
 
         $status = $validated['status'] ?? null;
 
-        $aanwezigheid = $training->attendances()->updateOrCreate(
-            ['player_id' => $player->id],
-            ['status' => $status],
-        );
-
-        // Een beurt gaat van de rittenkaart zodra iemand aanwezig gemeld wordt,
-        // en komt terug als de trainer zich vergist. Heeft de speler geen kaart,
-        // dan gebeurt hier niets: afvinken mag nooit stuklopen op de
-        // administratie.
-        $this->credits->sync($aanwezigheid, $status === null ? null : AttendanceStatus::from($status));
-
-        // Aanwezig zijn is XP: trouw komen wordt beloond, niet alleen talent.
-        // Een vergissing van de trainer draait de punten weer terug.
-        if ($status === AttendanceStatus::Present->value) {
-            $this->engine->award(
-                $player,
-                'attendance',
-                $this->engine->settingsFor($player)->xpForAttendance(),
-                'Aanwezig bij '.$training->label(),
-                $aanwezigheid,
-                $training->starts_at,
-            );
-        } else {
-            $this->engine->revoke($player, 'attendance', $aanwezigheid);
-        }
+        $this->record->handle($training, $player, $status === null ? null : AttendanceStatus::from($status));
 
         return back();
     }

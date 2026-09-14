@@ -32,6 +32,10 @@ const levels = computed(() => props.card.levels.filter((l) => l.xp > 0));
 
 // Kleuren of cijfers: in kleuren gaat de uitleg nergens over getallen.
 const kleuren = computed(() => props.card.grading === 'kleuren');
+
+// De inzetkaart: uitleg in kindertaal, zonder cijfers.
+const inzet = computed(() => props.card.card_mode === 'inzet');
+const regels = computed(() => props.card.effort?.rules ?? { attendance: 10, effort: [], attitude: [] });
 const niveaus = STANDAARD_NIVEAUS;
 </script>
 
@@ -39,13 +43,84 @@ const niveaus = STANDAARD_NIVEAUS;
     <Dialog v-model:open="open">
         <DialogScrollContent class="theme-donker max-w-md rounded-2xl bg-background text-foreground sm:rounded-2xl">
             <div class="space-y-1">
-                <DialogTitle class="text-lg font-bold">{{ kleuren ? 'Hoe werkt mijn kaart?' : 'Hoe werkt mijn rating?' }}</DialogTitle>
+                <DialogTitle class="text-lg font-bold">{{ kleuren || inzet ? 'Hoe werkt mijn kaart?' : 'Hoe werkt mijn rating?' }}</DialogTitle>
                 <DialogDescription class="text-sm text-muted-foreground">
-                    {{ kleuren ? 'Wat de kleuren op de kaart van ' + voornaam + ' betekenen.' : 'Wat de getallen op de kaart van ' + voornaam + ' betekenen.' }}
+                    {{
+                        inzet
+                            ? 'Hoe de kaart van ' + voornaam + ' groeit.'
+                            : kleuren
+                              ? 'Wat de kleuren op de kaart van ' + voornaam + ' betekenen.'
+                              : 'Wat de getallen op de kaart van ' + voornaam + ' betekenen.'
+                    }}
                 </DialogDescription>
             </div>
 
-            <div class="space-y-5 text-sm leading-relaxed">
+            <div v-if="inzet" class="space-y-5 text-sm leading-relaxed">
+                <section>
+                    <h3 class="font-semibold text-gold">Iedereen begint gelijk</h3>
+                    <p class="mt-1 text-muted-foreground">
+                        Aan het begin van het seizoen heeft iedereen dezelfde kaart. Het maakt niet uit hoe goed je al bent: niemand heeft een voorsprong.
+                    </p>
+                </section>
+
+                <section>
+                    <h3 class="font-semibold text-gold">Zo verdien je punten</h3>
+                    <p class="mt-1 text-muted-foreground">Na elke training geeft je trainer je punten. Niet voor hoe goed je al bent, maar voor hoe je je best doet.</p>
+                    <ul class="mt-2 space-y-1.5">
+                        <li class="flex items-baseline justify-between gap-3">
+                            <span class="text-muted-foreground">Je bent er bij de training</span>
+                            <strong class="tabular shrink-0 text-foreground">+{{ regels.attendance }}</strong>
+                        </li>
+                        <li v-for="t in regels.effort" :key="'e' + t.key" class="flex items-baseline justify-between gap-3">
+                            <span class="text-muted-foreground">Inzet: {{ t.label }}</span>
+                            <strong class="tabular shrink-0 text-foreground">+{{ t.points }}</strong>
+                        </li>
+                        <li v-for="t in regels.attitude" :key="'h' + t.key" class="flex items-baseline justify-between gap-3">
+                            <span class="text-muted-foreground">Luisteren: {{ t.label }}</span>
+                            <strong class="tabular shrink-0 text-foreground">+{{ t.points }}</strong>
+                        </li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h3 class="font-semibold text-gold">Punten gaan nooit omlaag</h3>
+                    <p class="mt-1 text-muted-foreground">
+                        Je kunt geen punten kwijtraken en je krijgt nooit een onvoldoende. Ging een training minder? Dan kost dat je niks. Wie traint, groeit.
+                    </p>
+                </section>
+
+                <section>
+                    <h3 class="font-semibold text-gold">Genoeg punten? Dan wordt je kaart mooier</h3>
+                    <p class="mt-1 text-muted-foreground">
+                        Is je balk vol, dan krijg je vanzelf een nieuwe kaart<template v-if="levels.length"
+                            >:
+                            <span v-for="(l, i) in levels" :key="l.key"
+                                >{{ i === 0 ? '' : i === levels.length - 1 ? ' en ' : ', ' }}<strong class="text-foreground">{{ l.label }}</strong> bij
+                                {{ l.xp }} punten</span
+                            ></template
+                        >. Werk je vaak hard of luister je goed, dan krijg je ook badges, zoals <strong class="text-foreground">Doorzetter</strong>.
+                    </p>
+                </section>
+
+                <section>
+                    <h3 class="font-semibold text-gold">En waar word ik beter in?</h3>
+                    <p class="mt-1 text-muted-foreground">
+                        Aan het begin en aan het eind van een cursus kijkt je trainer waar je staat, met kleuren. Dat zie je bij Voortgang. Het gaat alleen over
+                        jou, niet over wie de beste is.
+                    </p>
+                </section>
+
+                <section v-if="audience === 'trainer'" class="rounded-xl border border-border bg-card p-4">
+                    <h3 class="font-semibold text-primary">Voor trainers: zo geef je inzetpunten</h3>
+                    <ul class="mt-1 list-disc space-y-1 pl-5 text-muted-foreground">
+                        <li>Na de training: per kind aanwezig, inzet en houding. Een paar tikken per kind.</li>
+                        <li>Het gaat om inzet, niet om talent. Het kind dat minder kan maar alles geeft, verdient de hoogste inzet.</li>
+                        <li>Niets aantikken mag; het kost nooit punten.</li>
+                    </ul>
+                </section>
+            </div>
+
+            <div v-else class="space-y-5 text-sm leading-relaxed">
                 <!-- In kleuren: geen getal, vier kleuren -->
                 <section v-if="kleuren">
                     <h3 class="font-semibold text-gold">De kleuren</h3>

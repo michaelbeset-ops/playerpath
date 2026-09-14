@@ -40,7 +40,7 @@ class EnrollmentSettings
      * krijgen - en een aparte intake-wizard ernaast zou betekenen dat er twee
      * plekken zijn waar je hetzelfde instelt.
      */
-    public const STAPPEN = ['school', 'aanbod', 'kosten', 'betalen', 'annuleren', 'kortingen', 'formulier', 'groepen', 'trainers'];
+    public const STAPPEN = ['school', 'aanbod', 'kosten', 'betalen', 'annuleren', 'kortingen', 'formulier', 'kaart', 'groepen', 'trainers'];
 
     /** @var array<string, mixed> */
     public const STANDAARD = [

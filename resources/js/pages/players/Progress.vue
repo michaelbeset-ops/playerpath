@@ -4,12 +4,27 @@ import GradeChart from '@/components/GradeChart.vue';
 import GradeChip from '@/components/GradeChip.vue';
 import LineChart from '@/components/LineChart.vue';
 import type { Kaart } from '@/components/PlayerCardVisual.vue';
+import CourseProgressBlock, { type Cursus } from '@/components/progress/CourseProgressBlock.vue';
 import RatingExplanation from '@/components/RatingExplanation.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { useGrading } from '@/lib/grade';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
-import { CalendarCheck, CircleHelp, ClipboardList, IdCard, Minus, Sparkles, Target, TrendingDown, TrendingUp, Trophy } from 'lucide-vue-next';
+import {
+    CalendarCheck,
+    CircleHelp,
+    ClipboardList,
+    Flame,
+    GraduationCap,
+    IdCard,
+    Minus,
+    Sparkles,
+    Target,
+    TrendingDown,
+    TrendingUp,
+    Trophy,
+    Zap,
+} from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 interface Trend {
@@ -51,6 +66,8 @@ const props = defineProps<{
         days_left: number | null;
     } | null;
     canReport: boolean;
+    /** Inzetkaart: begin- en eindniveau per cursus. */
+    courses: Cursus[];
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -61,7 +78,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 const labels = computed(() => props.progress.points.map((p) => p.label));
 
 // In kleuren: een grafiek van werkpunt naar top, en nergens een getal.
-const { kleuren, niveauVoor } = useGrading();
+const { kleuren, niveauVoor, inzet, voortgang } = useGrading();
 
 // Een tabelweergave hoort erbij: de cijfers mogen nooit alleen in een plaatje
 // zitten. Zie de datavisualisatie-richtlijnen.
@@ -125,7 +142,8 @@ const trendIcoon = (trend: Trend | null) => {
     return trend.key === 'aandacht' ? TrendingDown : TrendingUp;
 };
 
-const tijdlijnIcoon = (type: string) => (type === 'level' ? Sparkles : type === 'mijlpaal' ? Trophy : ClipboardList);
+const tijdlijnIcoon = (type: string) =>
+    type === 'level' ? Sparkles : type === 'mijlpaal' ? Trophy : type === 'inzet' ? Flame : type === 'cursus' ? GraduationCap : ClipboardList;
 
 // Standaard de laatste paar; de rest achter een knop. Een tijdlijn van dertig
 // rapporten is geen scherm maar een archief.
@@ -154,7 +172,100 @@ const tijdlijnZichtbaar = computed(() => (tijdlijnUit.value ? props.timeline : p
                 </Link>
             </div>
 
-            <template v-if="progress.hasEnoughData">
+            <!-- Inzetkaart: wat het kind verdiende, en waar het beter in werd per cursus. -->
+            <template v-if="inzet">
+                <div class="mt-6 overflow-hidden rounded-2xl border border-primary/30 bg-card shadow-sm">
+                    <div class="h-1 bg-primary"></div>
+                    <div class="p-5">
+                        <p class="text-xl font-bold leading-tight text-primary sm:text-2xl">
+                            {{ card.effort?.points ? card.effort.points + ' punten verdiend dit seizoen' : 'Het seizoen is net begonnen' }}
+                        </p>
+                        <p class="mt-1 text-sm text-muted-foreground">Punten voor er zijn en voor inzet. Ze gaan nooit omlaag: wie traint, groeit.</p>
+
+                        <div class="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-3">
+                            <div>
+                                <p class="tabular flex items-center gap-1.5 text-2xl font-bold leading-none">
+                                    <Zap class="size-5 text-muted-foreground" />
+                                    {{ card.effort?.points ?? level.xp }}
+                                </p>
+                                <p class="mt-1 text-xs text-muted-foreground">inzetpunten</p>
+                            </div>
+                            <div>
+                                <p class="tabular flex items-center gap-1.5 text-2xl font-bold leading-none">
+                                    <CalendarCheck class="size-5 text-muted-foreground" />
+                                    {{ card.effort?.trainings ?? 0 }}
+                                </p>
+                                <p class="mt-1 text-xs text-muted-foreground">trainingen aanwezig</p>
+                            </div>
+                            <div>
+                                <p class="tabular flex items-center gap-1.5 text-2xl font-bold leading-none">
+                                    <Flame class="size-5 text-gold" />
+                                    {{ card.effort?.standouts ?? 0 }}
+                                </p>
+                                <p class="mt-1 text-xs text-muted-foreground">keer {{ (card.effort?.standout_label ?? 'uitblinker').toLowerCase() }}</p>
+                            </div>
+                        </div>
+
+                        <div class="mt-5 rounded-xl border border-border bg-background p-4">
+                            <div class="flex flex-wrap items-baseline justify-between gap-2">
+                                <p class="text-sm font-medium">Level {{ level.label }}</p>
+                                <p class="tabular text-xs text-muted-foreground">{{ level.xp }} XP</p>
+                            </div>
+                            <div class="mt-2 h-2 overflow-hidden rounded-full bg-secondary">
+                                <div class="h-full rounded-full bg-primary transition-all" :style="{ width: level.progress + '%' }"></div>
+                            </div>
+                            <p class="mt-2 text-sm text-muted-foreground">
+                                <template v-if="level.next">
+                                    Nog <span class="font-semibold text-foreground">{{ level.next.remaining }} punten</span> tot {{ level.next.label }}. Elke
+                                    training telt mee.
+                                </template>
+                                <template v-else>Het hoogste level bereikt.</template>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                    <p class="min-w-0 flex-1 text-sm text-muted-foreground">
+                        De kaart van {{ player.first_name }} beloont inzet, niet talent. Waar {{ player.first_name }} beter in wordt, zie je hieronder per
+                        cursus, in kleuren en zonder vergelijking met anderen.
+                    </p>
+                    <button
+                        type="button"
+                        class="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 self-start rounded-lg border border-border px-3 py-2 text-sm font-medium transition hover:border-primary"
+                        @click="uitlegOpen = true"
+                    >
+                        <CircleHelp class="size-4" />
+                        Hoe werkt dit?
+                    </button>
+                </div>
+
+                <h2 class="mt-6 font-semibold">Waar {{ player.first_name }} beter in wordt</h2>
+                <div v-if="courses.length" class="mt-3 space-y-4">
+                    <CourseProgressBlock v-for="c in courses" :key="c.product.id" :course="c" :levels="voortgang" :first-name="player.first_name" />
+                </div>
+                <p v-else class="mt-3 rounded-2xl border border-dashed border-border bg-card/50 p-6 text-center text-sm text-muted-foreground">
+                    Aan het begin en het eind van een cursus legt de trainer per onderdeel vast waar {{ player.first_name }} staat. Dat verschijnt hier.
+                </p>
+
+                <div v-if="card.recent_trainings?.length" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+                    <p class="font-medium">Laatste trainingen</p>
+                    <ul class="mt-3 divide-y divide-border">
+                        <li v-for="t in card.recent_trainings" :key="t.date + t.label" class="py-2.5 first:pt-0 last:pb-0">
+                            <div class="flex items-baseline justify-between gap-3">
+                                <p class="min-w-0 truncate text-sm font-medium">{{ t.label }}</p>
+                                <p class="tabular shrink-0 text-sm font-bold text-primary">+{{ t.points }}</p>
+                            </div>
+                            <p class="text-xs text-muted-foreground">
+                                {{ t.date }}<template v-if="t.effort || t.attitude"> &middot; {{ [t.effort, t.attitude].filter(Boolean).join(', ') }}</template>
+                            </p>
+                            <p v-if="t.note" class="mt-1 text-sm text-muted-foreground">{{ t.note }}</p>
+                        </li>
+                    </ul>
+                </div>
+            </template>
+
+            <template v-else-if="progress.hasEnoughData">
                 <!-- De kop van het verhaal: wat er in drie maanden gebeurd is -->
                 <div
                     class="mt-6 overflow-hidden rounded-2xl border bg-card shadow-sm"
@@ -469,7 +580,7 @@ const tijdlijnZichtbaar = computed(() => (tijdlijnUit.value ? props.timeline : p
                 <p v-else class="mt-3 text-sm text-muted-foreground">Er is nog niets gebeurd om te laten zien.</p>
             </div>
 
-            <div v-if="canReport" class="mt-4">
+            <div v-if="canReport && !inzet" class="mt-4">
                 <Link
                     :href="'/players/' + player.id + '/reports/create'"
                     class="inline-flex min-h-11 items-center rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"

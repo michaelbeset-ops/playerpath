@@ -23,13 +23,17 @@ class BadgeSettingsController extends Controller
         abort_unless($request->user()->isEigenaar(), 403);
 
         $instellingen = BadgeSettings::for($request->user()->school);
+        // Alleen de mijlpalen die bij de kaart van deze school horen.
+        $modus = \App\Support\Rating\RatingSettings::for($request->user()->school)->cardMode();
+        $catalogus = PlayerBadges::catalogueFor($modus);
+        $bekend = array_column($catalogus, 'key');
 
         return Inertia::render('badges/Edit', [
-            'catalogue' => PlayerBadges::catalogue(),
-            'defaultKeys' => $instellingen->defaultKeys(),
+            'catalogue' => $catalogus,
+            'defaultKeys' => array_values(array_intersect($instellingen->defaultKeys(), $bekend)) ?: BadgeSettings::standardFor($modus),
             'categories' => BadgeSettings::categories(),
             'overrides' => (object) $instellingen->categoryOverrides(),
-            'standard' => BadgeSettings::STANDAARD,
+            'standard' => BadgeSettings::standardFor($modus),
             'custom' => $instellingen->customBadges(),
         ]);
     }
@@ -42,7 +46,7 @@ class BadgeSettingsController extends Controller
         $categorieen = array_column(BadgeSettings::categories(), 'key');
 
         $validated = $request->validate([
-            'default' => ['required', 'array', 'min:1', 'max:9'],
+            'default' => ['required', 'array', 'min:1', 'max:15'],
             'default.*' => ['string', Rule::in($bekend)],
             'overrides' => ['nullable', 'array'],
             // Eigen mijlpalen: een naam is verplicht, de rest mag leeg. De
@@ -52,7 +56,7 @@ class BadgeSettingsController extends Controller
             'custom.*.label' => ['required', 'string', 'max:40'],
             'custom.*.description' => ['nullable', 'string', 'max:120'],
             ...collect($categorieen)->mapWithKeys(fn ($c) => [
-                "overrides.{$c}" => ['nullable', 'array', 'max:9'],
+                "overrides.{$c}" => ['nullable', 'array', 'max:15'],
                 "overrides.{$c}.*" => ['string', Rule::in($bekend)],
             ])->all(),
         ], [

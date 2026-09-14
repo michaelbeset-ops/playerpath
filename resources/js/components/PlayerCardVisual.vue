@@ -8,17 +8,22 @@ import {
     Camera,
     CircleHelp,
     ClipboardCheck,
+    Crown,
+    Ear,
+    Flame,
     Hand,
     Medal,
     Rocket,
     RotateCw,
     Share2,
     Shirt,
+    Sparkles,
     Star,
     Target,
     TrendingUp,
     Trophy,
     UserRound,
+    Zap,
 } from 'lucide-vue-next';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 
@@ -57,6 +62,20 @@ export interface Kaart {
      */
     grading?: 'kleuren' | 'cijfers';
     grade?: { key: string; label: string } | null;
+    /**
+     * Welke kaart: de prestatiekaart met ratings, of de inzetkaart. Bij de
+     * inzetkaart zijn `overall` en `categories` leeg en staat `effort` erop.
+     */
+    card_mode?: 'prestatie' | 'inzet';
+    effort?: {
+        points: number;
+        trainings: number;
+        standouts: number;
+        standout_label: string | null;
+        rules?: { attendance: number; effort: { key: string; label: string; points: number }[]; attitude: { key: string; label: string; points: number }[] };
+    } | null;
+    /** De achterkant van de inzetkaart: de laatste trainingen. Publiek null. */
+    recent_trainings?: { date: string; label: string; effort: string | null; attitude: string | null; points: number; note: string | null }[] | null;
     /** `delta` is wat het laatste rapport aan deze categorie veranderde; null zonder vorige stand. */
     categories: { category: string; label: string; hint?: string; rating: number | null; delta?: number | null }[];
     report_count: number;
@@ -198,7 +217,9 @@ const binnen = ref<HTMLElement | null>(null);
 const voorHoogte = ref(0);
 let bezigDraaien = false;
 
-const heeftAchterkant = computed(() => props.card.recent_reports !== undefined && props.card.recent_reports !== null);
+const heeftAchterkant = computed(
+    () => (props.card.recent_reports !== undefined && props.card.recent_reports !== null) || (props.card.recent_trainings !== undefined && props.card.recent_trainings !== null),
+);
 
 const wacht = (ms: number) => new Promise((ok) => setTimeout(ok, ms));
 
@@ -251,6 +272,9 @@ const kaartStijl = computed(() => ({
  */
 const kleuren = computed(() => props.card.grading === 'kleuren');
 
+// De inzetkaart: level, punten en trainingen in plaats van cijfers.
+const inzet = computed(() => props.card.card_mode === 'inzet');
+
 // Op de donkere kaart vaste tinten; de tokens van de werkvloer zijn te donker.
 const KAARTKLEUR: Record<string, string> = { rood: '#f87171', oranje: '#fb923c', groen: '#22e06b', blauw: '#60a5fa' };
 
@@ -272,7 +296,8 @@ const tier = computed(() => {
         return props.displayLevel;
     }
 
-    return props.card.overall === null ? 'geen' : props.card.level.key;
+    // De inzetkaart heeft altijd een level: iedereen begint op brons.
+    return props.card.overall === null && props.card.card_mode !== 'inzet' ? 'geen' : props.card.level.key;
 });
 
 // Elke mijlpaal zijn eigen icoon, zodat drie badges naast elkaar van elkaar
@@ -287,6 +312,12 @@ const badgeIcoon: Record<string, unknown> = {
     doel_gehaald: Target,
     aanwezig_vijf: CalendarCheck,
     aanwezig_tien: Trophy,
+    eerste_inzet: Sparkles,
+    doorzetter: Flame,
+    luisteraar: Ear,
+    topinzet: Zap,
+    zilveren_kaart: Medal,
+    gouden_kaart: Crown,
 };
 
 const icoonVoor = (key: string) => badgeIcoon[key] ?? Trophy;
@@ -312,7 +343,7 @@ const upgradeTekst = computed(() => {
         return 'Eindstand van dit seizoen';
     }
 
-    if (props.card.overall === null) {
+    if (props.card.overall === null && !inzet.value) {
         return 'Je eerste rapport zet de kaart aan';
     }
 
@@ -320,7 +351,9 @@ const upgradeTekst = computed(() => {
         return 'Het hoogste level bereikt';
     }
 
-    return `Nog ${next.remaining} ${next.remaining === 1 ? 'punt' : 'punten'} tot je volgende upgrade`;
+    return inzet.value
+        ? `Nog ${next.remaining} ${next.remaining === 1 ? 'punt' : 'punten'} tot ${next.label}`
+        : `Nog ${next.remaining} ${next.remaining === 1 ? 'punt' : 'punten'} tot je volgende upgrade`;
 });
 </script>
 
@@ -344,6 +377,23 @@ const upgradeTekst = computed(() => {
                 <div class="pp-achter-inhoud">
                     <p class="pp-achter-naam">{{ card.first_name }} {{ card.last_name }}</p>
 
+                    <template v-if="inzet">
+                        <p class="pp-achter-kop">Laatste trainingen</p>
+                        <ul v-if="card.recent_trainings?.length" class="pp-rapporten">
+                            <li v-for="t in card.recent_trainings" :key="t.date + t.label" class="pp-rapport">
+                                <div class="pp-rapport-regel">
+                                    <span class="tabular">{{ t.date }}</span>
+                                    <span class="pp-rapport-trainer">{{ t.label }}</span>
+                                    <span class="pp-rapport-cijfer tabular">+{{ t.points }}</span>
+                                </div>
+                                <p v-if="t.effort || t.attitude" class="pp-rapport-noot">{{ [t.effort, t.attitude].filter(Boolean).join(' · ') }}</p>
+                                <p v-if="t.note" class="pp-rapport-noot">{{ t.note }}</p>
+                            </li>
+                        </ul>
+                        <p v-else class="pp-achter-leeg">Na je eerste training staat hier wat je verdiende.</p>
+                    </template>
+
+                    <template v-else>
                     <p class="pp-achter-kop">Laatste rapporten</p>
                     <ul v-if="card.recent_reports?.length" class="pp-rapporten">
                         <li v-for="r in card.recent_reports" :key="r.date + (r.trainer ?? '')" class="pp-rapport">
@@ -359,6 +409,7 @@ const upgradeTekst = computed(() => {
                         </li>
                     </ul>
                     <p v-else class="pp-achter-leeg">Nog geen rapport. Na de eerste training komt hier de eerste.</p>
+                    </template>
 
                     <template v-if="card.goal">
                         <p class="pp-achter-kop">Waar we aan werken</p>
@@ -418,7 +469,11 @@ const upgradeTekst = computed(() => {
                     <p class="pp-merk">PlayerPath</p>
 
                     <div class="pp-overall-blok">
-                        <template v-if="kleuren">
+                        <!-- Inzetkaart: het level groot, in het metaal van het frame. Geen cijfer. -->
+                        <template v-if="inzet">
+                            <p class="pp-level-groot">{{ card.level.label }}</p>
+                        </template>
+                        <template v-else-if="kleuren">
                             <p class="pp-overall-kleur" :style="{ '--pp-kleur': kleurVoor(card.overall) }">
                                 {{ card.overall === null ? 'Nieuw' : niveauVoor(card.overall)?.label }}
                             </p>
@@ -454,7 +509,40 @@ const upgradeTekst = computed(() => {
                         <p class="pp-achternaam">{{ card.last_name }}</p>
                     </div>
 
-                    <div v-if="card.overall !== null" class="pp-stats">
+                    <!-- Inzetkaart: groot en centraal het level en de balk, en wat het kind
+                         verzamelde. Geen categorieën, niets om naast een ander te leggen. -->
+                    <div v-if="inzet" class="pp-inzet">
+                        <div class="pp-inzet-level">
+                            <div class="pp-xp-regel">
+                                <span class="pp-xp-label">LEVEL {{ card.level.label.toUpperCase() }}</span>
+                                <span class="pp-xp-cijfer tabular">{{ card.level.xp }} XP</span>
+                            </div>
+                            <div class="pp-balk pp-balk-inzet">
+                                <div class="pp-balk-vulling" :style="{ width: card.level.progress + '%' }"></div>
+                            </div>
+                            <p class="pp-inzet-tekst">{{ upgradeTekst }}</p>
+                        </div>
+
+                        <div class="pp-inzet-stats">
+                            <div class="pp-inzet-stat">
+                                <Zap class="size-3.5" aria-hidden="true" />
+                                <span class="pp-inzet-getal tabular">{{ card.effort?.points ?? card.level.xp }}</span>
+                                <span class="pp-inzet-label">inzetpunten</span>
+                            </div>
+                            <div class="pp-inzet-stat">
+                                <CalendarCheck class="size-3.5" aria-hidden="true" />
+                                <span class="pp-inzet-getal tabular">{{ card.effort?.trainings ?? 0 }}</span>
+                                <span class="pp-inzet-label">trainingen</span>
+                            </div>
+                            <div class="pp-inzet-stat">
+                                <Flame class="size-3.5" aria-hidden="true" />
+                                <span class="pp-inzet-getal tabular">{{ card.effort?.standouts ?? 0 }}</span>
+                                <span class="pp-inzet-label">{{ (card.effort?.standout_label ?? 'Uitblinker').toLowerCase() }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-else-if="card.overall !== null" class="pp-stats">
                         <div v-for="c in card.categories" :key="c.category" class="pp-stat">
                             <div class="pp-stat-regel">
                                 <span class="pp-stat-label">{{ c.label }}</span>
@@ -466,13 +554,10 @@ const upgradeTekst = computed(() => {
                                     :title="'Sinds het vorige rapport'"
                                     >{{ deltaTekst(c.delta) }}</span
                                 >
-                                <span v-if="kleuren" class="pp-stat-kleur" :style="{ color: kleurVoor(c.rating) }">{{
-                                    niveauVoor(c.rating)?.label ?? '-'
-                                }}</span>
-                                <span v-else class="pp-stat-cijfer tabular">{{ c.rating ?? '-' }}</span>
+                                <span v-if="!kleuren" class="pp-stat-cijfer tabular">{{ c.rating ?? '-' }}</span>
                             </div>
-                            <!-- In kleuren vier blokjes, van werkpunt naar top: een balk van
-                                 0 tot 100 zou het getal alsnog laten zien. -->
+                            <!-- In kleuren vier blokjes met de kleur erachter, onder het label:
+                                 naast het label paste "Werkpunt" niet in een halve kaart. -->
                             <div v-if="kleuren" class="pp-blokjes" :aria-label="niveauVoor(c.rating)?.label ?? 'Nog geen'">
                                 <span
                                     v-for="(n, i) in STANDAARD_NIVEAUS"
@@ -480,6 +565,7 @@ const upgradeTekst = computed(() => {
                                     class="pp-blokje"
                                     :style="i <= niveauIndex(c.rating) ? { background: kleurVoor(c.rating) } : undefined"
                                 ></span>
+                                <span class="pp-stat-kleur" :style="{ color: kleurVoor(c.rating) }">{{ niveauVoor(c.rating)?.label ?? '-' }}</span>
                             </div>
                             <div v-else class="pp-balk">
                                 <div class="pp-balk-vulling" :style="{ width: balk(c.rating) }"></div>
@@ -489,7 +575,7 @@ const upgradeTekst = computed(() => {
 
                     <p v-else class="pp-leeg">Zodra het eerste rapport binnen is, komt deze kaart tot leven.</p>
 
-                    <div class="pp-xp">
+                    <div v-if="!inzet" class="pp-xp">
                         <div class="pp-xp-regel">
                             <span class="pp-xp-label">XP</span>
                             <span class="pp-xp-cijfer tabular">{{ card.level.xp }}</span>
@@ -503,7 +589,7 @@ const upgradeTekst = computed(() => {
                     <div class="pp-voet">
                         <p class="pp-voet-regel">
                             {{ card.season_label ?? 'Seizoen ' + card.season }}
-                            <template v-if="card.overall !== null"> &middot; Level {{ card.level.label }}</template>
+                            <template v-if="card.overall !== null || inzet"> &middot; Level {{ card.level.label }}</template>
                         </p>
                         <p v-if="card.school || card.card_number" class="pp-school">
                             <template v-if="card.school">{{ card.school }}</template>
@@ -519,7 +605,7 @@ const upgradeTekst = computed(() => {
         <div class="pp-acties">
             <button type="button" class="pp-actie" @click="uitlegOpen = true">
                 <CircleHelp class="size-4" aria-hidden="true" />
-                {{ kleuren ? 'Hoe werkt mijn kaart?' : 'Hoe werkt mijn rating?' }}
+                {{ kleuren || inzet ? 'Hoe werkt mijn kaart?' : 'Hoe werkt mijn rating?' }}
             </button>
             <button v-if="heeftAchterkant" type="button" class="pp-actie" :aria-pressed="kant === 'achter'" @click="draai">
                 <RotateCw class="size-4" aria-hidden="true" />
@@ -1013,9 +1099,15 @@ const upgradeTekst = computed(() => {
 
 .pp-blokjes {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+    align-items: center;
     gap: 0.15rem;
     margin-top: 0.3rem;
+}
+
+.pp-blokjes .pp-stat-kleur {
+    margin-left: 0.3rem;
+    font-size: 0.6875rem;
 }
 
 .pp-blokje {
@@ -1030,6 +1122,82 @@ const upgradeTekst = computed(() => {
     font-size: 0.8rem;
     font-weight: 800;
     white-space: nowrap;
+}
+
+/* ---------- De inzetkaart ---------- */
+/* Het level groot linksboven, in het metaal van het frame: dat is wat groeit. */
+.pp-level-groot {
+    max-width: 10rem;
+    font-size: 2.125rem;
+    font-weight: 900;
+    letter-spacing: -0.01em;
+    line-height: 0.95;
+    text-transform: uppercase;
+    background: var(--pp-metaal);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.8));
+}
+
+.pp-inzet {
+    position: relative;
+    margin-top: 0.85rem;
+}
+
+.pp-balk-inzet {
+    height: 0.55rem;
+    margin-top: 0.4rem;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.pp-balk-inzet .pp-balk-vulling {
+    background: var(--pp-metaal);
+}
+
+.pp-inzet-tekst {
+    margin-top: 0.4rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--pp-tekst);
+}
+
+.pp-inzet-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.4rem;
+    margin-top: 0.8rem;
+}
+
+.pp-inzet-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    min-width: 0;
+    padding: 0.5rem 0.25rem;
+    border-radius: 0.6rem;
+    background: rgba(255, 255, 255, 0.05);
+    box-shadow: 0 0 0 1px var(--pp-tier-zacht) inset;
+    color: var(--pp-tier);
+}
+
+.pp-inzet-getal {
+    font-size: 1.375rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--pp-tekst);
+}
+
+.pp-inzet-label {
+    max-width: 100%;
+    font-size: 0.5625rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-align: center;
+    text-transform: uppercase;
+    color: var(--pp-tekst-zacht);
+    overflow-wrap: anywhere;
 }
 
 /* Het grote cijfer als kleur: kleiner dan een getal, want het is een woord. */

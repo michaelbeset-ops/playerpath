@@ -66,13 +66,13 @@ class FamilyDashboard
                     'first_name' => $speler->first_name,
                     'photo' => $speler->photo_url,
                     'position' => $speler->position->label(),
-                    'overall' => $speler->overall_rating,
+                    'overall' => \App\Support\Rating\RatingSettings::for($speler->school)->usesEffort() ? null : $speler->overall_rating,
                     'level' => $level['key'],
                     'level_label' => $level['label'],
                     'xp' => $level['xp'],
                     'xp_progress' => $level['progress'],
                     'next_level' => $level['next']['label'] ?? null,
-                    'growth' => $this->groei($speler),
+                    'growth' => \App\Support\Rating\RatingSettings::for($speler->school)->usesEffort() ? null : $this->groei($speler),
                     'report_count' => $speler->reports()->count(),
                 ];
             })

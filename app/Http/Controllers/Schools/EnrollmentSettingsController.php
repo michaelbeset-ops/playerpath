@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Schools;
 
 use App\Actions\Onboarding\RemoveDemoData;
+use App\Actions\Schools\ChangeCardMode;
 use App\Enums\BillingType;
 use App\Enums\Feature;
 use App\Enums\OfferingStatus;
@@ -20,6 +21,7 @@ use App\Support\Features\Features;
 use App\Support\Money\Money;
 use App\Support\Onboarding\OnboardingState;
 use App\Support\Rating\AgeCategory;
+use App\Support\Rating\RatingSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -119,6 +121,8 @@ class EnrollmentSettingsController extends Controller
                 'expires_on' => $rij->expires_at->format('d-m-Y'), 'sent_count' => $rij->sent_count,
             ]),
             'invitationDays' => (int) ($school->invitation_valid_days ?: 14),
+            // De spelerskaart: wat de school koos, of anders de aanbevolen inzetkaart.
+            'cardMode' => $school->rating_settings['card_mode'] ?? RatingSettings::INZET,
         ]);
     }
 
@@ -150,6 +154,16 @@ class EnrollmentSettingsController extends Controller
         // schrijft rechtstreeks weg en heeft hier verder niets te bewaren.
         if ($sleutel === 'school') {
             $this->schoolgegevens($request, $school);
+
+            return $this->volgende($request, $school, $stap);
+        }
+
+        if ($sleutel === 'kaart') {
+            $data = $request->validate([
+                'card_mode' => ['required', Rule::in([RatingSettings::PRESTATIE, RatingSettings::INZET])],
+            ], ['card_mode.required' => 'Kies een spelerskaart.']);
+
+            app(ChangeCardMode::class)->handle($school, $data['card_mode']);
 
             return $this->volgende($request, $school, $stap);
         }
@@ -497,6 +511,7 @@ class EnrollmentSettingsController extends Controller
             'annuleren' => ['Annuleren', 'Wat er terugkomt bij annuleren of ziekte'],
             'kortingen' => ['Kortingen', 'Gezin, vroegboek, volume en codes'],
             'formulier' => ['Formulier', 'Wachtlijst, verplichte velden, toestemmingen'],
+            'kaart' => ['Spelerskaart', 'Een kaart met ratings, of een kaart die inzet beloont'],
             'groepen' => ['Groepen', 'In welke groepen je traint, met leeftijdscategorie'],
             'trainers' => ['Trainers', 'Wie er training geeft - ze krijgen een uitnodiging'],
         ];

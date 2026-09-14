@@ -10,6 +10,7 @@ use App\Models\Report;
 use App\Models\Training;
 use App\Support\Goals\GoalProgress;
 use App\Support\PlayerCard\CalculatePlayerCard;
+use App\Support\Rating\RatingSettings;
 use App\Support\Reports\ReportOutcome;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -62,6 +63,11 @@ class TrainingReportController extends Controller
     public function show(Request $request, Training $training): Response|RedirectResponse
     {
         $this->authorize('recordAttendance', $training);
+
+        // Met de inzetkaart geeft de trainer na de training inzetpunten, geen cijfers.
+        if (RatingSettings::for($request->user()->school)->usesEffort()) {
+            return redirect()->route('trainings.effort.show', $training);
+        }
 
         $user = $request->user();
         $spelers = $this->spelers($training, $request);
@@ -174,9 +180,13 @@ class TrainingReportController extends Controller
      * De sessie wordt hier leeggehaald, zodat een tweede ronde bij dezelfde
      * training niet de resultaten van de eerste erbij toont.
      */
-    public function summary(Request $request, Training $training): Response
+    public function summary(Request $request, Training $training): Response|RedirectResponse
     {
         $this->authorize('recordAttendance', $training);
+
+        if (RatingSettings::for($request->user()->school)->usesEffort()) {
+            return redirect()->route('trainings.effort.summary', $training);
+        }
 
         $verzameld = $request->session()->pull($this->sleutel($training), []);
 

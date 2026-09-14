@@ -3,11 +3,13 @@
 namespace App\Support\Trainings;
 
 use App\Enums\Feature;
+use App\Models\EffortRating;
 use App\Models\Player;
 use App\Models\Report;
 use App\Models\Training;
 use App\Models\User;
 use App\Support\Features\Features;
+use App\Support\Rating\RatingSettings;
 use Illuminate\Support\Collection;
 
 /**
@@ -120,8 +122,10 @@ class ReportPrompts
     protected function beschrijf(Training $training): array
     {
         $spelers = $training->expectedPlayers();
+        // Inzetkaart: gedaan is afwezig gemeld of inzetpunten gekregen.
+        $inzet = RatingSettings::for($training->school)->usesEffort();
 
-        $gedaan = Report::query()
+        $gedaan = $inzet ? EffortRating::doneFor($training) : Report::query()
             ->whereIn('player_id', $spelers->pluck('id'))
             ->whereDate('reported_on', $training->starts_at->toDateString())
             ->pluck('player_id')
@@ -139,7 +143,8 @@ class ReportPrompts
             'id' => $training->id,
             // Eén tik naar de snelle invulflow: alle spelers van deze training
             // achter elkaar. Dat is waarom dit blok er staat.
-            'href' => '/trainings/'.$training->id.'/rapporten',
+            'href' => '/trainings/'.$training->id.($inzet ? '/inzet' : '/rapporten'),
+            'mode' => $inzet ? 'inzet' : 'rapport',
             'group' => $training->label(),
             'time' => $training->starts_at->format('H:i').' - '.$training->ends_at->format('H:i'),
             'date' => $training->starts_at->translatedFormat('l j F'),

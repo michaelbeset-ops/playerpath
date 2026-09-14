@@ -45,6 +45,15 @@ const props = defineProps<SpelerDashboardData>();
 const kop = computed(() => {
     const groei = props.quarter.growth;
 
+    // De inzetkaart: geen groei in cijfers, wel wat je verdiende.
+    if (props.card.card_mode === 'inzet') {
+        const punten = props.card.effort?.points ?? props.card.level.xp;
+
+        return punten > 0
+            ? { toon: 'goed', tekst: `${punten} punten verdiend dit seizoen 🎉`, sub: 'Komen, hard werken en goed luisteren: zo groeit je kaart. Punten gaan nooit omlaag.' }
+            : { toon: 'rustig', tekst: 'Je eerste training levert je eerste punten op', sub: 'Iedereen begint gelijk. Wie traint, groeit.' };
+    }
+
     if (!props.hasEnoughData || groei === null) {
         return {
             toon: 'rustig',
@@ -122,13 +131,13 @@ const { kleuren } = useGrading();
             <!-- 1. Mijn kaart. Dit is waar een kind voor komt. -->
             <section>
                 <div class="theme-donker overflow-hidden rounded-3xl bg-background p-4 text-foreground sm:p-8">
-                    <CardGlow :level="card.overall === null ? 'geen' : card.level.key">
+                    <CardGlow :level="card.overall === null && card.card_mode !== 'inzet' ? 'geen' : card.level.key">
                         <!-- Zonder foto staat de knop op de kaart zelf; die brengt je naar het fotovak op de kaartpagina. -->
                         <PlayerCardVisual
                             :card="card"
                             :photo-href="card.photo ? null : kaartHref + '#foto'"
                             audience="gezin"
-                            :shareable="card.overall !== null"
+                            :shareable="card.overall !== null || card.card_mode === 'inzet'"
                             @share="deel"
                         />
                     </CardGlow>
@@ -137,7 +146,7 @@ const { kleuren } = useGrading();
                          zonder cijfers, en dat leest als "er is niets". Eén
                          motiverende regel eronder zegt dat er iets komt en
                          wanneer - dat is het verschil tussen leeg en beginnend. -->
-                    <p v-if="card.overall === null" class="mx-auto mt-5 max-w-xs text-center text-sm text-muted-foreground">
+                    <p v-if="card.overall === null && card.card_mode !== 'inzet'" class="mx-auto mt-5 max-w-xs text-center text-sm text-muted-foreground">
                         Na je eerste training vult je trainer je rapport in, en verschijnt hier jouw kaart met je cijfers.
                     </p>
 

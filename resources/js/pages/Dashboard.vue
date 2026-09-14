@@ -90,6 +90,9 @@ const rollen = computed(() => page.props.auth.roles ?? []);
 const voornaam = computed(() => (page.props.auth.user?.name ?? '').split(' ')[0]);
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' }];
+
+// De inzetkaart: na de training inzet geven in plaats van een rapport.
+const { inzet: inzetKaart } = useGrading();
 </script>
 
 <template>
@@ -141,11 +144,11 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Dashboard', href: '/dashboard' 
                      cijfers een half scherm naar beneden. -->
                         <div class="order-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap lg:order-1">
                             <Link
-                                href="/reports"
+                                :href="inzetKaart ? '/trainings/mijn' : '/reports'"
                                 class="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-primary px-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 sm:justify-start sm:px-4"
                             >
                                 <ClipboardList class="size-4" />
-                                Rapport invullen
+                                {{ inzetKaart ? 'Inzet geven' : 'Rapport invullen' }}
                             </Link>
 
                             <!-- Voor wie zelf voor de groep staat: waar moet ik zijn.

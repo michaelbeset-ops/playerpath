@@ -16,7 +16,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 /**
- * Beoordelen in kleuren: standaard aan, geen getal bij ouders, en onder de
+ * Beoordelen in kleuren (een keuze bij de prestatiekaart): geen getal bij ouders, en onder de
  * motorkap rekent alles gewoon door.
  */
 class GradingTest extends TestCase
@@ -41,11 +41,27 @@ class GradingTest extends TestCase
         $this->eigenaar->assignRole(Role::Eigenaar->value);
 
         $this->speler = Player::factory()->for($this->school)->keeper()->create();
+
+        // Deze school beoordeelt in kleuren; de standaard is cijfers.
+        $this->school->forceFill(['rating_settings' => ['grading' => 'kleuren']])->save();
     }
 
-    public function test_kleuren_is_de_standaard_en_de_grenzen_kloppen(): void
+    /** @return array<string, mixed> */
+    protected function kaartInstellingen(string $grading): array
     {
-        $this->assertSame(Grade::KLEUREN, Grade::mode($this->school));
+        return [
+            'grading' => $grading,
+            'attendance_points' => 10,
+            'effort_levels' => [['label' => 'Goed bezig', 'points' => 5], ['label' => 'Hard gewerkt', 'points' => 10], ['label' => 'Uitblinker', 'points' => 15]],
+            'attitude_levels' => [['label' => 'Luistert goed', 'points' => 5], ['label' => 'Top houding', 'points' => 10], ['label' => 'Voorbeeld', 'points' => 15]],
+            'progress_levels' => [['label' => 'Werkpunt', 'color' => 'rood'], ['label' => 'Op weg', 'color' => 'oranje'], ['label' => 'Goed', 'color' => 'groen'], ['label' => 'Sterk', 'color' => 'blauw']],
+        ];
+    }
+
+    public function test_cijfers_is_de_standaard_kleuren_een_keuze_en_de_grenzen_kloppen(): void
+    {
+        $this->assertSame(Grade::CIJFERS, Grade::mode(School::factory()->create()));
+        $this->assertSame(Grade::KLEUREN, Grade::mode($this->school->fresh()));
 
         $this->assertNull(Grade::forRating(null));
         $this->assertSame('rood', Grade::forRating(40)['key']);
@@ -95,7 +111,7 @@ class GradingTest extends TestCase
 
     public function test_de_eigenaar_kiest_cijfers_en_een_trainer_mag_dat_niet(): void
     {
-        $this->actingAs($this->eigenaar)->post('/seizoen/beoordelen', ['mode' => 'cijfers'])->assertRedirect()->assertSessionHas('status');
+        $this->actingAs($this->eigenaar)->patch('/instellingen/spelerskaart', $this->kaartInstellingen('cijfers'))->assertRedirect()->assertSessionHas('status');
 
         $this->assertSame(Grade::CIJFERS, Grade::mode($this->school->fresh()));
 
@@ -109,8 +125,8 @@ class GradingTest extends TestCase
 
         $trainer = User::factory()->for($this->school)->create();
         $trainer->assignRole(Role::Trainer->value);
-        $this->actingAs($trainer)->post('/seizoen/beoordelen', ['mode' => 'kleuren'])->assertForbidden();
+        $this->actingAs($trainer)->patch('/instellingen/spelerskaart', $this->kaartInstellingen('kleuren'))->assertForbidden();
 
-        $this->actingAs($this->eigenaar)->post('/seizoen/beoordelen', ['mode' => 'sterren'])->assertSessionHasErrors('mode');
+        $this->actingAs($this->eigenaar)->patch('/instellingen/spelerskaart', $this->kaartInstellingen('sterren'))->assertSessionHasErrors('grading');
     }
 }

@@ -19,7 +19,7 @@ defineProps<{ card: Kaart }>();
 
     <div class="theme-donker flex min-h-svh flex-col items-center justify-center bg-background p-4 text-foreground">
         <div class="w-full max-w-sm">
-            <CardGlow :level="card.overall === null ? 'geen' : card.level.key">
+            <CardGlow :level="card.overall === null && card.card_mode !== 'inzet' ? 'geen' : card.level.key">
                 <PlayerCardVisual :card="card" :shareable="false" />
             </CardGlow>
 

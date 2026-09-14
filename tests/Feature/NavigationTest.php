@@ -162,7 +162,7 @@ class NavigationTest extends TestCase
             '/dashboard',
             '/calendar', '/trainings', '/trainings/mijn',
             '/clients', '/groups', '/enrollments',
-            '/reports', '/mijlpalen',
+            '/reports', '/instellingen/spelerskaart', '/mijlpalen',
             '/payments', '/subscriptions', '/aanbod', '/exports',
             '/announcements', '/announcements/verjaardagen',
             '/staff', '/beschikbaarheid', '/personeel/beschikbaarheid', '/locaties', '/instellingen/inschrijven', '/seizoen', '/branding', '/verantwoording', '/settings/profile', '/help',

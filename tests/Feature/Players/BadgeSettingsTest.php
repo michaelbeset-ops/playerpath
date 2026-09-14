@@ -47,7 +47,9 @@ class BadgeSettingsTest extends TestCase
 
         $this->assertCount(4, $badges);
         $this->assertSame(['eerste_rapport', 'groei', 'doel_gehaald', 'aanwezig_vijf'], array_column($badges, 'key'));
-        $this->assertCount(9, PlayerBadges::catalogue());
+        // Vijftien bestaan er; bij de prestatiekaart gaan er negen over rapporten en aanwezigheid.
+        $this->assertCount(15, PlayerBadges::catalogue());
+        $this->assertCount(9, PlayerBadges::catalogueFor('prestatie'));
     }
 
     public function test_de_eigenaar_kiest_de_mijlpalen_voor_iedereen_en_per_categorie(): void

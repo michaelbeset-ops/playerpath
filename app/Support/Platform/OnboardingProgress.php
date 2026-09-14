@@ -51,7 +51,8 @@ class OnboardingProgress
             'group' => $this->bestaat(Group::class, $school),
             'player' => $this->bestaat(Player::class, $school),
             'training' => $this->bestaat(Training::class, $school),
-            'report' => $this->bestaat(Report::class, $school),
+            // Een rapport, of bij de inzetkaart de eerste inzetpunten.
+            'report' => $this->bestaat(Report::class, $school) || $this->bestaat(\App\Models\EffortRating::class, $school),
             'guardian' => $this->heeftRol($school, Role::Ouder),
             'product' => $this->bestaat(Product::class, $school),
         ];

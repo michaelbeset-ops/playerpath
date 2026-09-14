@@ -2,6 +2,7 @@
 
 namespace App\Support\Dashboard;
 
+use App\Support\Rating\RatingSettings;
 use App\Enums\Role;
 use App\Models\Group;
 use App\Models\Invitation;
@@ -140,7 +141,16 @@ class SetupChecklist
                 'action' => 'Training inplannen',
                 'done' => Training::query()->real()->exists(),
             ],
-            [
+            RatingSettings::for($school)->usesEffort() ? [
+                'key' => 'report',
+                // Bij de inzetkaart is het eerste moment de eerste inzetpunten.
+                'highlight' => true,
+                'title' => 'Geef je eerste inzetpunten',
+                'body' => 'Na een training tik je per kind aan of het er was, hoe hard het werkte en hoe het luisterde. Dan groeit de kaart, en zien ouders wat er gebeurt.',
+                'href' => '/trainings/mijn',
+                'action' => 'Inzet geven',
+                'done' => \App\Models\EffortRating::query()->real()->exists(),
+            ] : [
                 'key' => 'report',
                 // Het moment waar alles op draait, en dus als enige gemarkeerd.
                 'highlight' => true,

@@ -234,6 +234,12 @@ class Training extends Model
             ->withTimestamps();
     }
 
+    /** De inzetpunten bij deze training (inzetkaart). */
+    public function effortRatings(): HasMany
+    {
+        return $this->hasMany(EffortRating::class);
+    }
+
     public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class);

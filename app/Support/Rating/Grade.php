@@ -89,6 +89,14 @@ final class Grade
      */
     public static function share(?School $school): array
     {
-        return ['mode' => self::mode($school), 'levels' => self::NIVEAUS];
+        $instellingen = RatingSettings::for($school);
+
+        return [
+            'mode' => self::mode($school),
+            'levels' => self::NIVEAUS,
+            // Welke kaart, en de kleurenschaal van de voortgang per cursus.
+            'card' => $instellingen->cardMode(),
+            'progress' => $instellingen->progressLevels(),
+        ];
     }
 }

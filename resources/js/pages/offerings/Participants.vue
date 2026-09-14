@@ -21,6 +21,8 @@ interface Deelnemer {
 }
 
 const props = defineProps<{
+    /** Inzetkaart: begin- en eindniveau per kind bij deze cursus. */
+    courseProgress?: boolean;
     product: {
         id: number;
         name: string;
@@ -108,12 +110,21 @@ const haalVanLijst = (deelnemer: Deelnemer) => {
                     </p>
                 </div>
 
-                <Link
-                    :href="'/aanbod/' + product.id + '/edit'"
-                    class="inline-flex h-11 items-center rounded-xl border border-border bg-card px-4 text-sm font-medium shadow-sm transition hover:border-primary"
-                >
-                    Bewerken
-                </Link>
+                <div class="flex flex-wrap gap-2">
+                    <Link
+                        v-if="courseProgress"
+                        :href="'/aanbod/' + product.id + '/voortgang'"
+                        class="inline-flex h-11 items-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
+                    >
+                        Niveaus per kind
+                    </Link>
+                    <Link
+                        :href="'/aanbod/' + product.id + '/edit'"
+                        class="inline-flex h-11 items-center rounded-xl border border-border bg-card px-4 text-sm font-medium shadow-sm transition hover:border-primary"
+                    >
+                        Bewerken
+                    </Link>
+                </div>
             </div>
 
             <!-- Hoe vol het zit. Zonder capaciteit is er geen grens, en dan

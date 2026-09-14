@@ -25,6 +25,20 @@ export const STANDAARD_NIVEAUS: Niveau[] = [
     { key: 'blauw', label: 'Top', from: 85, score: 9.2 },
 ];
 
+/** Een niveau op de voortgangsschaal van de inzetkaart (instelbaar per school). */
+export interface VoortgangNiveau {
+    key: string;
+    label: string;
+    color: string;
+}
+
+export const STANDAARD_VOORTGANG: VoortgangNiveau[] = [
+    { key: 'n1', label: 'Werkpunt', color: 'rood' },
+    { key: 'n2', label: 'Op weg', color: 'oranje' },
+    { key: 'n3', label: 'Goed', color: 'groen' },
+    { key: 'n4', label: 'Sterk', color: 'blauw' },
+];
+
 /** De kleur bij een kaartwaarde (0-100). */
 export function niveauVoor(rating: number | null | undefined, niveaus: Niveau[] = STANDAARD_NIVEAUS): Niveau | null {
     if (rating === null || rating === undefined) {
@@ -49,13 +63,21 @@ export const kleurVan = (key: string | undefined | null, alpha = 1) => (key ? `h
 export function useGrading(override?: () => string | undefined) {
     const page = usePage();
 
-    const gedeeld = computed(() => (page.props as { grading?: { mode: string; levels: Niveau[] } | null }).grading ?? null);
+    const gedeeld = computed(
+        () => (page.props as { grading?: { mode: string; levels: Niveau[]; card?: string; progress?: VoortgangNiveau[] } | null }).grading ?? null,
+    );
 
     const kleuren = computed(() => (override?.() ?? gedeeld.value?.mode ?? 'kleuren') === 'kleuren');
     const niveaus = computed<Niveau[]>(() => gedeeld.value?.levels ?? STANDAARD_NIVEAUS);
 
+    /** De inzetkaart: geen cijfers, punten voor inzet. */
+    const inzet = computed(() => gedeeld.value?.card === 'inzet');
+    const voortgang = computed<VoortgangNiveau[]>(() => gedeeld.value?.progress ?? STANDAARD_VOORTGANG);
+
     return {
         kleuren,
+        inzet,
+        voortgang,
         niveaus,
         niveauVoor: (rating: number | null | undefined) => niveauVoor(rating, niveaus.value),
     };

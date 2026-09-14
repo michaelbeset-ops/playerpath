@@ -171,6 +171,9 @@ class ProgressAndNotificationTest extends TestCase
     {
         $ouder = $this->ouderVan($this->speler);
 
+        // Een school die in kleuren beoordeelt.
+        $this->school->forceFill(['rating_settings' => ['grading' => 'kleuren']])->save();
+
         $this->rapporteer(8);
 
         $this->assertSame(1, $ouder->unreadNotifications()->count());
@@ -183,7 +186,7 @@ class ProgressAndNotificationTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('notifications/Index')
                 ->count('notifications', 1)
-                // In kleuren (de standaard) geen getal in de melding, wel de kleur.
+                // In kleuren geen getal in de melding, wel de kleur.
                 ->where('notifications.0.overall_rating', null)
                 ->where('notifications.0.grade', 'Goed')
                 ->where('notifications.0.read', false)

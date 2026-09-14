@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import InputError from '@/components/InputError.vue';
+import CardVariantChoice from '@/components/cards/CardVariantChoice.vue';
 import EnrollmentFlow from '@/components/onboarding/EnrollmentFlow.vue';
 import EnrollmentPreview from '@/components/onboarding/EnrollmentPreview.vue';
 import InviteForm, { type Uitnodiging } from '@/components/onboarding/InviteForm.vue';
@@ -64,6 +65,7 @@ const props = defineProps<{
     ageCategories: string[];
     invitations: Uitnodiging[];
     invitationDays: number;
+    cardMode: 'prestatie' | 'inzet';
 }>();
 
 const huidige = computed(() => props.steps[props.step - 1]);
@@ -143,6 +145,8 @@ const form = useForm(
                         stackable: s.discounts.stackable as boolean,
                     }
                   : props.step === 8
+                    ? { card_mode: props.cardMode as string }
+                    : props.step === 9
                     ? {
                           // Wat er al is, plus een lege regel om mee te beginnen.
                           groups: [
@@ -150,7 +154,7 @@ const form = useForm(
                               ...(props.groups.length ? [] : [{ name: '', age_category: '' }]),
                           ] as { name: string; age_category: string }[],
                       }
-                    : props.step === 9
+                    : props.step === 10
                       ? {}
                       : {
                             waitlist: s.capacity.waitlist as boolean,
@@ -340,7 +344,7 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
     <Head :title="huidige.title + ' - Inschrijven en betalen'" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <div class="mx-auto w-full p-4 pb-28" :class="step === 2 ? 'max-w-5xl' : 'max-w-2xl'">
+        <div class="mx-auto w-full p-4 pb-28" :class="step === 2 ? 'max-w-5xl' : step === 8 ? 'max-w-3xl' : 'max-w-2xl'">
             <!-- Waar je bent. Zes bolletjes, de huidige groen, gedane met een vinkje. -->
             <div class="flex items-center justify-between gap-2">
                 <p class="text-sm text-muted-foreground">Stap {{ step }} van {{ steps.length }}</p>
@@ -1177,8 +1181,25 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                         />
                     </section>
                 </template>
-                <!-- ================= 8. Groepen ================= -->
+                <!-- ================= 8. Spelerskaart ================= -->
                 <template v-else-if="step === 8">
+                    <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
+                        <p class="font-medium">Hoe laten jullie de ontwikkeling van spelers zien?</p>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            Veel voetbal- en keepersscholen willen bewust niet met cijfers werken, omdat kinderen zich dan met elkaar gaan vergelijken. Kies de
+                            kaart die bij jullie past. Rapportinvoer, kaart, voortgang en overzichten gaan vanzelf mee.
+                        </p>
+                    </section>
+
+                    <CardVariantChoice v-model="f.card_mode" />
+
+                    <p class="text-xs text-muted-foreground">
+                        Twijfel je? Kies de inzetkaart. Wisselen kan later bij Mijn bedrijf &rarr; Spelerskaart; er gaat dan niets verloren.
+                    </p>
+                </template>
+
+                <!-- ================= 9. Groepen ================= -->
+                <template v-else-if="step === 9">
                     <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
                         <p class="font-medium">In welke groepen train je?</p>
                         <p class="mt-1 text-sm text-muted-foreground">
@@ -1228,8 +1249,8 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                     </section>
                 </template>
 
-                <!-- ================= 9. Trainers ================= -->
-                <template v-else-if="step === 9">
+                <!-- ================= 10. Trainers ================= -->
+                <template v-else-if="step === 10">
                     <InviteForm role="trainer" :invitations="invitations" :valid-days="invitationDays" title="Wie geeft er training?" />
 
                     <p class="text-xs text-muted-foreground">

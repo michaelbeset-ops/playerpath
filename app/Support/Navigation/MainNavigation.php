@@ -2,6 +2,7 @@
 
 namespace App\Support\Navigation;
 
+use App\Support\Rating\RatingSettings;
 use App\Enums\Feature;
 use App\Models\Announcement;
 use App\Models\AvailabilityException;
@@ -72,6 +73,9 @@ class MainNavigation
             return $this->trainerGroups($user);
         }
 
+        // Met de inzetkaart geen rapporten met cijfers in het menu.
+        $inzet = RatingSettings::for($user->school)->usesEffort();
+
         return [
             [
                 'title' => 'Dashboard', 'icon' => 'dashboard', 'href' => '/dashboard', 'allowed' => true, 'items' => [],
@@ -98,7 +102,8 @@ class MainNavigation
             ],
             [
                 'title' => 'Ontwikkeling', 'icon' => 'reports', 'items' => [
-                    ['title' => 'Rapporten', 'href' => '/reports', 'icon' => 'reports', 'allowed' => $user->can('viewAny', Report::class), 'feature' => Feature::Ontwikkeling],
+                    ['title' => 'Rapporten', 'href' => '/reports', 'icon' => 'reports', 'allowed' => ! $inzet && $user->can('viewAny', Report::class), 'feature' => Feature::Ontwikkeling],
+                    ['title' => 'Spelerskaart', 'href' => '/instellingen/spelerskaart', 'icon' => 'badges', 'allowed' => $user->isEigenaar(), 'feature' => Feature::Ontwikkeling],
                     ['title' => 'Mijlpalen', 'href' => '/mijlpalen', 'icon' => 'badges', 'allowed' => $user->isEigenaar(), 'feature' => Feature::Ontwikkeling],
                 ],
             ],
@@ -245,7 +250,7 @@ class MainNavigation
                 'title' => 'Spelers', 'icon' => 'players', 'href' => '/clients', 'allowed' => $user->can('viewAny', Player::class), 'items' => [],
             ],
             [
-                'title' => 'Rapporten', 'icon' => 'reports', 'href' => '/reports', 'allowed' => $user->can('viewAny', Report::class), 'feature' => Feature::Ontwikkeling, 'items' => [],
+                'title' => 'Rapporten', 'icon' => 'reports', 'href' => '/reports', 'allowed' => ! RatingSettings::for($user->school)->usesEffort() && $user->can('viewAny', Report::class), 'feature' => Feature::Ontwikkeling, 'items' => [],
             ],
             [
                 'title' => 'Verjaardagen', 'icon' => 'birthdays', 'href' => '/verjaardagen', 'allowed' => true, 'items' => [],

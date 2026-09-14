@@ -4,6 +4,8 @@ namespace App\Support\PlayerCard;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\GoalStatus;
+use App\Models\CourseAssessment;
+use App\Models\EffortRating;
 use App\Models\Player;
 use App\Models\Report;
 use App\Models\XpEvent;
@@ -26,8 +28,12 @@ class PlayerTimeline
     public function for(Player $player, int $limit = 20): array
     {
         $items = [];
+        $settings = RatingSettings::for($player->school);
+        // Bij de inzetkaart geen rapporten en cijfers in de tijdlijn, wel de
+        // uitblinkers na een training en het begin en eind van een cursus.
+        $inzet = $settings->usesEffort();
 
-        $rapporten = $player->reports()->with(['scores', 'trainer'])->orderBy('reported_on')->orderBy('id')->get();
+        $rapporten = $inzet ? collect() : $player->reports()->with(['scores', 'trainer'])->orderBy('reported_on')->orderBy('id')->get();
 
         $vorigGemiddelde = null;
 
@@ -73,7 +79,7 @@ class PlayerTimeline
                 'date' => $training->starts_at->format('d-m-Y'),
                 'sort' => $training->starts_at->format('Y-m-d').'-1',
                 'title' => "{$mijlpaal} trainingen aanwezig",
-                'body' => 'Mooie opkomst - dat zie je terug in je cijfers.',
+                'body' => $inzet ? 'Mooie opkomst - elke training levert punten op.' : 'Mooie opkomst - dat zie je terug in je cijfers.',
                 'value' => null,
                 'delta' => null,
             ];
@@ -113,6 +119,10 @@ class PlayerTimeline
             ];
         }
 
+        if ($inzet) {
+            $items = array_merge($items, $this->inzetMomenten($player, $settings), $this->cursusMomenten($player));
+        }
+
         $items = array_merge($items, $this->levelMomenten($player));
 
         usort($items, fn ($a, $b) => strcmp($b['sort'], $a['sort']));
@@ -145,7 +155,9 @@ class PlayerTimeline
         $totaal = 0;
         $volgende = 0;
 
-        foreach ($player->xpEvents()->orderBy('occurred_on')->orderBy('id')->get() as $event) {
+        $uitgesloten = RatingSettings::for($player->school)->excludedXpSources();
+
+        foreach ($player->xpEvents()->whereNotIn('source', $uitgesloten)->orderBy('occurred_on')->orderBy('id')->get() as $event) {
             /** @var XpEvent $event */
             $totaal += $event->points;
 
@@ -168,6 +180,60 @@ class PlayerTimeline
         }
 
         return $items;
+    }
+
+    /**
+     * De trainingen waarin een kind de hoogste trede van inzet of houding
+     * kreeg. Niet elke training: "je was er" is geen nieuws, uitblinken wel.
+     *
+     * @return list<array<string, mixed>>
+     */
+    protected function inzetMomenten(Player $player, RatingSettings $settings): array
+    {
+        $inzet = collect($settings->effortLevels())->last();
+        $houding = collect($settings->attitudeLevels())->last();
+
+        return $player->effortRatings()
+            ->with('training')
+            ->get()
+            ->filter(fn (EffortRating $r) => $r->training !== null
+                && (($inzet !== null && $r->effort === $inzet['key']) || ($houding !== null && $r->attitude === $houding['key'])))
+            ->map(fn (EffortRating $r) => [
+                'type' => 'inzet',
+                'date' => $r->training->starts_at->format('d-m-Y'),
+                'sort' => $r->training->starts_at->format('Y-m-d').'-2',
+                'title' => implode(' en ', array_filter([
+                    $inzet !== null && $r->effort === $inzet['key'] ? $inzet['label'] : null,
+                    $houding !== null && $r->attitude === $houding['key'] ? $houding['label'] : null,
+                ])).' bij '.$r->training->label(),
+                'body' => $r->note,
+                'value' => null,
+                'delta' => null,
+            ])
+            ->values()
+            ->all();
+    }
+
+    /** @return list<array<string, mixed>> */
+    protected function cursusMomenten(Player $player): array
+    {
+        return $player->courseAssessments()
+            ->with('product')
+            ->get()
+            ->filter(fn (CourseAssessment $a) => $a->product !== null)
+            ->map(fn (CourseAssessment $a) => [
+                'type' => 'cursus',
+                'date' => $a->assessed_on->format('d-m-Y'),
+                'sort' => $a->assessed_on->format('Y-m-d').'-3',
+                'title' => ($a->moment === CourseAssessment::BEGIN ? 'Beginniveau vastgelegd: ' : 'Eindverslag: ').$a->product->name,
+                'body' => $a->note ?? ($a->moment === CourseAssessment::BEGIN
+                    ? 'De trainer weet nu waar je begint. Aan het eind zie je hoe ver je bent gekomen.'
+                    : 'Bekijk bij Voortgang waar je beter in bent geworden.'),
+                'value' => null,
+                'delta' => null,
+            ])
+            ->values()
+            ->all();
     }
 
     /**

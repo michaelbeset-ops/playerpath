@@ -62,6 +62,9 @@
         --grade-oranje: 26 90% 38%;
         --grade-groen: 143 75% 29%;
         --grade-blauw: 214 80% 42%;
+        /* Extra kleuren voor de voortgangsschaal van de inzetkaart. */
+        --grade-geel: 42 92% 31%;
+        --grade-paars: 271 62% 46%;
         --success: 143 75% 32%;
         --success-foreground: 0 0% 100%;
 
@@ -134,6 +137,8 @@
         --grade-oranje: 30 95% 58%;
         --grade-groen: 143 75% 51%;
         --grade-blauw: 212 92% 66%;
+        --grade-geel: 48 96% 58%;
+        --grade-paars: 270 85% 74%;
         --success: 143 75% 51%;
         --success-foreground: 225 12% 6%;
 

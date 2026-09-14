@@ -115,6 +115,18 @@ class Player extends Model
         return $this->hasMany(PlayerBadge::class);
     }
 
+    /** Inzetpunten per training (inzetkaart). */
+    public function effortRatings(): HasMany
+    {
+        return $this->hasMany(EffortRating::class);
+    }
+
+    /** Begin- en eindniveau per cursus (inzetkaart). */
+    public function courseAssessments(): HasMany
+    {
+        return $this->hasMany(CourseAssessment::class);
+    }
+
     public function attendances(): HasMany
     {
         return $this->hasMany(Attendance::class);

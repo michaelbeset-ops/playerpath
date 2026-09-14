@@ -17,6 +17,8 @@ export interface Herinnering {
     id: number;
     /** Naar de snelle invulflow van deze training. */
     href: string;
+    /** Rapporten met cijfers, of inzet geven (inzetkaart). */
+    mode?: 'rapport' | 'inzet';
     group: string;
     time: string;
     date: string;
@@ -37,13 +39,13 @@ defineProps<{ prompts: Herinnering[] }>();
             v-for="training in prompts"
             :key="training.id"
             class="rounded-2xl border border-primary/40 bg-primary/5 p-4 sm:p-5"
-            :aria-label="'Rapporten invullen voor ' + training.group"
+            :aria-label="(training.mode === 'inzet' ? 'Inzet geven voor ' : 'Rapporten invullen voor ') + training.group"
         >
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div class="min-w-0">
                     <p class="flex items-center gap-2 font-medium">
                         <ClipboardList class="size-4 shrink-0 text-primary" />
-                        Rapporten invullen &middot; {{ training.group }}
+                        {{ training.mode === 'inzet' ? 'Inzet geven' : 'Rapporten invullen' }} &middot; {{ training.group }}
                     </p>
                     <p class="mt-1 text-xs text-muted-foreground first-letter:uppercase">
                         {{ training.date }} &middot; {{ training.time }}
@@ -90,7 +92,7 @@ defineProps<{ prompts: Herinnering[] }>();
                     <span
                         v-if="speler.done"
                         class="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
-                        title="Rapport ingevuld"
+                        :title="training.mode === 'inzet' ? 'Gedaan' : 'Rapport ingevuld'"
                     >
                         <Check class="size-3.5" />
                     </span>

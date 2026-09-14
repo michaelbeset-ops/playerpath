@@ -85,7 +85,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('seizoen', [SeasonController::class, 'edit'])->name('season.edit');
     Route::post('seizoen', [SeasonController::class, 'update'])->name('season.update');
     Route::post('seizoen/afsluiten', [SeasonController::class, 'close'])->name('season.close');
-    Route::post('seizoen/beoordelen', [SeasonController::class, 'grading'])->name('season.grading');
+    // De spelerskaart: prestatie of inzet, en de knoppen die erbij horen.
+    Route::get('instellingen/spelerskaart', [\App\Http\Controllers\Schools\CardSettingsController::class, 'edit'])->name('card-settings.edit');
+    Route::patch('instellingen/spelerskaart', [\App\Http\Controllers\Schools\CardSettingsController::class, 'update'])->name('card-settings.update');
+    Route::post('instellingen/spelerskaart/variant', [\App\Http\Controllers\Schools\CardSettingsController::class, 'mode'])->name('card-settings.mode');
 
     Route::get('branding', [BrandingController::class, 'edit'])->name('branding.edit');
     Route::post('branding', [BrandingController::class, 'update'])->name('branding.update');

@@ -35,6 +35,15 @@ use App\Models\School;
  */
 class RatingSettings
 {
+    /** Variant A: de kaart met een rating per categorie en overall. */
+    public const PRESTATIE = 'prestatie';
+
+    /** Variant B: de kaart als beloning voor inzet, zonder cijfers. */
+    public const INZET = 'inzet';
+
+    /** De kleuren waaruit een school haar voortgangsniveaus kiest. */
+    public const KLEURENPALET = ['rood', 'oranje', 'geel', 'groen', 'blauw', 'paars'];
+
     /** @var array<string, mixed> */
     public const STANDAARD = [
         'xp_attendance' => 10,
@@ -52,10 +61,33 @@ class RatingSettings
         ],
         // Het seizoen loopt van augustus tot juli, zoals in het Nederlandse voetbal.
         'season_start_month' => 8,
-        // Wat ouders, spelers en trainers zien: vier kleuren of cijfers. Zie Grade.
-        // Kleuren als standaard: de meeste voetbal- en keepersscholen willen een
-        // kind niet met een getal beoordelen.
-        'grading' => 'kleuren',
+        // Bij de prestatiekaart: tonen de rapporten cijfers of vier kleuren. Zie Grade.
+        'grading' => 'cijfers',
+        // Welke kaart de school gebruikt. De prestatiekaart is de standaard voor
+        // wie niets koos (zo bleef het voor bestaande scholen zoals het was); de
+        // wizard zet de inzetkaart voor, als aanbevolen keuze.
+        'card_mode' => 'prestatie',
+        // Inzetkaart: de treden die een trainer na de training aantikt, met hun
+        // punten. Geen negatieve trede; niets kiezen is nul extra. Drie of vier.
+        // Een training vol inzet levert 10 + 15 + 15 = 40 op; twaalf weken zo
+        // is goud, twaalf weken gewoon goed meedoen (10 + 10 + 5) is zilver.
+        'effort_levels' => [
+            ['key' => 'n1', 'label' => 'Goed bezig', 'points' => 5],
+            ['key' => 'n2', 'label' => 'Hard gewerkt', 'points' => 10],
+            ['key' => 'n3', 'label' => 'Uitblinker', 'points' => 15],
+        ],
+        'attitude_levels' => [
+            ['key' => 'n1', 'label' => 'Luistert goed', 'points' => 5],
+            ['key' => 'n2', 'label' => 'Top houding', 'points' => 10],
+            ['key' => 'n3', 'label' => 'Voorbeeld voor de groep', 'points' => 15],
+        ],
+        // Inzetkaart: de kleurenschaal voor het begin- en eindniveau per cursus.
+        'progress_levels' => [
+            ['key' => 'n1', 'label' => 'Werkpunt', 'color' => 'rood'],
+            ['key' => 'n2', 'label' => 'Op weg', 'color' => 'oranje'],
+            ['key' => 'n3', 'label' => 'Goed', 'color' => 'groen'],
+            ['key' => 'n4', 'label' => 'Sterk', 'color' => 'blauw'],
+        ],
     ];
 
     /** @var array<string, mixed> */
@@ -100,6 +132,104 @@ class RatingSettings
     public function grading(): string
     {
         return $this->waarden['grading'] === Grade::CIJFERS ? Grade::CIJFERS : Grade::KLEUREN;
+    }
+
+    /** Welke kaart: 'prestatie' (ratings) of 'inzet' (punten voor inzet). */
+    public function cardMode(): string
+    {
+        return $this->waarden['card_mode'] === self::INZET ? self::INZET : self::PRESTATIE;
+    }
+
+    public function usesEffort(): bool
+    {
+        return $this->cardMode() === self::INZET;
+    }
+
+    /** @return list<array{key: string, label: string, points: int}> */
+    public function effortLevels(): array
+    {
+        return self::treden($this->waarden['effort_levels'], self::STANDAARD['effort_levels']);
+    }
+
+    /** @return list<array{key: string, label: string, points: int}> */
+    public function attitudeLevels(): array
+    {
+        return self::treden($this->waarden['attitude_levels'], self::STANDAARD['attitude_levels']);
+    }
+
+    /** @return array{key: string, label: string, points: int}|null */
+    public function effortLevel(?string $key): ?array
+    {
+        return $key === null ? null : collect($this->effortLevels())->firstWhere('key', $key);
+    }
+
+    /** @return array{key: string, label: string, points: int}|null */
+    public function attitudeLevel(?string $key): ?array
+    {
+        return $key === null ? null : collect($this->attitudeLevels())->firstWhere('key', $key);
+    }
+
+    /** @return list<array{key: string, label: string, color: string}> */
+    public function progressLevels(): array
+    {
+        $uit = [];
+
+        foreach (is_array($this->waarden['progress_levels']) ? array_values($this->waarden['progress_levels']) : [] as $niveau) {
+            $label = trim((string) ($niveau['label'] ?? ''));
+
+            if ($label === '') {
+                continue;
+            }
+
+            $uit[] = [
+                'key' => 'n'.(count($uit) + 1),
+                'label' => $label,
+                'color' => in_array($niveau['color'] ?? null, self::KLEURENPALET, true) ? $niveau['color'] : 'groen',
+            ];
+        }
+
+        return count($uit) >= 2 ? $uit : self::STANDAARD['progress_levels'];
+    }
+
+    /**
+     * De XP-bronnen die bij deze kaart niet meetellen.
+     *
+     * Alle boekingen blijven bestaan; de som op de speler telt alleen wat bij
+     * de kaart hoort. Zo begint bij de inzetkaart iedereen gelijk, ook als er
+     * eerder rapporten waren, en is terugwisselen de stand van vroeger.
+     *
+     * @return list<string>
+     */
+    public function excludedXpSources(): array
+    {
+        return $this->usesEffort() ? ['report', 'growth'] : ['inzet'];
+    }
+
+    /**
+     * Treden opschonen: een naam is verplicht, de sleutels volgen de volgorde.
+     *
+     * @param  list<array{key: string, label: string, points: int}>  $standaard
+     * @return list<array{key: string, label: string, points: int}>
+     */
+    protected static function treden(mixed $lijst, array $standaard): array
+    {
+        if (! is_array($lijst)) {
+            return $standaard;
+        }
+
+        $uit = [];
+
+        foreach (array_values($lijst) as $trede) {
+            $label = trim((string) ($trede['label'] ?? ''));
+
+            if ($label === '') {
+                continue;
+            }
+
+            $uit[] = ['key' => 'n'.(count($uit) + 1), 'label' => $label, 'points' => max(0, (int) ($trede['points'] ?? 0))];
+        }
+
+        return count($uit) >= 2 ? $uit : $standaard;
     }
 
     public function seasonStartMonth(): int

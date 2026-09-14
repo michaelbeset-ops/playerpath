@@ -65,6 +65,8 @@ class ParticipantController extends Controller
                 'location' => $product->location,
                 'group_id' => $product->group?->id,
             ],
+            // Inzetkaart: bij een cursus of blok het begin- en eindniveau per kind.
+            'courseProgress' => \App\Support\Rating\RatingSettings::for($request->user()->school)->usesEffort() && \App\Support\Progress\CourseProgress::eligible($product),
             'paidCount' => $deelnames
                 ->where('status', ParticipationStatus::Confirmed)
                 ->filter(fn (Participation $d) => $this->betaalstand($d)['payment_status'] === 'paid')

@@ -2,7 +2,9 @@
 
 namespace App\Support\PlayerCard;
 
+use App\Enums\AttendanceStatus;
 use App\Enums\ReportCategory;
+use App\Models\EffortRating;
 use App\Models\Goal;
 use App\Models\Player;
 use App\Models\PlayerCardSeason;
@@ -11,6 +13,7 @@ use App\Support\Goals\GoalProgress;
 use App\Support\Rating\AgeCategory;
 use App\Support\Rating\Grade;
 use App\Support\Rating\RatingEngine;
+use App\Support\Rating\RatingSettings;
 use App\Support\Rating\SchoolSeason;
 use Illuminate\Support\Facades\Storage;
 
@@ -42,8 +45,15 @@ class PlayerCardPresenter
         $settings = $this->engine->settingsFor($player);
         $categorie = $player->age_category ?? $this->engine->categoryFor($player);
         $seizoen = SchoolSeason::for($player->school);
+        // De inzetkaart: geen overall, geen categorieën, geen rapporten op de
+        // kaart - ook niet onzichtbaar in de gegevens. Wel level, punten en
+        // hoe vaak het kind er was.
+        $inzet = $settings->usesEffort();
 
         return [
+            'card_mode' => $settings->cardMode(),
+            'effort' => $inzet ? $this->inzet($player, $settings) : null,
+            'recent_trainings' => $inzet && ! $public ? $this->recenteTrainingen($player, $settings) : null,
             'first_name' => $player->first_name,
             // Publiek: alleen de initiaal. De achternaam hoort niet op internet.
             'last_name' => $public ? mb_substr($player->last_name, 0, 1).'.' : $player->last_name,
@@ -61,19 +71,19 @@ class PlayerCardPresenter
                 'label' => AgeCategory::describe($categorie),
             ],
             'moved_up' => $this->engine->recentlyMovedUp($player),
-            'overall' => $player->overall_rating,
+            'overall' => $inzet ? null : $player->overall_rating,
             // Kleuren of cijfers, en de kleur bij het overall-cijfer. De kaart
             // is ook publiek te zien, zonder gedeelde props: daarom reist het
             // hier mee in plaats van alleen via de gedeelde prop.
             'grading' => Grade::mode($player->school),
-            'grade' => Grade::forRating($player->overall_rating),
+            'grade' => $inzet ? null : Grade::forRating($player->overall_rating),
             // Per categorie ook wat het laatste rapport veranderde: een pijltje
             // op de kaart maakt groei voelbaar in plaats van alleen een stand.
-            'categories' => array_map(
+            'categories' => $inzet ? [] : array_map(
                 fn (array $c) => [...$c, 'grade' => Grade::forRating($c['rating'])],
                 $this->metDeltas($player),
             ),
-            'report_count' => $player->reports()->count(),
+            'report_count' => $inzet ? 0 : $player->reports()->count(),
             'level' => $this->badges->level($player),
             'levels' => array_map(
                 fn (array $level) => ['key' => $level['key'], 'label' => $level['label'], 'xp' => $level['xp']],
@@ -96,8 +106,8 @@ class PlayerCardPresenter
             // De achterkant van de kaart: de laatste rapporten en het doel.
             // Publiek zonder trainer en toelichting, en zonder doel: dat is
             // de opmerking van een trainer over een kind, niet voor internet.
-            'recent_reports' => $this->recenteRapporten($player, $public),
-            'goal' => $public ? null : $this->doel($player),
+            'recent_reports' => $inzet ? null : $this->recenteRapporten($player, $public),
+            'goal' => $public || $inzet ? null : $this->doel($player),
         ];
     }
 
@@ -148,6 +158,60 @@ class PlayerCardPresenter
                     'archived' => true,
                 ];
             })
+            ->values()
+            ->all();
+    }
+
+    /**
+     * De inzetkaart: punten, trainingen en uitblinkers in dit seizoen.
+     *
+     * @return array<string, mixed>
+     */
+    protected function inzet(Player $player, RatingSettings $settings): array
+    {
+        $vanaf = SchoolSeason::for($player->school)->xpFrom;
+        $inSeizoen = fn ($query) => $vanaf === null
+            ? $query
+            : $query->whereHas('training', fn ($t) => $t->whereDate('starts_at', '>=', $vanaf->toDateString()));
+
+        $hoogste = collect($settings->effortLevels())->last();
+
+        return [
+            'points' => (int) $player->xp,
+            'trainings' => $inSeizoen($player->attendances()->where('status', AttendanceStatus::Present->value))->count(),
+            'standouts' => $hoogste === null ? 0 : $inSeizoen($player->effortRatings()->where('effort', $hoogste['key']))->count(),
+            'standout_label' => $hoogste['label'] ?? null,
+            // Voor de uitleg bij de kaart: wat een training kan opleveren.
+            'rules' => [
+                'attendance' => $settings->xpForAttendance(),
+                'effort' => $settings->effortLevels(),
+                'attitude' => $settings->attitudeLevels(),
+            ],
+        ];
+    }
+
+    /**
+     * De achterkant van de inzetkaart: de laatste drie trainingen met wat het
+     * kind verdiende.
+     *
+     * @return list<array<string, mixed>>
+     */
+    protected function recenteTrainingen(Player $player, RatingSettings $settings): array
+    {
+        return $player->effortRatings()
+            ->with('training')
+            ->get()
+            ->filter(fn (EffortRating $r) => $r->training !== null)
+            ->sortByDesc(fn (EffortRating $r) => $r->training->starts_at)
+            ->take(3)
+            ->map(fn (EffortRating $r) => [
+                'date' => $r->training->starts_at->format('d-m-Y'),
+                'label' => $r->training->label(),
+                'effort' => $settings->effortLevel($r->effort)['label'] ?? null,
+                'attitude' => $settings->attitudeLevel($r->attitude)['label'] ?? null,
+                'points' => $r->points() + $settings->xpForAttendance(),
+                'note' => $r->note,
+            ])
             ->values()
             ->all();
     }

@@ -2,6 +2,8 @@
 
 namespace App\Support\Exports;
 
+use App\Support\Rating\RatingSettings;
+use App\Support\Tenancy\Tenancy;
 use InvalidArgumentException;
 
 /**
@@ -18,13 +20,32 @@ class ExportRegistry
         TrainingsExport::class,
         AttendanceExport::class,
         ReportsExport::class,
+        EffortExport::class,
+        CourseProgressExport::class,
         FinancialExport::class,
+    ];
+
+    /**
+     * Overzichten die bij één soort spelerskaart horen. Een school met de
+     * inzetkaart heeft geen rapportcijfers om te exporteren, en andersom.
+     *
+     * @var array<class-string<Export>, string>
+     */
+    protected array $alleenBij = [
+        ReportsExport::class => RatingSettings::PRESTATIE,
+        EffortExport::class => RatingSettings::INZET,
+        CourseProgressExport::class => RatingSettings::INZET,
     ];
 
     /** @return list<Export> */
     public function all(): array
     {
-        return array_map(fn (string $klasse) => app($klasse), $this->exports);
+        $modus = RatingSettings::for(app(Tenancy::class)->school())->cardMode();
+
+        return array_values(array_map(
+            fn (string $klasse) => app($klasse),
+            array_filter($this->exports, fn (string $klasse) => ! isset($this->alleenBij[$klasse]) || $this->alleenBij[$klasse] === $modus),
+        ));
     }
 
     public function find(string $key): Export

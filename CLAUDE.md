@@ -671,8 +671,8 @@ onderwerpen (aanbod, innen, kortingen, wachtlijst, toestemmingen) stonden daar
 al; een aparte intake zou betekenen dat er twee plekken zijn waar je hetzelfde
 instelt. Achteraan staan **Groepen** (namen met leeftijdscategorie; wat er al
 is blijft staan) en **Trainers** (het gewone uitnodigingsformulier).
-`EnrollmentSettings::STAPPEN` telt daardoor **negen** stappen; stap 1, 8 en 9
-slaan niets in die klasse op, die schrijven naar de school, de groepen en de
+`EnrollmentSettings::STAPPEN` telt daardoor **tien** stappen; stap 1, 8 (de spelerskaart, zie hieronder), 9 en 10
+slaan niets in die klasse op, die schrijven naar de school, de kaartinstelling, de groepen en de
 uitnodigingen zelf.
 
 - **Stap 1 laat zien wat je kiest**: het logo en de kleur staan meteen in een
@@ -848,7 +848,7 @@ een afgevlakte lijn in plaats van wat de trainer die dag opschreef. Vanaf twee
 rapporten is er een grafiek; daarvoor niet.
 
 **Mijlpalen zijn instelbaar** (`Support\PlayerCard\BadgeSettings`, opgeslagen in
-`schools.rating_settings['badges']`): negen bestaan er, standaard staan er
+`schools.rating_settings['badges']`): vijftien bestaan er (zes horen alleen bij de inzetkaart), standaard staan er bij de prestatiekaart
 **vier** aan (eerste rapport, vijf keer aanwezig, vijf punten groei, doel
 gehaald). De eigenaar of trainer kiest op `/mijlpalen` welke gelden, voor alle
 spelers of per leeftijdscategorie; `PlayerBadges::for()` geeft alleen die.
@@ -987,6 +987,60 @@ het kind hoort hetzelfde te zien als elke speler, niet een tweede versie.
 - Zelfde regels als de deel-link: `X-Robots-Tag`, throttle, zoeken op token
   met `withoutScope()`. Alles daarna is gewoon de app, met de school uit
   het account en de policies van een speler.
+
+### Twee spelerskaarten: prestatie of inzet
+
+Veel voetbal- en keepersscholen willen bewust geen cijfers geven, omdat
+kinderen zich dan met elkaar gaan vergelijken. Daarom zijn er **twee
+spelerskaarten** en kiest de school er één (`RatingSettings::cardMode()`,
+`schools.rating_settings['card_mode']`):
+
+| | Prestatiekaart (`prestatie`) | Inzetkaart (`inzet`) |
+|---|---|---|
+| Na de training | rapport met cijfers per categorie | aanwezig, inzet en houding (tikken) |
+| Op de kaart | overall + zes categorieën | level groot, XP-balk, punten, trainingen |
+| XP uit | aanwezig, rapport, groei | aanwezig, inzetpunten |
+| Voortgang | grafieken uit rapporten | begin- en eindniveau per cursus, in kleuren |
+
+- **Kiezen gebeurt in de wizard** (stap 8, `CardVariantChoice.vue`, met beide
+  kaarten als echt voorbeeld naast elkaar; de inzetkaart staat voorgekozen als
+  aanbevolen) en later bij Mijn bedrijf → Spelerskaart
+  (`CardSettingsController`), met een waarschuwing vóór het wisselen. Wie niets
+  koos houdt de prestatiekaart: zo bleven bestaande scholen zoals ze waren.
+- **Wisselen verwijdert niets** (`Actions\Schools\ChangeCardMode`). Alle
+  XP-boekingen blijven; `RatingSettings::excludedXpSources()` bepaalt welke
+  bronnen meetellen en elke speler wordt opnieuw opgeteld. Zo begint bij de
+  inzetkaart iedereen gelijk, en is terugwisselen de stand van vroeger.
+- **De inzetkaart heeft ook in de gegevens geen cijfers.** De presenter zet
+  `overall`, `grade`, `categories`, `recent_reports` en `goal` leeg; wat niet in
+  de JSON zit kan ook niet naast een ander kind gelegd worden.
+- **Inzet geven** (`/trainings/{id}/inzet`, `EffortController`,
+  `Actions\Trainings\RecordEffort`): dezelfde flow als de snelle rapporten, kind
+  na kind. Aanwezig loopt via `RecordAttendance` (rittenkaart en XP op één
+  plek); afwezig ruimt de inzet van die training op. `effort_ratings` bewaart de
+  gekozen trede én de punten van toen. Treden zijn per school instelbaar (drie
+  of vier, naam en punten); **er is geen negatieve trede**, niets kiezen is nul
+  extra. Opnieuw opslaan vervangt, telt nooit dubbel.
+- **Alles beweegt mee op één vraag**, `usesEffort()`: de rapportflow en
+  `ReportPrompts` wijzen naar inzet (`EffortRating::doneFor` zegt wie klaar is),
+  het menu toont geen Rapporten, de startlijst vraagt om de eerste inzetpunten,
+  `ExportRegistry::$alleenBij` wisselt Rapporten voor Inzetpunten en Voortgang
+  per cursus, de tijdlijn toont uitblinkers en cursusmomenten, en de uitleg
+  ("Hoe werkt mijn kaart?", `CardFaq`) praat kindertaal: iedereen begint gelijk,
+  punten gaan nooit omlaag, genoeg punten maakt je kaart mooier.
+- **Mijlpalen horen bij een kaart**: `PlayerBadges::ALLEEN_PRESTATIE` en
+  `ALLEEN_INZET`, met `BadgeSettings::standardFor()` als standaard per kaart.
+- **Voortgang zonder cijfers** (`course_assessments`,
+  `Support\Progress\CourseProgress`, `/aanbod/{id}/voortgang`): per cursus of
+  blok (alleen aanbod met een begin en eind, `hasPeriod()`) per categorie een
+  begin- en eindniveau plus een verslag. De schaal is van de school: drie tot
+  vijf niveaus met naam en kleur uit `RatingSettings::KLEURENPALET`. Een niveau
+  wordt opgeslagen als positie met het aantal niveaus van toen (`scale`) en
+  teruggerekend, zodat een schaal aanpassen oude niveaus niet verschuift. Ouders
+  zien alleen de eigen lijn (`CourseProgressBlock.vue`), nooit andere kinderen.
+- **Kleuren of cijfers in het rapport** (`grading`) is een keuze binnen de
+  prestatiekaart, standaard cijfers, en staat nu ook bij Spelerskaart (niet meer
+  bij Seizoen).
 
 ### De spelerskaart als verzamelkaart
 

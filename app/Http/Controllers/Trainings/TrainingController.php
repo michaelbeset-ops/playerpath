@@ -206,6 +206,9 @@ class TrainingController extends Controller
                 'age_label' => $training->ageLabel(),
                 'audience_label' => $training->audience->label(),
             ],
+            // Inzetkaart: na de training inzet geven, en bij een cursus het begin- en eindniveau.
+            'effortFlow' => $mag && \App\Support\Rating\RatingSettings::for($user->school)->usesEffort(),
+            'course' => $mag && \App\Support\Rating\RatingSettings::for($user->school)->usesEffort() ? EffortController::cursus($training) : null,
             'players' => $spelers->values()->map(function (Player $speler) use ($aanwezigheid, $training) {
                 $aanmelding = $training->enrollments->firstWhere('player_id', $speler->id);
                 $los = $training->isLooseParticipant($speler->id);

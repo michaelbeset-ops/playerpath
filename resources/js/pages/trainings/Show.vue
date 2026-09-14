@@ -78,6 +78,10 @@ const props = defineProps<{
     enrollments: Aanmelding[];
     enrollUrl: string | null;
     can: { record: boolean; manage: boolean; delete: boolean };
+    /** Inzetkaart: na de training inzet geven. */
+    effortFlow?: boolean;
+    /** Hoort deze training bij een cursus: daar staan begin- en eindniveau. */
+    course?: { id: number; name: string } | null;
 }>();
 
 const aanvragen = computed(() => props.enrollments.filter((e) => e.status === 'requested'));
@@ -481,6 +485,32 @@ const verwijderen = () => {
                 <p v-if="!aanvragen.length && !wachtlijst.length" class="mt-3 text-sm text-muted-foreground">
                     Geen aanvragen of wachtlijst. Wie los is ingeschreven staat hieronder bij de aanwezigheid.
                 </p>
+            </div>
+
+            <!-- Inzetkaart: na de training per kind aanwezig, inzet en houding -->
+            <div
+                v-if="effortFlow && players.length"
+                class="mt-6 flex flex-col gap-3 rounded-xl border border-primary/30 bg-primary/5 p-4 sm:flex-row sm:items-center"
+            >
+                <p class="min-w-0 flex-1 text-sm">
+                    <span class="font-medium">Na de training:</span>
+                    <span class="text-muted-foreground"> per kind aanwezig, inzet en houding. Een paar tikken per kind.</span>
+                </p>
+                <div class="flex flex-col gap-2 sm:flex-row">
+                    <Link
+                        :href="'/trainings/' + training.id + '/inzet'"
+                        class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                    >
+                        Inzet geven
+                    </Link>
+                    <Link
+                        v-if="course"
+                        :href="'/aanbod/' + course.id + '/voortgang'"
+                        class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium transition hover:border-primary"
+                    >
+                        Niveaus cursus
+                    </Link>
+                </div>
             </div>
 
             <!-- Aanwezigheid afvinken (trainer) -->

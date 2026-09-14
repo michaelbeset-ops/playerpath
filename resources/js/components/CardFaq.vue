@@ -18,6 +18,9 @@ const open = defineModel<boolean>('open', { default: false });
 const naam = computed(() => props.card.first_name);
 const levels = computed(() => props.card.levels.filter((l) => l.xp > 0));
 const laatste = computed(() => props.card.levels[props.card.levels.length - 1]?.label ?? 'het hoogste level');
+
+// De inzetkaart: dezelfde vragen, andere antwoorden.
+const inzet = computed(() => props.card.card_mode === 'inzet');
 </script>
 
 <template>
@@ -32,8 +35,14 @@ const laatste = computed(() => props.card.levels[props.card.levels.length - 1]?.
                 <div class="rounded-xl border border-border bg-card p-4">
                     <p class="font-semibold">Wanneer stijgt mijn kaart?</p>
                     <p class="mt-1 text-muted-foreground">
-                        Na elke training vinkt de trainer af wie er was en vult hij een rapport in. Aanwezig zijn en een rapport leveren allebei punten
-                        (XP) op, en groei in het rapport levert extra punten op. Die punten zie je op de balk onder de kaart.
+                        <template v-if="inzet">
+                            Na elke training geeft je trainer je punten: omdat je er was, voor hoe hard je werkte en voor hoe goed je luisterde. Die punten
+                            (XP) zie je op de balk onder de kaart. Hoe goed je al bent telt niet mee, alleen je inzet.
+                        </template>
+                        <template v-else>
+                            Na elke training vinkt de trainer af wie er was en vult hij een rapport in. Aanwezig zijn en een rapport leveren allebei punten
+                            (XP) op, en groei in het rapport levert extra punten op. Die punten zie je op de balk onder de kaart.
+                        </template>
                     </p>
                 </div>
 
@@ -53,16 +62,27 @@ const laatste = computed(() => props.card.levels[props.card.levels.length - 1]?.
                     <p class="mt-1 text-muted-foreground">
                         <template v-if="card.season_ends">Dit seizoen ({{ card.season_label }}) loopt tot {{ card.season_ends }}.</template>
                         <template v-else>Aan het eind van het seizoen of blok</template>
-                        krijg je je eindkaart: de kaart zoals hij dan is, met je cijfers en je level, bewaard bij Mijn kaarten. Daarna beginnen de punten
-                        opnieuw en werk je naar de volgende kaart toe. Je cijfers blijven staan.
+                        <template v-if="inzet">
+                            krijg je je eindkaart: de kaart zoals hij dan is, met je level, bewaard bij Mijn kaarten. Daarna begint iedereen weer gelijk en
+                            werk je naar de volgende kaart toe.
+                        </template>
+                        <template v-else>
+                            krijg je je eindkaart: de kaart zoals hij dan is, met je cijfers en je level, bewaard bij Mijn kaarten. Daarna beginnen de punten
+                            opnieuw en werk je naar de volgende kaart toe. Je cijfers blijven staan.
+                        </template>
                     </p>
                 </div>
 
                 <div class="rounded-xl border border-border bg-card p-4">
                     <p class="font-semibold">Kan mijn kaart ook zakken?</p>
                     <p class="mt-1 text-muted-foreground">
-                        Punten raak je niet kwijt door een mindere training. De cijfers per categorie kunnen wel dalen als een rapport lager
-                        uitvalt, want die zeggen hoe je er nu voor staat. Het hoogste level is {{ laatste }}.
+                        <template v-if="inzet">
+                            Nee. Punten gaan nooit omlaag en er bestaat geen onvoldoende. Wie traint, groeit. Het hoogste level is {{ laatste }}.
+                        </template>
+                        <template v-else>
+                            Punten raak je niet kwijt door een mindere training. De cijfers per categorie kunnen wel dalen als een rapport lager
+                            uitvalt, want die zeggen hoe je er nu voor staat. Het hoogste level is {{ laatste }}.
+                        </template>
                     </p>
                 </div>
             </div>

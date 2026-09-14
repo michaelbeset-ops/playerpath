@@ -8,8 +8,10 @@ use App\Support\Goals\GoalProgress;
 use App\Support\PlayerCard\PlayerCardPresenter;
 use App\Support\PlayerCard\PlayerProgress;
 use App\Support\PlayerCard\PlayerTimeline;
+use App\Support\Progress\CourseProgress;
 use App\Support\Progress\NextStep;
 use App\Support\Rating\RatingEngine;
+use App\Support\Rating\RatingSettings;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -28,13 +30,15 @@ class PlayerProgressController extends Controller
         protected PlayerCardPresenter $presenter,
         protected NextStep $nextStep,
         protected RatingEngine $engine,
+        protected CourseProgress $courses,
     ) {}
 
     public function show(Player $player): Response
     {
         $this->authorize('view', $player);
 
-        $doelen = $this->goals->forPlayer($player);
+        $inzet = RatingSettings::for($player->school)->usesEffort();
+        $doelen = $inzet ? [] : $this->goals->forPlayer($player);
 
         return Inertia::render('players/Progress', [
             'player' => [
@@ -52,7 +56,9 @@ class PlayerProgressController extends Controller
             'timeline' => $this->timeline->for($player),
             'quarter' => $this->timeline->quarterSummary($player),
             'goals' => $doelen,
-            'nextStep' => $this->nextStep->for($player, $doelen),
+            'nextStep' => $inzet ? null : $this->nextStep->for($player, $doelen),
+            // De inzetkaart: waar het kind beter in werd, per cursus in kleuren.
+            'courses' => $inzet ? $this->courses->forPlayer($player) : [],
             'canReport' => auth()->user()->can('createReport', $player),
         ]);
     }

@@ -106,7 +106,9 @@ export async function renderKaartStory(card: Kaart, opties: KaartAfbeeldingOptie
     canvas.height = HOOGTE;
     const ctx = canvas.getContext('2d')!;
 
-    const tier = card.overall === null ? 'geen' : card.level.key;
+    // De inzetkaart heeft geen cijfers: het level en wat het kind verzamelde.
+    const inzet = card.card_mode === 'inzet';
+    const tier = card.overall === null && !inzet ? 'geen' : card.level.key;
     const tint = TINTEN[tier] ?? TINTEN.geen;
 
     // --- Achtergrond: de donkere kant van het merk, met een zachte gloed in de levelkleur ---
@@ -225,7 +227,11 @@ export async function renderKaartStory(card: Kaart, opties: KaartAfbeeldingOptie
     ctx.fillStyle = '#f1f5f9';
     const kleuren = card.grading === 'kleuren';
 
-    if (kleuren) {
+    if (inzet) {
+        ctx.fillStyle = tint.accent;
+        ctx.font = `900 96px ${FONT}`;
+        ctx.fillText(passend(ctx, card.level.label.toUpperCase(), 520), bx + 44, by + 150);
+    } else if (kleuren) {
         // Geen getal op een afbeelding die de groepsapp in gaat: de kleur.
         const niveau = niveauVoor(card.overall);
         ctx.fillStyle = niveau ? KAARTKLEUR[niveau.key] : '#94a3b8';
@@ -272,7 +278,31 @@ export async function renderKaartStory(card: Kaart, opties: KaartAfbeeldingOptie
     const kolomB = (bw - 96 - 40) / 2;
     const rijH = 118;
 
-    if (card.overall !== null) {
+    if (inzet) {
+        const e = card.effort ?? { points: card.level.xp, trainings: 0, standouts: 0, standout_label: null };
+        const tegels = [
+            { getal: e.points, label: 'INZETPUNTEN' },
+            { getal: e.trainings, label: 'TRAININGEN' },
+            { getal: e.standouts, label: (e.standout_label ?? 'Uitblinker').toUpperCase() },
+        ];
+        const tegelB = (bw - 96 - 48) / 3;
+
+        tegels.forEach((t, i) => {
+            const x = bx + 48 + i * (tegelB + 24);
+            afgerond(ctx, x, y - 20, tegelB, 300, 24);
+            ctx.fillStyle = '#171a1d';
+            ctx.fill();
+            ctx.textAlign = 'center';
+            ctx.fillStyle = tint.accent;
+            ctx.font = `800 110px ${FONT}`;
+            ctx.fillText(String(t.getal), x + tegelB / 2, y + 150);
+            ctx.fillStyle = '#99a3b3';
+            ctx.font = `700 26px ${FONT}`;
+            ctx.fillText(passend(ctx, t.label, tegelB - 24), x + tegelB / 2, y + 220);
+        });
+
+        y += rijH * 3 + 10;
+    } else if (card.overall !== null) {
         card.categories.forEach((c, i) => {
             const kolom = i % 2;
             const rij = Math.floor(i / 2);
@@ -347,11 +377,11 @@ export async function renderKaartStory(card: Kaart, opties: KaartAfbeeldingOptie
     ctx.fill();
 
     const upgrade =
-        card.overall === null
+        card.overall === null && !inzet
             ? 'Je eerste rapport zet de kaart aan'
             : card.level.next === null
               ? 'Het hoogste level bereikt'
-              : `Nog ${card.level.next.remaining} ${card.level.next.remaining === 1 ? 'punt' : 'punten'} tot je volgende upgrade`;
+              : `Nog ${card.level.next.remaining} ${card.level.next.remaining === 1 ? 'punt' : 'punten'} tot ${inzet ? card.level.next.label : 'je volgende upgrade'}`;
 
     ctx.textAlign = 'left';
     ctx.fillStyle = '#99a3b3';
@@ -363,7 +393,7 @@ export async function renderKaartStory(card: Kaart, opties: KaartAfbeeldingOptie
     ctx.fillStyle = '#99a3b3';
     ctx.font = `600 26px ${FONT}`;
     ctx.textAlign = 'left';
-    ctx.fillText((card.season_label ?? `Seizoen ${card.season}`) + (card.overall !== null ? `  ·  Level ${card.level.label}` : ''), bx + 48, voetY);
+    ctx.fillText((card.season_label ?? `Seizoen ${card.season}`) + (card.overall !== null || inzet ? `  ·  Level ${card.level.label}` : ''), bx + 48, voetY);
 
     const rechts = [card.school ? passend(ctx, card.school, 320) : null, card.card_number ?? null].filter(Boolean).join('  ·  ');
 

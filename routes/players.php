@@ -40,6 +40,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('trainings/{training}/rapporten', [TrainingReportController::class, 'show'])->name('trainings.reports.show');
         Route::post('trainings/{training}/rapporten/{player}', [TrainingReportController::class, 'store'])->name('trainings.reports.store');
 
+        // De inzetkaart: na de training per kind aanwezig, inzet en houding.
+        // "klaar" staat vóór de gewone route, net als bij de rapporten.
+        Route::get('trainings/{training}/inzet/klaar', [\App\Http\Controllers\Trainings\EffortController::class, 'summary'])->name('trainings.effort.summary');
+        Route::get('trainings/{training}/inzet', [\App\Http\Controllers\Trainings\EffortController::class, 'show'])->name('trainings.effort.show');
+        Route::post('trainings/{training}/inzet/{player}', [\App\Http\Controllers\Trainings\EffortController::class, 'store'])->name('trainings.effort.store');
+
+        // Begin- en eindniveau per cursus of blok, in kleuren.
+        Route::get('aanbod/{product}/voortgang', [\App\Http\Controllers\Offerings\CourseProgressController::class, 'index'])->name('offerings.progress');
+        Route::post('aanbod/{product}/voortgang/{player}', [\App\Http\Controllers\Offerings\CourseProgressController::class, 'store'])->name('offerings.progress.store');
+
         // Fase 5: groei over de tijd en de tijdlijn.
         Route::get('players/{player}/progress', [PlayerProgressController::class, 'show'])->name('players.progress');
 

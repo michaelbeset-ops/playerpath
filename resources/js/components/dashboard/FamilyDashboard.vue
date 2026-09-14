@@ -29,7 +29,7 @@ const levelRand: Record<string, string> = {
 };
 
 // Kleuren of cijfers: in kleuren geen getal en geen "+3" bij het kind.
-const { kleuren } = useGrading();
+const { kleuren, inzet } = useGrading();
 </script>
 
 <template>
@@ -136,7 +136,12 @@ const { kleuren } = useGrading();
                         </span>
 
                         <span class="shrink-0 text-right">
-                            <GradeChip :rating="kind.overall">
+                            <!-- Inzetkaart: de punten, geen cijfer -->
+                            <span v-if="inzet" class="block leading-none">
+                                <span class="tabular block text-2xl font-bold">{{ kind.xp }}</span>
+                                <span class="block text-[10px] font-medium uppercase tracking-wide text-muted-foreground">punten</span>
+                            </span>
+                            <GradeChip v-else :rating="kind.overall">
                                 <span class="tabular block text-2xl font-bold leading-none">{{ kind.overall ?? '-' }}</span>
                             </GradeChip>
                             <span

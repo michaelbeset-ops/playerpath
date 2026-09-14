@@ -4,6 +4,7 @@ namespace App\Support\PlayerCard;
 
 use App\Models\School;
 use App\Support\Rating\AgeCategory;
+use App\Support\Rating\RatingSettings;
 use Illuminate\Support\Str;
 
 /**
@@ -29,6 +30,15 @@ class BadgeSettings
     /** @var list<string> */
     public const STANDAARD = ['eerste_rapport', 'aanwezig_vijf', 'groei', 'doel_gehaald'];
 
+    /** @var list<string> De standaard bij de inzetkaart: alleen mijlpalen voor inzet. */
+    public const STANDAARD_INZET = ['eerste_inzet', 'aanwezig_vijf', 'doorzetter', 'luisteraar', 'topinzet', 'gouden_kaart'];
+
+    /** @return list<string> */
+    public static function standardFor(string $mode): array
+    {
+        return $mode === RatingSettings::INZET ? self::STANDAARD_INZET : self::STANDAARD;
+    }
+
     /** Voorvoegsel van een eigen mijlpaal, zodat hij nooit botst met de catalogus. */
     public const EIGEN = 'eigen_';
 
@@ -40,7 +50,7 @@ class BadgeSettings
         $opgeslagen = $school?->rating_settings['badges'] ?? [];
 
         $this->waarden = [
-            'default' => $this->schoon($opgeslagen['default'] ?? null) ?? self::STANDAARD,
+            'default' => $this->schoon($opgeslagen['default'] ?? null) ?? self::standardFor(RatingSettings::for($school)->cardMode()),
             'categories' => collect($opgeslagen['categories'] ?? [])
                 ->map(fn ($keys) => $this->schoon($keys))
                 ->filter()

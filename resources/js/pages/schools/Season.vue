@@ -7,8 +7,7 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { kleurVan, STANDAARD_NIVEAUS } from '@/lib/grade';
-import { CalendarRange, Flag, LoaderCircle, Medal, Palette } from 'lucide-vue-next';
+import { CalendarRange, Flag, LoaderCircle, Medal } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 
 /**
@@ -33,7 +32,6 @@ const props = defineProps<{
     players: number;
     archived: number;
     suggestion: string;
-    grading: 'kleuren' | 'cijfers';
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Seizoen', href: '/seizoen' }];
@@ -93,19 +91,6 @@ const sluitNu = () => {
 const voortgang = computed(() =>
     props.season.current_week && props.season.total_weeks ? Math.round((props.season.current_week / props.season.total_weeks) * 100) : 0,
 );
-
-// Beoordelen in kleuren of cijfers. Wisselen raakt geen enkel rapport.
-const beoordeling = ref(props.grading);
-const niveaus = STANDAARD_NIVEAUS;
-
-const kiesBeoordeling = (mode: 'kleuren' | 'cijfers') => {
-    if (mode === beoordeling.value) {
-        return;
-    }
-
-    beoordeling.value = mode;
-    router.post('/seizoen/beoordelen', { mode }, { preserveScroll: true });
-};
 </script>
 
 <template>
@@ -222,52 +207,6 @@ const kiesBeoordeling = (mode: 'kleuren' | 'cijfers') => {
                 </div>
             </form>
 
-            <!-- Hoe beoordelen jullie: kleuren of cijfers -->
-            <section class="mt-6 rounded-xl border border-border bg-card p-5 shadow-sm">
-                <p class="flex items-center gap-2 font-medium">
-                    <Palette class="size-4 text-primary" />
-                    Hoe beoordelen jullie?
-                </p>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    De spelerskaart blijft, met foto, level en mijlpalen. Hier kies je wat trainers invullen en wat ouders en kinderen zien. Wisselen
-                    kan altijd; er gaat geen rapport verloren.
-                </p>
-
-                <div class="mt-4 grid gap-3 sm:grid-cols-2">
-                    <button
-                        type="button"
-                        class="rounded-xl border-2 p-4 text-left transition"
-                        :class="beoordeling === 'kleuren' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'"
-                        :aria-pressed="beoordeling === 'kleuren'"
-                        @click="kiesBeoordeling('kleuren')"
-                    >
-                        <p class="font-semibold">In kleuren <span class="text-xs font-normal text-muted-foreground">(aanbevolen)</span></p>
-                        <p class="mt-2 flex flex-wrap gap-1.5">
-                            <span
-                                v-for="n in niveaus"
-                                :key="n.key"
-                                class="rounded-full px-2 py-0.5 text-xs font-semibold"
-                                :style="{ color: kleurVan(n.key), backgroundColor: kleurVan(n.key, 0.12) }"
-                                >{{ n.label }}</span
-                            >
-                        </p>
-                        <p class="mt-2 text-xs text-muted-foreground">Geen cijfers bij kinderen en ouders, dus ook geen onderling vergelijken.</p>
-                    </button>
-
-                    <button
-                        type="button"
-                        class="rounded-xl border-2 p-4 text-left transition"
-                        :class="beoordeling === 'cijfers' ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'"
-                        :aria-pressed="beoordeling === 'cijfers'"
-                        @click="kiesBeoordeling('cijfers')"
-                    >
-                        <p class="font-semibold">In cijfers</p>
-                        <p class="tabular mt-2 text-sm font-bold text-primary">7,4 &rarr; 74</p>
-                        <p class="mt-2 text-xs text-muted-foreground">Een cijfer van 1 tot 10 per onderdeel, en een rating op de kaart.</p>
-                    </button>
-                </div>
-            </section>
-
             <!-- Wat het betekent -->
             <section class="mt-6 rounded-xl border border-border bg-card p-5 shadow-sm">
                 <p class="flex items-center gap-2 font-medium">
@@ -275,7 +214,7 @@ const kiesBeoordeling = (mode: 'kleuren' | 'cijfers') => {
                     Zo werken de kaarten in een seizoen
                 </p>
                 <ul class="mt-3 space-y-2 text-sm text-muted-foreground">
-                    <li>Elke training en elk rapport levert punten op. De punten bepalen de kaart:</li>
+                    <li>Elke training levert punten op, en afhankelijk van jullie spelerskaart ook de inzet of het rapport. De punten bepalen de kaart:</li>
                     <li class="flex flex-wrap gap-2">
                         <span v-for="l in levels" :key="l.key" class="rounded-lg border border-border px-2.5 py-1 text-xs">
                             <span class="font-medium text-foreground">{{ l.label }}</span>
@@ -284,7 +223,7 @@ const kiesBeoordeling = (mode: 'kleuren' | 'cijfers') => {
                         </span>
                     </li>
                     <li>Aan het eind van het seizoen krijgt elke speler zijn eindkaart bij Mijn kaarten, en beginnen de punten opnieuw. Ouders en spelers krijgen daar bericht van.</li>
-                    <li>De cijfers per categorie en de rating gaan gewoon door: die groeien over seizoenen heen.</li>
+                    <li>Bij de prestatiekaart gaan de cijfers per categorie en de rating gewoon door: die groeien over seizoenen heen. Welke kaart jullie gebruiken kies je bij Spelerskaart.</li>
                 </ul>
             </section>
         </div>

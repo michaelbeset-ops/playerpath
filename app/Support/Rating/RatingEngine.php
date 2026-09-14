@@ -192,9 +192,12 @@ class RatingEngine
     public function recalculate(Player $player): int
     {
         $vanaf = SchoolSeason::for($player->school)->xpFrom;
+        // Prestatiekaart of inzetkaart: alleen de punten die bij die kaart horen.
+        $uitgesloten = $this->settingsFor($player)->excludedXpSources();
 
         $som = (int) XpEvent::query()
             ->where('player_id', $player->id)
+            ->whereNotIn('source', $uitgesloten)
             ->when($vanaf !== null, fn ($q) => $q->whereDate('occurred_on', '>=', $vanaf->toDateString()))
             ->sum('points');
 

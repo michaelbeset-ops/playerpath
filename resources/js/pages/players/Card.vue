@@ -191,12 +191,12 @@ const sticker = computed(() => (viering.value?.level.up ? 'NIEUW LEVEL' : groeiS
                 speler/ouder-kant van het merk. Zie CLAUDE.md hoofdstuk 4.
             -->
             <div class="theme-donker overflow-hidden rounded-3xl bg-background p-4 text-foreground sm:p-8" data-tour="player-card">
-                <CardGlow :level="vorigLevel ?? (player.overall_rating === null ? 'geen' : card.level.key)">
+                <CardGlow :level="vorigLevel ?? (player.overall_rating === null && card.card_mode !== 'inzet' ? 'geen' : card.level.key)">
                     <PlayerCardVisual
                         :card="kaartMetVoorbeeld"
                         :photo-action="canPhoto && !player.photo && !voorbeeldFoto"
                         :audience="canReport ? 'trainer' : 'gezin'"
-                        :shareable="share.can && player.overall_rating !== null"
+                        :shareable="share.can && (player.overall_rating !== null || card.card_mode === 'inzet')"
                         :display-level="vorigLevel"
                         :flash="flits"
                         @share="naarDelen"
@@ -204,7 +204,7 @@ const sticker = computed(() => (viering.value?.level.up ? 'NIEUW LEVEL' : groeiS
                     />
                 </CardGlow>
 
-                <p v-if="player.rated_at" class="mt-4 text-center text-xs text-muted-foreground">
+                <p v-if="player.rated_at && card.card_mode !== 'inzet'" class="mt-4 text-center text-xs text-muted-foreground">
                     Bijgewerkt op {{ player.rated_at }} &middot; gemiddelde van de laatste 3 rapporten
                 </p>
             </div>
