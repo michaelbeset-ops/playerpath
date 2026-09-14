@@ -790,6 +790,14 @@ die kan die twee dingen niet.
   "Welkom bij …" en heeft een eigen tekst voor een eigenaar. De knop
   "wachtwoord resetten" in platformbeheer blijft wel een reset-mail: daar
   vraag je er ook om.
+- **Aan een eigenaar schrijft PlayerPath, niet de school** (`Uitnodiging`,
+  en de wachtwoordmail in `FortifyServiceProvider`): ons logo, afzender
+  PlayerPath, geen antwoordadres van de school, ondertekend door
+  `MailBrand::PLATFORM_AFZENDER` ("Michael van PlayerPath") en met ons
+  telefoonnummer. Een eigenaar is klant van ons; zijn school bestaat net,
+  en "vraag Keepersschool Rob om een nieuwe uitnodiging" is voor de
+  eigenaar van Keepersschool Rob een doodlopende weg. Ouders en trainers
+  houden de mail van de school.
 - **Een wachtwoordlink is twee dagen geldig** (`auth.passwords.users.expire`,
   standaard 2880 minuten, `AUTH_PASSWORD_RESET_TOKEN_EXPIRE`), en eenmalig.
   Een uur was te kort voor iemand die door platformbeheer een link kreeg en

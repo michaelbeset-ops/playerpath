@@ -91,20 +91,27 @@ class FortifyServiceProvider extends ServiceProvider
                 default => $minuten.' minuten',
             };
 
+            // Een eigenaar is klant van PlayerPath, niet van zijn eigen school:
+            // die mail komt van ons en is door ons ondertekend. Een ouder of
+            // trainer kent de school, dus daar staat de school.
+            $vanPlatform = method_exists($notifiable, 'isEigenaar') && $notifiable->isEigenaar();
+            $afzender = $vanPlatform ? null : ($notifiable->school ?? null);
+            $account = $notifiable->school?->name;
+
             // Neutraal: deze mail gaat ook naar iemand die niet zelf op
             // "wachtwoord vergeten" drukte, maar door de school of platformbeheer
             // een nieuwe link kreeg. "Je hebt gevraagd" klopt dan niet.
-            return MailBrand::apply(new MailMessage, $notifiable->school ?? null)
+            return MailBrand::apply(new MailMessage, $afzender)
                 ->subject('Kies je wachtwoord')
                 ->greeting('Kies je wachtwoord')
-                ->line('Klik hieronder om een wachtwoord te kiezen voor je account'.($notifiable->school?->name ? ' bij '.$notifiable->school->name : '').'. Daarna log je meteen in.')
+                ->line('Klik hieronder om een wachtwoord te kiezen voor je account'.($account ? ' bij '.$account : '').'. Daarna log je meteen in.')
                 ->action('Wachtwoord kiezen', url(route('password.reset', [
                     'token' => $token,
                     'email' => $notifiable->getEmailForPasswordReset(),
                 ], absolute: false)))
                 ->line("Deze link is {$geldig} geldig en werkt één keer.")
                 ->line('Heb je hier niet om gevraagd? Dan hoef je niets te doen; je wachtwoord blijft zoals het was.')
-                ->salutation('Met vriendelijke groet, '.($notifiable->school?->name ?? config('app.name')));
+                ->salutation('Met vriendelijke groet, '.($vanPlatform ? MailBrand::PLATFORM_AFZENDER : ($afzender?->name ?? config('app.name'))));
         });
 
         VerifyEmail::toMailUsing(function (object $notifiable) {

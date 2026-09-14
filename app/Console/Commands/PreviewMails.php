@@ -192,10 +192,19 @@ class PreviewMails extends Command
         ]);
         $uitnodiging->forceFill(['token' => Invitation::nieuwToken()])->save();
 
+        // Een eigenaar krijgt zijn uitnodiging van PlayerPath, niet van de school.
+        $uitnodigingEigenaar = new Invitation([
+            'name' => 'Rob Jansen',
+            'email' => 'rob@voorbeeld.nl',
+            'role' => Role::Eigenaar->value,
+            'expires_at' => now()->addDays(14),
+        ]);
+        $uitnodigingEigenaar->forceFill(['token' => Invitation::nieuwToken()])->save();
+
         return compact(
             'school', 'eigenaar', 'ouder', 'speler', 'groep', 'training', 'aanbod',
             'order', 'rekening', 'inschrijving', 'rapport', 'doel', 'mededeling',
-            'losseAanmelding', 'uitnodiging',
+            'losseAanmelding', 'uitnodiging', 'uitnodigingEigenaar',
         );
     }
 
@@ -210,6 +219,7 @@ class PreviewMails extends Command
 
         return [
             'uitnodiging-ouder' => fn () => [new Notifications\Uitnodiging($w['uitnodiging']), $ouder],
+            'uitnodiging-eigenaar' => fn () => [new Notifications\Uitnodiging($w['uitnodigingEigenaar']), $eigenaar],
             'inschrijving-ontvangen' => fn () => [new Notifications\InschrijvingOntvangen([$w['inschrijving']], $w['order'], true), $ouder],
             'inschrijving-goedgekeurd' => fn () => [new Notifications\InschrijvingGoedgekeurd($w['speler'], $w['rekening']), $ouder],
             'inschrijving-geannuleerd-ouder' => fn () => [new Notifications\InschrijvingGeannuleerd($w['inschrijving'], false), $ouder],
@@ -234,6 +244,7 @@ class PreviewMails extends Command
             // Deze twee komen uit Laravel zelf, maar horen er net zo goed bij:
             // wachtwoord vergeten is de eerste mail die een schooleigenaar ziet.
             'wachtwoord-vergeten' => fn () => [new ResetPassword('voorbeeld-token'), $ouder],
+            'wachtwoord-eigenaar' => fn () => [new ResetPassword('voorbeeld-token'), $eigenaar],
             'email-bevestigen' => fn () => [new VerifyEmail, $ouder],
         ];
     }

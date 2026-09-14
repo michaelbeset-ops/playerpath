@@ -2,6 +2,7 @@
 
 namespace App\Support\Mail;
 
+use App\Http\Controllers\Schools\EnrollmentSettingsController;
 use App\Models\School;
 use App\Support\Branding\BrandColor;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -30,6 +31,12 @@ final class MailBrand
 {
     /** Het groen van PlayerPath op de lichte kant; diep genoeg voor witte tekst. */
     public const STANDAARD_KLEUR = '#12813D';
+
+    /**
+     * Wie een mail van PlayerPath zelf ondertekent. Een eigenaar is klant
+     * van ons, niet van zijn eigen school: die mails komen van ons.
+     */
+    public const PLATFORM_AFZENDER = 'Michael van PlayerPath';
 
     /**
      * De school op een mail zetten: afzendernaam, antwoordadres en huisstijl.
@@ -88,7 +95,9 @@ final class MailBrand
             'color' => $kleur?->toHex() ?? self::STANDAARD_KLEUR,
             'onColor' => $kleur === null ? '#FFFFFF' : self::leesbaar($kleur),
             'email' => $school?->contact_email,
-            'phone' => $school?->contact_phone,
+            // Zonder school: ons eigen nummer, zodat een nieuwe eigenaar weet
+            // wie hij belt als het niet lukt.
+            'phone' => $school === null ? EnrollmentSettingsController::SUPPORT_PHONE : $school->contact_phone,
             'url' => config('app.url'),
             // Wel of niet "Verstuurd met PlayerPath" onderaan: bij een school
             // wel (zij is de afzender, wij het gereedschap), bij PlayerPath

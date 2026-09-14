@@ -175,7 +175,8 @@ const bekijkAls = (id: number) => {
                     </p>
                     <p class="truncate text-xs text-muted-foreground">
                         {{ user.email }}
-                        <template v-if="!user.verified"> &middot; nog niet bevestigd</template>
+                        <!-- Bevestigd = via de link in zijn mail een wachtwoord gekozen of een uitnodiging geactiveerd. -->
+                        <template v-if="!user.verified"> &middot; nog niet geactiveerd</template>
                         <template v-if="user.deactivated_at"> &middot; sinds {{ user.deactivated_at }}</template>
                     </p>
                 </div>

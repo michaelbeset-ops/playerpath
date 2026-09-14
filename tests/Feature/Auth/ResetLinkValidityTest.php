@@ -26,7 +26,8 @@ class ResetLinkValidityTest extends TestCase
         Notification::fake();
 
         $school = School::factory()->create(['name' => 'Keepersschool Rob']);
-        $user = User::factory()->for($school)->create(['email' => 'rob@rob.nl']);
+        // Zoals platformbeheer hem vroeger aanmaakte: nog nooit bevestigd.
+        $user = User::factory()->for($school)->create(['email' => 'rob@rob.nl', 'email_verified_at' => null]);
 
         $token = $this->token($user);
 
@@ -41,6 +42,10 @@ class ResetLinkValidityTest extends TestCase
         ])->assertSessionHasNoErrors();
 
         $this->assertTrue(Hash::check('Nieuw-Wachtwoord-2026!', $user->fresh()->password));
+
+        // Via de link uit zijn mail een wachtwoord gekozen: dan is het adres
+        // bevestigd, en staat hij in platformbeheer niet meer op "nog niet geactiveerd".
+        $this->assertNotNull($user->fresh()->email_verified_at);
 
         // Een nieuwe link, en die meer dan twee dagen laten liggen: verlopen.
         $this->travelBack();

@@ -27,6 +27,12 @@ class ResetUserPassword implements ResetsUserPasswords
 
         $user->forceFill([
             'password' => Hash::make($input['password']),
+            // Wie via de link in zijn mail een wachtwoord kiest, heeft daarmee
+            // bewezen dat het adres van hem is. Zonder dit bleef een account dat
+            // platformbeheer aanmaakte op "nog niet bevestigd" staan, ook nadat
+            // de eigenaar allang was ingelogd - en dan kun je aan de lijst niet
+            // zien of iemand zijn account in gebruik heeft genomen.
+            'email_verified_at' => $user->email_verified_at ?? now(),
         ])->save();
     }
 }
