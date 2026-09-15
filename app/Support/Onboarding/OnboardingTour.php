@@ -7,9 +7,10 @@ use App\Models\Player;
 use App\Models\School;
 use App\Models\Training;
 use App\Support\Features\Features;
+use App\Support\Rating\RatingSettings;
 
 /**
- * De rondleiding: zestien schermen, één uitleg per scherm.
+ * De rondleiding: zeventien schermen, één uitleg per scherm.
  *
  * Hij loopt door de echte app, niet door plaatjes ervan: elke stap heeft een
  * adres en een anker op dat scherm, en de voorbeelddata zorgt dat er iets te
@@ -42,7 +43,9 @@ class OnboardingTour
         // Bewust niet via Tenancy::set(): dit wordt ook uit het platformbeheer
         // aangeroepen, en daar mag de scope niet dichtklappen. Expliciet op
         // school_id, net als DeleteSchool::summarise().
-        $spelers = Player::withoutSchoolScope()->where('school_id', $school->id)->whereNotNull('overall_rating');
+        // De inzetkaart heeft geen rating nodig om iets te laten zien.
+        $inzet = RatingSettings::for($school)->usesEffort();
+        $spelers = Player::withoutSchoolScope()->where('school_id', $school->id)->when(! $inzet, fn ($q) => $q->whereNotNull('overall_rating'));
         $speler = (clone $spelers)->where('is_demo', true)->orderBy('first_name')->first()
             ?? $spelers->orderBy('first_name')->first();
 
@@ -99,7 +102,24 @@ class OnboardingTour
                 'body' => 'Elke speler, met daaronder zijn ouders. Hier voeg je spelers toe, zet je ze in een groep en nodig je ouders uit voor hun eigen inlog.',
                 'tip' => 'Klik op een speler: dan zie je alles over hem op één pagina, van rapporten tot betalingen.',
             ],
+            // De keuze vóór de stappen over invullen en de kaart: die laten
+            // daarna de kaart zien die de school koos.
             [
+                'key' => 'spelerskaart',
+                'url' => '/onboarding/spelerskaart',
+                'anchor' => 'card-choice',
+                'title' => 'Kies je spelerskaart',
+                'body' => 'Er zijn twee kaarten. De inzetkaart beloont aanwezigheid en inzet, zonder cijfers: iedereen start gelijk en punten gaan alleen omhoog. De prestatiekaart geeft een cijfer per onderdeel en een overall rating, zoals in een voetbalgame. Tik de kaart aan die bij jullie past.',
+                'tip' => 'Twijfel je? Je kunt later nog wisselen, in de wizard of bij Mijn bedrijf → Spelerskaart. Er gaat dan niets verloren.',
+            ],
+            $inzet ? [
+                'key' => 'rapport',
+                'url' => $training ? '/trainings/'.$training->id.'/inzet' : '/trainings',
+                'anchor' => 'quick-report',
+                'title' => 'Inzet geven na de training',
+                'body' => 'Dit is het belangrijkste scherm van de app. Na een training tikt de trainer per kind aan of het er was, hoe hard het werkte en hoe het luisterde. Geen cijfers en geen onvoldoende: elke tik levert punten op. Opslaan gaat meteen door naar het volgende kind.',
+                'tip' => 'Probeer het: tik een niveau aan en zie de punten op de knop. Zolang je niet op Opslaan drukt, verandert er niets.',
+            ] : [
                 'key' => 'rapport',
                 'url' => $training ? '/trainings/'.$training->id.'/rapporten' : '/reports',
                 'anchor' => 'quick-report',
@@ -107,7 +127,14 @@ class OnboardingTour
                 'body' => 'Dit is het belangrijkste scherm van de app. Na een training geeft de trainer elke speler een cijfer op zes onderdelen, met een schuifje. De cijfers van de vorige keer staan al ingevuld; hij past alleen aan wat veranderde. Opslaan gaat meteen door naar de volgende speler.',
                 'tip' => 'Probeer het: schuif een cijfer omhoog. Zolang je niet op Opslaan drukt, verandert er niets.',
             ],
-            [
+            $inzet ? [
+                'key' => 'kaart',
+                'url' => $speler ? '/players/'.$speler->id.'/card' : '/clients',
+                'anchor' => 'player-card',
+                'title' => 'De inzetkaart',
+                'body' => 'Dit is wat een kind en zijn ouders zien: het level groot, de balk naar de volgende kaart, en hoeveel punten en trainingen het verzamelde. Wie vaak komt en hard werkt, gaat van brons naar zilver, goud en Special. Waar een kind beter in wordt, zien ouders per cursus in kleuren bij Voortgang.',
+                'tip' => 'Tik onder de kaart op "Hoe werkt mijn kaart?". Die uitleg zien kinderen en ouders ook, in gewone taal.',
+            ] : [
                 'key' => 'kaart',
                 'url' => $speler ? '/players/'.$speler->id.'/card' : '/clients',
                 'anchor' => 'player-card',

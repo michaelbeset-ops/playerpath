@@ -26,9 +26,9 @@ class OnboardingTourTest extends TestCase
         $school = School::factory()->create();
         $stappen = app(OnboardingTour::class)->steps($school);
 
-        $this->assertCount(16, $stappen);
+        $this->assertCount(17, $stappen);
         $this->assertSame('welkom', $stappen[0]['key']);
-        $this->assertSame('afsluiting', $stappen[15]['key']);
+        $this->assertSame('afsluiting', $stappen[16]['key']);
 
         foreach ($stappen as $stap) {
             $this->assertStringStartsWith('/', $stap['url'], $stap['key']);
@@ -53,7 +53,8 @@ class OnboardingTourTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->where('onboarding.tour', true)
-                ->count('onboarding.tourSteps', 16)
+                ->count('onboarding.tourSteps', 17)
+                ->where('onboarding.tourSteps.6.key', 'spelerskaart')
                 ->has('onboarding.tourSteps.0.tip')
             );
     }
@@ -94,5 +95,43 @@ class OnboardingTourTest extends TestCase
         $trainer = User::factory()->for($school)->create();
         $trainer->assignRole(Role::Trainer->value);
         $this->actingAs($trainer)->get('/onboarding/aanmeldpagina')->assertForbidden();
+    }
+
+    /**
+     * In de rondleiding kiest de school zelf haar spelerskaart, en de stappen
+     * daarna laten die kaart zien.
+     */
+    public function test_de_rondleiding_laat_de_school_kiezen_en_volgt_de_keuze(): void
+    {
+        $this->seed(RoleSeeder::class);
+
+        $school = School::factory()->create();
+        $eigenaar = User::factory()->for($school)->create();
+        $eigenaar->assignRole(Role::Eigenaar->value);
+        app(SeedDemoData::class)->handle($school, $eigenaar);
+
+        $this->actingAs($eigenaar)
+            ->get('/onboarding/spelerskaart')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->component('onboarding/CardChoice')
+                ->where('cardMode', null)
+                ->where('onboarding.tourSteps.7.title', 'Een rapport invullen')
+            );
+
+        $this->actingAs($eigenaar)->post('/instellingen/spelerskaart/variant', ['mode' => 'inzet'])->assertRedirect();
+
+        $this->actingAs($eigenaar)
+            ->get('/onboarding/spelerskaart')
+            ->assertInertia(fn ($page) => $page
+                ->where('cardMode', 'inzet')
+                ->where('onboarding.tourSteps.7.title', 'Inzet geven na de training')
+                ->where('onboarding.tourSteps.7.url', fn ($url) => str_ends_with($url, '/inzet'))
+                ->where('onboarding.tourSteps.8.title', 'De inzetkaart')
+            );
+
+        $trainer = User::factory()->for($school)->create();
+        $trainer->assignRole(Role::Trainer->value);
+        $this->actingAs($trainer)->get('/onboarding/spelerskaart')->assertForbidden();
     }
 }

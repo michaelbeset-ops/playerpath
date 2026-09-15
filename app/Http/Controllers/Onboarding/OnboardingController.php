@@ -128,6 +128,19 @@ class OnboardingController extends Controller
      * De echte pagina in een kader, niet een nagebouwde: wat de eigenaar hier
      * ziet is precies wat een ouder krijgt als hij de link deelt.
      */
+    public function cardChoice(Request $request): Response
+    {
+        abort_unless($request->user()->isEigenaar(), 403);
+
+        // Niets voorgekozen zolang de school nog niet koos.
+        return Inertia::render('onboarding/CardChoice', [
+            'cardMode' => $request->user()->school->rating_settings['card_mode'] ?? null,
+        ]);
+    }
+
+    /**
+     * Je eigen inschrijfpagina, voor de rondleiding.
+     */
     public function enrollPreview(Request $request): Response
     {
         abort_unless($request->user()->isEigenaar(), 403);

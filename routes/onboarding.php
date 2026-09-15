@@ -21,6 +21,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('onboarding/rondleiding/stap', [OnboardingController::class, 'tourStep'])->name('onboarding.tour.step');
     // Het ouderscherm zoals een ouder het ziet, voor de eigenaar.
     Route::get('onboarding/ouderweergave', [OnboardingController::class, 'parentPreview'])->name('onboarding.parent-preview');
+    // De keuze tussen de prestatiekaart en de inzetkaart, als stap in de rondleiding.
+    Route::get('onboarding/spelerskaart', [OnboardingController::class, 'cardChoice'])->name('onboarding.card-choice');
     // Hoe een ouder zich inschrijft: de echte inschrijfpagina in een kader,
     // en de trainingen zoals een ouder ze ziet (met "Inschrijven").
     Route::get('onboarding/aanmeldpagina', [OnboardingController::class, 'enrollPreview'])->name('onboarding.enroll-preview');

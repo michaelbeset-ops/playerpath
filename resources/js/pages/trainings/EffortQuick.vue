@@ -118,7 +118,7 @@ const sla = () => {
     <Head :title="'Inzet - ' + player.name" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
-        <form class="mx-auto w-full max-w-3xl p-4 pb-36" @submit.prevent="opslaan">
+        <form class="mx-auto w-full max-w-3xl p-4 pb-36" data-tour="quick-report" @submit.prevent="opslaan">
             <div class="flex items-center justify-between gap-3">
                 <p class="min-w-0 truncate text-xs text-muted-foreground first-letter:uppercase">{{ training.group }} &middot; {{ training.date }}</p>
                 <p class="tabular shrink-0 text-xs font-medium text-muted-foreground">Speler {{ position }} van {{ total }}</p>

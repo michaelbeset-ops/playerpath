@@ -717,7 +717,10 @@ het trainingsformulier blokkeert zonder groep en waarschuwt zonder locatie.
 
 #### De rondleiding
 
-Zestien stappen door de echte app, alleen voor de eigenaar, vóór de wizard.
+Zeventien stappen door de echte app, alleen voor de eigenaar, vóór de wizard.
+**Vóór de stappen over invullen en de kaart kiest de school haar spelerskaart**
+(`/onboarding/spelerskaart`, `onboarding/CardChoice.vue`, niets voorgekozen); de
+stappen daarna laten de gekozen kaart zien.
 **Eerst een welkom in het midden van het scherm** (`AppTour.vue`): welkom
 met de schoolnaam, de vier stappen (er staat al iets, de rondleiding,
 inrichten, de startlijst) en een knop die het kaartje rechtsonder aanwijst.
