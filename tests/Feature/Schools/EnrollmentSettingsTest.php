@@ -149,7 +149,7 @@ class EnrollmentSettingsTest extends TestCase
         // Stap acht: de spelerskaart. Stap negen: groepen. Stap tien: trainers
         // uitnodigen, en dat rondt af.
         $this->actingAs($this->eigenaar)->get('/instellingen/inschrijven/stap/8')
-            ->assertInertia(fn ($page) => $page->where('cardMode', 'inzet'));
+            ->assertInertia(fn ($page) => $page->where('cardMode', null));
 
         $this->actingAs($this->eigenaar)->patch('/instellingen/inschrijven/stap/8', ['card_mode' => 'inzet'])
             ->assertRedirect('/instellingen/inschrijven/stap/9');

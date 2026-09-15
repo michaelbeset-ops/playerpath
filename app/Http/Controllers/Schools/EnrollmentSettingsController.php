@@ -121,8 +121,9 @@ class EnrollmentSettingsController extends Controller
                 'expires_on' => $rij->expires_at->format('d-m-Y'), 'sent_count' => $rij->sent_count,
             ]),
             'invitationDays' => (int) ($school->invitation_valid_days ?: 14),
-            // De spelerskaart: wat de school koos, of anders de aanbevolen inzetkaart.
-            'cardMode' => $school->rating_settings['card_mode'] ?? RatingSettings::INZET,
+            // De spelerskaart: wat de school koos. Nog niets gekozen: niets
+            // voorgekozen, de school kiest zelf tussen de twee.
+            'cardMode' => $school->rating_settings['card_mode'] ?? null,
         ]);
     }
 
@@ -138,6 +139,12 @@ class EnrollmentSettingsController extends Controller
     {
         abort_unless($request->user()->isEigenaar(), 403);
         abort_unless($stap >= 1 && $stap <= count(EnrollmentSettings::STAPPEN), 404);
+
+        // De spelerskaart sla je niet over: dat is een keuze die de school zelf
+        // maakt, niet een standaard die stilletjes voor haar wordt gekozen.
+        if (EnrollmentSettings::STAPPEN[$stap - 1] === 'kaart') {
+            return back()->withErrors(['card_mode' => 'Kies een van de twee spelerskaarten.']);
+        }
 
         return $this->volgende($request, $request->user()->school, $stap);
     }

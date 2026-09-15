@@ -65,7 +65,7 @@ const props = defineProps<{
     ageCategories: string[];
     invitations: Uitnodiging[];
     invitationDays: number;
-    cardMode: 'prestatie' | 'inzet';
+    cardMode: 'prestatie' | 'inzet' | null;
 }>();
 
 const huidige = computed(() => props.steps[props.step - 1]);
@@ -145,7 +145,7 @@ const form = useForm(
                         stackable: s.discounts.stackable as boolean,
                     }
                   : props.step === 8
-                    ? { card_mode: props.cardMode as string }
+                    ? { card_mode: props.cardMode as 'prestatie' | 'inzet' | null }
                     : props.step === 9
                     ? {
                           // Wat er al is, plus een lege regel om mee te beginnen.
@@ -1192,9 +1192,10 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                     </section>
 
                     <CardVariantChoice v-model="f.card_mode" />
+                    <InputError :message="(form.errors as Record<string, string>).card_mode" />
 
                     <p class="text-xs text-muted-foreground">
-                        Twijfel je? Kies de inzetkaart. Wisselen kan later bij Mijn bedrijf &rarr; Spelerskaart; er gaat dan niets verloren.
+                        Tik de kaart aan die bij jullie past. Wisselen kan later bij Mijn bedrijf &rarr; Spelerskaart; er gaat dan niets verloren.
                     </p>
                 </template>
 
@@ -1285,7 +1286,7 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                      geen antwoord op heeft moet verder kunnen in plaats van te
                      stoppen; elke vraag heeft een bruikbare standaard. -->
                 <button
-                    v-if="!completed"
+                    v-if="!completed && step !== 8"
                     type="button"
                     class="ml-auto inline-flex min-h-11 shrink-0 items-center rounded-xl px-1 text-sm text-muted-foreground transition hover:text-foreground"
                     title="Je kunt dit later in de instellingen aanvullen"
@@ -1297,7 +1298,7 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                 <button
                     type="submit"
                     form="wizard"
-                    :disabled="form.processing"
+                    :disabled="form.processing || (step === 8 && !f.card_mode)"
                     class="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
                 >
                     <template v-if="completed || laatste">

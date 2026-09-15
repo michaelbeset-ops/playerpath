@@ -97,7 +97,7 @@ class InzetkaartTest extends TestCase
         return $this->actingAs($door ?? $this->trainer)->post("/trainings/{$training->id}/inzet/{$this->speler->id}", $data);
     }
 
-    public function test_zonder_keuze_blijft_de_prestatiekaart_en_de_wizard_raadt_de_inzetkaart_aan(): void
+    public function test_de_school_kiest_zelf_een_van_de_twee_kaarten_in_de_onboarding(): void
     {
         $nieuw = School::factory()->create();
         $this->assertSame(RatingSettings::PRESTATIE, RatingSettings::for($nieuw)->cardMode());
@@ -112,10 +112,16 @@ class InzetkaartTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->component('enrollment-settings/Wizard')
                 ->where('steps.7.key', 'kaart')
-                ->where('cardMode', 'inzet')
+                // Niets voorgekozen: de school kiest zelf.
+                ->where('cardMode', null)
             );
 
         $this->actingAs($eigenaar)->patch('/instellingen/inschrijven/stap/8', ['card_mode' => 'sterren'])->assertSessionHasErrors('card_mode');
+        $this->actingAs($eigenaar)->patch('/instellingen/inschrijven/stap/8', [])->assertSessionHasErrors('card_mode');
+
+        // Overslaan kan bij deze stap niet.
+        $this->actingAs($eigenaar)->post('/instellingen/inschrijven/stap/8/overslaan')->assertSessionHasErrors('card_mode');
+        $this->assertSame(RatingSettings::PRESTATIE, RatingSettings::for($nieuw->refresh())->cardMode());
 
         $this->actingAs($eigenaar)
             ->patch('/instellingen/inschrijven/stap/8', ['card_mode' => 'inzet'])

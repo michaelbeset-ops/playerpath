@@ -9,7 +9,8 @@ import { Check, Sparkles } from 'lucide-vue-next';
  * zijn de echte kaartcomponent met verzonnen gegevens: een plaatje zou
  * verouderen zodra de kaart verandert, dit niet.
  */
-const model = defineModel<'prestatie' | 'inzet'>({ required: true });
+// Leeg is mogelijk: in de onboarding staat er niets voorgekozen.
+const model = defineModel<'prestatie' | 'inzet' | null>({ required: true });
 
 const basis = {
     first_name: 'Sem',

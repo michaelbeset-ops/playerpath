@@ -1003,8 +1003,8 @@ spelerskaarten** en kiest de school er één (`RatingSettings::cardMode()`,
 | Voortgang | grafieken uit rapporten | begin- en eindniveau per cursus, in kleuren |
 
 - **Kiezen gebeurt in de wizard** (stap 8, `CardVariantChoice.vue`, met beide
-  kaarten als echt voorbeeld naast elkaar; de inzetkaart staat voorgekozen als
-  aanbevolen) en later bij Mijn bedrijf → Spelerskaart
+  kaarten als echt voorbeeld naast elkaar; niets voorgekozen en niet over te
+  slaan: de school kiest zelf, de inzetkaart draagt het label aanbevolen) en later bij Mijn bedrijf → Spelerskaart
   (`CardSettingsController`), met een waarschuwing vóór het wisselen. Wie niets
   koos houdt de prestatiekaart: zo bleven bestaande scholen zoals ze waren.
 - **Wisselen verwijdert niets** (`Actions\Schools\ChangeCardMode`). Alle
