@@ -79,7 +79,7 @@ const props = defineProps<{
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Spelers', href: '/players' },
+    { title: 'Klanten', href: '/clients' },
     { title: props.player.name, href: '/players/' + props.player.id },
 ];
 
@@ -159,9 +159,17 @@ const stopDoel = (id: number) => {
     }
 };
 
-const koppelBestaande = () => bestaandeOuder.post('/players/' + props.player.id + '/guardians', { preserveScroll: true });
+const koppelBestaande = () =>
+    bestaandeOuder.post('/players/' + props.player.id + '/guardians', {
+        preserveScroll: true,
+        onSuccess: () => bestaandeOuder.reset(),
+    });
 
-const ontkoppel = (id: number) => router.delete('/players/' + props.player.id + '/guardians/' + id, { preserveScroll: true });
+const ontkoppel = (id: number, naam: string) => {
+    if (confirm('De koppeling met ' + naam + ' verwijderen? ' + naam + ' ziet de kaart van ' + props.player.first_name + ' dan niet meer.')) {
+        router.delete('/players/' + props.player.id + '/guardians/' + id, { preserveScroll: true });
+    }
+};
 
 const verwijderen = () => {
     if (confirm('Weet je zeker dat je ' + props.player.name + ' wilt verwijderen? Ook alle rapporten van deze speler verdwijnen.')) {
@@ -303,8 +311,8 @@ const streefScore = computed<number | null>({
                 </div>
             </div>
 
-            <!-- Doelen: waar werkt deze speler naartoe -->
-            <div class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+            <!-- Doelen: waar werkt deze speler naartoe (niet bij de inzetkaart) -->
+            <div v-if="!inzet" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
                 <div class="flex flex-wrap items-center justify-between gap-2">
                     <div>
                         <p class="font-medium">Ontwikkelingsdoelen</p>
@@ -455,8 +463,9 @@ const streefScore = computed<number | null>({
                 </ul>
             </div>
 
-            <!-- Ouders -->
-            <div class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+            <!-- Ouders: alleen voor wie de speler beheert. Een trainer krijgt
+                 de ouders ook niet in de gegevens mee. -->
+            <div v-if="can.manage" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
                 <p class="font-medium">Ouder koppelen</p>
                 <p class="mt-1 text-xs text-muted-foreground">Gekoppelde ouders zien de spelerskaart en de voortgang van hun kind.</p>
 
@@ -471,11 +480,10 @@ const streefScore = computed<number | null>({
                         </div>
 
                         <button
-                            v-if="can.manage"
                             type="button"
                             class="inline-flex min-h-11 items-center rounded-lg p-2 text-muted-foreground transition hover:bg-secondary hover:text-destructive"
                             :aria-label="'Koppeling met ' + ouder.name + ' verwijderen'"
-                            @click="ontkoppel(ouder.id)"
+                            @click="ontkoppel(ouder.id, ouder.name)"
                         >
                             <X class="size-4" />
                         </button>
@@ -484,7 +492,7 @@ const streefScore = computed<number | null>({
 
                 <p v-else class="mt-3 text-sm text-muted-foreground">Er is nog geen ouder gekoppeld.</p>
 
-                <div v-if="can.manage" class="mt-5 border-t border-border pt-5">
+                <div class="mt-5 border-t border-border pt-5">
                     <!-- Bestaande ouder koppelen -->
                     <form v-if="linkableGuardians.length" class="flex flex-wrap items-end gap-3" @submit.prevent="koppelBestaande">
                         <div class="grid min-w-48 flex-1 gap-2">
@@ -505,6 +513,7 @@ const streefScore = computed<number | null>({
                         <div class="grid w-40 gap-2">
                             <Label for="relationship">Relatie</Label>
                             <Input id="relationship" v-model="bestaandeOuder.relationship" placeholder="moeder" />
+                            <InputError :message="bestaandeOuder.errors.relationship" />
                         </div>
 
                         <Button type="submit" variant="secondary" :disabled="bestaandeOuder.processing || !bestaandeOuder.user_id"> Koppelen </Button>
@@ -536,7 +545,7 @@ const streefScore = computed<number | null>({
             </div>
 
             <!-- De speler zelf: een eigen inlog, los van of naast een ouder -->
-            <div class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+            <div v-if="can.manage" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
                 <p class="font-medium">Eigen inlog voor {{ player.first_name }}</p>
                 <p class="mt-1 text-xs text-muted-foreground">
                     Voor een speler met een eigen e-mailadres. Kan naast een ouder: dan zien ze allebei de kaart en de voortgang.
@@ -550,10 +559,9 @@ const streefScore = computed<number | null>({
                     {{ player.first_name }} kijkt nu via de kind-link, zonder wachtwoord. Nodig je {{ player.first_name }} uit met een eigen e-mailadres, dan
                     logt hij voortaan daarmee in.
                 </p>
-                <p v-else-if="!can.manage" class="mt-3 text-sm text-muted-foreground">{{ player.first_name }} heeft nog geen eigen inlog.</p>
 
                 <InviteForm
-                    v-if="can.manage && !(account && !account.kind)"
+                    v-if="!(account && !account.kind)"
                     class="mt-4"
                     role="speler"
                     :invitations="playerInvitations"
@@ -597,7 +605,7 @@ const streefScore = computed<number | null>({
                             id="product_id"
                             v-model="productForm.product_id"
                             required
-                            class="h-10 rounded-lg border border-input bg-background px-3 text-base outline-none focus:border-primary sm:text-sm"
+                            class="min-h-11 rounded-lg border border-input bg-background px-3 text-base outline-none focus:border-primary sm:text-sm"
                         >
                             <option value="">Kies een product...</option>
                             <option v-for="product in sellableProducts" :key="product.id" :value="product.id">

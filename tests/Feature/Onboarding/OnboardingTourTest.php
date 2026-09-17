@@ -3,6 +3,7 @@
 namespace Tests\Feature\Onboarding;
 
 use App\Actions\Onboarding\SeedDemoData;
+use App\Enums\Feature;
 use App\Enums\Role;
 use App\Models\School;
 use App\Models\User;
@@ -38,6 +39,21 @@ class OnboardingTourTest extends TestCase
             // Geen vaktaal zonder uitleg: "XP" staat nergens los in de tekst.
             $this->assertStringNotContainsString('XP', $stap['body'].$stap['tip'], $stap['key']);
         }
+    }
+
+    public function test_zonder_kalender_wijst_de_agenda_stap_naar_het_rooster(): void
+    {
+        $this->seed(RoleSeeder::class);
+
+        $school = School::factory()->create();
+        $stappen = collect(app(OnboardingTour::class)->steps($school))->keyBy('key');
+        $this->assertSame('/calendar', $stappen['agenda']['url']);
+
+        $school->update(['features' => [Feature::Kalender->value => false]]);
+        $stappen = collect(app(OnboardingTour::class)->steps($school->fresh()))->keyBy('key');
+
+        $this->assertSame('/trainings', $stappen['agenda']['url']);
+        $this->assertCount(17, $stappen);
     }
 
     public function test_de_stappen_gaan_mee_zolang_de_rondleiding_loopt(): void

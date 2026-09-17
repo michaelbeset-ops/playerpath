@@ -53,8 +53,32 @@ return Application::configure(basePath: dirname(__DIR__))
         // melding; een trainer laat de aanwezigheidspagina makkelijk een uur
         // openstaan.
         $exceptions->respond(function ($response, $exception, $request) {
-            if ($response->getStatusCode() === 419) {
+            $status = $response->getStatusCode();
+
+            if ($status === 419) {
                 return back()->with('status', 'Je sessie was verlopen. Probeer het nog een keer.');
+            }
+
+            // Een Inertia-verzoek (een klik of een formulier binnen de app) krijgt
+            // anders een kale HTML-foutpagina in een modaal venster. Voor fouten
+            // waar je gewoon verder kunt, sturen we terug met een melding; een
+            // gewone paginaweergave houdt de Nederlandse foutpagina.
+            // Een 500 laten we tijdens ontwikkelen staan: dan wil je de fout zien.
+            $foutpagina = in_array($status, [500, 503], true) && app()->hasDebugModeEnabled();
+
+            if ($request->header('X-Inertia') && ! $foutpagina) {
+                $melding = match ($status) {
+                    403 => 'Dat mag je met dit account niet doen.',
+                    404 => 'Dat bestaat niet (meer). Misschien is het net verwijderd.',
+                    413 => 'Het bestand is te groot. Kies een kleiner bestand.',
+                    429 => 'Even rustig aan: probeer het over een minuut nog een keer.',
+                    500, 503 => 'Er ging iets mis. Probeer het nog een keer.',
+                    default => null,
+                };
+
+                if ($melding !== null) {
+                    return back()->with('status', $melding);
+                }
             }
 
             return $response;

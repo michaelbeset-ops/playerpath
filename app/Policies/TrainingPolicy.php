@@ -5,6 +5,7 @@ namespace App\Policies;
 use App\Models\Player;
 use App\Models\Training;
 use App\Models\User;
+use App\Support\Trainers\TrainerScope;
 
 /**
  * Trainingen plannen doen de eigenaar en de trainer; verwijderen alleen de
@@ -71,6 +72,18 @@ class TrainingPolicy
                 || $training->enrollments()->where('player_id', $kind->id)->active()->exists());
     }
 
+    /**
+     * Een kind afmelden van een losse training.
+     *
+     * Ruimer dan inschrijven: ook als de school los inschrijven inmiddels heeft
+     * uitgezet, moet een ouder zijn kind kunnen afmelden. Alleen de ouder, niet
+     * de trainer en niet het kind zelf.
+     */
+    public function unenroll(User $user, Training $training): bool
+    {
+        return $user->belongsToSameSchool($training) && $user->isOuder();
+    }
+
     public function create(User $user): bool
     {
         return $user->isEigenaar() || $user->isTrainer();
@@ -87,10 +100,46 @@ class TrainingPolicy
         return $user->belongsToSameSchool($training) && $user->isEigenaar();
     }
 
-    /** Aanwezigheid afvinken is werk van de trainer. */
+    /**
+     * Aanwezigheid afvinken is werk van de trainer - bij zijn eigen werk.
+     *
+     * Het rooster ziet hij schoolbreed (invallen moet kunnen zien wat er
+     * staat), maar afvinken en beoordelen alleen waar hij bij hoort: een
+     * training waar hij aan gekoppeld is, of van een van zijn groepen. Is hij
+     * nérgens gekoppeld, dan is de hele school van hem (zie TrainerScope).
+     */
     public function recordAttendance(User $user, Training $training): bool
     {
-        return $user->belongsToSameSchool($training)
-            && ($user->isEigenaar() || $user->isTrainer());
+        if (! $user->belongsToSameSchool($training)) {
+            return false;
+        }
+
+        if ($user->isEigenaar()) {
+            return true;
+        }
+
+        if (! $user->isTrainer()) {
+            return false;
+        }
+
+        $scope = app(TrainerScope::class);
+        $groepen = $scope->groupIds($user);
+
+        if ($groepen === null) {
+            return true;
+        }
+
+        if ($training->trainers()->whereKey($user->id)->exists()) {
+            return true;
+        }
+
+        if ($training->group_id !== null) {
+            return in_array($training->group_id, $groepen, true);
+        }
+
+        // Een privétraining heeft geen groep: dan gaat het om het kind.
+        $speler = $training->slot?->player;
+
+        return $speler !== null && $scope->ownsPlayer($user, $speler);
     }
 }

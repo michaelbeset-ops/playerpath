@@ -34,12 +34,12 @@ const bewerken = computed(() => props.player !== null);
 const breadcrumbs = computed<BreadcrumbItem[]>(() =>
     bewerken.value
         ? [
-              { title: 'Spelers', href: '/players' },
+              { title: 'Klanten', href: '/clients' },
               { title: props.player!.first_name + ' ' + props.player!.last_name, href: '/players/' + props.player!.id },
               { title: 'Bewerken', href: '/players/' + props.player!.id + '/edit' },
           ]
         : [
-              { title: 'Spelers', href: '/players' },
+              { title: 'Klanten', href: '/clients' },
               { title: 'Nieuwe speler', href: '/players/create' },
           ],
 );
@@ -205,7 +205,7 @@ const opslaan = () => {
                 </Button>
 
                 <Link
-                    :href="bewerken ? '/players/' + player!.id : '/players'"
+                    :href="bewerken ? '/players/' + player!.id : '/clients'"
                     class="inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4 hover:text-foreground"
                 >
                     Annuleren

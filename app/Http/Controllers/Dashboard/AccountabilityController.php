@@ -42,7 +42,7 @@ class AccountabilityController extends Controller
 
         return Inertia::render('accountability/Index', [
             'report' => $this->overzicht->for($vanaf, $tot),
-            'school' => $request->user()->school->only(['name']),
+            'schoolInfo' => $request->user()->school->only(['name']),
             'range' => ['from' => $vanaf->toDateString(), 'to' => $tot->toDateString()],
         ]);
     }

@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers\Groups;
 
+use App\Enums\Feature;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Groups\GroupRequest;
 use App\Models\Group;
 use App\Models\Player;
 use App\Models\Training;
+use App\Support\Features\Features;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -114,7 +116,11 @@ class GroupController extends Controller
                         'age_category' => $speler->age_category,
                     ])
                 : [],
-            'can' => ['manage' => $mag],
+            'can' => [
+                'manage' => $mag,
+                // Het aanbod is van de eigenaar, en bestaat alleen met Betalingen aan.
+                'editProduct' => $request->user()->isEigenaar() && app(Features::class)->enabled(Feature::Betalingen),
+            ],
         ]);
     }
 
@@ -146,7 +152,30 @@ class GroupController extends Controller
                 'is_active' => $group->is_active,
                 'is_demo' => $group->is_demo,
             ],
+            // Verwijderen kan alleen bij een groep zonder trainingen en zonder
+            // aanbod; het formulier zegt vooraf waarom het niet kan.
+            'deleteBlocker' => $this->verwijderBlokkade($group),
         ]);
+    }
+
+    /**
+     * Waarom deze groep niet verwijderd mag worden, of null als het wel kan.
+     *
+     * Trainingen en mededelingen hangen met een cascade aan de groep: de groep
+     * weggooien zou het rooster, de aanwezigheid en verstuurde berichten
+     * meenemen. Een groep van een aanbod is de knoop met de inschrijvingen.
+     */
+    protected function verwijderBlokkade(Group $group): ?string
+    {
+        if ($group->product_id !== null) {
+            return 'Deze groep hoort bij een aanbod en kan daarom niet verwijderd worden. Zet de groep op niet actief.';
+        }
+
+        if ($group->trainings()->exists()) {
+            return 'Deze groep heeft trainingen, met aanwezigheid en berichten eraan. Verwijderen zou die geschiedenis wissen; zet de groep daarom op niet actief.';
+        }
+
+        return null;
     }
 
     public function update(GroupRequest $request, Group $group): RedirectResponse
@@ -196,6 +225,10 @@ class GroupController extends Controller
     public function destroy(Group $group): RedirectResponse
     {
         $this->authorize('delete', $group);
+
+        if ($reden = $this->verwijderBlokkade($group)) {
+            return back()->withErrors(['group' => $reden]);
+        }
 
         // De spelers zelf blijven bestaan; alleen hun indeling in deze groep
         // verdwijnt. Een groep opheffen mag nooit een speler wissen.

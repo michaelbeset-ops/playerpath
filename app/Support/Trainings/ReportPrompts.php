@@ -75,8 +75,11 @@ class ReportPrompts
 
         $trainingen = $this->inHetVenster($user);
 
+        // Eén keer, niet per training: alle trainingen zijn van dezelfde school.
+        $inzet = RatingSettings::for($user->school)->usesEffort();
+
         return $trainingen
-            ->map(fn (Training $training) => $this->beschrijf($training))
+            ->map(fn (Training $training) => $this->beschrijf($training, $inzet))
             // Alles gedaan: dan is er niets meer te herinneren.
             ->filter(fn (array $rij) => $rij['open'] > 0)
             ->values()
@@ -96,7 +99,7 @@ class ReportPrompts
         return Training::query()
             ->whereNull('cancelled_at')
             ->whereBetween('ends_at', [$vanaf, $tot])
-            ->with(['group', 'trainers'])
+            ->with(['group', 'trainers', 'slot.product', 'slot.player'])
             ->orderByDesc('ends_at')
             ->get()
             ->filter(fn (Training $training) => $this->isVanHem($training, $user))
@@ -119,11 +122,10 @@ class ReportPrompts
     }
 
     /** @return array<string, mixed> */
-    protected function beschrijf(Training $training): array
+    protected function beschrijf(Training $training, bool $inzet): array
     {
         $spelers = $training->expectedPlayers();
         // Inzetkaart: gedaan is afwezig gemeld of inzetpunten gekregen.
-        $inzet = RatingSettings::for($training->school)->usesEffort();
 
         $gedaan = $inzet ? EffortRating::doneFor($training) : Report::query()
             ->whereIn('player_id', $spelers->pluck('id'))

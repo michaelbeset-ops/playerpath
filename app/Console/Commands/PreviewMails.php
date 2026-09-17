@@ -224,6 +224,7 @@ class PreviewMails extends Command
             'inschrijving-goedgekeurd' => fn () => [new Notifications\InschrijvingGoedgekeurd($w['speler'], $w['rekening']), $ouder],
             'inschrijving-geannuleerd-ouder' => fn () => [new Notifications\InschrijvingGeannuleerd($w['inschrijving'], false), $ouder],
             'inschrijving-geannuleerd-school' => fn () => [new Notifications\InschrijvingGeannuleerd($w['inschrijving'], true), $eigenaar],
+            'inschrijving-afgewezen' => fn () => [new Notifications\InschrijvingAfgewezen($w['inschrijving']), $ouder],
             'nieuwe-inschrijving' => fn () => [new Notifications\NieuweInschrijving($w['inschrijving']), $eigenaar],
             'verleng-uitnodiging' => fn () => [new Notifications\VerlengUitnodiging($w['inschrijving']), $ouder],
             'uitnodiging-verlopen' => fn () => [new Notifications\UitnodigingVerlopen($w['inschrijving']), $ouder],

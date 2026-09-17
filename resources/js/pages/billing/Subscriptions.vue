@@ -7,9 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { Plus } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 interface Abonnement {
     id: number;
@@ -25,7 +25,7 @@ interface Abonnement {
     ends_on: string | null;
 }
 
-const props = defineProps<{
+defineProps<{
     subscriptions: Abonnement[];
     gateway: { connected: boolean; name: string; message: string };
     playersWithoutSubscription: { id: number; name: string }[];
@@ -42,7 +42,8 @@ const form = useForm({
     player_id: '',
     product_id: '',
     payment_method: 'directdebit',
-    starts_on: new Date().toISOString().slice(0, 10),
+    // De datum van vandaag in lokale tijd: toISOString() geeft tussen middernacht en twee uur gisteren.
+    starts_on: new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10),
     installments: 1,
 });
 
@@ -55,7 +56,19 @@ const opslaan = () =>
         },
     });
 
-const zetStatus = (abonnement: Abonnement, status: string) => router.patch('/subscriptions/' + abonnement.id, { status }, { preserveScroll: true });
+// Stoppen is niet terug te draaien; daar hoort een bevestiging bij. Lukt een
+// overgang niet, dan komt de fout onder de lijst en springt de keuze terug.
+const zetStatus = (abonnement: Abonnement, status: string) => {
+    if (['cancelled', 'ended'].includes(status) && !confirm('Dit abonnement stoppen? Dat is niet terug te draaien.')) {
+        router.reload({ only: ['subscriptions'] });
+
+        return;
+    }
+
+    router.patch('/subscriptions/' + abonnement.id, { status }, { preserveScroll: true, onError: () => router.reload({ only: ['subscriptions'] }) });
+};
+
+const statusFout = computed(() => (usePage().props.errors as Record<string, string> | undefined)?.status ?? null);
 
 const kleurVoor = (status: string) =>
     status === 'active' ? 'bg-primary/10 text-primary' : status === 'paused' ? 'bg-warning/10 text-warning' : 'bg-secondary text-muted-foreground';
@@ -68,6 +81,10 @@ const kleurVoor = (status: string) =>
         <div class="mx-auto w-full max-w-4xl p-4">
             <FlashMessage />
             <GatewayNotice :gateway="gateway" />
+
+            <p v-if="statusFout" class="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive" role="alert">
+                {{ statusFout }}
+            </p>
 
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>
@@ -82,8 +99,8 @@ const kleurVoor = (status: string) =>
             </div>
 
             <p v-if="!products.length" class="mt-6 rounded-xl border border-dashed border-border bg-card/50 p-6 text-center text-sm">
-                Je hebt nog geen actieve tarieven.
-                <Link href="/products/create" class="font-medium text-primary underline underline-offset-4">Maak er eerst een aan</Link>.
+                Je hebt nog geen aanbod dat per maand betaald wordt.
+                <Link href="/aanbod/create" class="font-medium text-primary underline underline-offset-4">Maak er eerst een aan</Link>.
             </p>
 
             <!-- Inschrijven: hier wordt straks ook de incasso of iDEAL-betaling gestart -->

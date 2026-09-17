@@ -18,7 +18,7 @@ use Tests\TestCase;
  * dat je wel mag.
  *
  * Aanleiding, twee keer:
- * 1. NavMain las item.url terwijl de items item.href hebben â€” klikken deed
+ * 1. NavMain las item.url terwijl de items item.href hebben — klikken deed
  *    niets, zonder foutmelding, want er ging geen request uit.
  * 2. Het menu was hardgecodeerd, dus een ouder zag Spelers, Groepen en
  *    Rapporten staan die allemaal 403 gaven.

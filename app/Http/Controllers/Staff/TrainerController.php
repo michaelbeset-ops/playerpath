@@ -28,7 +28,9 @@ class TrainerController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
         ], [
-            'email.unique' => 'Er bestaat al een account met dit e-mailadres.',
+            // Neutraal: het adres kan bij een andere school horen, en dat gaat
+            // deze school niets aan.
+            'email.unique' => 'Dit e-mailadres is al in gebruik.',
         ], [
             'name' => 'De naam',
             'email' => 'Het e-mailadres',
@@ -52,8 +54,16 @@ class TrainerController extends Controller
     {
         $this->authorize('delete', $user);
 
-        abort_if($user->id === $request->user()->id, 422, 'Je kunt je eigen account niet verwijderen.');
-        abort_if($user->isEigenaar(), 422, 'De eigenaar van de school kun je niet verwijderen.');
+        if ($user->id === $request->user()->id) {
+            return back()->withErrors(['user' => 'Je kunt je eigen account niet verwijderen.']);
+        }
+
+        if ($user->isEigenaar()) {
+            return back()->withErrors(['user' => 'De eigenaar van de school kun je niet verwijderen.']);
+        }
+
+        // Deze route is voor trainers; ouders en spelers gaan via hun eigen weg.
+        abort_unless($user->isTrainer(), 404);
 
         // Zijn rapporten blijven bestaan met een lege trainer: die historie
         // hoort bij de speler, niet bij de trainer. Zie de migratie

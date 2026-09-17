@@ -156,4 +156,72 @@ class GuardianTest extends TestCase
 
         $this->actingAs($ouder)->get('/players/'.$this->speler->id.'/card')->assertOk();
     }
+
+    public function test_een_trainer_ziet_de_ouders_van_een_speler_niet(): void
+    {
+        $trainer = User::factory()->for($this->school)->create();
+        $trainer->assignRole(Role::Trainer->value);
+
+        $ouder = User::factory()->for($this->school)->create();
+        $ouder->assignRole(Role::Ouder->value);
+        $this->speler->guardians()->attach($ouder->id);
+
+        $losseOuder = User::factory()->for($this->school)->create();
+        $losseOuder->assignRole(Role::Ouder->value);
+
+        // Ook niet onzichtbaar in de gegevens: de ouders horen bij de klantrelatie.
+        $this->actingAs($trainer)
+            ->get('/players/'.$this->speler->id)
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page
+                ->where('can.manage', false)
+                ->count('guardians', 0)
+                ->count('linkableGuardians', 0)
+                ->count('invitations', 0)
+                ->count('playerInvitations', 0)
+                ->where('account', null));
+
+        $this->actingAs($this->eigenaar)
+            ->get('/players/'.$this->speler->id)
+            ->assertInertia(fn ($page) => $page
+                ->where('can.manage', true)
+                ->count('guardians', 1)
+                ->count('linkableGuardians', 1));
+    }
+
+    public function test_alleen_een_ouder_kan_gekoppeld_worden(): void
+    {
+        $trainer = User::factory()->for($this->school)->create();
+        $trainer->assignRole(Role::Trainer->value);
+
+        $this->actingAs($this->eigenaar)
+            ->post('/players/'.$this->speler->id.'/guardians', ['user_id' => $trainer->id])
+            ->assertSessionHasErrors(['user_id' => 'Je kunt alleen een ouder van deze school koppelen.']);
+
+        $this->assertDatabaseCount('guardian_player', 0);
+    }
+
+    public function test_een_adres_van_een_andere_school_krijgt_een_neutrale_melding(): void
+    {
+        $andereSchool = School::factory()->create();
+        $vreemde = User::factory()->for($andereSchool)->create(['email' => 'vreemd@example.com']);
+        $vreemde->assignRole(Role::Ouder->value);
+
+        $this->actingAs($this->eigenaar)
+            ->post('/players/'.$this->speler->id.'/guardians/invite', [
+                'name' => 'Iemand',
+                'email' => 'vreemd@example.com',
+            ])
+            ->assertSessionHasErrors(['email' => 'Dit e-mailadres is al in gebruik.']);
+
+        $eigen = User::factory()->for($this->school)->create(['email' => 'eigen@example.com']);
+        $eigen->assignRole(Role::Ouder->value);
+
+        $this->actingAs($this->eigenaar)
+            ->post('/players/'.$this->speler->id.'/guardians/invite', [
+                'name' => 'Eigen ouder',
+                'email' => 'eigen@example.com',
+            ])
+            ->assertSessionHasErrors(['email' => 'Er bestaat al een account met dit e-mailadres. Koppel die ouder via de lijst hierboven.']);
+    }
 }

@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Enrollments;
 
 use App\Actions\Enrollments\ApproveEnrollment;
 use App\Actions\Enrollments\CancelEnrollment;
+use App\Actions\Enrollments\DeclineEnrollment;
 use App\Enums\EnrollmentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Enrollment;
+use App\Models\Payment;
 use App\Support\Money\Money;
 use App\Support\Payments\PaymentLink;
 use App\Support\Status\TransitionException;
@@ -29,6 +31,14 @@ class EnrollmentController extends Controller
     public function index(Request $request): Response
     {
         $this->authorize('viewAny', Enrollment::class);
+
+        $alle = Enrollment::with(['product', 'paymentOption', 'order.payments'])->orderBy('created_at')->get();
+        // Welke rekeningen openstaan zegt de scope op Payment; één query voor alles.
+        $openstaand = Payment::query()
+            ->outstanding()
+            ->whereIn('order_id', $alle->pluck('order_id')->filter()->unique()->values())
+            ->pluck('id')
+            ->all();
 
         $vorm = fn (Enrollment $e) => [
             'id' => $e->id,
@@ -54,13 +64,16 @@ class EnrollmentController extends Controller
             'handled_at' => $e->handled_at?->format('d-m-Y'),
             'player_id' => $e->player_id,
             'can_approve' => in_array($e->status, [EnrollmentStatus::AwaitingApproval, EnrollmentStatus::Waitlist], strict: true),
-            'can_decline' => $e->status->isOpen(),
+            'can_decline' => $e->status->canTransitionTo(EnrollmentStatus::Declined),
             'can_cancel' => $e->status->isSettled(),
-            'first_payment_id' => $e->order?->payments()->outstanding()->orderBy('due_on')->value('id'),
+            // Uit de geladen rekeningen, niet per regel een query.
+            'first_payment_id' => $e->order?->payments
+                ->filter(fn (Payment $p) => in_array($p->id, $openstaand, strict: true))
+                ->sortBy([['due_on', 'asc'], ['id', 'asc']])
+                ->first()?->id,
         ];
 
         $school = app(Tenancy::class)->schoolOrFail();
-        $alle = Enrollment::with(['product', 'paymentOption', 'order'])->orderBy('created_at')->get();
 
         return Inertia::render('enrollments/Index', [
             'pending' => $alle->where('status', EnrollmentStatus::AwaitingApproval)->map($vorm)->values(),
@@ -88,22 +101,17 @@ class EnrollmentController extends Controller
         return back()->with('status', $melding);
     }
 
-    public function decline(Request $request, Enrollment $enrollment): RedirectResponse
+    public function decline(Request $request, Enrollment $enrollment, DeclineEnrollment $afwijzen): RedirectResponse
     {
         $this->authorize('update', $enrollment);
 
-        abort_unless($enrollment->status->isOpen(), 422, 'Deze inschrijving is al afgehandeld.');
+        try {
+            $afwijzen->handle($enrollment, $request->user());
+        } catch (TransitionException) {
+            return back()->withErrors(['enrollment' => 'Deze aanmelding is al verder en kan niet meer worden afgewezen. Annuleer hem als dat nodig is.']);
+        }
 
-        $enrollment->transitionTo(EnrollmentStatus::Declined, [
-            'handled_by_id' => $request->user()->id,
-            'handled_at' => now(),
-        ]);
-
-        // De order gaat mee dicht: er valt niets meer te betalen.
-        $enrollment->order?->forceFill(['status' => 'cancelled'])->save();
-        $enrollment->order?->payments()->outstanding()->update(['status' => 'cancelled']);
-
-        return back()->with('status', 'De inschrijving is afgewezen.');
+        return back()->with('status', 'De aanmelding is afgewezen. De ouder heeft bericht gekregen.');
     }
 
     /** Annuleren door de school, met hetzelfde restitutiebeleid als voor een ouder. */

@@ -233,4 +233,37 @@ class QuickFlowTest extends TestCase
                 ->where('reportPrompts.0.href', "/trainings/{$this->training->id}/rapporten")
             );
     }
+
+    public function test_een_speler_buiten_de_training_krijgt_hier_geen_rapport(): void
+    {
+        $this->speler('Anna');
+        $buitenstaander = Player::factory()->for($this->school)->keeper()->create(['first_name' => 'Zoë']);
+
+        $this->actingAs($this->eigenaar)
+            ->post("/trainings/{$this->training->id}/rapporten/{$buitenstaander->id}", ['scores' => $this->cijfers()])
+            ->assertNotFound();
+
+        $this->assertSame(0, Report::count());
+    }
+
+    public function test_een_training_die_nog_moet_beginnen_heeft_nog_geen_rapporten(): void
+    {
+        $anna = $this->speler('Anna');
+
+        $later = Training::factory()->for($this->school)->for($this->groep)->create([
+            'starts_at' => now()->addDay(),
+            'ends_at' => now()->addDay()->addHour(),
+        ]);
+
+        $this->actingAs($this->trainer)
+            ->get("/trainings/{$later->id}/rapporten")
+            ->assertRedirect("/trainings/{$later->id}")
+            ->assertSessionHas('status', 'Deze training moet nog beginnen.');
+
+        $this->actingAs($this->trainer)
+            ->post("/trainings/{$later->id}/rapporten/{$anna->id}", ['scores' => $this->cijfers()])
+            ->assertNotFound();
+
+        $this->assertSame(0, Report::count());
+    }
 }

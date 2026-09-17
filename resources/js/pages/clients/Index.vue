@@ -36,7 +36,8 @@ interface SpelerRij {
 }
 
 const props = defineProps<{
-    counts: { players: number; guardians: number };
+    /** Het aantal ouders is null voor een trainer: die krijgt de ouders niet te zien. */
+    counts: { players: number; guardians: number | null };
     can: { managePlayers: boolean };
     players: SpelerRij[];
     filters: { search: string; position: string; group: number | null; status: string };
@@ -102,9 +103,12 @@ const { kleuren, niveauVoor } = useGrading();
 
             <h1 class="text-2xl font-semibold tracking-tight">{{ isTrainer ? 'Spelers' : 'Klanten' }}</h1>
             <p class="mt-1 text-sm text-muted-foreground">
-                <span class="tabular">{{ counts.players }}</span> actieve {{ counts.players === 1 ? 'speler' : 'spelers' }} en
-                <span class="tabular">{{ counts.guardians }}</span>
-                {{ counts.guardians === 1 ? 'ouder' : 'ouders' }}. Klap een speler uit om te zien wie je belt.
+                <span class="tabular">{{ counts.players }}</span> actieve {{ counts.players === 1 ? 'speler' : 'spelers' }}<template
+                    v-if="!isTrainer && counts.guardians !== null"
+                >
+                    en <span class="tabular">{{ counts.guardians }}</span>
+                    {{ counts.guardians === 1 ? 'ouder' : 'ouders' }}. Klap een speler uit om te zien wie je belt.</template
+                ><template v-else>.</template>
                 <span v-if="players.length" class="hidden sm:inline">{{
                     kleuren ? 'De stip is de kleur op de spelerskaart.' : 'Het groene getal is de rating op de spelerskaart.'
                 }}</span>
@@ -134,7 +138,7 @@ const { kleuren, niveauVoor } = useGrading();
                     <input
                         v-model="filters.search"
                         type="search"
-                        placeholder="Zoek op speler of ouder..."
+                        :placeholder="isTrainer ? 'Zoek op speler...' : 'Zoek op speler of ouder...'"
                         class="min-h-11 w-full rounded-lg border border-input bg-card py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
                     />
                 </div>
@@ -242,7 +246,7 @@ const { kleuren, niveauVoor } = useGrading();
 
                     <!-- De ouders bij dit kind. Geen aparte lijst meer: je zoekt
                          een ouder zelden zonder te weten van wie hij er een is. -->
-                    <div v-if="uitgeklapt.includes(speler.id)" class="border-t border-border bg-secondary/40 px-3 py-3 sm:px-4">
+                    <div v-if="!isTrainer && uitgeklapt.includes(speler.id)" class="border-t border-border bg-secondary/40 px-3 py-3 sm:px-4">
                         <div v-if="speler.guardians.length" class="space-y-2">
                             <div v-for="ouder in speler.guardians" :key="ouder.id" class="flex items-center gap-3">
                                 <Avatar :name="ouder.name" :photo="ouder.photo" size="size-9" />

@@ -132,6 +132,86 @@ class TrainerScopeTest extends TestCase
      * Koppelen is bij veel scholen niet gebruikelijk. Een trainer die nergens
      * bij staat en na het inloggen nul spelers ziet, denkt dat het stuk is.
      */
+    /**
+     * Het rooster is schoolbreed te zien, maar afvinken doet een gekoppelde
+     * trainer alleen bij zijn eigen trainingen en groepen.
+     */
+    public function test_een_gekoppelde_trainer_vinkt_alleen_zijn_eigen_trainingen_af(): void
+    {
+        $this->koppel();
+
+        $andere = Training::factory()->for($this->school)->for($this->andere)->create([
+            'starts_at' => now()->subHour(),
+            'ends_at' => now(),
+        ]);
+
+        $this->actingAs($this->trainer)
+            ->get('/trainings/'.$andere->id)
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('can.record', false)->count('players', 0));
+
+        $this->actingAs($this->trainer)
+            ->patch('/trainings/'.$andere->id.'/attendance/'.$this->andereSpeler->id, ['status' => 'present'])
+            ->assertForbidden();
+
+        // Een training van zijn eigen groep zonder gekoppelde trainer: wel.
+        $eigen = Training::factory()->for($this->school)->for($this->eigen)->create([
+            'starts_at' => now()->subHour(),
+            'ends_at' => now(),
+        ]);
+
+        $this->actingAs($this->trainer)
+            ->get('/trainings/'.$eigen->id)
+            ->assertInertia(fn ($page) => $page
+                ->where('can.record', true)
+                ->where('players', fn ($spelers) => collect($spelers)->pluck('id')->all() === [$this->eigenSpeler->id]));
+
+        $this->actingAs($this->trainer)
+            ->patch('/trainings/'.$eigen->id.'/attendance/'.$this->eigenSpeler->id, ['status' => 'present'])
+            ->assertRedirect();
+    }
+
+    /** Afvinken bij een training van zijn groep toont alleen spelers die van hem zijn. */
+    public function test_de_afvinklijst_toont_alleen_zijn_eigen_spelers(): void
+    {
+        $this->koppel();
+
+        // Een speler van de andere groep die los op zijn training is ingeschreven.
+        $training = Training::query()->where('group_id', $this->eigen->id)->firstOrFail();
+        $training->enrollments()->create([
+            'player_id' => $this->andereSpeler->id,
+            'status' => 'confirmed',
+        ]);
+
+        $this->actingAs($this->eigenaar)
+            ->get('/trainings/'.$training->id)
+            ->assertInertia(fn ($page) => $page->count('players', 2));
+
+        $this->actingAs($this->trainer)
+            ->get('/trainings/'.$training->id)
+            ->assertInertia(fn ($page) => $page->where('players', fn ($spelers) => collect($spelers)->pluck('id')->all() === [$this->eigenSpeler->id]));
+    }
+
+    /** Het aandacht-blok van een trainer noemt alleen zijn eigen spelers. */
+    public function test_het_aandachtblok_noemt_alleen_zijn_eigen_spelers(): void
+    {
+        $this->koppel();
+
+        $this->actingAs($this->trainer)
+            ->get('/dashboard')
+            ->assertInertia(fn ($page) => $page
+                ->where('attention', function ($items) {
+                    $stil = collect($items)->firstWhere('key', 'silent_players');
+
+                    $this->assertNotNull($stil);
+                    $this->assertStringContainsString($this->eigenSpeler->full_name, $stil['title']);
+                    // Hoe stil de rest van de school is, gaat een trainer niet aan.
+                    $this->assertNull(collect($items)->firstWhere('key', 'quiet_trainers'));
+
+                    return true;
+                }));
+    }
+
     public function test_nergens_gekoppeld_betekent_de_hele_school(): void
     {
         $this->actingAs($this->trainer)

@@ -104,11 +104,20 @@ const gemiddelde = computed(() => {
     return Math.ceil((waarden.reduce((a, b) => a + b, 0) / waarden.length) * 10 - 0.0001);
 });
 
-const volgendeNaam = computed(() => {
-    const open = props.roster.filter((r) => !r.done && r.id !== props.player.id);
+/**
+ * De volgende die nog open staat: eerst vooruit vanaf deze speler, daarna
+ * vanaf het begin. Dezelfde volgorde als TrainingReportController::volgende(),
+ * zodat overslaan niet terugspringt naar de eerste van de lijst.
+ */
+const volgendeOpen = computed<RosterRij | null>(() => {
+    const index = props.roster.findIndex((r) => r.id === props.player.id);
+    const vanaf = index === -1 ? 0 : index + 1;
+    const volgorde = [...props.roster.slice(vanaf), ...props.roster.slice(0, vanaf)];
 
-    return open.length ? open[0].first_name : null;
+    return volgorde.find((r) => !r.done && r.id !== props.player.id) ?? null;
 });
+
+const volgendeNaam = computed(() => volgendeOpen.value?.first_name ?? null);
 
 const foutVoor = (categorie: string) => (form.errors as Record<string, string | undefined>)['scores.' + categorie];
 
@@ -156,10 +165,8 @@ const naar = (id: number) => router.get('/trainings/' + props.training.id + '/ra
 // Overslaan: de volgende die nog open staat, anders de reeks uit. Wie je
 // overslaat blijft open staan en komt aan het eind vanzelf weer langs.
 const sla = () => {
-    const open = props.roster.filter((r) => !r.done && r.id !== props.player.id);
-
-    if (open.length) {
-        naar(open[0].id);
+    if (volgendeOpen.value) {
+        naar(volgendeOpen.value.id);
     } else {
         router.get('/trainings/' + props.training.id + '/rapporten/klaar');
     }
@@ -223,7 +230,7 @@ const sla = () => {
 
             <p v-if="player.done" class="mt-3 flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-xs text-primary">
                 <Check class="size-4 shrink-0" />
-                Deze speler heeft vandaag al een rapport. Opslaan zet er een tweede bij.
+                Deze speler heeft voor deze training al een rapport. Opslaan zet er een tweede bij.
             </p>
 
             <div class="mt-4 flex items-baseline justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 shadow-sm">

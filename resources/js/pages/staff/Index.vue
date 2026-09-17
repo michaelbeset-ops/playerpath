@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import Avatar from '@/components/Avatar.vue';
 import FlashMessage from '@/components/FlashMessage.vue';
+import InputError from '@/components/InputError.vue';
 import InviteForm, { type Uitnodiging } from '@/components/onboarding/InviteForm.vue';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { ClipboardList, Plus, Trash2 } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 defineProps<{
     trainers: {
@@ -30,6 +31,10 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 const toonFormulier = ref(false);
+
+// Waarom verwijderen niet kon (je eigen account, de eigenaar).
+const page = usePage();
+const verwijderFout = computed(() => (page.props.errors as Record<string, string | undefined>).user);
 
 const verwijder = (id: number, naam: string) => {
     if (confirm(`Het account van ${naam} verwijderen? Zijn rapporten blijven bewaard.`)) {
@@ -68,6 +73,8 @@ const verwijder = (id: number, naam: string) => {
                 :valid-days="invitationDays"
                 title="Trainers uitnodigen"
             />
+
+            <InputError class="mt-4" :message="verwijderFout" />
 
             <div v-if="trainers.length" class="mt-4 overflow-hidden rounded-xl border border-border bg-card shadow-sm">
                 <div

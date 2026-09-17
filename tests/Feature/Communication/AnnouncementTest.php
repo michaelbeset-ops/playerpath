@@ -164,6 +164,36 @@ class AnnouncementTest extends TestCase
             ->assertSessionHasErrors('group_id');
     }
 
+    public function test_een_trainer_mag_niet_de_hele_school_aanschrijven(): void
+    {
+        Notification::fake();
+
+        $this->actingAs($this->trainer)
+            ->post('/announcements', ['title' => 'Hoi', 'body' => 'Tekst.'])
+            ->assertSessionHasErrors('group_id');
+
+        $this->assertSame(0, Announcement::count());
+    }
+
+    public function test_een_gekoppelde_trainer_mag_alleen_zijn_eigen_groepen_aanschrijven(): void
+    {
+        Notification::fake();
+
+        $andereGroep = Group::factory()->for($this->school)->create();
+        $training = Training::factory()->for($this->school)->create(['group_id' => $this->groep->id]);
+        $training->trainers()->attach($this->trainer->id);
+
+        $this->actingAs($this->trainer)
+            ->post('/announcements', ['title' => 'Hoi', 'body' => 'Tekst.', 'group_id' => $andereGroep->id])
+            ->assertSessionHasErrors('group_id');
+
+        $this->actingAs($this->trainer)
+            ->post('/announcements', ['title' => 'Hoi', 'body' => 'Tekst.', 'group_id' => $this->groep->id])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(1, Announcement::count());
+    }
+
     public function test_een_training_afzeggen_bericht_de_hele_groep(): void
     {
         Notification::fake();

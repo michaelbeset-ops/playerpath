@@ -36,7 +36,7 @@ const props = defineProps<{
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Agenda', href: '/trainings' },
+    { title: 'Trainingen', href: '/trainings' },
     { title: 'Mijn trainingen', href: '/trainings/mijn' },
 ];
 
@@ -138,7 +138,7 @@ const dagen = computed(() => {
                 </p>
                 <Link
                     href="/trainings/create"
-                    class="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"
+                    class="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
                 >
                     <CalendarPlus class="size-4" />
                     Training inplannen

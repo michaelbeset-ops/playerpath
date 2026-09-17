@@ -124,7 +124,7 @@ const leeftijd = (product: ProductRij) => {
                 </Link>
             </div>
 
-            <GatewayNotice v-if="!gateway.connected" class="mt-4" :name="gateway.name" :message="gateway.message" />
+            <GatewayNotice class="mt-4" :gateway="gateway" />
 
             <div v-if="products.length" class="mt-6 space-y-6">
                 <section v-for="groep in groepen" :key="groep.value">

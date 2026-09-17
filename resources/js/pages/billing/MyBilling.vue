@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
 import { CreditCard, Receipt } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 defineProps<{
     players: {
@@ -56,6 +56,10 @@ defineProps<{
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Mijn abonnement', href: '/billing' }];
 
+// Wat de server terugmeldt bij betalen, annuleren of opzeggen.
+const fouten = computed(() => Object.values((usePage().props.errors as Record<string, string> | undefined) ?? {}));
+const demo = computed(() => usePage().props.paymentsDemo === true);
+
 // Welke betaling op dit moment onderweg is naar de provider. Zonder dit kun je
 // twee keer klikken en sta je twee keer bij de bank.
 const bezig = ref<number | null>(null);
@@ -103,6 +107,10 @@ const kleurVoor = (status: string) => {
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-2xl p-4">
             <h1 class="text-2xl font-semibold tracking-tight">Mijn abonnement</h1>
+
+            <div v-if="fouten.length" class="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive" role="alert">
+                <p v-for="fout in fouten" :key="fout">{{ fout }}</p>
+            </div>
             <p class="mt-1 text-sm text-muted-foreground">Wat je betaalt en wat er nog openstaat.</p>
 
             <!-- Per kind: het lopende abonnement -->
@@ -215,13 +223,13 @@ const kleurVoor = (status: string) => {
                             </span>
 
                             <p v-if="betaling.offline && betaling.status !== 'paid'" class="shrink-0 text-xs text-muted-foreground">
-                                {{ betaling.method === 'Contant' ? 'Contant bij de training' : 'Via overboeking' }}
+                                {{ betaling.method_value === 'cash' ? (betaling.cash_at_training ? 'Contant bij de training' : 'Contant bij de school') : 'Via overboeking' }}
                             </p>
 
                             <button
                                 v-if="betaling.payable"
                                 type="button"
-                                class="inline-flex h-9 shrink-0 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+                                class="inline-flex min-h-11 shrink-0 items-center rounded-lg bg-primary px-3 text-sm font-medium text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
                                 :disabled="bezig === betaling.id"
                                 @click="betaal(betaling.id)"
                             >

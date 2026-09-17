@@ -21,10 +21,20 @@ declare module 'vite/client' {
 
 const appName = import.meta.env.VITE_APP_NAME || 'PlayerPath';
 
+// In het tabblad staat de naam van de school als die een eigen huisstijl heeft;
+// PlayerPath alleen als terugval (en op de openbare kaart, die geen huisstijl krijgt).
+type MetMerk = { branding?: { name?: string | null } | null };
+let merkNaam: string | null = null;
+const zetMerk = (props: unknown) => {
+    merkNaam = (props as MetMerk | undefined)?.branding?.name || null;
+};
+router.on('navigate', (event) => zetMerk(event.detail.page.props));
+
 createInertiaApp({
-    title: (title) => `${title} - ${appName}`,
+    title: (title) => `${title} - ${merkNaam ?? appName}`,
     resolve: (name) => resolvePageComponent(`./pages/${name}.vue`, import.meta.glob<DefineComponent>('./pages/**/*.vue')),
     setup({ el, App, props, plugin }) {
+        zetMerk(props.initialPage.props);
         createApp({ render: () => h(App, props) })
             .use(plugin)
             .use(ZiggyVue)

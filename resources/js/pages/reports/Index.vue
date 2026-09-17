@@ -16,7 +16,7 @@ interface SpelerRij {
     days_since_report: number | null;
 }
 
-const props = defineProps<{ players: SpelerRij[]; group: string | null; staleAfterDays: number }>();
+const props = defineProps<{ players: SpelerRij[]; group: string | null; staleAfterDays: number; canCreatePlayer: boolean }>();
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Rapporten', href: '/reports' }];
 
@@ -115,11 +115,22 @@ const { kleuren, niveauVoor } = useGrading();
                 </Link>
             </div>
 
-            <div v-else class="mt-4 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
+            <div v-else-if="players.length" class="mt-4 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
                 <p class="font-medium">Geen spelers gevonden</p>
-                <p class="mt-1 text-sm text-muted-foreground">
-                    {{ players.length ? 'Pas je zoekopdracht aan.' : 'Deze school heeft nog geen spelers. Die voeg je toe in fase 3.' }}
-                </p>
+                <p class="mt-1 text-sm text-muted-foreground">Pas je zoekopdracht aan.</p>
+            </div>
+
+            <div v-else class="mt-4 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
+                <p class="font-medium">Nog geen spelers om te beoordelen</p>
+                <p v-if="canCreatePlayer" class="mt-1 text-sm text-muted-foreground">Voeg eerst een speler toe; daarna vul je hier zijn rapport in.</p>
+                <p v-else class="mt-1 text-sm text-muted-foreground">Zodra de school je spelers heeft, staan ze hier.</p>
+                <Link
+                    v-if="canCreatePlayer"
+                    href="/players/create"
+                    class="mt-4 inline-flex min-h-11 items-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                >
+                    Speler toevoegen
+                </Link>
             </div>
         </div>
     </AppLayout>

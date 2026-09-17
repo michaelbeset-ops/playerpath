@@ -99,9 +99,18 @@ const opnieuw = (id: number) => {
 };
 
 const trekIn = (id: number) => {
+    const rij = props.invitations.find((u) => u.id === id);
+    if (!confirm(`De uitnodiging voor ${rij?.email ?? 'deze persoon'} intrekken? De link in de e-mail werkt daarna niet meer.`)) {
+        return;
+    }
     bezig.value = id;
     router.delete('/uitnodigingen/' + id, { preserveScroll: true, onFinish: () => (bezig.value = null) });
 };
+
+// Staat er iets ingevuld dat nog niet verstuurd is? Voor wie het formulier
+// insluit (de wizard), zodat afronden dat niet stilletjes weggooit.
+const heeftOnverstuurd = computed(() => form.recipients.trim() !== '' || email.value.trim() !== '');
+defineExpose({ heeftOnverstuurd });
 
 const isOuder = computed(() => props.role === 'ouder');
 const isSpeler = computed(() => props.role === 'speler');

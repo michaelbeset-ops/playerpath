@@ -13,7 +13,9 @@ import { computed, ref } from 'vue';
 const props = defineProps<{
     training: {
         id: number;
-        group_id: number;
+        group_id: number | null;
+        is_private?: boolean;
+        label?: string;
         date: string;
         starts_at: string;
         ends_at: string;
@@ -40,13 +42,20 @@ const props = defineProps<{
 
 const bewerken = computed(() => props.training !== null);
 
+// Een privétraining (geboekt moment) heeft geen groep en krijgt er ook geen.
+const prive = computed(() => props.training?.is_private === true);
+
+// Een oude training met alleen een vrije tekst als locatie: die blijft staan
+// zolang je hier niets kiest.
+const vrijeLocatie = computed(() => (props.training && !props.training.location_id ? props.training.location : null));
+
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     { title: 'Trainingen', href: '/trainings' },
     bewerken.value ? { title: 'Bewerken', href: '/trainings/' + props.training!.id + '/edit' } : { title: 'Inplannen', href: '/trainings/create' },
 ]);
 
 const form = useForm({
-    group_id: props.training?.group_id ?? props.groups[0]?.id ?? '',
+    group_id: prive.value ? null : (props.training?.group_id ?? props.groups[0]?.id ?? ''),
     date: props.training?.date ?? '',
     starts_at: props.training?.starts_at ?? '18:00',
     ends_at: props.training?.ends_at ?? '19:30',
@@ -123,8 +132,13 @@ const opslaan = () => {
                 </div>
             </div>
 
-            <form v-if="groups.length" class="mt-6 space-y-5 rounded-xl border border-border bg-card p-5 shadow-sm" @submit.prevent="opslaan">
-                <div class="grid gap-2">
+            <form v-if="groups.length || prive" class="mt-6 space-y-5 rounded-xl border border-border bg-card p-5 shadow-sm" @submit.prevent="opslaan">
+                <div v-if="prive" class="rounded-lg border border-border bg-background p-3 text-sm">
+                    <p class="font-medium">{{ training?.label }}</p>
+                    <p class="mt-0.5 text-xs text-muted-foreground">Een privétraining hoort bij één kind en niet bij een groep.</p>
+                </div>
+
+                <div v-else class="grid gap-2">
                     <Label for="group_id">Groep</Label>
                     <select
                         id="group_id"
@@ -311,6 +325,9 @@ const opslaan = () => {
                         <option :value="null">Nog niet bekend</option>
                         <option v-for="locatie in locations" :key="locatie.id" :value="locatie.id">{{ locatie.name }}</option>
                     </select>
+                    <p v-if="vrijeLocatie && form.location_id === null" class="text-xs text-muted-foreground">
+                        Nu: {{ vrijeLocatie }}. Dat blijft staan zolang je hier niets kiest.
+                    </p>
                     <p v-if="!locations.length" class="text-xs text-muted-foreground">
                         Je hebt nog geen locaties.
                         <Link href="/locaties" class="font-medium text-primary underline underline-offset-4">Zet er een neer</Link>, dan staat hij hier.

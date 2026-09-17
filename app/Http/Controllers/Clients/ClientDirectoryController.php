@@ -56,12 +56,14 @@ class ClientDirectoryController extends Controller
         // Zonder de betaallaag is "betaling openstaand" een status die nergens
         // vandaan komt; dan wordt hij ook niet berekend.
         $betalingen = $this->features->enabled(Feature::Betalingen);
-        $trainer = $request->user()->isTrainer() && ! $request->user()->isEigenaar();
+        $user = $request->user();
+        $trainer = $user->isTrainer() && ! $user->isEigenaar();
 
         $players = Player::query()
             // Een trainer ziet zijn eigen spelers; de eigenaar alles.
-            ->visibleTo($request->user())
-            ->with(['groups', 'user', 'guardians'])
+            ->visibleTo($user)
+            // Een trainer krijgt geen ouders mee, dus die hoeven ook niet geladen.
+            ->with($trainer ? ['groups', 'user'] : ['groups', 'user', 'guardians'])
             // Wanneer voor het laatst beoordeeld: dat is de vraag waarmee een
             // trainer deze lijst opent. Dezelfde grens van dertig dagen als
             // overal, zodat "te lang geleden" één ding betekent.
@@ -73,17 +75,23 @@ class ClientDirectoryController extends Controller
                     ->where('status', PaymentStatus::Open->value)
                     ->whereDate('due_on', '<', now()->toDateString()),
             ]))
-            ->when($filters['search'] !== '', function ($query) use ($filters) {
-                $term = '%'.$filters['search'].'%';
+            ->when($filters['search'] !== '', function ($query) use ($filters, $trainer) {
+                // % en _ zijn jokers in LIKE; wie "a_b" typt bedoelt letterlijk
+                // dat. Het escape-teken is '!' en staat expliciet in de query:
+                // SQLite kent geen standaard, en een backslash betekent in MySQL
+                // en SQLite iets anders binnen een string.
+                $term = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $filters['search']).'%';
+                $like = fn (string $kolom) => "{$kolom} like ? escape '!'";
 
                 // Ook op de naam van een ouder: wie een mailtje van "Marieke"
                 // krijgt, zoekt op Marieke en niet op de achternaam van haar zoon.
+                // Een trainer niet: dan zou zoeken verraden wie de ouders zijn.
                 $query->where(fn ($q) => $q
-                    ->where('first_name', 'like', $term)
-                    ->orWhere('last_name', 'like', $term)
-                    ->orWhereHas('guardians', fn ($g) => $g
-                        ->where('users.name', 'like', $term)
-                        ->orWhere('users.email', 'like', $term)));
+                    ->whereRaw($like('players.first_name'), [$term])
+                    ->orWhereRaw($like('players.last_name'), [$term])
+                    ->when(! $trainer, fn ($q) => $q->orWhereHas('guardians', fn ($g) => $g
+                        ->whereRaw($like('users.name'), [$term])
+                        ->orWhereRaw($like('users.email'), [$term]))));
             })
             ->when($filters['position'] !== '', fn ($q) => $q->where('position', $filters['position']))
             ->when($filters['group'], fn ($q, $groupId) => $q->whereHas('groups', fn ($g) => $g->whereKey($groupId)))
@@ -128,13 +136,14 @@ class ClientDirectoryController extends Controller
             'staleAfterDays' => SchoolDashboard::AANDACHT_NA_DAGEN,
             'filters' => $filters,
             'positions' => PlayerPosition::options(),
-            'groups' => Group::orderBy('name')->get(['id', 'name']),
+            // Een trainer filtert alleen op zijn eigen groepen.
+            'groups' => Group::query()->visibleTo($user)->orderBy('name')->get(['id', 'name']),
             'counts' => [
-                'players' => Player::active()->count(),
-                'guardians' => User::ofCurrentSchool()->role(Role::Ouder->value)->count(),
+                'players' => Player::query()->visibleTo($user)->active()->count(),
+                'guardians' => $trainer ? null : User::ofCurrentSchool()->role(Role::Ouder->value)->count(),
             ],
             'can' => [
-                'managePlayers' => $request->user()->can('create', Player::class),
+                'managePlayers' => $user->can('create', Player::class),
             ],
         ]);
     }

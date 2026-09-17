@@ -16,6 +16,7 @@ use App\Models\Player;
 use App\Models\Product;
 use App\Models\School;
 use App\Models\User;
+use App\Notifications\InschrijvingAfgewezen;
 use App\Notifications\InschrijvingGoedgekeurd;
 use App\Notifications\InschrijvingOntvangen;
 use App\Notifications\NieuweInschrijving;
@@ -116,7 +117,8 @@ class EnrollmentTest extends TestCase
             ->assertOk()
             ->assertInertia(fn ($page) => $page
                 ->component('enrollments/Public')
-                ->where('school.name', $this->school->name)
+                ->where('enrollSchool.name', $this->school->name)
+                ->where('enrollSchool.logo', null)
                 ->count('products', 1)
                 ->where('products.0.name', 'Keepersblok')
                 ->count('products.0.payment_options', 2)
@@ -198,8 +200,9 @@ class EnrollmentTest extends TestCase
     {
         User::factory()->for($this->school)->create(['email' => 'marieke@voorbeeld.nl']);
 
+        // Neutraal: de melding zegt niet letterlijk dat het adres bekend is.
         $this->post('/inschrijven/keepersschool-rob', $this->formulier())
-            ->assertSessionHasErrors('guardian_email');
+            ->assertSessionHasErrors(['guardian_email' => 'Log eerst in met dit e-mailadres, of gebruik een ander adres.']);
 
         $this->assertDatabaseCount('enrollments', 0);
     }
@@ -510,9 +513,172 @@ class EnrollmentTest extends TestCase
         $this->actingAs($this->eigenaar)->post('/enrollments/'.$inschrijving->id.'/decline')->assertRedirect();
 
         $this->assertSame(EnrollmentStatus::Declined, $inschrijving->refresh()->status);
-        $this->assertSame('cancelled', $inschrijving->order->status->value);
+        // Het enige kind op de order: de order gaat dicht, de inschrijving hangt er los van.
+        $this->assertNull($inschrijving->order_id);
+        $this->assertSame('cancelled', Order::firstOrFail()->status->value);
+        Notification::assertSentTo(User::where('email', 'marieke@voorbeeld.nl')->firstOrFail(), InschrijvingAfgewezen::class);
         // Afwijzen is definitief: de statusmachine laat geen goedkeuren meer toe.
         $this->actingAs($this->eigenaar)->post('/enrollments/'.$inschrijving->id.'/approve')->assertSessionHasErrors('enrollment');
+    }
+
+    public function test_afwijzen_haalt_alleen_dit_kind_van_een_gedeelde_order(): void
+    {
+        Notification::fake();
+
+        $optie = PaymentOption::withoutSchoolScope()->where('product_id', $this->blok->id)->where('is_default', true)->value('id');
+        $gegevens = $this->formulier();
+        $gegevens['children'][] = [
+            'first_name' => 'Liam', 'last_name' => 'de Vries', 'date_of_birth' => now()->subYears(9)->toDateString(),
+            'position' => 'field', 'product_id' => $this->blok->id, 'payment_option_id' => $optie,
+        ];
+
+        $this->post('/inschrijven/keepersschool-rob', $gegevens)->assertSessionHasNoErrors();
+
+        app(Tenancy::class)->set($this->school);
+        $order = Order::firstOrFail();
+        $this->assertSame(24000, $order->total_cents);
+
+        $sem = Enrollment::where('first_name', 'Sem')->firstOrFail();
+        $liam = Enrollment::where('first_name', 'Liam')->firstOrFail();
+
+        // Sem goedgekeurd: de order gaat open met een rekening voor beide kinderen.
+        $this->actingAs($this->eigenaar)->post('/enrollments/'.$sem->id.'/approve')->assertSessionHasNoErrors();
+        $this->assertSame(24000, (int) $order->payments()->sum('amount_cents'));
+
+        // Liam afgewezen: alleen zijn regel eraf, het totaal opnieuw, de rekening opnieuw.
+        $this->actingAs($this->eigenaar)->post('/enrollments/'.$liam->id.'/decline')
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('status');
+
+        $order->refresh();
+        $this->assertSame(EnrollmentStatus::Declined, $liam->refresh()->status);
+        $this->assertNull($liam->order_id);
+        $this->assertSame(12000, $order->total_cents);
+        $this->assertSame('open', $order->status->value);
+        $this->assertSame(['Keepersblok voor Sem'], $order->lines()->pluck('description')->all());
+        $this->assertSame(12000, (int) $order->payments()->outstanding()->sum('amount_cents'));
+        $this->assertSame(1, $order->payments()->where('status', 'cancelled')->count());
+        $this->assertSame(EnrollmentStatus::AwaitingPayment, $sem->refresh()->status);
+
+        $ouder = User::where('email', 'marieke@voorbeeld.nl')->firstOrFail();
+        Notification::assertSentTo($ouder, InschrijvingAfgewezen::class, function (InschrijvingAfgewezen $m) use ($ouder) {
+            $mail = $m->toMail($ouder);
+            $this->assertStringContainsString('Liam', (string) $mail->subject);
+
+            return $m->enrollment->first_name === 'Liam';
+        });
+
+        // Wie al wacht op betaling kan niet meer worden afgewezen; dat is annuleren.
+        $this->actingAs($this->eigenaar)->post('/enrollments/'.$sem->id.'/decline')->assertSessionHasErrors('enrollment');
+        $this->assertSame(EnrollmentStatus::AwaitingPayment, $sem->refresh()->status);
+    }
+
+    public function test_afwijzen_vanaf_de_wachtlijst_annuleert_de_wachtlijstplek(): void
+    {
+        Notification::fake();
+
+        app(Tenancy::class)->set($this->school);
+        $this->blok->update(['capacity' => 1]);
+        Participation::create(['product_id' => $this->blok->id, 'player_id' => Player::factory()->for($this->school)->create()->id, 'status' => ParticipationStatus::Confirmed]);
+        app(Tenancy::class)->forget();
+
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier());
+
+        app(Tenancy::class)->set($this->school);
+        $inschrijving = Enrollment::firstOrFail();
+
+        $this->actingAs($this->eigenaar)->post('/enrollments/'.$inschrijving->id.'/decline')->assertSessionHasNoErrors();
+
+        $this->assertSame(EnrollmentStatus::Declined, $inschrijving->refresh()->status);
+        $this->assertDatabaseHas('participations', ['player_id' => $inschrijving->player_id, 'status' => 'cancelled']);
+        $this->assertDatabaseMissing('participations', ['player_id' => $inschrijving->player_id, 'status' => 'waitlist']);
+        Notification::assertSentTo(User::where('email', 'marieke@voorbeeld.nl')->firstOrFail(), InschrijvingAfgewezen::class);
+    }
+
+    // --- Positie en meldingen ---
+
+    public function test_zonder_positieveld_mag_de_positie_leeg_zijn(): void
+    {
+        Notification::fake();
+        $this->instellen(['fields' => ['positie' => 'off']]);
+
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier(kind: ['position' => null]))
+            ->assertSessionHasNoErrors();
+
+        app(Tenancy::class)->set($this->school);
+        // Het aanbod is voor iedereen: dan wordt het de standaard.
+        $this->assertSame('keeper', Player::firstOrFail()->position->value);
+    }
+
+    public function test_zonder_positieveld_volgt_de_positie_de_doelgroep(): void
+    {
+        Notification::fake();
+        $this->instellen(['fields' => ['positie' => 'off']]);
+
+        app(Tenancy::class)->set($this->school);
+        $this->blok->update(['audience' => 'field']);
+        app(Tenancy::class)->forget();
+
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier(kind: ['position' => null]))
+            ->assertSessionHasNoErrors();
+
+        app(Tenancy::class)->set($this->school);
+        $this->assertSame('field', Player::firstOrFail()->position->value);
+    }
+
+    public function test_een_verplichte_positie_moet_gekozen_worden(): void
+    {
+        $this->instellen(['fields' => ['positie' => 'required']]);
+
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier(kind: ['position' => null]))
+            ->assertSessionHasErrors(['children.0.position' => 'Kies een positie.']);
+
+        $this->assertDatabaseCount('enrollments', 0);
+    }
+
+    public function test_meldingen_bij_een_kind_zijn_nederlands(): void
+    {
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier(kind: ['first_name' => '', 'last_name' => '']))
+            ->assertSessionHasErrors([
+                'children.0.first_name' => 'Vul de voornaam in.',
+                'children.0.last_name' => 'Vul de achternaam in.',
+            ]);
+
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier(kind: ['date_of_birth' => now()->addDay()->toDateString()]))
+            ->assertSessionHasErrors(['children.0.date_of_birth' => 'De geboortedatum moet in het verleden liggen.']);
+
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier(kind: ['date_of_birth' => now()->subYears(40)->toDateString()]))
+            ->assertSessionHasErrors(['children.0.date_of_birth' => 'Controleer de geboortedatum: die ligt wel erg ver terug.']);
+
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier(kind: ['date_of_birth' => 'geen datum']))
+            ->assertSessionHasErrors(['children.0.date_of_birth' => 'Vul een geldige geboortedatum in.']);
+
+        // Nergens meer een technische veldnaam in de melding.
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier(kind: ['payment_option_id' => null]))
+            ->assertSessionHasErrors(['children.0.payment_option_id' => 'Kies een betaalvorm.']);
+
+        $this->assertDatabaseCount('enrollments', 0);
+    }
+
+    public function test_het_overzicht_heeft_een_eigen_limiet(): void
+    {
+        for ($i = 0; $i < 10; $i++) {
+            $this->postJson('/inschrijven/keepersschool-rob/overzicht', ['children' => $this->formulier()['children']])->assertOk();
+        }
+
+        $this->postJson('/inschrijven/keepersschool-rob/overzicht', ['children' => $this->formulier()['children']])->assertStatus(429);
+
+        // Het overzicht maakt de inzendingen niet op.
+        Notification::fake();
+        $this->post('/inschrijven/keepersschool-rob', $this->formulier())->assertSessionHasNoErrors()->assertRedirect();
+    }
+
+    public function test_het_logo_van_de_school_staat_op_de_pagina(): void
+    {
+        $this->school->forceFill(['logo_path' => 'logos/rob.png'])->save();
+
+        $this->get('/inschrijven/keepersschool-rob')
+            ->assertInertia(fn ($page) => $page->where('enrollSchool.logo', fn ($url) => str_ends_with((string) $url, 'logos/rob.png')));
     }
 
     public function test_gesloten_en_verborgen_aanbod_staat_niet_op_de_pagina(): void

@@ -23,12 +23,12 @@
 {{-- Voet --}}
 <x-slot:footer>
 <x-mail::footer>
-@if ($m['platform'])
+@if ($m['fromSchool'])
 {{ $m['name'] }}@if ($m['email']) · {{ $m['email'] }}@endif @if ($m['phone']) · {{ $m['phone'] }}@endif
 
 Verstuurd met PlayerPath.
 @else
-© {{ date('Y') }} {{ $m['name'] }}
+© {{ date('Y') }} {{ $m['name'] }}@if ($m['phone']) · Vragen? Bel {{ $m['phone'] }}@endif
 @endif
 </x-mail::footer>
 </x-slot:footer>

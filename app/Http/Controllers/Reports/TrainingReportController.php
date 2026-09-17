@@ -54,6 +54,11 @@ class TrainingReportController extends Controller
         protected ReportOutcome $outcome,
     ) {}
 
+    protected function nogNietBegonnen(Training $training): bool
+    {
+        return $training->starts_at->isFuture();
+    }
+
     /** De sessiesleutel waarin de wijzigingen van deze ronde staan. */
     protected function sleutel(Training $training): string
     {
@@ -69,7 +74,14 @@ class TrainingReportController extends Controller
             return redirect()->route('trainings.effort.show', $training);
         }
 
-        $user = $request->user();
+        // Een rapport gaat over wat er op het veld gebeurde. Vóór de training
+        // is er nog niets om te beoordelen.
+        if ($this->nogNietBegonnen($training)) {
+            return redirect()
+                ->route('trainings.show', $training)
+                ->with('status', 'Deze training moet nog beginnen.');
+        }
+
         $spelers = $this->spelers($training, $request);
 
         if ($spelers->isEmpty()) {
@@ -142,6 +154,16 @@ class TrainingReportController extends Controller
     public function store(StoreReportRequest $request, Training $training, Player $player, StoreReport $storeReport): RedirectResponse
     {
         $this->authorize('recordAttendance', $training);
+
+        abort_if($this->nogNietBegonnen($training), 404);
+
+        // Alleen een speler van déze training, die deze gebruiker mag
+        // beoordelen. Anders krijgt een willekeurig kind een rapport op de
+        // datum van een training waar het niet bij was.
+        abort_unless(
+            $this->spelers($training, $request)->contains(fn (Player $speler) => $speler->id === $player->id),
+            404,
+        );
 
         $voor = $this->outcome->snapshot($player);
 

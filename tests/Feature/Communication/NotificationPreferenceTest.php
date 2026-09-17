@@ -69,6 +69,37 @@ class NotificationPreferenceTest extends TestCase
         $this->assertSame(['database'], $kanalen);
     }
 
+    public function test_opslaan_behoudt_de_hoofdschakelaar_voor_mail(): void
+    {
+        $this->ouder->forceFill(['notification_preferences' => ['mail' => false]])->save();
+
+        $this->actingAs($this->ouder)
+            ->patch('/settings/notifications', [
+                'preferences' => ['rapport' => true, 'doel' => true, 'mededeling' => true, 'verjaardag' => true, 'samenvatting' => true, 'betaling' => true],
+            ])
+            ->assertSessionHasNoErrors();
+
+        $voorkeuren = $this->ouder->refresh()->notification_preferences;
+        $this->assertFalse($voorkeuren['mail']);
+        $this->assertTrue($voorkeuren['mededeling']);
+        $this->assertFalse($this->ouder->wantsEmail('mededeling'));
+    }
+
+    public function test_een_kind_account_wordt_van_de_instellingen_weggestuurd(): void
+    {
+        $this->ouder->forceFill(['email' => 'speler-1-abcdefgh@'.\App\Actions\Players\EnsurePlayerAccount::DOMEIN])->save();
+
+        foreach (['/settings/profile', '/settings/password', '/settings/notifications'] as $adres) {
+            $this->actingAs($this->ouder)->get($adres)->assertRedirect('/dashboard');
+        }
+
+        $this->actingAs($this->ouder)
+            ->delete('/settings/profile', ['password' => 'password'])
+            ->assertRedirect('/dashboard');
+
+        $this->assertNotNull($this->ouder->fresh());
+    }
+
     public function test_met_mail_aan_gaan_beide_kanalen_mee(): void
     {
         $kanalen = (new NieuweMededeling(new Announcement))->via($this->ouder);

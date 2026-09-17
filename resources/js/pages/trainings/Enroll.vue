@@ -216,9 +216,10 @@ const bevestig = () => form.post('/trainings/' + props.training.id + '/inschrijv
                         <InputError :message="form.errors.payment_method" />
                     </div>
 
-                    <p v-else-if="!training.is_free && !methods.length && !training.requires_approval" class="mt-2 text-sm text-warning">
+                    <p v-else-if="!training.is_free && !methods.length" class="mt-2 text-sm text-warning">
                         Deze training heeft nog geen betaalwijze die nu kan. Neem contact op met de school.
                     </p>
+                    <InputError v-if="!moetBetaalwijzeKiezen" class="mt-2" :message="form.errors.payment_method" />
                 </section>
 
                 <!-- 3. Wat er gebeurt -->
@@ -230,7 +231,13 @@ const bevestig = () => form.post('/trainings/' + props.training.id + '/inschrijv
                     <button
                         type="button"
                         class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60 sm:w-auto"
-                        :disabled="form.processing || !form.player_id || (moetBetaalwijzeKiezen && !form.payment_method) || !training.open"
+                        :disabled="
+                            form.processing ||
+                            !form.player_id ||
+                            (moetBetaalwijzeKiezen && !form.payment_method) ||
+                            !training.open ||
+                            (!training.is_free && !methods.length)
+                        "
                         @click="bevestig"
                     >
                         <LoaderCircle v-if="form.processing" class="size-4 animate-spin" />

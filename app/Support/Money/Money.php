@@ -31,6 +31,17 @@ class Money
      * Bewust via string en round(): 12.50 * 100 geeft in floating point
      * 1249.9999999999998, en dat is precies waarom geld geen float mag zijn.
      */
+    /**
+     * Is dit een bedrag zoals mensen het typen? "12", "12,50", "1.250,00",
+     * "12.50" of "€ 12,50". Geen letters, hooguit twee decimalen.
+     */
+    public static function isValid(?string $bedrag): bool
+    {
+        $schoon = trim(str_replace(['€', ' '], '', (string) $bedrag));
+
+        return (bool) preg_match('/^(\d{1,3}(\.\d{3})+|\d+)(,\d{1,2})?$|^\d+(\.\d{1,2})?$/', $schoon);
+    }
+
     public static function toCents(string $bedrag): int
     {
         $schoon = preg_replace('/[^0-9,.\-]/', '', $bedrag) ?? '';

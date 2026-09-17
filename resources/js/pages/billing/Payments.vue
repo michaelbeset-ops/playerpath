@@ -17,6 +17,8 @@ interface Betaling {
     vat_rate: number;
     status: string;
     status_label: string;
+    /** De stappen die de school met de hand mag zetten. */
+    next_statuses: Record<string, string>;
     method: string | null;
     method_value: string | null;
     description: string;
@@ -119,8 +121,23 @@ const wissel = (id: number) => {
     open.value = open.value.includes(id) ? open.value.filter((x) => x !== id) : [...open.value, id];
 };
 
-const zetStatus = (betaling: Betaling, status: string) =>
+// Terug naar openstaand, annuleren of terugbetaald zetten raakt de
+// administratie; daar hoort een bevestiging bij.
+const zetStatus = (betaling: Betaling, status: string) => {
+    const zwaar: Record<string, string> = {
+        cancelled: 'Deze rekening annuleren? Hij hoeft dan niet meer betaald te worden.',
+        refunded: 'Deze rekening op terugbetaald zetten? Het bedrag telt dan niet meer mee als omzet.',
+        open: 'Deze rekening weer op openstaand zetten?',
+    };
+
+    if (zwaar[status] && !confirm(zwaar[status])) {
+        router.reload({ only: ['payments'] });
+
+        return;
+    }
+
     router.patch('/payments/' + betaling.id, { status }, { preserveScroll: true, preserveState: false });
+};
 
 /**
  * Hoe het geld binnenkwam. Bij contant en overboeking is dit de enige plek
@@ -316,7 +333,8 @@ const zetMethode = (betaling: Betaling, method: string) =>
                                         class="h-11 rounded-lg border border-input bg-background px-2 text-sm text-foreground outline-none focus:border-primary"
                                         @change="zetStatus(betaling, ($event.target as HTMLSelectElement).value)"
                                     >
-                                        <option v-for="(label, waarde) in statuses" :key="waarde" :value="waarde">{{ label }}</option>
+                                        <option :value="betaling.status">{{ betaling.status_label }}</option>
+                                        <option v-for="(label, waarde) in betaling.next_statuses" :key="waarde" :value="waarde">{{ label }}</option>
                                     </select>
                                 </label>
 

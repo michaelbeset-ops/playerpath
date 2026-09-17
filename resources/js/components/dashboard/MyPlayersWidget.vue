@@ -2,7 +2,8 @@
 import GradeChip from '@/components/GradeChip.vue';
 import Avatar from '@/components/Avatar.vue';
 import { Link } from '@inertiajs/vue3';
-import { ClipboardList } from 'lucide-vue-next';
+import { ClipboardList, Sparkles } from 'lucide-vue-next';
+import { computed } from 'vue';
 
 /**
  * Mijn spelers, op het dashboard van de trainer.
@@ -27,41 +28,53 @@ export interface MijnSpeler {
     tone: 'good' | 'warning';
 }
 
-defineProps<{
-    data: { players: MijnSpeler[]; total: number; stale: number; staleAfterDays: number };
+const props = defineProps<{
+    data: { players: MijnSpeler[]; total: number; stale: number; staleAfterDays: number; effort?: boolean };
 }>();
+
+// Bij de inzetkaart geen cijfers en geen rapporten: het laatste moment is de
+// laatste inzet, en inzet geef je vanuit de training.
+const inzet = computed(() => props.data.effort === true);
 
 const geleden = (speler: MijnSpeler) => {
     if (speler.days_since_report === null) {
-        return 'nog geen rapport';
+        return inzet.value ? 'nog geen inzet' : 'nog geen rapport';
     }
 
     if (speler.days_since_report === 0) {
-        return 'vandaag beoordeeld';
+        return inzet.value ? 'vandaag inzet gegeven' : 'vandaag beoordeeld';
     }
 
-    return speler.days_since_report === 1 ? 'gisteren beoordeeld' : speler.days_since_report + ' dagen geleden';
+    if (speler.days_since_report === 1) {
+        return inzet.value ? 'gisteren inzet gegeven' : 'gisteren beoordeeld';
+    }
+
+    return speler.days_since_report + ' dagen geleden';
 };
+
+const href = (speler: MijnSpeler) => (inzet.value ? '/players/' + speler.id + '/card' : '/players/' + speler.id + '/reports/create');
+const lijst = computed(() => (inzet.value ? '/trainings/mijn' : '/reports'));
 </script>
 
 <template>
     <section class="flex h-full min-w-0 flex-col rounded-xl border border-border bg-card p-4 shadow-sm sm:p-5">
         <div class="flex flex-wrap items-baseline justify-between gap-2">
             <h2 class="font-medium">Mijn spelers</h2>
-            <Link href="/reports" class="inline-flex min-h-11 items-center text-xs text-muted-foreground underline underline-offset-4">Alles</Link>
+            <Link :href="lijst" class="inline-flex min-h-11 items-center text-xs text-muted-foreground underline underline-offset-4">Alles</Link>
         </div>
 
         <p v-if="data.total" class="mt-1 text-xs text-muted-foreground">
             <template v-if="data.stale">
                 <span class="font-medium text-warning">{{ data.stale }}</span> van {{ data.total }} wachten langer dan {{ data.staleAfterDays }} dagen
-                op een rapport.
+                op {{ inzet ? 'inzetpunten' : 'een rapport' }}.
             </template>
+            <template v-else-if="inzet">Alle {{ data.total }} spelers kregen onlangs inzetpunten.</template>
             <template v-else>Alle {{ data.total }} spelers hebben een actueel rapport.</template>
         </p>
 
         <ul v-if="data.players.length" class="mt-3 min-w-0 flex-1 divide-y divide-border">
             <li v-for="speler in data.players" :key="speler.id">
-                <Link :href="'/players/' + speler.id + '/reports/create'" class="flex min-h-14 min-w-0 items-center gap-3 py-2">
+                <Link :href="href(speler)" class="flex min-h-14 min-w-0 items-center gap-3 py-2">
                     <Avatar :name="speler.name" :photo="speler.photo" size="size-9" />
 
                     <span class="min-w-0 flex-1">
@@ -71,7 +84,7 @@ const geleden = (speler: MijnSpeler) => {
                         </span>
                     </span>
 
-                    <span class="tabular shrink-0 text-right">
+                    <span v-if="!inzet" class="tabular shrink-0 text-right">
                         <GradeChip :rating="speler.rating" size="sm">
                             <span class="block text-base font-bold leading-none" :class="speler.rating ? '' : 'text-muted-foreground'">
                                 {{ speler.rating ?? '-' }}
@@ -80,7 +93,8 @@ const geleden = (speler: MijnSpeler) => {
                         </GradeChip>
                     </span>
 
-                    <ClipboardList class="size-4 shrink-0 text-muted-foreground" />
+                    <Sparkles v-if="inzet" class="size-4 shrink-0 text-muted-foreground" />
+                    <ClipboardList v-else class="size-4 shrink-0 text-muted-foreground" />
                 </Link>
             </li>
         </ul>
@@ -94,7 +108,7 @@ const geleden = (speler: MijnSpeler) => {
 
         <Link
             v-if="data.total > data.players.length"
-            href="/reports"
+            :href="lijst"
             class="mt-2 inline-flex min-h-11 items-center justify-center text-xs text-muted-foreground underline underline-offset-4"
         >
             Nog {{ data.total - data.players.length }} spelers

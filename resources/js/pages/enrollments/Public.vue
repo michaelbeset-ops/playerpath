@@ -55,7 +55,7 @@ interface Kind {
     first_name: string;
     last_name: string;
     date_of_birth: string;
-    position: string;
+    position: string | null;
     product_id: number | null;
     payment_option_id: number | null;
     details: { kledingmaat: string; niveau: string; medisch: string };
@@ -71,7 +71,7 @@ interface BestaandKind {
 }
 
 const props = defineProps<{
-    school: { name: string; slug: string };
+    enrollSchool: { name: string; slug: string; logo: string | null };
     products: Aanbod[];
     selected: number | null;
     config: {
@@ -95,12 +95,20 @@ const props = defineProps<{
 
 const ingelogd = computed(() => props.config.guardian !== null);
 
+// Een aanbod voor één doelgroep zegt al welke positie het is; anders kiest de
+// ouder zelf. Niets voorkiezen: een veldspeler die als keeper binnenkomt
+// merkt niemand op tot hij in de verkeerde groep staat.
+const positieVoor = (productId: number | null): string | null => {
+    const doelgroep = props.products.find((p) => p.id === productId)?.audience;
+    return doelgroep && doelgroep !== 'all' ? doelgroep : null;
+};
+
 const nieuwKind = (productId: number | null): Kind => ({
     player_id: null,
     first_name: '',
     last_name: '',
     date_of_birth: '',
-    position: 'keeper',
+    position: positieVoor(productId),
     product_id: productId,
     payment_option_id: props.products.find((p) => p.id === productId)?.payment_options.find((o) => o.is_default)?.id ?? null,
     details: { kledingmaat: '', niveau: '', medisch: '' },
@@ -150,6 +158,9 @@ const kies = (aanbod: Aanbod) => {
     for (const kind of form.children) {
         kind.product_id = aanbod.id;
         kind.payment_option_id = aanbod.payment_options.find((o) => o.is_default)?.id ?? aanbod.payment_options[0]?.id ?? null;
+        if (kind.player_id === null && aanbod.audience !== 'all') {
+            kind.position = aanbod.audience;
+        }
     }
     stap.value = 'kinderen';
     window.scrollTo({ top: 0 });
@@ -180,7 +191,9 @@ const kanVerder = computed(() => {
         case 'aanbod':
             return gekozen.value !== null;
         case 'kinderen':
-            return form.children.every((k) => k.player_id !== null || (k.first_name && k.last_name && k.date_of_birth));
+            return form.children.every(
+                (k) => k.player_id !== null || (k.first_name && k.last_name && k.date_of_birth && (!verplichtVeld('positie') || k.position)),
+            );
         case 'jij':
             return !!(form.guardian_name && form.guardian_email && form.password.length >= 8);
         case 'toestemming':
@@ -251,6 +264,9 @@ const overzicht = ref<Overzicht | null>(null);
 const overzichtLaadt = ref(false);
 const overzichtFout = ref<string | null>(null);
 
+// Vraagt de school niet naar de positie, dan gaat er ook geen mee.
+const kinderVoorServer = () => form.children.map((k) => ({ ...k, position: vraagt('positie') ? k.position : null }));
+
 const xsrf = () => decodeURIComponent(document.cookie.match(/XSRF-TOKEN=([^;]+)/)?.[1] ?? '');
 
 const haalOverzicht = async () => {
@@ -258,21 +274,36 @@ const haalOverzicht = async () => {
     overzichtFout.value = null;
 
     try {
-        const antwoord = await fetch('/inschrijven/' + props.school.slug + '/overzicht', {
+        const antwoord = await fetch('/inschrijven/' + props.enrollSchool.slug + '/overzicht', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-XSRF-TOKEN': xsrf() },
-            body: JSON.stringify({ children: form.children, code: form.code || null }),
+            body: JSON.stringify({ children: kinderVoorServer(), code: form.code || null }),
         });
 
-        if (antwoord.status === 422) {
-            const fouten = await antwoord.json();
-            overzichtFout.value = Object.values(fouten.errors ?? {}).flat()[0] as string;
+        if (!antwoord.ok) {
             overzicht.value = null;
+
+            if (antwoord.status === 422) {
+                const fouten = await antwoord.json().catch(() => ({}));
+                overzichtFout.value =
+                    (Object.values(fouten.errors ?? {}).flat()[0] as string | undefined) ?? 'Controleer de gegevens en probeer het nog eens.';
+            } else if (antwoord.status === 419) {
+                overzichtFout.value = 'Je sessie is verlopen. Ververs de pagina en probeer het opnieuw.';
+            } else if (antwoord.status === 429) {
+                overzichtFout.value = 'Even wachten: je hebt het overzicht te vaak opgevraagd. Probeer het over een minuut nog eens.';
+            } else {
+                overzichtFout.value = 'Het overzicht kon niet worden opgehaald. Probeer het nog eens.';
+            }
             return;
         }
 
-        overzicht.value = await antwoord.json();
+        const gegevens = (await antwoord.json()) as Overzicht;
+        overzicht.value = Array.isArray(gegevens?.lines) ? { ...gegevens, recurring: gegevens.recurring ?? [] } : null;
+        if (overzicht.value === null) {
+            overzichtFout.value = 'Het overzicht kon niet worden opgehaald. Probeer het nog eens.';
+        }
     } catch {
+        overzicht.value = null;
         overzichtFout.value = 'Het overzicht kon niet worden opgehaald. Probeer het nog eens.';
     } finally {
         overzichtLaadt.value = false;
@@ -301,21 +332,43 @@ const betaalregel = computed(() => {
         : 'Je krijgt meteen een betaallink; na betaling is de inschrijving rond.';
 });
 
-const verstuur = () => form.post('/inschrijven/' + props.school.slug, { onError: () => window.scrollTo({ top: 0 }) });
+const verstuur = () =>
+    form
+        .transform((gegevens) => ({ ...gegevens, children: kinderVoorServer() }))
+        .post('/inschrijven/' + props.enrollSchool.slug, { onError: () => window.scrollTo({ top: 0 }) });
 
 // Een fout van de server op een stap die je al voorbij was: terug ernaartoe.
+// Het aanbod hoort bij stap 1, de betaalvorm en de opmerking bij Betalen.
+const stapVoorFout = (sleutel: string): Stap | null => {
+    if (/^children(\.\d+)?\.product_id$/.test(sleutel)) return 'aanbod';
+    if (/^children\.\d+\.payment_option_id$/.test(sleutel)) return 'betalen';
+    if (sleutel.startsWith('children')) return 'kinderen';
+    if (sleutel.startsWith('guardian') || sleutel === 'password' || sleutel === 'relationship') return 'jij';
+    if (sleutel.startsWith('consents')) return 'toestemming';
+    if (['payment_method', 'code', 'note'].includes(sleutel)) return 'betalen';
+    return null;
+};
+
 watch(
     () => form.errors,
     (fouten) => {
-        const sleutels = Object.keys(fouten);
-        if (!sleutels.length) return;
-        if (sleutels.some((k) => k.startsWith('children'))) stap.value = 'kinderen';
-        else if (sleutels.some((k) => k.startsWith('guardian') || k === 'password')) stap.value = 'jij';
-        else if (sleutels.includes('consents')) stap.value = 'toestemming';
-        else if (sleutels.includes('payment_method') || sleutels.includes('code')) stap.value = 'betalen';
+        const doelen = Object.keys(fouten)
+            .map(stapVoorFout)
+            .filter((s): s is Stap => s !== null && stappen.value.includes(s));
+        if (!doelen.length) return;
+        // De vroegste stap met een fout eerst.
+        stap.value = stappen.value.find((s) => doelen.includes(s)) ?? stap.value;
     },
     { deep: true },
 );
+
+// Fouten zonder eigen veld op een stap (aanbod, bestaand kind): bovenaan tonen.
+const stapFouten = computed(() => {
+    const fouten = form.errors as Record<string, string>;
+    return Object.keys(fouten)
+        .filter((k) => stapVoorFout(k) === stap.value && (/\.product_id$/.test(k) || /\.player_id$/.test(k) || k === 'children'))
+        .map((k) => fouten[k]);
+});
 
 /* ---------- Hulpjes ---------- */
 
@@ -333,16 +386,18 @@ const invoer = 'h-11 w-full rounded-lg border border-input bg-background px-3 te
 </script>
 
 <template>
-    <Head :title="'Inschrijven bij ' + school.name" />
+    <Head :title="'Inschrijven bij ' + enrollSchool.name" />
 
     <!-- Licht: dit staat vaak in een iframe op de eigen website van de school. -->
     <div class="min-h-svh bg-background px-4 pb-28 pt-6 text-foreground sm:pt-10">
         <div class="mx-auto w-full max-w-lg">
             <div class="flex items-center gap-3">
-                <AppLogoIcon class="size-10 rounded-xl" />
+                <!-- Het logo van de school; het PlayerPath-teken alleen als terugval. -->
+                <img v-if="enrollSchool.logo" :src="enrollSchool.logo" :alt="enrollSchool.name" class="h-10 max-w-32 shrink-0 object-contain" />
+                <AppLogoIcon v-else class="size-10 shrink-0 rounded-xl" />
                 <div class="min-w-0">
                     <p class="text-xs uppercase tracking-widest text-muted-foreground">Inschrijven bij</p>
-                    <p class="break-words text-lg font-semibold">{{ school.name }}</p>
+                    <p class="break-words text-lg font-semibold">{{ enrollSchool.name }}</p>
                 </div>
             </div>
 
@@ -419,6 +474,13 @@ const invoer = 'h-11 w-full rounded-lg border border-input bg-background px-3 te
                 >
                     {{ fout('guardian_email') }}
                 </p>
+                <p
+                    v-for="(melding, i) in stapFouten"
+                    :key="'sf' + i"
+                    class="mt-3 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+                >
+                    {{ melding }}
+                </p>
 
                 <!-- ================= 1. Aanbod ================= -->
                 <div v-if="stap === 'aanbod'" class="mt-5 space-y-3">
@@ -494,7 +556,8 @@ const invoer = 'h-11 w-full rounded-lg border border-input bg-background px-3 te
                             <button
                                 v-if="form.children.length > 1"
                                 type="button"
-                                class="text-sm text-muted-foreground hover:text-destructive"
+                                class="-mr-2 inline-flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:text-destructive"
+                                :aria-label="'Kind ' + (i + 1) + ' verwijderen'"
                                 @click="verwijderKind(i)"
                             >
                                 <Trash2 class="size-4" />
@@ -542,7 +605,9 @@ const invoer = 'h-11 w-full rounded-lg border border-input bg-background px-3 te
                                 <InputError :message="fout('children.' + i + '.date_of_birth')" />
                             </div>
                             <div v-if="vraagt('positie')">
-                                <label class="block text-sm font-medium">Positie</label>
+                                <label class="block text-sm font-medium">
+                                    Positie <span v-if="!verplichtVeld('positie')" class="text-muted-foreground">(optioneel)</span>
+                                </label>
                                 <div class="mt-1 grid grid-cols-2 gap-2">
                                     <label
                                         v-for="(label, waarde) in config.positions"
@@ -558,7 +623,8 @@ const invoer = 'h-11 w-full rounded-lg border border-input bg-background px-3 te
                             </div>
                         </div>
                         <p v-else class="mt-3 text-sm text-muted-foreground">
-                            {{ kind.first_name }} {{ kind.last_name }} · {{ config.positions[kind.position] }}
+                            {{ kind.first_name }} {{ kind.last_name
+                            }}<template v-if="kind.position"> · {{ config.positions[kind.position] }}</template>
                         </p>
 
                         <div
@@ -751,6 +817,7 @@ const invoer = 'h-11 w-full rounded-lg border border-input bg-background px-3 te
                             rows="2"
                             class="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-base outline-none focus:border-primary"
                         ></textarea>
+                        <InputError :message="fout('note')" />
                     </div>
                 </div>
 

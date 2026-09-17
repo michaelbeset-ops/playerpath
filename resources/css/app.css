@@ -50,6 +50,9 @@
         /* Goud/metallic: schaars gebruiken (spelerskaart, badges, mijlpalen) */
         --gold: 43 74% 38%; /* donkerder, anders onleesbaar op wit */
         --gold-foreground: 0 0% 100%;
+        /* De levelkleuren als rand (kindkaartje op het gezinsdashboard). */
+        --level-brons: 25 60% 38%;
+        --level-zilver: 215 14% 60%;
 
         /* Statussen */
         --destructive: 0 72% 45%;
@@ -128,6 +131,8 @@
 
         --gold: 46 65% 52%; /* #D4AF37 */
         --gold-foreground: 225 12% 6%;
+        --level-brons: 27 55% 52%;
+        --level-zilver: 215 16% 72%;
 
         --destructive: 0 84% 60%;
         --destructive-foreground: 210 40% 96%;

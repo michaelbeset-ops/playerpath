@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head, router, useForm, usePage } from '@inertiajs/vue3';
 import { CalendarRange, Flag, LoaderCircle, Medal } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 
@@ -36,7 +36,14 @@ const props = defineProps<{
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Seizoen', href: '/seizoen' }];
 
-const vandaag = new Date().toISOString().slice(0, 10);
+// Datums in lokale tijd: toISOString() rekent in UTC en geeft rond middernacht
+// (en na een zomertijdwissel) de dag ervoor.
+const alsDatum = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+/** 2026-09-17 → 17-09-2026, zoals overal in de app. */
+const alsNederlands = (iso: string | null) => (iso ? iso.split('-').reverse().join('-') : '');
+
+const vandaag = alsDatum(new Date());
 
 const form = useForm({
     name: props.season.name ?? props.suggestion,
@@ -55,7 +62,7 @@ const eindUitWeken = (start: string, weken: number) => {
 
     d.setDate(d.getDate() + weken * 7 - 1);
 
-    return d.toISOString().slice(0, 10);
+    return alsDatum(d);
 };
 
 const zelfAangepast = ref(false);
@@ -79,8 +86,16 @@ const opslaan = () => form.post('/seizoen', { preserveScroll: true });
 
 const bezigSluiten = ref(false);
 
+// Afsluiten gaat via router.post, dus de fout staat in de gedeelde errors.
+const page = usePage();
+const sluitFout = computed(() => (page.props.errors as Record<string, string> | undefined)?.season);
+
 const sluitNu = () => {
-    if (!confirm('Het seizoen nu afsluiten? Van elke speler wordt de kaart van dit moment bewaard als eindkaart en de punten beginnen opnieuw. De cijfers blijven staan. Ouders en spelers krijgen bericht.')) {
+    if (
+        !confirm(
+            'Het seizoen nu afsluiten? Van elke speler wordt de kaart van dit moment bewaard als eindkaart en de punten beginnen opnieuw. De cijfers blijven staan. Ouders en spelers krijgen bericht.',
+        )
+    ) {
         return;
     }
 
@@ -102,8 +117,8 @@ const voortgang = computed(() =>
 
             <h1 class="text-2xl font-semibold tracking-tight">Seizoen</h1>
             <p class="mt-1 text-sm text-muted-foreground">
-                De punten en het level van een kaart horen bij een seizoen. Aan het eind wordt elke kaart bewaard als eindkaart en beginnen de
-                punten opnieuw. De cijfers blijven staan: die zeggen hoe goed iemand is, en dat verdwijnt niet op een datum.
+                De punten en het level van een kaart horen bij een seizoen. Aan het eind wordt elke kaart bewaard als eindkaart en beginnen de punten
+                opnieuw. De cijfers blijven staan: die zeggen hoe goed iemand is, en dat verdwijnt niet op een datum.
             </p>
 
             <!-- Waar we staan -->
@@ -122,7 +137,7 @@ const voortgang = computed(() =>
                             <template v-else-if="season.has_ended">
                                 De einddatum is voorbij. Vannacht wordt het seizoen afgesloten, of doe het nu.
                             </template>
-                            <template v-else>Begint op {{ season.starts_on }}.</template>
+                            <template v-else>Begint op {{ alsNederlands(season.starts_on) }}.</template>
                         </p>
                         <div v-if="season.is_active" class="mt-3 h-1.5 overflow-hidden rounded-full bg-secondary">
                             <div class="h-full rounded-full bg-primary transition-all" :style="{ width: voortgang + '%' }"></div>
@@ -141,15 +156,14 @@ const voortgang = computed(() =>
                         <Flag v-else class="size-4" />
                         Seizoen nu afsluiten
                     </button>
-                    <p class="text-xs text-muted-foreground">
-                        {{ players }} actieve spelers krijgen een eindkaart. Eerder bewaard: {{ archived }}.
-                    </p>
+                    <p class="text-xs text-muted-foreground">{{ players }} actieve spelers krijgen een eindkaart. Eerder bewaard: {{ archived }}.</p>
                 </div>
+                <InputError class="mt-2" :message="sluitFout" />
             </section>
 
             <div v-else-if="season.closed_at" class="mt-6 rounded-xl border border-border bg-card p-4 text-sm shadow-sm">
-                Het vorige seizoen is afgesloten op {{ season.closed_at }}. Stel hieronder het volgende in; tot die tijd tellen de punten gewoon
-                door vanaf de dag na het afsluiten.
+                Het vorige seizoen is afgesloten op {{ season.closed_at }}. Stel hieronder het volgende in; tot die tijd tellen de punten gewoon door
+                vanaf de dag na het afsluiten.
             </div>
 
             <!-- Instellen -->
@@ -179,12 +193,24 @@ const voortgang = computed(() =>
                                 :key="n"
                                 type="button"
                                 class="min-h-11 rounded-lg border px-3 text-sm transition"
-                                :class="Number(form.weeks) === n ? 'border-primary bg-primary/10 font-medium text-primary' : 'border-border hover:border-primary'"
+                                :class="
+                                    Number(form.weeks) === n
+                                        ? 'border-primary bg-primary/10 font-medium text-primary'
+                                        : 'border-border hover:border-primary'
+                                "
                                 @click="kiesWeken(n)"
                             >
                                 {{ n }} weken
                             </button>
-                            <Input v-model="form.weeks" type="number" min="1" max="52" class="w-24" aria-label="Aantal weken" @input="zelfAangepast = false" />
+                            <Input
+                                v-model="form.weeks"
+                                type="number"
+                                min="1"
+                                max="52"
+                                class="w-24"
+                                aria-label="Aantal weken"
+                                @input="zelfAangepast = false"
+                            />
                         </div>
                         <InputError :message="form.errors.weeks" />
                     </div>
@@ -214,7 +240,10 @@ const voortgang = computed(() =>
                     Zo werken de kaarten in een seizoen
                 </p>
                 <ul class="mt-3 space-y-2 text-sm text-muted-foreground">
-                    <li>Elke training levert punten op, en afhankelijk van jullie spelerskaart ook de inzet of het rapport. De punten bepalen de kaart:</li>
+                    <li>
+                        Elke training levert punten op, en afhankelijk van jullie spelerskaart ook de inzet of het rapport. De punten bepalen de
+                        kaart:
+                    </li>
                     <li class="flex flex-wrap gap-2">
                         <span v-for="l in levels" :key="l.key" class="rounded-lg border border-border px-2.5 py-1 text-xs">
                             <span class="font-medium text-foreground">{{ l.label }}</span>
@@ -222,8 +251,14 @@ const voortgang = computed(() =>
                             <template v-else> bij de start</template>
                         </span>
                     </li>
-                    <li>Aan het eind van het seizoen krijgt elke speler zijn eindkaart bij Mijn kaarten, en beginnen de punten opnieuw. Ouders en spelers krijgen daar bericht van.</li>
-                    <li>Bij de prestatiekaart gaan de cijfers per categorie en de rating gewoon door: die groeien over seizoenen heen. Welke kaart jullie gebruiken kies je bij Spelerskaart.</li>
+                    <li>
+                        Aan het eind van het seizoen krijgt elke speler zijn eindkaart bij Mijn kaarten, en beginnen de punten opnieuw. Ouders en
+                        spelers krijgen daar bericht van.
+                    </li>
+                    <li>
+                        Bij de prestatiekaart gaan de cijfers per categorie en de rating gewoon door: die groeien over seizoenen heen. Welke kaart
+                        jullie gebruiken kies je bij Spelerskaart.
+                    </li>
                 </ul>
             </section>
         </div>

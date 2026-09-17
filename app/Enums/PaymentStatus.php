@@ -62,6 +62,34 @@ enum PaymentStatus: string
         return in_array($this, [self::Paid, self::PartiallyRefunded], strict: true);
     }
 
+    /**
+     * Kan hier nu online voor betaald worden?
+     *
+     * Niet bij een voldane, geannuleerde of terugbetaalde rekening, en niet
+     * terwijl er al een betaling loopt (dan zou een tweede checkout dubbel
+     * afschrijven).
+     */
+    public function isPayable(): bool
+    {
+        return in_array($this, [self::Open, self::Failed, self::Expired, self::ChargedBack], strict: true);
+    }
+
+    /**
+     * Waar de school een rekening met de hand naartoe mag zetten.
+     *
+     * De volgende stappen uit de statusmachine, zonder wat alleen van de
+     * betaalprovider komt (in behandeling, verlopen, gestorneerd, deels
+     * terugbetaald).
+     *
+     * @return list<self>
+     */
+    public function manualNext(): array
+    {
+        $alleenProvider = [self::Pending, self::Expired, self::ChargedBack, self::PartiallyRefunded];
+
+        return array_values(array_filter($this->next(), fn (self $status) => ! in_array($status, $alleenProvider, true)));
+    }
+
     /** Staat er nog iets te betalen? */
     public function isOutstanding(): bool
     {

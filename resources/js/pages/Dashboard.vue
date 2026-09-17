@@ -84,7 +84,15 @@ defineProps<{
 
 const page = usePage<SharedData>();
 const school = computed(() => page.props.school);
-const rollen = computed(() => page.props.auth.roles ?? []);
+// Nette labels: "eigenaar, trainer" is de sleutel, niet wat je leest.
+const rolLabels: Record<string, string> = {
+    eigenaar: 'Eigenaar',
+    trainer: 'Trainer',
+    ouder: 'Ouder',
+    speler: 'Speler',
+    platformbeheerder: 'Platformbeheerder',
+};
+const rollen = computed(() => (page.props.auth.roles ?? []).map((rol: string) => rolLabels[rol] ?? rol));
 
 // Alleen de voornaam: "Hallo Marieke de Vries" leest als een brief van de bank.
 const voornaam = computed(() => (page.props.auth.user?.name ?? '').split(' ')[0]);
@@ -344,6 +352,7 @@ const { inzet: inzetKaart } = useGrading();
                 <FamilyDashboard
                     v-else-if="view === 'gezin'"
                     class="mt-6"
+                    :attention="attention ?? []"
                     :children="children ?? []"
                     :upcoming="upcoming ?? []"
                     :offerings="offerings ?? []"

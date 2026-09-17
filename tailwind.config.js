@@ -61,6 +61,10 @@ export default {
                     DEFAULT: 'hsl(var(--gold))',
                     foreground: 'hsl(var(--gold-foreground))',
                 },
+                level: {
+                    brons: 'hsl(var(--level-brons) / <alpha-value>)',
+                    zilver: 'hsl(var(--level-zilver) / <alpha-value>)',
+                },
                 warning: {
                     DEFAULT: 'hsl(var(--warning))',
                     foreground: 'hsl(var(--warning-foreground))',

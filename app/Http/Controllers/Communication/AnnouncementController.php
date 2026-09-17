@@ -28,7 +28,7 @@ class AnnouncementController extends Controller
     {
         $this->authorize('viewAny', Announcement::class);
 
-        $groepen = Group::where('is_active', true)->orderBy('name')->get();
+        $groepen = Group::visibleTo($request->user())->where('is_active', true)->orderBy('name')->get();
 
         return Inertia::render('announcements/Index', [
             'announcements' => Announcement::with('author', 'group')
@@ -53,7 +53,10 @@ class AnnouncementController extends Controller
                 // een bericht dat per ongeluk naar de hele school gaat.
                 'recipients' => $this->audience->countForGroup($groep),
             ]),
-            'schoolRecipients' => $this->audience->countForGroup(null),
+            // Alleen de eigenaar schrijft de hele school aan; een trainer kiest
+            // een van zijn eigen groepen.
+            'canMessageSchool' => $request->user()->isEigenaar(),
+            'schoolRecipients' => $request->user()->isEigenaar() ? $this->audience->countForGroup(null) : 0,
         ]);
     }
 
@@ -61,12 +64,27 @@ class AnnouncementController extends Controller
     {
         $this->authorize('create', Announcement::class);
 
+        $user = $request->user();
+
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:120'],
             'body' => ['required', 'string', 'max:2000'],
             // exists kent de global scope niet, dus expliciet op school begrenzen.
-            'group_id' => ['nullable', 'integer', Rule::exists('groups', 'id')->where('school_id', app(Tenancy::class)->id())],
-        ], [], [
+            // Een trainer schrijft nooit de hele school aan, alleen een groep
+            // die hij mag zien (TrainerScope).
+            'group_id' => [
+                $user->isEigenaar() ? 'nullable' : 'required',
+                'integer',
+                Rule::exists('groups', 'id')->where('school_id', app(Tenancy::class)->id()),
+                function (string $attribute, mixed $value, \Closure $fail) use ($user) {
+                    if ($value !== null && ! Group::visibleTo($user)->whereKey($value)->exists()) {
+                        $fail('Je kunt alleen een bericht sturen aan een groep waar je training aan geeft.');
+                    }
+                },
+            ],
+        ], [
+            'group_id.required' => 'Kies de groep die het bericht krijgt.',
+        ], [
             'title' => 'Het onderwerp',
             'body' => 'Het bericht',
             'group_id' => 'De groep',

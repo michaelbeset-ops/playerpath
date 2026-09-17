@@ -43,7 +43,7 @@ class TrainingController extends Controller
         $magAfvinken = $user->isEigenaar() || $user->isTrainer();
 
         // Een ouder of speler krijgt zijn eigen drie stapels: komend,
-        // inschrijven, geweest â€” per kind. Zie FamilyTrainings.
+        // inschrijven, geweest — per kind. Zie FamilyTrainings.
         if ($eigenSpelers !== [] && ! $magAfvinken) {
             return Inertia::render('trainings/Index', [
                 ...$this->gezin->for($user),
@@ -57,8 +57,8 @@ class TrainingController extends Controller
             ]);
         }
 
-        // Filteren is werk van wie het hele rooster ziet. Een ouder heeft Ã©Ã©n
-        // groep en zou een keuzelijst met Ã©Ã©n optie krijgen.
+        // Filteren is werk van wie het hele rooster ziet. Een ouder heeft één
+        // groep en zou een keuzelijst met één optie krijgen.
         $groep = $magAfvinken ? $request->integer('group') : 0;
         $trainer = $magAfvinken ? $request->integer('trainer') : 0;
 
@@ -83,10 +83,18 @@ class TrainingController extends Controller
             // afgevinkt" is geen "afwezig". Daarom allebei een eigen getal.
             'recorded_count' => $training->attendances_count,
             'present_count' => $training->present_count,
-            'expected_count' => ($training->group?->players_count ?? $training->expectedPlayers()->count()) + $training->confirmed_enrollments_count,
+            // Zonder groep (privétraining) is dat het kind van het moment. De
+            // losse aanmeldingen komen er één keer bij, niet twee keer.
+            'expected_count' => ($training->group_id !== null
+                ? ($training->group?->players_count ?? 0)
+                : ($training->slot?->player_id !== null ? 1 : 0)) + $training->confirmed_enrollments_count,
             // Los inschrijven: hoeveel plekken, en hoeveel er nog vragen wachten.
             'open' => $training->open_enrollment,
-            'spots_left' => $training->open_enrollment ? $training->spotsLeft() : null,
+            // Zelfde als spotsLeft(), maar uit de tellingen hierboven: geen
+            // twee queries per training in een lijst van vijftig.
+            'spots_left' => $training->open_enrollment && $training->capacity !== null
+                ? max(0, $training->capacity - (($training->group?->players_count ?? 0) + $training->confirmed_enrollments_count))
+                : null,
             'requests_count' => $training->requested_enrollments_count,
             // Alleen relevant voor ouder en speler: wat gaf ik door?
             'my_registration' => $eigenSpelers === [] ? null : $training->attendances
@@ -95,7 +103,7 @@ class TrainingController extends Controller
         ];
 
         $basis = fn () => $this->visible->query($user)
-            ->with('trainers')
+            ->with(['trainers', 'slot.product'])
             ->withCount([
                 'attendances' => fn ($q) => $q->whereNotNull('status'),
                 'attendances as present_count' => fn ($q) => $q->where('status', AttendanceStatus::Present->value),
@@ -118,7 +126,7 @@ class TrainingController extends Controller
             'filters' => ['group' => $groep ?: null, 'trainer' => $trainer ?: null],
             // Alleen tonen waar iets uit te kiezen valt.
             'groups' => $magAfvinken
-                ? Group::orderBy('name')->get(['id', 'name'])->map(fn (Group $g) => ['id' => $g->id, 'name' => $g->name])
+                ? Group::query()->visibleTo($user)->where('is_active', true)->orderBy('name')->get(['id', 'name'])->map(fn (Group $g) => ['id' => $g->id, 'name' => $g->name])
                 : [],
             'trainers' => $magAfvinken ? $this->beschikbareTrainers() : [],
         ]);
@@ -171,6 +179,10 @@ class TrainingController extends Controller
 
         if (! $mag) {
             $spelers = $spelers->whereIn('id', $user->visiblePlayerIds());
+        } else {
+            // Afvinken en beoordelen alleen bij spelers die van jou zijn; een
+            // trainer die invalt ziet de rest van de school niet.
+            $spelers = $spelers->filter(fn (Player $speler) => $user->can('createReport', $speler));
         }
 
         $eigen = $user->visiblePlayerIds();
@@ -293,7 +305,7 @@ class TrainingController extends Controller
     /**
      * Wie kun je aan een training hangen: trainers en de eigenaar.
      *
-     * De eigenaar staat er bewust bij â€” bij kleine scholen geeft die zelf ook
+     * De eigenaar staat er bewust bij — bij kleine scholen geeft die zelf ook
      * training.
      */
     protected function beschikbareTrainers()
@@ -312,6 +324,9 @@ class TrainingController extends Controller
             'training' => $training ? [
                 'id' => $training->id,
                 'group_id' => $training->group_id,
+                // Een geboekt moment: geen groep, en dat blijft zo.
+                'is_private' => $training->slot_id !== null,
+                'label' => $training->label(),
                 'date' => $training->starts_at->format('Y-m-d'),
                 'starts_at' => $training->starts_at->format('H:i'),
                 'ends_at' => $training->ends_at->format('H:i'),

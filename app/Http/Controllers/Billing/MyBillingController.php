@@ -78,6 +78,7 @@ class MyBillingController extends Controller
                     ? 'Contant te voldoen bij de training'
                     : $betaling->status->label(),
                 'cash_at_training' => $betaling->isCashAtTraining(),
+                'method_value' => $betaling->method?->value,
                 'description' => $betaling->description,
                 'due_on' => $betaling->due_on->format('d-m-Y'),
                 'paid_at' => $betaling->paid_at?->format('d-m-Y'),
@@ -90,7 +91,7 @@ class MyBillingController extends Controller
                 // levert een gezin op dat twee keer betaalt, en dat terugdraaien
                 // kost meer dan het gemak waard is.
                 'payable' => $this->gateway->isConnected()
-                    && $betaling->status !== PaymentStatus::Paid
+                    && $betaling->status->isPayable()
                     && ! ($betaling->method?->isOffline() ?? false),
                 'offline' => $betaling->method?->isOffline() ?? false,
             ]);

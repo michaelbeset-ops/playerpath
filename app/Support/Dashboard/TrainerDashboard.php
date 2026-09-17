@@ -5,6 +5,7 @@ namespace App\Support\Dashboard;
 use App\Models\Player;
 use App\Models\Training;
 use App\Models\User;
+use App\Support\Rating\RatingSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
@@ -35,7 +36,7 @@ class TrainerDashboard
     public function trainings(User $user, int $limiet = 3): array
     {
         return Training::query()
-            ->with(['group', 'trainers'])
+            ->with(['group', 'trainers', 'slot.product', 'slot.player'])
             ->where('starts_at', '>=', now()->startOfDay())
             ->forTrainer($user)
             ->orderBy('starts_at')
@@ -72,16 +73,18 @@ class TrainerDashboard
      */
     public function players(User $user, int $limiet = 8): array
     {
-        $spelers = $this->eigenSpelers($user);
+        // Eén keer per scherm, niet per speler. Bij de inzetkaart is het
+        // laatste moment de laatste inzet, en staat er geen cijfer.
+        $inzet = RatingSettings::for($user->school)->usesEffort();
+        $spelers = $this->eigenSpelers($user, $inzet);
 
         $rijen = $spelers
-            ->map(function (Player $speler) {
+            ->map(function (Player $speler) use ($inzet) {
                 // Uit withMax(), niet uit een query per speler: bij een school
                 // met tweehonderd kinderen scheelt dat tweehonderd queries op
                 // het scherm dat een trainer als eerste opent.
-                $laatste = $speler->reports_max_reported_on === null
-                    ? null
-                    : CarbonImmutable::parse($speler->reports_max_reported_on);
+                $moment = $inzet ? $speler->effort_ratings_max_created_at : $speler->reports_max_reported_on;
+                $laatste = $moment === null ? null : CarbonImmutable::parse($moment);
 
                 $dagen = $laatste?->startOfDay()->diffInDays(now()->startOfDay());
 
@@ -90,7 +93,7 @@ class TrainerDashboard
                     'name' => $speler->full_name,
                     'first_name' => $speler->first_name,
                     'photo' => $speler->photo_url,
-                    'rating' => $speler->overall_rating,
+                    'rating' => $inzet ? null : $speler->overall_rating,
                     'last_report_on' => $laatste?->format('d-m-Y'),
                     'days_since_report' => $dagen === null ? null : (int) $dagen,
                     // Nooit beoordeeld telt als aandacht: een lege kaart is
@@ -107,6 +110,7 @@ class TrainerDashboard
             'total' => $rijen->count(),
             'stale' => $rijen->where('tone', 'warning')->count(),
             'staleAfterDays' => self::RAPPORT_NA_DAGEN,
+            'effort' => $inzet,
         ];
     }
 
@@ -115,11 +119,15 @@ class TrainerDashboard
      *
      * @return Collection<int, Player>
      */
-    protected function eigenSpelers(User $user): Collection
+    protected function eigenSpelers(User $user, bool $inzet = false): Collection
     {
         return Player::query()
             ->active()
-            ->withMax('reports', 'reported_on')
+            ->when(
+                $inzet,
+                fn ($q) => $q->withMax('effortRatings', 'created_at'),
+                fn ($q) => $q->withMax('reports', 'reported_on'),
+            )
             // Dezelfde grens als de policies en de lijsten: zie TrainerScope.
             ->visibleTo($user)
             ->orderBy('first_name')

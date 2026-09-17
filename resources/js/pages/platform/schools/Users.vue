@@ -33,6 +33,16 @@ const props = defineProps<{
 
 const toonFormulier = ref(false);
 
+// De rol als woord, niet als sleutel uit de database.
+const ROLLABELS: Record<string, string> = {
+    eigenaar: 'Eigenaar',
+    trainer: 'Trainer',
+    ouder: 'Ouder',
+    speler: 'Speler',
+    platformbeheerder: 'Platformbeheerder',
+};
+const rolLabel = (sleutel: string) => ROLLABELS[sleutel] ?? props.roles[sleutel] ?? sleutel;
+
 const form = useForm({ name: '', email: '', role: 'eigenaar' });
 
 const voegToe = () =>
@@ -122,7 +132,7 @@ const bekijkAls = (id: number) => {
                     <select
                         id="role"
                         v-model="form.role"
-                        class="h-10 rounded-lg border border-input bg-background px-3 text-base outline-none focus:border-primary sm:text-sm"
+                        class="min-h-11 rounded-lg border border-input bg-background px-3 text-base outline-none focus:border-primary sm:text-sm"
                     >
                         <option v-for="(label, waarde) in roles" :key="waarde" :value="waarde">{{ label }}</option>
                     </select>
@@ -151,7 +161,7 @@ const bekijkAls = (id: number) => {
                     <p class="flex flex-wrap items-center gap-2 font-medium">
                         <Mail class="size-4 text-muted-foreground" />
                         {{ rij.name }}
-                        <span class="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">{{ rij.role }}</span>
+                        <span class="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">{{ rolLabel(rij.role) }}</span>
                         <span
                             class="rounded px-1.5 py-0.5 text-[10px] font-medium"
                             :class="rij.status === 'verlopen' ? 'bg-warning/15 text-warning' : 'bg-primary/10 text-primary'"
@@ -179,7 +189,7 @@ const bekijkAls = (id: number) => {
                             :key="rol"
                             class="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
                         >
-                            {{ rol }}
+                            {{ rolLabel(rol) }}
                         </span>
                         <span v-if="!user.is_active" class="rounded bg-warning/15 px-1.5 py-0.5 text-[10px] font-medium text-warning">
                             gedeactiveerd
@@ -198,7 +208,7 @@ const bekijkAls = (id: number) => {
                     <button
                         v-if="!user.verified"
                         type="button"
-                        class="inline-flex h-8 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+                        class="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
                         @click="opnieuwUitnodigen(user.id, user.name, user.email)"
                     >
                         <Send class="size-3.5" />
@@ -208,7 +218,7 @@ const bekijkAls = (id: number) => {
                     <button
                         v-if="user.is_active"
                         type="button"
-                        class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs font-medium hover:border-primary"
+                        class="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs font-medium hover:border-primary"
                         @click="bekijkAls(user.id)"
                     >
                         <Eye class="size-3.5" />
@@ -217,7 +227,7 @@ const bekijkAls = (id: number) => {
 
                     <button
                         type="button"
-                        class="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs font-medium hover:border-primary"
+                        class="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs font-medium hover:border-primary"
                         @click="reset(user.id, user.email)"
                     >
                         <KeyRound class="size-3.5" />
@@ -226,7 +236,7 @@ const bekijkAls = (id: number) => {
 
                     <button
                         type="button"
-                        class="h-8 rounded-lg border border-border px-2.5 text-xs font-medium hover:border-destructive hover:text-destructive"
+                        class="inline-flex min-h-11 items-center rounded-lg border border-border px-2.5 text-xs font-medium hover:border-destructive hover:text-destructive"
                         @click="wissel(user.id, user.name, user.is_active)"
                     >
                         {{ user.is_active ? 'Deactiveren' : 'Activeren' }}

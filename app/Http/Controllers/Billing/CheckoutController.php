@@ -44,6 +44,12 @@ class CheckoutController extends Controller
             return back()->with('status', 'Deze betaling is al voldaan.');
         }
 
+        if (! $payment->status->isPayable()) {
+            return back()->with('status', $payment->status === PaymentStatus::Pending
+                ? 'Deze betaling wordt al verwerkt. Probeer het over een paar minuten nog eens.'
+                : 'Deze rekening staat niet meer open.');
+        }
+
         // Contant of overboeking wordt bij de school afgerekend. Hier ook online
         // kunnen betalen levert dubbel betaalde gezinnen op.
         if ($payment->method?->isOffline()) {

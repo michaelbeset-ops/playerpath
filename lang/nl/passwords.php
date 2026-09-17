@@ -5,5 +5,5 @@ return [
     'sent' => 'We hebben je een e-mail gestuurd met een link om je wachtwoord opnieuw in te stellen.',
     'throttled' => 'Wacht even voordat je het opnieuw probeert.',
     'token' => 'Deze link om je wachtwoord opnieuw in te stellen is niet (meer) geldig.',
-    'user' => 'We kennen geen account met dit e-mailadres.',
+    'user' => 'We hebben je een e-mail gestuurd met een link om je wachtwoord opnieuw in te stellen.',
 ];

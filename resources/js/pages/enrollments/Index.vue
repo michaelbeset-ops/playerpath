@@ -3,7 +3,7 @@ import FlashMessage from '@/components/FlashMessage.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
-import { Check, Copy, CreditCard, Inbox, Link2, Mail, Phone, X } from 'lucide-vue-next';
+import { Check, Copy, CreditCard, Inbox, Link2, LoaderCircle, Mail, Phone, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 /**
@@ -73,6 +73,18 @@ const kopieer = async () => {
     setTimeout(() => (gekopieerd.value = false), 2000);
 };
 
+// Eén actie tegelijk per aanmelding: twee keer tikken mag geen twee verzoeken worden.
+const bezig = ref<number | null>(null);
+
+const verstuur = (i: Inschrijving, url: string, data: Record<string, string> = {}) => {
+    if (bezig.value !== null) return;
+    router.post(url, data, {
+        preserveScroll: true,
+        onStart: () => (bezig.value = i.id),
+        onFinish: () => (bezig.value = null),
+    });
+};
+
 const keurGoed = (i: Inschrijving) => {
     const wat = i.waitlist
         ? ' De ouder krijgt een betaallink met een tijdslimiet; de plek is van hen zodra er betaald is.'
@@ -81,13 +93,13 @@ const keurGoed = (i: Inschrijving) => {
           : '';
 
     if (confirm(`${i.waitlist ? 'Uitnodigen vanaf de wachtlijst' : 'De inschrijving van ' + i.child_name + ' goedkeuren'}?${wat}`)) {
-        router.post('/enrollments/' + i.id + '/approve', {}, { preserveScroll: true });
+        verstuur(i, '/enrollments/' + i.id + '/approve');
     }
 };
 
 const wijsAf = (i: Inschrijving) => {
-    if (confirm(`De inschrijving van ${i.child_name} afwijzen?`)) {
-        router.post('/enrollments/' + i.id + '/decline', {}, { preserveScroll: true });
+    if (confirm(`De aanmelding van ${i.child_name} afwijzen? De ouder krijgt daar bericht van.`)) {
+        verstuur(i, '/enrollments/' + i.id + '/decline');
     }
 };
 
@@ -95,7 +107,7 @@ const annuleer = (i: Inschrijving) => {
     const reden = prompt(`De inschrijving van ${i.child_name} annuleren? Het restitutiebeleid van je school geldt. Reden (optioneel):`);
 
     if (reden !== null) {
-        router.post('/enrollments/' + i.id + '/annuleren', { reason: reden }, { preserveScroll: true });
+        verstuur(i, '/enrollments/' + i.id + '/annuleren', { reason: reden });
     }
 };
 
@@ -167,8 +179,8 @@ const detailLabels: Record<string, string> = { kledingmaat: 'Kledingmaat', nivea
                 <Inbox class="mx-auto size-8 text-muted-foreground" />
                 <p class="mt-2 font-medium">Nog niets hier</p>
                 <p class="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-                    Zodra een ouder zich aanmeldt via je inschrijfpagina, staat hij hier en krijg je een melding. Zet de link op je website
-                    of stuur hem naar ouders; hij staat bovenaan deze pagina.
+                    Zodra een ouder zich aanmeldt via je inschrijfpagina, staat hij hier en krijg je een melding. Zet de link op je website of stuur
+                    hem naar ouders; hij staat bovenaan deze pagina.
                 </p>
             </div>
 
@@ -197,7 +209,7 @@ const detailLabels: Record<string, string> = { kledingmaat: 'Kledingmaat', nivea
                             :href="'mailto:' + i.guardian_email"
                             class="flex min-h-11 items-center gap-1.5 text-muted-foreground hover:text-foreground"
                         >
-                            <Mail class="size-3.5" />{{ i.guardian_email }}
+                            <Mail class="size-3.5 shrink-0" /><span class="min-w-0 break-all">{{ i.guardian_email }}</span>
                         </a>
                         <a
                             v-if="i.guardian_phone"
@@ -231,10 +243,12 @@ const detailLabels: Record<string, string> = { kledingmaat: 'Kledingmaat', nivea
                         <button
                             v-if="i.can_approve"
                             type="button"
-                            class="inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
+                            :disabled="bezig !== null"
+                            class="inline-flex min-h-11 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50"
                             @click="keurGoed(i)"
                         >
-                            <Check class="size-4" />
+                            <LoaderCircle v-if="bezig === i.id" class="size-4 animate-spin" />
+                            <Check v-else class="size-4" />
                             {{ i.waitlist ? 'Uitnodigen' : 'Goedkeuren' }}
                         </button>
                         <Link
@@ -264,7 +278,8 @@ const detailLabels: Record<string, string> = { kledingmaat: 'Kledingmaat', nivea
                         <button
                             v-if="i.can_cancel"
                             type="button"
-                            class="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-muted-foreground hover:text-destructive"
+                            :disabled="bezig !== null"
+                            class="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-muted-foreground hover:text-destructive disabled:opacity-50"
                             @click="annuleer(i)"
                         >
                             <X class="size-4" />
@@ -273,7 +288,8 @@ const detailLabels: Record<string, string> = { kledingmaat: 'Kledingmaat', nivea
                         <button
                             v-if="i.can_decline"
                             type="button"
-                            class="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-muted-foreground hover:text-destructive"
+                            :disabled="bezig !== null"
+                            class="inline-flex min-h-11 items-center gap-2 rounded-lg px-3 text-sm text-muted-foreground hover:text-destructive disabled:opacity-50"
                             @click="wijsAf(i)"
                         >
                             <X class="size-4" />

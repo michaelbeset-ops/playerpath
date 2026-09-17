@@ -14,6 +14,7 @@ use App\Support\Features\Features;
 use App\Support\Money\Money;
 use App\Support\PlayerCard\CalculatePlayerCard;
 use App\Support\PlayerCard\PlayerBadges;
+use App\Support\Rating\RatingSettings;
 use App\Support\Trainings\VisibleTrainings;
 
 /**
@@ -54,10 +55,16 @@ class FamilyDashboard
      */
     public function children(array $spelerIds): array
     {
-        return Player::whereIn('id', $spelerIds)
+        // De kinderen zitten op één school; de kaartkeuze is dus één vraag.
+        $spelers = Player::whereIn('id', $spelerIds)
+            ->withCount('reports')
             ->orderBy('first_name')
-            ->get()
-            ->map(function (Player $speler) {
+            ->get();
+
+        $inzet = RatingSettings::for($spelers->first()?->school)->usesEffort();
+
+        return $spelers
+            ->map(function (Player $speler) use ($inzet) {
                 $level = $this->badges->level($speler);
 
                 return [
@@ -66,14 +73,14 @@ class FamilyDashboard
                     'first_name' => $speler->first_name,
                     'photo' => $speler->photo_url,
                     'position' => $speler->position->label(),
-                    'overall' => \App\Support\Rating\RatingSettings::for($speler->school)->usesEffort() ? null : $speler->overall_rating,
+                    'overall' => $inzet ? null : $speler->overall_rating,
                     'level' => $level['key'],
                     'level_label' => $level['label'],
                     'xp' => $level['xp'],
                     'xp_progress' => $level['progress'],
                     'next_level' => $level['next']['label'] ?? null,
-                    'growth' => \App\Support\Rating\RatingSettings::for($speler->school)->usesEffort() ? null : $this->groei($speler),
-                    'report_count' => $speler->reports()->count(),
+                    'growth' => $inzet ? null : $this->groei($speler),
+                    'report_count' => (int) $speler->reports_count,
                 ];
             })
             ->values()
@@ -164,9 +171,12 @@ class FamilyDashboard
     /**
      * Wat er nú van een ouder gevraagd wordt.
      *
-     * Alleen dingen met een knop: een rekening die openstaat, een bericht dat
-     * hij nog niet gelezen heeft. Geen cijfers ter informatie - daar komt hij
-     * niet voor.
+     * Alleen dingen met een knop: een rekening die openstaat. Geen cijfers ter
+     * informatie - daar komt hij niet voor. Ongelezen berichten staan hier
+     * niet: die staan al bij het belletje en in het blok met berichten.
+     *
+     * De vorm is die van het aandacht-blok van de school (AttentionPanel), met
+     * dezelfde tonen: te laat is `danger`, openstaand `warning`.
      *
      * @param  list<int>  $spelerIds
      * @return list<array<string, mixed>>
@@ -189,7 +199,7 @@ class FamilyDashboard
 
                 $items[] = [
                     'key' => 'payments',
-                    'tone' => $teLaat->isNotEmpty() ? 'bad' : 'warn',
+                    'tone' => $teLaat->isNotEmpty() ? 'danger' : 'warning',
                     'icon' => 'payment',
                     'title' => $open->count() === 1
                         ? "Een rekening van {$bedrag} staat open"
@@ -199,20 +209,6 @@ class FamilyDashboard
                     'action' => 'Bekijken',
                 ];
             }
-        }
-
-        $ongelezen = $user->unreadNotifications()->count();
-
-        if ($ongelezen > 0) {
-            $items[] = [
-                'key' => 'messages',
-                'tone' => 'warn',
-                'icon' => 'message',
-                'title' => $ongelezen === 1 ? 'Je hebt één ongelezen bericht' : "Je hebt {$ongelezen} ongelezen berichten",
-                'body' => 'Van de school, over trainingen en je kind.',
-                'href' => '/notifications',
-                'action' => 'Lezen',
-            ];
         }
 
         return $items;

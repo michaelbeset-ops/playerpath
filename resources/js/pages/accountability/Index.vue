@@ -25,7 +25,7 @@ const props = defineProps<{
         attendance: { percentage: number | null; present: number; recorded: number };
         development: { average: number | null; measured: number; improved: number };
     };
-    school: { name: string };
+    schoolInfo: { name: string };
     range: { from: string; to: string };
 }>();
 
@@ -92,7 +92,7 @@ const toonVoor = (waarde: number | null, goed = 75, matig = 50): 'default' | 'wa
                  telefoon. -->
             <div class="mt-4">
                 <header class="rounded-xl border border-border bg-card p-4 shadow-sm">
-                    <p class="text-lg font-semibold">{{ school.name }}</p>
+                    <p class="text-lg font-semibold">{{ schoolInfo.name }}</p>
                     <p class="text-sm text-muted-foreground">Overzicht over {{ report.period.label }}</p>
                 </header>
 
@@ -159,9 +159,14 @@ const toonVoor = (waarde: number | null, goed = 75, matig = 50): 'default' | 'wa
 </template>
 
 <style>
+/* Afdrukken is voor een ouderavond of de gemeente: alleen de cijfers, geen
+   balk, tabbalk, melding, rondleiding of bekijk-als-balk. */
 @media print {
     aside,
-    header[class*='sticky'] {
+    header.sticky,
+    nav,
+    [role='status'],
+    [data-print-hidden] {
         display: none !important;
     }
 }

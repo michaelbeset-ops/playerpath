@@ -6,6 +6,7 @@ use App\Enums\DashboardWidget;
 use App\Enums\Feature;
 use App\Models\User;
 use App\Support\Features\Features;
+use App\Support\Rating\RatingSettings;
 
 /**
  * Welke widgets er voor deze gebruiker bestaan, en waar ze standaard staan.
@@ -25,6 +26,16 @@ class WidgetRegistry
 {
     /** Het raster is twaalf kolommen breed; op mobiel wordt het er één. */
     public const KOLOMMEN = 12;
+
+    /** De widgets die over cijfers en rapporten gaan; die bestaan niet bij de inzetkaart. */
+    public const ALLEEN_PRESTATIE = [
+        DashboardWidget::KpiRating,
+        DashboardWidget::KpiReports,
+        DashboardWidget::Development,
+    ];
+
+    /** @var array<int, bool> per school: werkt die met de inzetkaart? */
+    protected array $inzet = [];
 
     public function __construct(protected Features $features) {}
 
@@ -223,9 +234,23 @@ class WidgetRegistry
             return false;
         }
 
+        // Bij de inzetkaart zijn er geen cijfers en geen rapporten; een tegel
+        // "gemiddelde rating" zou daar altijd leeg staan.
+        if (in_array($widget, self::ALLEEN_PRESTATIE, true) && $this->usesEffort($user)) {
+            return false;
+        }
+
         $feature = $widget->feature();
 
         return $feature === null || $this->features->enabled($feature, $user->school);
+    }
+
+    /** Eén keer per school uitgerekend, niet per widget. */
+    protected function usesEffort(User $user): bool
+    {
+        $id = (int) $user->school_id;
+
+        return $this->inzet[$id] ??= RatingSettings::for($user->school)->usesEffort();
     }
 
     /** Puur voor de leesbaarheid van aanroepers. */

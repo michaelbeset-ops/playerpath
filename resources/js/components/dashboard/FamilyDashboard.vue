@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AttentionPanel, { type AandachtItem } from '@/components/dashboard/AttentionPanel.vue';
 import GradeChip from '@/components/GradeChip.vue';
 import { useGrading } from '@/lib/grade';
 import Avatar from '@/components/Avatar.vue';
@@ -10,20 +11,22 @@ import { ArrowUpRight, CalendarDays, Camera, ChevronRight, IdCard, MapPin, Shopp
  * Het dashboard van een ouder, in deze volgorde: binnenkort, mijn kinderen,
  * inschrijven, berichten. Praktisch bovenaan, de kaart één tik verderop.
  *
- * Geen losse meldingsblokken: een openstaande rekening staat als bolletje in
- * het menu bij Financiën, en een ongelezen bericht bij het belletje. Alles
- * noemt bij welk kind het hoort; twee kinderen is het gewone geval.
+ * Wat er nú van je gevraagd wordt (een openstaande rekening) staat bovenaan,
+ * in hetzelfde blok als bij de school; zonder rekening is het weg. Een
+ * ongelezen bericht staat bij het belletje. Alles noemt bij welk kind het
+ * hoort; twee kinderen is het gewone geval.
  */
-defineProps<{
+withDefaults(defineProps<{
+    attention?: AandachtItem[];
     children: FamilyKind[];
     upcoming: FamilyTraining[];
     offerings: FamilyAanbod[];
     messages: FamilyBericht[];
-}>();
+}>(), { attention: () => [] });
 
 const levelRand: Record<string, string> = {
-    brons: 'border-amber-700/40',
-    zilver: 'border-slate-400/50',
+    brons: 'border-level-brons/50',
+    zilver: 'border-level-zilver/60',
     goud: 'border-gold/50',
     elite: 'border-primary/50',
 };
@@ -37,7 +40,7 @@ const { kleuren, inzet } = useGrading();
          lege blokken laten we weg (dat is de regel), maar een scherm zonder
          iets is geen scherm - dan staat er één regel die zegt wat er komt. -->
     <div
-        v-if="!upcoming.length && !children.length && !offerings.length && !messages.length"
+        v-if="!attention.length && !upcoming.length && !children.length && !offerings.length && !messages.length"
         class="rounded-2xl border border-border bg-card p-6 text-center shadow-sm"
     >
         <CalendarDays class="mx-auto size-7 text-muted-foreground" />
@@ -49,6 +52,9 @@ const { kleuren, inzet } = useGrading();
     </div>
 
     <div v-else class="space-y-6" data-tour="family">
+        <!-- 0. Wat er nu van je gevraagd wordt. Leeg is weg: geen "alles loopt". -->
+        <AttentionPanel v-if="attention.length" :items="attention" />
+
         <!-- 1. Binnenkort: wanneer moet je waar zijn. Het scherm opent hiermee. -->
         <section>
             <div class="flex flex-wrap items-center justify-between gap-2">
@@ -160,7 +166,7 @@ const { kleuren, inzet } = useGrading();
                             <div class="h-full rounded-full bg-primary transition-all" :style="{ width: kind.xp_progress + '%' }"></div>
                         </div>
                         <p class="tabular mt-1 text-[11px] text-muted-foreground">
-                            {{ kind.xp }} XP<template v-if="kind.next_level"> · op weg naar {{ kind.next_level }}</template>
+                            {{ kind.xp }} punten<template v-if="kind.next_level"> · op weg naar {{ kind.next_level }}</template>
                         </p>
                     </div>
 

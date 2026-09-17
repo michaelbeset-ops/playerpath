@@ -30,10 +30,19 @@ class SyncPayment
     {
         $wasBetaald = $payment->status === PaymentStatus::Paid;
 
+        // Is de rekening al betaald (bijvoorbeeld contant, met de hand gezet),
+        // dan mag een oude checkout die verloopt of wordt afgebroken dat niet
+        // terugdraaien. Alleen een stornering of terugbetaling telt dan nog.
+        $status = $remote->status;
+
+        if ($wasBetaald && ! in_array($status, [PaymentStatus::Paid, PaymentStatus::ChargedBack, PaymentStatus::Refunded, PaymentStatus::PartiallyRefunded], true)) {
+            $status = PaymentStatus::Paid;
+        }
+
         $payment->forceFill([
             'external_reference' => $remote->reference,
-            'status' => $remote->status,
-            'paid_at' => $remote->status === PaymentStatus::Paid
+            'status' => $status,
+            'paid_at' => $status === PaymentStatus::Paid
                 ? ($remote->paidAt ?? $payment->paid_at ?? now())
                 : null,
             // De methode alleen overnemen als de provider er een noemt: bij een

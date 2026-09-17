@@ -13,8 +13,8 @@ const props = defineProps<{
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
-    { title: 'Mededelingen', href: '/announcements' },
-    { title: 'Verjaardagen', href: '/announcements/verjaardagen' },
+    { title: 'Berichten', href: '/announcements' },
+    { title: 'Verjaardagsmail', href: '/announcements/verjaardagen' },
 ];
 
 const form = useForm({

@@ -98,8 +98,9 @@ class EnrollmentSettingsController extends Controller
                 'label' => $type->label(),
                 'description' => $type->description(),
             ], array_values(array_filter(ProductType::cases(), fn (ProductType $t) => $t !== ProductType::Overig))),
-            // Voor stap één: wie ben je, en waar train je.
-            'school' => [
+            // Voor stap één: wie ben je, en waar train je. Niet 'school'
+            // noemen: dat is een gedeelde prop, en deze zou hem overschrijven.
+            'schoolProfile' => [
                 'name' => $school->name,
                 'slug' => $school->slug,
                 'contact_name' => $school->contact_name,

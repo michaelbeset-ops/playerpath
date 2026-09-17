@@ -5,12 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { LoaderCircle, Trash2 } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 const props = defineProps<{
     group: { id: number; name: string; age_category: string | null; is_active: boolean } | null;
+    /** Waarom verwijderen niet kan (trainingen of een aanbod), of null. */
+    deleteBlocker?: string | null;
 }>();
 
 const bewerken = computed(() => props.group !== null);
@@ -34,9 +36,13 @@ const opslaan = () => {
     }
 };
 
+// De server weigert een groep met trainingen of een aanbod; die melding komt hier.
+const page = usePage();
+const verwijderFout = computed(() => (page.props.errors as Record<string, string | undefined>).group);
+
 const verwijderen = () => {
     if (confirm('Groep "' + props.group!.name + '" verwijderen? De spelers blijven bestaan, alleen de indeling verdwijnt.')) {
-        router.delete('/groups/' + props.group!.id);
+        router.delete('/groups/' + props.group!.id, { preserveScroll: true });
     }
 };
 </script>
@@ -86,11 +92,20 @@ const verwijderen = () => {
 
             <div v-if="bewerken" class="mt-4 rounded-xl border border-destructive/25 bg-destructive/5 p-5">
                 <p class="font-medium text-destructive">Groep verwijderen</p>
-                <p class="mt-1 text-sm text-muted-foreground">De spelers blijven bestaan; alleen hun indeling in deze groep verdwijnt.</p>
-                <Button variant="destructive" class="mt-4" @click="verwijderen">
-                    <Trash2 class="mr-2 size-4" />
-                    Groep verwijderen
-                </Button>
+                <template v-if="deleteBlocker">
+                    <p class="mt-1 text-sm text-muted-foreground">{{ deleteBlocker }}</p>
+                    <p class="mt-1 text-sm text-muted-foreground">Een groep die niet actief is blijft bewaard, maar je plant er niets meer op.</p>
+                </template>
+                <template v-else>
+                    <p class="mt-1 text-sm text-muted-foreground">
+                        Kan alleen bij een groep zonder trainingen. De spelers blijven bestaan; alleen hun indeling in deze groep verdwijnt.
+                    </p>
+                    <Button variant="destructive" class="mt-4" @click="verwijderen">
+                        <Trash2 class="mr-2 size-4" />
+                        Groep verwijderen
+                    </Button>
+                </template>
+                <InputError class="mt-2" :message="verwijderFout" />
             </div>
         </div>
     </AppLayout>

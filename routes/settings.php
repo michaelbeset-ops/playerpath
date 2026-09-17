@@ -3,9 +3,12 @@
 use App\Http\Controllers\Settings\NotificationPreferenceController;
 use App\Http\Controllers\Settings\PasswordController;
 use App\Http\Controllers\Settings\ProfileController;
+use App\Http\Middleware\RedirectKindAccount;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('auth')->group(function () {
+// Een kind-account (via de kind-link) heeft geen echt e-mailadres en geen
+// wachtwoord dat iemand kent: daar valt niets in te stellen.
+Route::middleware(['auth', RedirectKindAccount::class])->group(function () {
     Route::redirect('settings', 'settings/profile');
 
     Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');

@@ -76,6 +76,24 @@ class InvitationTest extends TestCase
         $this->assertSame('nieuw@voorbeeld.nl', Invitation::first()->email);
     }
 
+    /** Een adres van een andere school wordt niet genoemd: anders kun je zo testen wie waar klant is. */
+    public function test_een_adres_van_een_andere_school_wordt_niet_genoemd(): void
+    {
+        User::factory()->for(School::factory()->create())->create(['email' => 'elders@voorbeeld.nl']);
+        User::factory()->for($this->school)->create(['email' => 'eigen@voorbeeld.nl']);
+
+        $this->actingAs($this->eigenaar)
+            ->post('/uitnodigingen', [
+                'role' => 'trainer',
+                'recipients' => "elders@voorbeeld.nl\neigen@voorbeeld.nl",
+            ])
+            ->assertSessionHas('status', fn (string $tekst) => str_contains($tekst, 'eigen@voorbeeld.nl')
+                && ! str_contains($tekst, 'elders@voorbeeld.nl')
+                && str_contains($tekst, 'Eén adres kon niet worden uitgenodigd.'));
+
+        $this->assertSame(0, Invitation::count());
+    }
+
     public function test_een_ouder_krijgt_zijn_kind_gekoppeld_bij_activatie(): void
     {
         $kind = Player::factory()->for($this->school)->create(['first_name' => 'Sem']);

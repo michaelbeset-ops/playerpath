@@ -205,7 +205,7 @@ const sticker = computed(() => (viering.value?.level.up ? 'NIEUW LEVEL' : groeiS
                 </CardGlow>
 
                 <p v-if="player.rated_at && card.card_mode !== 'inzet'" class="mt-4 text-center text-xs text-muted-foreground">
-                    Bijgewerkt op {{ player.rated_at }} &middot; gemiddelde van de laatste 3 rapporten
+                    Bijgewerkt op {{ player.rated_at }} &middot; gemiddelde van de laatste rapporten
                 </p>
             </div>
 
@@ -247,7 +247,7 @@ const sticker = computed(() => (viering.value?.level.up ? 'NIEUW LEVEL' : groeiS
                 </Link>
 
                 <Link
-                    v-if="canReport"
+                    v-if="canReport && card.card_mode !== 'inzet'"
                     :href="'/players/' + player.id + '/reports/create'"
                     class="inline-flex min-h-11 items-center rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
                 >
@@ -256,7 +256,7 @@ const sticker = computed(() => (viering.value?.level.up ? 'NIEUW LEVEL' : groeiS
             </div>
 
             <!-- Mijlpalen voluit: wat is behaald, en wat is de volgende -->
-            <div v-if="player.overall_rating" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+            <div v-if="badges.length" class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
                 <div class="flex flex-wrap items-baseline justify-between gap-2">
                     <p class="font-medium">Mijlpalen</p>
                     <p class="tabular text-xs text-muted-foreground">{{ behaald.length }} van {{ badges.length }} behaald</p>

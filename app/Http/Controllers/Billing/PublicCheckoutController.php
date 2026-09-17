@@ -51,6 +51,8 @@ class PublicCheckoutController extends Controller
                 'amount' => Money::format($betaling->amount_cents),
                 'due_on' => $betaling->due_on->format('d-m-Y'),
                 'paid' => $betaling->status === PaymentStatus::Paid,
+                // Geannuleerd, terugbetaald of al in behandeling: dan valt er hier niets te betalen.
+                'closed' => $betaling->status !== PaymentStatus::Paid && ! $betaling->status->isPayable(),
                 // De voornaam mag: die staat ook in de mail waar deze link in
                 // stond. De achternaam, de leeftijd en de groep niet.
                 'player' => $betaling->player?->first_name,
@@ -67,7 +69,7 @@ class PublicCheckoutController extends Controller
     {
         $betaling = $this->betaling($payment);
 
-        if ($betaling->status === PaymentStatus::Paid) {
+        if (! $betaling->status->isPayable()) {
             return back();
         }
 

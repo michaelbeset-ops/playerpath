@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
-import { AlertTriangle, CheckCircle2, ClipboardList, CreditCard, UserCog, X } from 'lucide-vue-next';
+import { AlertTriangle, CalendarDays, CheckCircle2, ClipboardList, CreditCard, UserCog, X } from 'lucide-vue-next';
 import type { Component } from 'vue';
 
 /**
@@ -49,6 +49,7 @@ const iconen: Record<string, Component> = {
     payment: CreditCard,
     report: ClipboardList,
     trainer: UserCog,
+    trainings: CalendarDays,
 };
 
 // Groen leest als "goed", dus een signaal is nooit groen. Zie CLAUDE.md 4.

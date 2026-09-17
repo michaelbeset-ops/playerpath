@@ -33,6 +33,19 @@ class GuardianController extends Controller
                 // Alleen gebruikers van de eigen school: User heeft geen global
                 // scope, dus die grens leggen we hier expliciet.
                 Rule::exists('users', 'id')->where('school_id', $player->school_id),
+                // En alleen een ouder: een trainer of speler aan een kind
+                // koppelen geeft hem de kaart en de betalingen van dat kind.
+                function (string $attribute, mixed $value, \Closure $fail) use ($player) {
+                    $isOuder = User::query()
+                        ->whereKey($value)
+                        ->where('school_id', $player->school_id)
+                        ->role(Role::Ouder->value)
+                        ->exists();
+
+                    if (! $isOuder) {
+                        $fail('Je kunt alleen een ouder van deze school koppelen.');
+                    }
+                },
             ],
             'relationship' => ['nullable', 'string', 'max:255'],
         ], [], [
@@ -60,11 +73,28 @@ class GuardianController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                // Een e-mailadres is uniek over alle scholen heen. Het advies om
+                // via de lijst te koppelen geldt alleen voor een account van
+                // déze school; voor de rest één neutrale melding, zodat dit
+                // formulier niet verraadt wie er bij een andere school zit.
+                function (string $attribute, mixed $value, \Closure $fail) use ($player) {
+                    $bestaand = User::query()->where('email', $value)->first(['id', 'school_id']);
+
+                    if ($bestaand === null) {
+                        return;
+                    }
+
+                    $fail($bestaand->school_id === $player->school_id && $bestaand->hasRole(Role::Ouder->value)
+                        ? 'Er bestaat al een account met dit e-mailadres. Koppel die ouder via de lijst hierboven.'
+                        : 'Dit e-mailadres is al in gebruik.');
+                },
+            ],
             'relationship' => ['nullable', 'string', 'max:255'],
-        ], [
-            'email.unique' => 'Er bestaat al een account met dit e-mailadres. Koppel die ouder via de lijst hierboven.',
-        ], [
+        ], [], [
             'name' => 'De naam',
             'email' => 'Het e-mailadres',
             'relationship' => 'De relatie',

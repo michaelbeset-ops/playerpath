@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
-import FlashMessage from '@/components/FlashMessage.vue';
+import FlashToast from '@/components/FlashToast.vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { Building2, LayoutGrid, LogOut, ScrollText } from 'lucide-vue-next';
 import { computed } from 'vue';
@@ -65,7 +65,7 @@ const naam = computed(() => page.props.auth?.user?.name ?? '');
         </header>
 
         <main class="mx-auto w-full max-w-6xl p-4">
-            <FlashMessage />
+            <FlashToast />
             <slot />
         </main>
 

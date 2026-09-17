@@ -323,6 +323,50 @@ class TrainingEnrollmentTest extends TestCase
             ->assertSessionHasErrors('payment_method');
     }
 
+    public function test_een_betaalde_training_zonder_bruikbare_betaalwijze_wordt_geweigerd(): void
+    {
+        // Alleen online, en er is geen betaalprovider: er valt niets af te rekenen.
+        $training = $this->training(['payment_methods' => ['online']]);
+
+        $this->actingAs($this->ouder)
+            ->from('/trainings/'.$training->id.'/inschrijven')
+            ->post('/trainings/'.$training->id.'/inschrijven', ['player_id' => $this->keeper->id])
+            ->assertSessionHasErrors(['payment_method' => 'Voor deze training kun je je nu niet inschrijven: er is geen manier om te betalen. Neem contact op met de school.']);
+
+        $this->assertSame(0, $training->enrollments()->count());
+    }
+
+    /** Afmelden is voor de ouder van het kind; een trainer of het kind zelf kan het niet. */
+    public function test_alleen_de_ouder_meldt_een_los_ingeschreven_kind_af(): void
+    {
+        Notification::fake();
+
+        $training = $this->training();
+        $this->actingAs($this->ouder)
+            ->post('/trainings/'.$training->id.'/inschrijven', ['player_id' => $this->keeper->id, 'payment_method' => 'cash'])
+            ->assertSessionHasNoErrors();
+
+        $kindAccount = User::factory()->for($this->school)->create();
+        $kindAccount->assignRole(Role::Speler->value);
+        $this->keeper->forceFill(['user_id' => $kindAccount->id])->save();
+
+        $this->actingAs($this->trainer)
+            ->delete('/trainings/'.$training->id.'/inschrijven/'.$this->keeper->id)
+            ->assertForbidden();
+
+        $this->actingAs($kindAccount)
+            ->delete('/trainings/'.$training->id.'/inschrijven/'.$this->keeper->id)
+            ->assertForbidden();
+
+        $this->assertSame(TrainingEnrollmentStatus::Confirmed, $training->enrollments()->first()->status);
+
+        $this->actingAs($this->ouder)
+            ->delete('/trainings/'.$training->id.'/inschrijven/'.$this->keeper->id)
+            ->assertSessionHas('status');
+
+        $this->assertNotSame(TrainingEnrollmentStatus::Confirmed, $training->enrollments()->first()->status);
+    }
+
     /**
      * Eenmaal ingeschreven is de knop overal weg - ook op de detailpagina, waar
      * hij bleef staan - en weigert de server een tweede aanmelding.

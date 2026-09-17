@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import InputError from '@/components/InputError.vue';
 import CardVariantChoice from '@/components/cards/CardVariantChoice.vue';
+import InputError from '@/components/InputError.vue';
 import EnrollmentFlow from '@/components/onboarding/EnrollmentFlow.vue';
 import EnrollmentPreview from '@/components/onboarding/EnrollmentPreview.vue';
 import InviteForm, { type Uitnodiging } from '@/components/onboarding/InviteForm.vue';
@@ -50,7 +50,7 @@ const props = defineProps<{
     consents: Toestemming[];
     development: boolean;
     offeringTypes: { value: string; label: string; description: string }[];
-    school: {
+    schoolProfile: {
         name: string;
         slug: string;
         contact_name: string | null;
@@ -86,12 +86,14 @@ const form = useForm(
               // Stap één gaat over de school zelf. Vier vragen, meer niet: elke
               // vraag hier is er een waarop iemand kan afhaken vóórdat hij het
               // product heeft gezien.
-              name: props.school.name,
-              slug: props.school.slug,
-              contact_name: props.school.contact_name ?? '',
-              contact_email: props.school.contact_email ?? '',
-              contact_phone: props.school.contact_phone ?? '',
-              brand_color: props.school.brand_color ?? '#12813D',
+              name: props.schoolProfile.name,
+              slug: props.schoolProfile.slug,
+              contact_name: props.schoolProfile.contact_name ?? '',
+              contact_email: props.schoolProfile.contact_email ?? '',
+              contact_phone: props.schoolProfile.contact_phone ?? '',
+              // Leeg is "geen eigen kleur": dan blijft het PlayerPath-groen,
+              // en een latere wijziging van dat groen gaat vanzelf mee.
+              brand_color: props.schoolProfile.brand_color ?? '',
               logo: null as File | null,
               remove_logo: false as boolean,
               location: '' as string,
@@ -147,25 +149,25 @@ const form = useForm(
                   : props.step === 8
                     ? { card_mode: props.cardMode as 'prestatie' | 'inzet' | null }
                     : props.step === 9
-                    ? {
-                          // Wat er al is, plus een lege regel om mee te beginnen.
-                          groups: [
-                              ...props.groups.map((g) => ({ name: g.name, age_category: g.age_category ?? '' })),
-                              ...(props.groups.length ? [] : [{ name: '', age_category: '' }]),
-                          ] as { name: string; age_category: string }[],
-                      }
-                    : props.step === 10
-                      ? {}
-                      : {
-                            waitlist: s.capacity.waitlist as boolean,
-                            pay_on_placement: s.capacity.pay_on_placement as boolean,
-                            invitation_days: s.capacity.invitation_days as number,
-                            fields: { ...(s.fields as Record<string, string>) },
-                            consents: Object.fromEntries(
-                                props.consents.map((c) => [c.key, { required: c.required, title: c.title, body: c.body }]),
-                            ) as Record<string, { required: boolean; title: string; body: string }>,
-                            development: props.development,
-                        },
+                      ? {
+                            // Wat er al is, plus een lege regel om mee te beginnen.
+                            groups: [
+                                ...props.groups.map((g) => ({ name: g.name, age_category: g.age_category ?? '' })),
+                                ...(props.groups.length ? [] : [{ name: '', age_category: '' }]),
+                            ] as { name: string; age_category: string }[],
+                        }
+                      : props.step === 10
+                        ? {}
+                        : {
+                              waitlist: s.capacity.waitlist as boolean,
+                              pay_on_placement: s.capacity.pay_on_placement as boolean,
+                              invitation_days: s.capacity.invitation_days as number,
+                              fields: { ...(s.fields as Record<string, string>) },
+                              consents: Object.fromEntries(
+                                  props.consents.map((c) => [c.key, { required: c.required, title: c.title, body: c.body }]),
+                              ) as Record<string, { required: boolean; title: string; body: string }>,
+                              development: props.development,
+                          },
 );
 
 const f = form as any;
@@ -189,15 +191,32 @@ const opslaan = () => {
         return;
     }
 
+    // Een adres dat nog in het uitnodigveld staat gaat bij afronden niet mee.
+    if (props.step === 10 && uitnodigen.value?.heeftOnverstuurd) {
+        if (!confirm('Er staat nog een adres in het uitnodigveld dat niet is verstuurd. Toch doorgaan zonder die uitnodiging?')) {
+            return;
+        }
+    }
+
+    // Lege regels bij de groepen zijn geen groep; niet meesturen.
+    if (props.step === 9) {
+        form.transform((data) => ({
+            ...data,
+            groups: ((data as { groups: { name: string; age_category: string }[] }).groups ?? []).filter((g) => g.name.trim() !== ''),
+        }));
+    }
+
     form.patch('/instellingen/inschrijven/stap/' + props.step, { preserveScroll: true, preserveState: 'errors' });
 };
+
+const uitnodigen = ref<{ heeftOnverstuurd: boolean } | null>(null);
 
 /** Overslaan: elke vraag heeft een bruikbare standaard. */
 const overslaan = () =>
     router.post('/instellingen/inschrijven/stap/' + props.step + '/overslaan', {}, { preserveScroll: true, preserveState: false });
 
 // Live voorbeeld van het gekozen logo, nog vóór het is opgeslagen.
-const logoVoorbeeld = ref<string | null>(props.school.logo);
+const logoVoorbeeld = ref<string | null>(props.schoolProfile.logo);
 
 const groepFout = (i: number) => (form.errors as Record<string, string | undefined>)['groups.' + i + '.name'];
 const voegGroepToe = () => (f.groups as { name: string; age_category: string }[]).push({ name: '', age_category: '' });
@@ -212,7 +231,18 @@ const slugUitNaam = (naam: string) =>
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '');
 
-const slugHandmatig = ref(props.school.slug !== slugUitNaam(props.school.name));
+// Alleen meelopen zolang de wizard nog niet af is: daarna staat het adres
+// misschien al op een website, en een naamswijziging mag dat niet breken.
+const slugHandmatig = ref(props.completed || props.schoolProfile.slug !== slugUitNaam(props.schoolProfile.name));
+const slugGewijzigd = computed(() => props.step === 1 && f.slug !== props.schoolProfile.slug);
+
+// Het groen van de lichte kant (--primary zonder eigen merkkleur), alleen als voorbeeld;
+// opgeslagen wordt het niet.
+const STANDAARD_KLEUR = '#12813D';
+
+const kiesKleur = (event: Event) => {
+    f.brand_color = (event.target as HTMLInputElement).value;
+};
 
 const bijNaam = () => {
     if (!slugHandmatig.value) {
@@ -298,7 +328,9 @@ const uitleg: Record<number, string[]> = {
         'Hoe ouders kunnen betalen. Je kunt meerdere betaalvormen aanbieden; de ouder kiest dan zelf bij het inschrijven.',
         'Daaronder: of jij eerst naar een aanmelding kijkt, en wat er gebeurt als een blok afloopt of een betaling mislukt.',
     ],
-    5: ['Wat een ouder terugkrijgt als hij annuleert of een kind ziek is. Dit staat letterlijk op het inschrijfformulier, zodat er later geen discussie is.'],
+    5: [
+        'Wat een ouder terugkrijgt als hij annuleert of een kind ziek is. Dit staat letterlijk op het inschrijfformulier, zodat er later geen discussie is.',
+    ],
     6: ['Kortingen worden automatisch berekend bij het inschrijven. Wat je hier aanzet, zie je terug op de rekening als aparte regel.'],
     7: ['Wat een ouder invult en aanvinkt bij het inschrijven, en wat er gebeurt als een blok vol is.'],
     8: ['Een groep is waar je op plant en afvinkt. Begin met de groepen die je nu hebt; een speler mag straks in meerdere groepen.'],
@@ -389,7 +421,8 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                 </div>
             </div>
 
-            <form id="wizard" class="mt-6 space-y-4" @submit.prevent="opslaan">
+            <!-- Bij stap 10 leeg en verborgen; hij blijft bestaan voor de knop onderin (form="wizard"). -->
+            <form id="wizard" :class="step === 10 ? 'hidden' : 'mt-6 space-y-4'" @submit.prevent="opslaan">
                 <!-- ================= 1. Je school ================= -->
                 <template v-if="step === 1">
                     <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -414,9 +447,17 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                             />
                         </div>
                         <p v-if="f.slug" class="mt-1 truncate text-xs text-muted-foreground">
-                            {{ school.domain ? 'https://' + f.slug + '.' + school.domain : '/inschrijven/' + f.slug }}
+                            {{ schoolProfile.domain ? 'https://' + f.slug + '.' + schoolProfile.domain : '/inschrijven/' + f.slug }}
                         </p>
                         <InputError class="mt-2" :message="form.errors.slug" />
+                        <p
+                            v-if="slugGewijzigd"
+                            class="mt-2 rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs text-foreground"
+                            role="status"
+                        >
+                            Let op: het oude adres (/inschrijven/{{ schoolProfile.slug }}) werkt na opslaan niet meer. Staat die link al op je website
+                            of in een bericht aan ouders, pas hem daar dan ook aan.
+                        </p>
                     </section>
 
                     <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -484,14 +525,32 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                         </p>
 
                         <div class="mt-3 flex items-center gap-3">
+                            <!-- Een kleurkiezer kent geen "leeg"; zonder eigen kleur toont hij het standaardgroen. -->
                             <input
                                 id="kleur"
-                                v-model="f.brand_color"
+                                :value="f.brand_color || STANDAARD_KLEUR"
                                 type="color"
                                 class="size-11 shrink-0 cursor-pointer rounded-lg border border-input bg-background"
+                                @input="kiesKleur"
                             />
-                            <input v-model="f.brand_color" type="text" :class="invoerKlasse" class="min-w-0 flex-1" placeholder="#12813D" />
+                            <input
+                                v-model="f.brand_color"
+                                type="text"
+                                :class="invoerKlasse"
+                                class="min-w-0 flex-1"
+                                placeholder="Standaard groen"
+                                aria-label="Kleurcode"
+                            />
                         </div>
+                        <button
+                            v-if="f.brand_color"
+                            type="button"
+                            class="mt-1 inline-flex min-h-11 items-center text-sm text-muted-foreground transition hover:text-foreground"
+                            @click="f.brand_color = ''"
+                        >
+                            Standaardkleur gebruiken
+                        </button>
+                        <p v-else class="mt-1 text-xs text-muted-foreground">Geen eigen kleur gekozen: je knoppen blijven groen, zoals hieronder.</p>
 
                         <InputError class="mt-2" :message="form.errors.brand_color" />
 
@@ -509,7 +568,7 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                                 <span v-else class="text-sm font-semibold">{{ f.name || 'Jouw school' }}</span>
                                 <span
                                     class="ml-auto flex size-8 items-center justify-center rounded-md text-xs font-bold text-primary-foreground"
-                                    :style="{ backgroundColor: f.brand_color }"
+                                    :style="{ backgroundColor: f.brand_color || STANDAARD_KLEUR }"
                                 >
                                     +
                                 </span>
@@ -518,7 +577,7 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                                 <span class="text-sm text-muted-foreground">Voorbeeld</span>
                                 <span
                                     class="inline-flex h-9 items-center rounded-lg px-3 text-sm font-semibold text-primary-foreground"
-                                    :style="{ backgroundColor: f.brand_color }"
+                                    :style="{ backgroundColor: f.brand_color || STANDAARD_KLEUR }"
                                 >
                                     Rapport invullen
                                 </span>
@@ -541,9 +600,9 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                             placeholder="Bijvoorbeeld: Sportpark De Vliert, veld 3"
                         />
 
-                        <ul v-if="school.locations.length" class="mt-3 flex flex-wrap gap-2">
+                        <ul v-if="schoolProfile.locations.length" class="mt-3 flex flex-wrap gap-2">
                             <li
-                                v-for="naam in school.locations"
+                                v-for="naam in schoolProfile.locations"
                                 :key="naam"
                                 class="rounded-full bg-secondary px-3 py-1 text-xs text-muted-foreground"
                             >
@@ -558,224 +617,242 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                 <!-- ================= 2. Inschrijven ================= -->
                 <template v-if="step === 2">
                     <div class="lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-6">
-                    <div class="space-y-4">
-                    <!-- Eerst zien hoe het loopt, dan pas kiezen. -->
-                    <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
-                        <p class="font-medium">Zo verloopt een inschrijving bij jou</p>
-                        <p class="mt-1 text-sm text-muted-foreground">
-                            Van klik tot kind in de groep. Wie wat doet verandert mee met je antwoorden hier en bij Betalen.
-                        </p>
-                        <div class="mt-4">
-                            <EnrollmentFlow
-                                :approval="s.approval"
-                                :payment-types="s.default_payment.types"
-                                :trial-enabled="f.trial_enabled && f.offering_types.includes('proefles')"
-                            />
-                        </div>
-                    </section>
+                        <div class="space-y-4">
+                            <!-- Eerst zien hoe het loopt, dan pas kiezen. -->
+                            <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
+                                <p class="font-medium">Zo verloopt een inschrijving bij jou</p>
+                                <p class="mt-1 text-sm text-muted-foreground">
+                                    Van klik tot kind in de groep. Wie wat doet verandert mee met je antwoorden hier en bij Betalen.
+                                </p>
+                                <div class="mt-4">
+                                    <EnrollmentFlow
+                                        :approval="s.approval"
+                                        :payment-types="s.default_payment.types"
+                                        :trial-enabled="f.trial_enabled && f.offering_types.includes('proefles')"
+                                    />
+                                </div>
+                            </section>
 
-                    <!-- Op een telefoon staat het voorbeeld hier, vóór de vragen. -->
-                    <div class="lg:hidden">
-                        <EnrollmentPreview
-                            :school-name="school.name"
-                            :slug="school.slug"
-                            :offering-types="f.offering_types"
-                            :moments="f.enrollment_moments"
-                            :training-open="f.training_open || f.enrollment_moments.includes('single_training')"
-                            :training-payment-methods="f.training_payment_methods"
-                            :training-requires-approval="f.training_requires_approval"
-                            :trial-enabled="f.trial_enabled"
-                            :trial-amount="f.trial_amount"
-                        />
-                    </div>
+                            <!-- Op een telefoon staat het voorbeeld hier, vóór de vragen. -->
+                            <div class="lg:hidden">
+                                <EnrollmentPreview
+                                    :school-name="schoolProfile.name"
+                                    :slug="schoolProfile.slug"
+                                    :offering-types="f.offering_types"
+                                    :moments="f.enrollment_moments"
+                                    :training-open="f.training_open || f.enrollment_moments.includes('single_training')"
+                                    :training-payment-methods="f.training_payment_methods"
+                                    :training-requires-approval="f.training_requires_approval"
+                                    :trial-enabled="f.trial_enabled"
+                                    :trial-amount="f.trial_amount"
+                                />
+                            </div>
 
-                    <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
-                        <p class="text-xs font-medium uppercase tracking-wide text-primary">Blok 1 van 4</p>
-                        <p class="mt-1 text-lg font-semibold">Wat bied je aan?</p>
-                        <p class="mt-1 text-sm text-muted-foreground">
-                            Elke vorm die je aanvinkt wordt een soort kaart op je inschrijfpagina, en een keuze in je aanbodformulier. Meerdere mag;
-                            uitbreiden kan altijd.
-                        </p>
-                        <p class="mt-2 text-sm">
-                            <span class="font-medium">Voor de ouder:</span> hij ziet alleen wat jij aanzet, met prijs, data en hoeveel plekken er nog zijn.
-                        </p>
+                            <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
+                                <p class="text-xs font-medium uppercase tracking-wide text-primary">Blok 1 van 4</p>
+                                <p class="mt-1 text-lg font-semibold">Wat bied je aan?</p>
+                                <p class="mt-1 text-sm text-muted-foreground">
+                                    Elke vorm die je aanvinkt wordt een soort kaart op je inschrijfpagina, en een keuze in je aanbodformulier.
+                                    Meerdere mag; uitbreiden kan altijd.
+                                </p>
+                                <p class="mt-2 text-sm">
+                                    <span class="font-medium">Voor de ouder:</span> hij ziet alleen wat jij aanzet, met prijs, data en hoeveel plekken
+                                    er nog zijn.
+                                </p>
 
-                        <div class="mt-4 grid gap-2">
-                            <button
-                                v-for="soort in offeringTypes"
-                                :key="soort.value"
-                                type="button"
-                                class="flex min-h-11 items-start gap-3 rounded-xl border p-3 text-left transition"
-                                :class="
-                                    f.offering_types.includes(soort.value) ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
-                                "
-                                :aria-pressed="f.offering_types.includes(soort.value)"
-                                @click="wisselSoort(soort.value)"
-                            >
-                                <span
-                                    class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border"
-                                    :class="
-                                        f.offering_types.includes(soort.value) ? 'border-primary bg-primary text-primary-foreground' : 'border-border'
-                                    "
-                                >
-                                    <Check v-if="f.offering_types.includes(soort.value)" class="size-3.5" />
-                                </span>
-                                <span class="min-w-0">
-                                    <span class="block text-sm font-medium">{{ soort.label }}</span>
-                                    <span class="block text-xs text-muted-foreground">{{ soort.description }}</span>
-                                </span>
-                            </button>
-                        </div>
-                        <InputError class="mt-2" :message="form.errors.offering_types" />
-                    </section>
-
-                    <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
-                        <p class="text-xs font-medium uppercase tracking-wide text-primary">Blok 2 van 4</p>
-                        <p class="mt-1 text-lg font-semibold">Wanneer kunnen ouders inschrijven?</p>
-                        <p class="mt-1 text-sm text-muted-foreground">
-                            Kies alles wat bij jou voorkomt. Dit bepaalt de zin bovenaan je inschrijfpagina en welk aanbod er wanneer open staat.
-                        </p>
-                        <p class="mt-2 text-sm">
-                            <span class="font-medium">Voor de ouder:</span> hij weet meteen of hij nu kan instappen, of moet wachten op een volgend blok.
-                        </p>
-
-                        <div class="mt-4 grid gap-2">
-                            <button
-                                v-for="moment in instapmomenten"
-                                :key="moment.value"
-                                type="button"
-                                class="flex min-h-11 items-start gap-3 rounded-xl border p-3 text-left transition"
-                                :class="
-                                    f.enrollment_moments.includes(moment.value) ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
-                                "
-                                :aria-pressed="f.enrollment_moments.includes(moment.value)"
-                                @click="wissel(f.enrollment_moments, moment.value)"
-                            >
-                                <span
-                                    class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border"
-                                    :class="
-                                        f.enrollment_moments.includes(moment.value)
-                                            ? 'border-primary bg-primary text-primary-foreground'
-                                            : 'border-border'
-                                    "
-                                >
-                                    <Check v-if="f.enrollment_moments.includes(moment.value)" class="size-3.5" />
-                                </span>
-                                <span class="min-w-0">
-                                    <span class="block text-sm font-medium">{{ moment.label }}</span>
-                                    <span class="block text-xs text-muted-foreground">{{ moment.hint }}</span>
-                                </span>
-                            </button>
-                        </div>
-                        <InputError class="mt-2" :message="form.errors.enrollment_moments" />
-                    </section>
-
-                    <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
-                        <p class="text-xs font-medium uppercase tracking-wide text-primary">Blok 3 van 4</p>
-                        <p class="mt-1 text-lg font-semibold">Losse trainingen</p>
-                        <p class="mt-1 text-sm text-muted-foreground">
-                            Naast een blok of abonnement kan een kind ook meedoen aan precies één training. Dit is wat een nieuwe training standaard
-                            krijgt; per training kun je ervan afwijken.
-                        </p>
-                        <p class="mt-2 text-sm">
-                            <span class="font-medium">Voor de ouder:</span> in zijn agenda staat bij zo'n training een knop Inschrijven, met hoeveel plekken er
-                            nog zijn. Zit het vol, dan komt hij op de wachtlijst.
-                        </p>
-
-                        <div class="mt-3 divide-y divide-border">
-                            <ToggleSwitch
-                                v-model="f.training_open"
-                                label="Ouders kunnen hun kind aanmelden voor één training"
-                                description="Aan: elke nieuwe training staat open voor losse aanmelding. Uit: alleen de groep traint mee."
-                            />
-
-                            <div v-if="f.training_open || f.enrollment_moments.includes('single_training')" class="py-4">
-                                <p class="text-sm font-medium">Hoe betaalt een ouder dan?</p>
-                                <p class="text-xs text-muted-foreground">Allebei mag; de ouder kiest.</p>
-                                <div class="mt-2 grid gap-2 sm:grid-cols-2">
+                                <div class="mt-4 grid gap-2">
                                     <button
-                                        v-for="wijze in trainingBetaalwijzen"
-                                        :key="wijze.value"
+                                        v-for="soort in offeringTypes"
+                                        :key="soort.value"
                                         type="button"
                                         class="flex min-h-11 items-start gap-3 rounded-xl border p-3 text-left transition"
                                         :class="
-                                            f.training_payment_methods.includes(wijze.value)
+                                            f.offering_types.includes(soort.value)
                                                 ? 'border-primary bg-primary/5'
                                                 : 'border-border hover:border-primary/50'
                                         "
-                                        :aria-pressed="f.training_payment_methods.includes(wijze.value)"
-                                        @click="wisselTrainingBetaalwijze(wijze.value)"
+                                        :aria-pressed="f.offering_types.includes(soort.value)"
+                                        @click="wisselSoort(soort.value)"
                                     >
                                         <span
                                             class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border"
                                             :class="
-                                                f.training_payment_methods.includes(wijze.value)
+                                                f.offering_types.includes(soort.value)
                                                     ? 'border-primary bg-primary text-primary-foreground'
                                                     : 'border-border'
                                             "
                                         >
-                                            <Check v-if="f.training_payment_methods.includes(wijze.value)" class="size-3.5" />
+                                            <Check v-if="f.offering_types.includes(soort.value)" class="size-3.5" />
                                         </span>
                                         <span class="min-w-0">
-                                            <span class="block text-sm font-medium">{{ wijze.label }}</span>
-                                            <span class="block text-xs text-muted-foreground">{{ wijze.hint }}</span>
+                                            <span class="block text-sm font-medium">{{ soort.label }}</span>
+                                            <span class="block text-xs text-muted-foreground">{{ soort.description }}</span>
                                         </span>
                                     </button>
                                 </div>
-                            </div>
+                                <InputError class="mt-2" :message="form.errors.offering_types" />
+                            </section>
 
-                            <ToggleSwitch
-                                v-if="f.training_open || f.enrollment_moments.includes('single_training')"
-                                v-model="f.training_requires_approval"
-                                label="Jij kijkt eerst naar de aanmelding"
-                                description="Aan: een aanmelding is eerst een aanvraag die jij goedkeurt; daarna pas betalen. Uit: direct ingeschreven."
+                            <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
+                                <p class="text-xs font-medium uppercase tracking-wide text-primary">Blok 2 van 4</p>
+                                <p class="mt-1 text-lg font-semibold">Wanneer kunnen ouders inschrijven?</p>
+                                <p class="mt-1 text-sm text-muted-foreground">
+                                    Kies alles wat bij jou voorkomt. Dit bepaalt de zin bovenaan je inschrijfpagina en welk aanbod er wanneer open
+                                    staat.
+                                </p>
+                                <p class="mt-2 text-sm">
+                                    <span class="font-medium">Voor de ouder:</span> hij weet meteen of hij nu kan instappen, of moet wachten op een
+                                    volgend blok.
+                                </p>
+
+                                <div class="mt-4 grid gap-2">
+                                    <button
+                                        v-for="moment in instapmomenten"
+                                        :key="moment.value"
+                                        type="button"
+                                        class="flex min-h-11 items-start gap-3 rounded-xl border p-3 text-left transition"
+                                        :class="
+                                            f.enrollment_moments.includes(moment.value)
+                                                ? 'border-primary bg-primary/5'
+                                                : 'border-border hover:border-primary/50'
+                                        "
+                                        :aria-pressed="f.enrollment_moments.includes(moment.value)"
+                                        @click="wissel(f.enrollment_moments, moment.value)"
+                                    >
+                                        <span
+                                            class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border"
+                                            :class="
+                                                f.enrollment_moments.includes(moment.value)
+                                                    ? 'border-primary bg-primary text-primary-foreground'
+                                                    : 'border-border'
+                                            "
+                                        >
+                                            <Check v-if="f.enrollment_moments.includes(moment.value)" class="size-3.5" />
+                                        </span>
+                                        <span class="min-w-0">
+                                            <span class="block text-sm font-medium">{{ moment.label }}</span>
+                                            <span class="block text-xs text-muted-foreground">{{ moment.hint }}</span>
+                                        </span>
+                                    </button>
+                                </div>
+                                <InputError class="mt-2" :message="form.errors.enrollment_moments" />
+                            </section>
+
+                            <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
+                                <p class="text-xs font-medium uppercase tracking-wide text-primary">Blok 3 van 4</p>
+                                <p class="mt-1 text-lg font-semibold">Losse trainingen</p>
+                                <p class="mt-1 text-sm text-muted-foreground">
+                                    Naast een blok of abonnement kan een kind ook meedoen aan precies één training. Dit is wat een nieuwe training
+                                    standaard krijgt; per training kun je ervan afwijken.
+                                </p>
+                                <p class="mt-2 text-sm">
+                                    <span class="font-medium">Voor de ouder:</span> in zijn agenda staat bij zo'n training een knop Inschrijven, met
+                                    hoeveel plekken er nog zijn. Zit het vol, dan komt hij op de wachtlijst.
+                                </p>
+
+                                <div class="mt-3 divide-y divide-border">
+                                    <ToggleSwitch
+                                        v-model="f.training_open"
+                                        label="Ouders kunnen hun kind aanmelden voor één training"
+                                        description="Aan: elke nieuwe training staat open voor losse aanmelding. Uit: alleen de groep traint mee."
+                                    />
+
+                                    <div v-if="f.training_open || f.enrollment_moments.includes('single_training')" class="py-4">
+                                        <p class="text-sm font-medium">Hoe betaalt een ouder dan?</p>
+                                        <p class="text-xs text-muted-foreground">Allebei mag; de ouder kiest.</p>
+                                        <div class="mt-2 grid gap-2 sm:grid-cols-2">
+                                            <button
+                                                v-for="wijze in trainingBetaalwijzen"
+                                                :key="wijze.value"
+                                                type="button"
+                                                class="flex min-h-11 items-start gap-3 rounded-xl border p-3 text-left transition"
+                                                :class="
+                                                    f.training_payment_methods.includes(wijze.value)
+                                                        ? 'border-primary bg-primary/5'
+                                                        : 'border-border hover:border-primary/50'
+                                                "
+                                                :aria-pressed="f.training_payment_methods.includes(wijze.value)"
+                                                @click="wisselTrainingBetaalwijze(wijze.value)"
+                                            >
+                                                <span
+                                                    class="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-md border"
+                                                    :class="
+                                                        f.training_payment_methods.includes(wijze.value)
+                                                            ? 'border-primary bg-primary text-primary-foreground'
+                                                            : 'border-border'
+                                                    "
+                                                >
+                                                    <Check v-if="f.training_payment_methods.includes(wijze.value)" class="size-3.5" />
+                                                </span>
+                                                <span class="min-w-0">
+                                                    <span class="block text-sm font-medium">{{ wijze.label }}</span>
+                                                    <span class="block text-xs text-muted-foreground">{{ wijze.hint }}</span>
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <ToggleSwitch
+                                        v-if="f.training_open || f.enrollment_moments.includes('single_training')"
+                                        v-model="f.training_requires_approval"
+                                        label="Jij kijkt eerst naar de aanmelding"
+                                        description="Aan: een aanmelding is eerst een aanvraag die jij goedkeurt; daarna pas betalen. Uit: direct ingeschreven."
+                                    />
+                                </div>
+                            </section>
+
+                            <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
+                                <p class="text-xs font-medium uppercase tracking-wide text-primary">Blok 4 van 4</p>
+                                <p class="mt-1 text-lg font-semibold">Proefles</p>
+                                <p class="mt-1 text-sm text-muted-foreground">
+                                    Eén keer meetrainen om te kijken of het bevalt. De proefles komt vanzelf op je inschrijfpagina te staan; je hoeft
+                                    hem niet als aanbod aan te maken.
+                                </p>
+                                <p
+                                    v-if="!f.offering_types.includes('proefles')"
+                                    class="mt-3 rounded-lg bg-secondary p-3 text-sm text-muted-foreground"
+                                >
+                                    Vink in blok 1 "Proefles" aan om hem aan te bieden.
+                                </p>
+                                <ToggleSwitch
+                                    v-else
+                                    v-model="f.trial_enabled"
+                                    label="Proefles aanbieden"
+                                    description="Voor de ouder: een kaart 'Proefles' bovenaan de pagina, gratis of tegen een klein bedrag."
+                                />
+
+                                <div v-if="f.trial_enabled && f.offering_types.includes('proefles')" class="mt-3 border-t border-border pt-4">
+                                    <label for="trial_amount" class="block text-sm font-medium">Wat kost de proefles?</label>
+                                    <p class="text-xs text-muted-foreground">Leeg of 0 betekent gratis.</p>
+                                    <div class="mt-2 flex items-center gap-2">
+                                        <span class="text-sm text-muted-foreground">€</span>
+                                        <input
+                                            id="trial_amount"
+                                            v-model="f.trial_amount"
+                                            inputmode="decimal"
+                                            placeholder="0,00"
+                                            :class="getalKlasse"
+                                        />
+                                    </div>
+                                    <InputError class="mt-2" :message="form.errors.trial_amount" />
+                                </div>
+                            </section>
+                        </div>
+
+                        <!-- Op een groot scherm blijft het voorbeeld in beeld terwijl je scrolt. -->
+                        <div class="hidden lg:sticky lg:top-24 lg:block">
+                            <EnrollmentPreview
+                                :school-name="schoolProfile.name"
+                                :slug="schoolProfile.slug"
+                                :offering-types="f.offering_types"
+                                :moments="f.enrollment_moments"
+                                :training-open="f.training_open || f.enrollment_moments.includes('single_training')"
+                                :training-payment-methods="f.training_payment_methods"
+                                :training-requires-approval="f.training_requires_approval"
+                                :trial-enabled="f.trial_enabled"
+                                :trial-amount="f.trial_amount"
                             />
                         </div>
-                    </section>
-
-                    <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
-                        <p class="text-xs font-medium uppercase tracking-wide text-primary">Blok 4 van 4</p>
-                        <p class="mt-1 text-lg font-semibold">Proefles</p>
-                        <p class="mt-1 text-sm text-muted-foreground">
-                            Eén keer meetrainen om te kijken of het bevalt. De proefles komt vanzelf op je inschrijfpagina te staan; je hoeft hem niet
-                            als aanbod aan te maken.
-                        </p>
-                        <p v-if="!f.offering_types.includes('proefles')" class="mt-3 rounded-lg bg-secondary p-3 text-sm text-muted-foreground">
-                            Vink in blok 1 "Proefles" aan om hem aan te bieden.
-                        </p>
-                        <ToggleSwitch
-                            v-else
-                            v-model="f.trial_enabled"
-                            label="Proefles aanbieden"
-                            description="Voor de ouder: een kaart 'Proefles' bovenaan de pagina, gratis of tegen een klein bedrag."
-                        />
-
-                        <div v-if="f.trial_enabled && f.offering_types.includes('proefles')" class="mt-3 border-t border-border pt-4">
-                            <label for="trial_amount" class="block text-sm font-medium">Wat kost de proefles?</label>
-                            <p class="text-xs text-muted-foreground">Leeg of 0 betekent gratis.</p>
-                            <div class="mt-2 flex items-center gap-2">
-                                <span class="text-sm text-muted-foreground">€</span>
-                                <input id="trial_amount" v-model="f.trial_amount" inputmode="decimal" placeholder="0,00" :class="getalKlasse" />
-                            </div>
-                            <InputError class="mt-2" :message="form.errors.trial_amount" />
-                        </div>
-                    </section>
-                    </div>
-
-                    <!-- Op een groot scherm blijft het voorbeeld in beeld terwijl je scrolt. -->
-                    <div class="hidden lg:sticky lg:top-24 lg:block">
-                        <EnrollmentPreview
-                            :school-name="school.name"
-                            :slug="school.slug"
-                            :offering-types="f.offering_types"
-                            :moments="f.enrollment_moments"
-                            :training-open="f.training_open || f.enrollment_moments.includes('single_training')"
-                            :training-payment-methods="f.training_payment_methods"
-                            :training-requires-approval="f.training_requires_approval"
-                            :trial-enabled="f.trial_enabled"
-                            :trial-amount="f.trial_amount"
-                        />
-                    </div>
                     </div>
                 </template>
 
@@ -837,8 +914,8 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                     <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
                         <p class="font-medium">Welke betaalvormen bied je aan?</p>
                         <p class="mt-1 text-sm text-muted-foreground">
-                            Meerdere mag: de ouder kiest dan bij het inschrijven. Ze staan alvast klaar bij elk nieuw aanbod; per aanbod kun je
-                            ervan afwijken.
+                            Meerdere mag: de ouder kiest dan bij het inschrijven. Ze staan alvast klaar bij elk nieuw aanbod; per aanbod kun je ervan
+                            afwijken.
                         </p>
 
                         <div class="mt-4 grid gap-2">
@@ -848,7 +925,9 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                                 type="button"
                                 class="flex min-h-11 items-start gap-3 rounded-xl border p-3 text-left transition"
                                 :class="
-                                    f.default_payment_types.includes(vorm.value) ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
+                                    f.default_payment_types.includes(vorm.value)
+                                        ? 'border-primary bg-primary/5'
+                                        : 'border-border hover:border-primary/50'
                                 "
                                 :aria-pressed="f.default_payment_types.includes(vorm.value)"
                                 @click="wisselBetaalvorm(vorm.value)"
@@ -871,7 +950,10 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                         </div>
                         <InputError class="mt-2" :message="form.errors.default_payment_types" />
 
-                        <div v-if="f.default_payment_types.includes('installments')" class="mt-4 flex flex-wrap items-end gap-4 border-t border-border pt-4">
+                        <div
+                            v-if="f.default_payment_types.includes('installments')"
+                            class="mt-4 flex flex-wrap items-end gap-4 border-t border-border pt-4"
+                        >
                             <div>
                                 <label for="installments" class="block text-sm font-medium">Aantal termijnen</label>
                                 <input
@@ -1186,8 +1268,8 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                     <section class="rounded-xl border border-border bg-card p-5 shadow-sm">
                         <p class="font-medium">Hoe laten jullie de ontwikkeling van spelers zien?</p>
                         <p class="mt-1 text-sm text-muted-foreground">
-                            Veel voetbal- en keepersscholen willen bewust niet met cijfers werken, omdat kinderen zich dan met elkaar gaan vergelijken. Kies de
-                            kaart die bij jullie past. Rapportinvoer, kaart, voortgang en overzichten gaan vanzelf mee.
+                            Veel voetbal- en keepersscholen willen bewust niet met cijfers werken, omdat kinderen zich dan met elkaar gaan
+                            vergelijken. Kies de kaart die bij jullie past. Rapportinvoer, kaart, voortgang en overzichten gaan vanzelf mee.
                         </p>
                     </section>
 
@@ -1249,16 +1331,19 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                         </button>
                     </section>
                 </template>
-
-                <!-- ================= 10. Trainers ================= -->
-                <template v-else-if="step === 10">
-                    <InviteForm role="trainer" :invitations="invitations" :valid-days="invitationDays" title="Wie geeft er training?" />
-
-                    <p class="text-xs text-muted-foreground">
-                        Geef je alleen zelf training? Dan sla je dit over. Uitnodigen kan altijd later, bij Mijn bedrijf â†’ Personeel.
-                    </p>
-                </template>
             </form>
+
+            <!-- ================= 10. Trainers =================
+                 Buiten het wizard-formulier: het uitnodigformulier is zelf een
+                 formulier, en een formulier in een formulier bestaat niet (Enter
+                 in het adresveld rondde dan de wizard af). -->
+            <div v-if="step === 10" class="mt-6 space-y-4">
+                <InviteForm ref="uitnodigen" role="trainer" :invitations="invitations" :valid-days="invitationDays" title="Wie geeft er training?" />
+
+                <p class="text-xs text-muted-foreground">
+                    Geef je alleen zelf training? Dan sla je dit over. Uitnodigen kan altijd later, bij Mijn bedrijf → Personeel.
+                </p>
+            </div>
         </div>
 
         <!-- Vaste balk onderaan, binnen duimbereik. -->
@@ -1303,7 +1388,7 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                 >
                     <template v-if="completed || laatste">
                         <Check class="size-4" />
-                        {{ laatste && !completed ? 'Afronden en naar mijn dashboard' : 'Opslaan' }}
+                        {{ laatste && !completed ? 'Afronden' : 'Opslaan' }}
                     </template>
                     <template v-else>
                         Opslaan en verder

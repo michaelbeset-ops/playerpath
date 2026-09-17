@@ -103,8 +103,8 @@ class FinancialExport implements WorkbookExport
     {
         return Payment::query()
             ->with('player')
-            ->when($filters['from'] ?? null, fn ($q, $van) => $q->where('due_on', '>=', $van))
-            ->when($filters['to'] ?? null, fn ($q, $tot) => $q->where('due_on', '<=', $tot))
+            ->when($filters['from'] ?? null, fn ($q, $van) => $q->whereDate('due_on', '>=', $van))
+            ->when($filters['to'] ?? null, fn ($q, $tot) => $q->whereDate('due_on', '<=', $tot))
             ->orderBy('due_on')
             ->orderBy('id')
             ->get();
@@ -122,7 +122,7 @@ class FinancialExport implements WorkbookExport
         $totaalMis = 0;
 
         foreach ($perMaand as $maand => $items) {
-            $ontvangen = (int) $items->where('status', PaymentStatus::Paid)->sum('amount_cents');
+            $ontvangen = (int) $items->filter(fn (Payment $b) => $b->status->countsAsRevenue())->sum('amount_cents');
             $open = (int) $items->where('status', PaymentStatus::Open)->sum('amount_cents');
             $mis = (int) $items->filter(fn (Payment $b) => $b->status->needsAttention())->sum('amount_cents');
 

@@ -4,7 +4,7 @@ import RegistrationDialog from '@/components/RegistrationDialog.vue';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import {
     Banknote,
     CalendarDays,
@@ -53,7 +53,7 @@ const props = defineProps<{
     training: {
         id: number;
         group: string;
-        group_id: number;
+        group_id: number | null;
         date: string;
         time: string;
         location: string | null;
@@ -91,20 +91,34 @@ const wachtlijst = computed(() => props.enrollments.filter((e) => e.status === '
 const afwijzen = ref<number | null>(null);
 const afwijsBericht = ref('');
 
-const keurGoed = (id: number) => router.post(`/trainings/${props.training.id}/aanmeldingen/${id}/goedkeuren`, {}, { preserveScroll: true });
+// Wat de server weigerde (bijvoorbeeld: de training is inmiddels vol) staat
+// op de pagina, niet alleen in een melding die je kunt missen.
+const page = usePage();
+const aanmeldFout = computed(() => (page.props.errors as Record<string, string> | undefined)?.enrollment ?? null);
+
+// Eén verzoek tegelijk: twee keer tikken op "Goedkeuren" hoort niets dubbel te doen.
+const bezig = ref(false);
+const opties = (extra: Record<string, unknown> = {}) => ({
+    preserveScroll: true,
+    onStart: () => (bezig.value = true),
+    onFinish: () => (bezig.value = false),
+    ...extra,
+});
+
+const keurGoed = (id: number) => router.post(`/trainings/${props.training.id}/aanmeldingen/${id}/goedkeuren`, {}, opties());
 const wijsAf = (id: number) =>
     router.post(
         `/trainings/${props.training.id}/aanmeldingen/${id}/afwijzen`,
         { message: afwijsBericht.value },
-        { preserveScroll: true, onSuccess: () => ((afwijzen.value = null), (afwijsBericht.value = '')) },
+        opties({ onSuccess: () => ((afwijzen.value = null), (afwijsBericht.value = '')) }),
     );
 const haalVanLijst = (e: Aanmelding) => {
     if (confirm(`${e.name} van deze training halen?`)) {
-        router.delete(`/trainings/${props.training.id}/aanmeldingen/${e.id}`, { preserveScroll: true });
+        router.delete(`/trainings/${props.training.id}/aanmeldingen/${e.id}`, opties());
     }
 };
 const contantOntvangen = (speler: SpelerRij) =>
-    router.post(`/trainings/${props.training.id}/aanmeldingen/${speler.enrollment_id}/contant`, {}, { preserveScroll: true });
+    router.post(`/trainings/${props.training.id}/aanmeldingen/${speler.enrollment_id}/contant`, {}, opties());
 
 // Een ouder meldt een los ingeschreven kind af: de plek gaat naar de wachtlijst.
 const schrijfUit = (speler: SpelerRij) => {
@@ -187,7 +201,7 @@ const verwijderen = () => {
                 <Link
                     v-if="can.manage"
                     :href="'/trainings/' + training.id + '/edit'"
-                    class="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium shadow-sm transition hover:border-primary"
+                    class="inline-flex min-h-11 items-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-medium shadow-sm transition hover:border-primary"
                 >
                     <Pencil class="size-4" />
                     Bewerken
@@ -236,7 +250,7 @@ const verwijderen = () => {
                         <Users class="size-5" />
                     </span>
                     <div class="min-w-0">
-                        <p class="text-xs text-muted-foreground">{{ players.length === 1 ? 'Voor' : 'Voor' }}</p>
+                        <p class="text-xs text-muted-foreground">Voor</p>
                         <p class="break-words font-medium">{{ players.map((s) => s.name.split(' ')[0]).join(' en ') }}</p>
                         <!-- Vooraf: afmelden of weer aanmelden, per kind. -->
                         <div v-if="!training.has_passed && !training.cancelled_at" class="mt-2 flex flex-col gap-2">
@@ -351,7 +365,7 @@ const verwijderen = () => {
                 <button
                     v-if="can.manage"
                     type="button"
-                    class="mt-3 inline-flex items-center gap-2 text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
+                    class="mt-3 inline-flex min-h-11 items-center gap-2 text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground"
                     @click="terugzetten"
                 >
                     <RotateCcw class="size-3.5" />
@@ -387,7 +401,11 @@ const verwijderen = () => {
 
                     <div class="mt-3 flex items-center gap-3">
                         <Button type="submit" variant="destructive" :disabled="!reden">Afzeggen en iedereen berichten</Button>
-                        <button type="button" class="text-sm text-muted-foreground underline underline-offset-4" @click="toonAfzeggen = false">
+                        <button
+                            type="button"
+                            class="inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4"
+                            @click="toonAfzeggen = false"
+                        >
                             Annuleren
                         </button>
                     </div>
@@ -408,6 +426,10 @@ const verwijderen = () => {
                     <template v-if="training.requires_approval"> · goedkeuring nodig</template>
                 </p>
 
+                <p v-if="aanmeldFout" role="alert" class="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                    {{ aanmeldFout }}
+                </p>
+
                 <!-- Aanvragen -->
                 <div v-if="aanvragen.length" class="mt-4">
                     <p class="text-sm font-semibold text-warning">
@@ -423,7 +445,8 @@ const verwijderen = () => {
                                 <div class="flex shrink-0 gap-2">
                                     <button
                                         type="button"
-                                        class="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                                        class="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
+                                        :disabled="bezig"
                                         @click="keurGoed(e.id)"
                                     >
                                         <Check class="size-4" />
@@ -431,7 +454,8 @@ const verwijderen = () => {
                                     </button>
                                     <button
                                         type="button"
-                                        class="inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-sm font-medium text-muted-foreground transition hover:border-destructive hover:text-destructive"
+                                        class="inline-flex min-h-11 items-center rounded-lg border border-border px-3 text-sm font-medium text-muted-foreground transition hover:border-destructive hover:text-destructive disabled:opacity-50"
+                                        :disabled="bezig"
                                         @click="afwijzen = afwijzen === e.id ? null : e.id"
                                     >
                                         Afwijzen
@@ -448,7 +472,8 @@ const verwijderen = () => {
                                 />
                                 <button
                                     type="submit"
-                                    class="inline-flex min-h-11 items-center justify-center rounded-lg bg-destructive px-3 text-sm font-semibold text-destructive-foreground"
+                                    class="inline-flex min-h-11 items-center justify-center rounded-lg bg-destructive px-3 text-sm font-semibold text-destructive-foreground disabled:opacity-50"
+                                    :disabled="bezig"
                                 >
                                     Afwijzen en berichten
                                 </button>
@@ -472,7 +497,8 @@ const verwijderen = () => {
                             </div>
                             <button
                                 type="button"
-                                class="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:text-destructive"
+                                class="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:text-destructive disabled:opacity-50"
+                                :disabled="bezig"
                                 :aria-label="e.name + ' van de wachtlijst halen'"
                                 @click="haalVanLijst(e)"
                             >
@@ -549,7 +575,8 @@ const verwijderen = () => {
                                 <button
                                     v-else-if="speler.cash_due"
                                     type="button"
-                                    class="inline-flex min-h-11 items-center gap-1 rounded-lg border border-warning/50 px-2 font-medium text-warning transition hover:bg-warning/10"
+                                    class="inline-flex min-h-11 items-center gap-1 rounded-lg border border-warning/50 px-2 font-medium text-warning transition hover:bg-warning/10 disabled:opacity-50"
+                                    :disabled="bezig"
                                     @click="contantOntvangen(speler)"
                                 >
                                     <Banknote class="size-3.5" />
@@ -558,7 +585,8 @@ const verwijderen = () => {
                                 <button
                                     v-else
                                     type="button"
-                                    class="inline-flex min-h-11 items-center gap-1 rounded-lg border border-border px-2 font-medium text-muted-foreground transition hover:border-primary"
+                                    class="inline-flex min-h-11 items-center gap-1 rounded-lg border border-border px-2 font-medium text-muted-foreground transition hover:border-primary disabled:opacity-50"
+                                    :disabled="bezig"
                                     @click="haalVanLijst({ id: speler.enrollment_id!, name: speler.name } as Aanmelding)"
                                 >
                                     Afmelden
@@ -569,7 +597,7 @@ const verwijderen = () => {
                         <div class="flex shrink-0 gap-1">
                             <button
                                 type="button"
-                                class="flex h-10 w-10 items-center justify-center rounded-lg border transition"
+                                class="flex size-11 items-center justify-center rounded-lg border transition"
                                 :class="
                                     speler.status === 'present'
                                         ? 'border-transparent bg-primary text-primary-foreground'
@@ -584,7 +612,7 @@ const verwijderen = () => {
 
                             <button
                                 type="button"
-                                class="flex h-10 w-10 items-center justify-center rounded-lg border transition"
+                                class="flex size-11 items-center justify-center rounded-lg border transition"
                                 :class="
                                     speler.status === 'absent'
                                         ? 'border-transparent bg-destructive text-destructive-foreground'
@@ -601,8 +629,12 @@ const verwijderen = () => {
                 </div>
 
                 <p v-else class="mt-3 text-sm text-muted-foreground">
-                    Deze groep heeft nog geen actieve spelers.
-                    <Link :href="'/groups/' + training.group_id + '/edit'" class="font-medium text-primary underline underline-offset-4">
+                    Er staan hier nog geen actieve spelers.
+                    <Link
+                        v-if="training.group_id"
+                        :href="'/groups/' + training.group_id"
+                        class="inline-flex min-h-11 items-center font-medium text-primary underline underline-offset-4"
+                    >
                         Bekijk de groep
                     </Link>
                 </p>

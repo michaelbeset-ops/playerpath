@@ -42,7 +42,8 @@ const props = defineProps<{
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Shop', href: '/shop' }];
 
 const page = usePage();
-const fout = computed(() => (page.props.errors as Record<string, string> | undefined)?.payment ?? null);
+// Elke fout van de server, niet alleen die bij betalen: een moment dat net geboekt is hoort er ook bij.
+const fout = computed(() => Object.values((page.props.errors as Record<string, string> | undefined) ?? {})[0] ?? null);
 
 const leeg = computed(() => props.groups.every((g) => g.products.length === 0));
 

@@ -92,6 +92,15 @@ class TrainingEnrollmentController extends Controller
         $eigen = $request->user()->visiblePlayerIds();
         $toegestaan = array_column($this->betaalwijzen($training), 'key');
 
+        // Een betaalde training zonder bruikbare betaalwijze (alleen online,
+        // en geen provider): dan valt er niets af te rekenen, en een
+        // inschrijving zonder rekening is gratis meedoen.
+        if ($training->price_cents > 0 && $toegestaan === []) {
+            return back()->withErrors([
+                'payment_method' => 'Voor deze training kun je je nu niet inschrijven: er is geen manier om te betalen. Neem contact op met de school.',
+            ]);
+        }
+
         $validated = $request->validate([
             'player_id' => ['required', 'integer', Rule::in($eigen)],
             'payment_method' => [Rule::requiredIf($training->price_cents > 0 && $toegestaan !== []), 'nullable', Rule::in($toegestaan)],
@@ -151,7 +160,9 @@ class TrainingEnrollmentController extends Controller
     /** Afmelden voor een losse training: de plek gaat terug in de pot. */
     public function destroy(Request $request, Training $training, Player $player): RedirectResponse
     {
-        $this->authorize('view', $training);
+        // Alleen de ouder van dit kind; ook als los inschrijven intussen dicht
+        // staat. 'view' liet ook een trainer of een kind met eigen inlog door.
+        $this->authorize('unenroll', $training);
 
         abort_unless(in_array($player->id, $request->user()->visiblePlayerIds(), strict: true), 403);
 

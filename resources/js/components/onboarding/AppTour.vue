@@ -319,7 +319,7 @@ watch(bezig, (nu, eerst) => {
                         <li class="flex gap-3">
                             <span class="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">3</span>
                             <p class="text-sm leading-relaxed">
-                                <span class="font-medium">Je eigen school inrichten.</span> Naam en logo, je aanbod, hoe je int, je groepen en trainers. Negen
+                                <span class="font-medium">Je eigen school inrichten.</span> Naam en logo, je aanbod, hoe je int, je groepen en trainers. Tien
                                 korte vragen, elk met een goede standaard.
                             </p>
                         </li>

@@ -5,6 +5,8 @@ namespace App\Actions\Enrollments;
 use App\Actions\Offerings\JoinOffering;
 use App\Enums\EnrollmentStatus;
 use App\Enums\ParticipationStatus;
+use App\Enums\PlayerPosition;
+use App\Enums\ProductAudience;
 use App\Enums\Role;
 use App\Models\Consent;
 use App\Models\ConsentDocument;
@@ -82,7 +84,7 @@ class SubmitEnrollment
                 $optie = PaymentOption::where('product_id', $aanbod->id)->findOrFail($kind['payment_option_id']);
                 $vol = $aanbod->isFull();
 
-                $speler = $this->speler($ouder, $kind);
+                $speler = $this->speler($ouder, $kind, $aanbod);
 
                 $inschrijving = Enrollment::create([
                     'first_name' => $speler->first_name,
@@ -180,7 +182,8 @@ class SubmitEnrollment
         if ($bestaand !== null) {
             // Zonder inloggen mag je geen bestaand account gebruiken: anders
             // schrijft iemand een kind in op andermans naam.
-            throw new RuntimeException('Dit e-mailadres heeft al een account. Log in om verder te gaan.');
+            // De tekst zegt niet letterlijk dat het adres bekend is.
+            throw new RuntimeException('Log eerst in met dit e-mailadres, of gebruik een ander adres.');
         }
 
         $ouder = User::create([
@@ -200,9 +203,14 @@ class SubmitEnrollment
     /**
      * Een bestaand kind van deze ouder, of een nieuw profiel.
      *
-     * @param  array{player_id?: int|null, first_name: string, last_name: string, date_of_birth: string, position: string}  $kind
+     * Vraagt de school niet naar de positie (veld uit), dan komt er null
+     * binnen. Een speler heeft er wel een nodig; die volgt dan uit de
+     * doelgroep van het aanbod, en anders is het keeper - zoals het formulier
+     * vroeger voorkoos. De school kan hem op de spelerspagina aanpassen.
+     *
+     * @param  array{player_id?: int|null, first_name: string, last_name: string, date_of_birth: string, position?: string|null}  $kind
      */
-    protected function speler(User $ouder, array $kind): Player
+    protected function speler(User $ouder, array $kind, Product $aanbod): Player
     {
         if (! empty($kind['player_id'])) {
             $speler = $ouder->children()->findOrFail($kind['player_id']);
@@ -214,7 +222,9 @@ class SubmitEnrollment
             'first_name' => $kind['first_name'],
             'last_name' => $kind['last_name'],
             'date_of_birth' => $kind['date_of_birth'],
-            'position' => $kind['position'],
+            'position' => ! empty($kind['position'])
+                ? $kind['position']
+                : ($aanbod->audience === ProductAudience::Field ? PlayerPosition::Field : PlayerPosition::Keeper)->value,
             'is_active' => true,
         ]);
 

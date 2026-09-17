@@ -46,7 +46,8 @@ class PlayerProgressController extends Controller
                 'name' => $player->full_name,
                 'first_name' => $player->first_name,
                 'position' => $player->position->label(),
-                'overall_rating' => $player->overall_rating,
+                // De inzetkaart heeft ook in de gegevens geen cijfers.
+                'overall_rating' => $inzet ? null : $player->overall_rating,
             ],
             // Dezelfde kaartgegevens als op de kaartpagina, zodat de uitleg
             // "Hoe werkt mijn rating?" hier hetzelfde zegt.

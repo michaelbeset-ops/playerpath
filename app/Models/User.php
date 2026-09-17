@@ -239,11 +239,11 @@ class User extends Authenticatable
     public static function notificationKinds(): array
     {
         return [
-            'rapport' => 'Een nieuw rapport voor mijn kind',
+            'rapport' => 'Een nieuw rapport',
             'doel' => 'Een doel dat gehaald is',
             'mededeling' => 'Mededelingen van de school',
             'verjaardag' => 'Een felicitatie op mijn verjaardag',
-            'samenvatting' => 'De maandelijkse samenvatting van mijn kind',
+            'samenvatting' => 'De maandelijkse samenvatting van de voortgang',
             'betaling' => 'Betalingen en herinneringen',
         ];
     }

@@ -65,8 +65,11 @@ class ConfirmEnrollment
      * Rekeningen voor een order: één per termijn als de standaardregel in
      * termijnen is, anders één voor het geheel. De restcenten gaan naar de
      * eerste termijnen, zodat de som exact klopt.
+     *
+     * Publiek omdat DeclineEnrollment ze opnieuw opmaakt als er een kind van
+     * een gedeelde order af gaat.
      */
-    protected function maakRekeningen(Order $order): void
+    public function maakRekeningen(Order $order): void
     {
         $eerste = $order->enrollments()->with('paymentOption')->first();
         $optie = $eerste?->paymentOption;

@@ -82,6 +82,12 @@ class DashboardController extends Controller
             return redirect()->route('platform.dashboard');
         }
 
+        // Wie de school runt of er traint krijgt eerst de school, ook als hij
+        // zelf een kind op de school heeft: dat gezinsblok is dan niet zijn werk.
+        if ($user->isEigenaar() || $user->isTrainer()) {
+            return $this->voorSchool($user);
+        }
+
         $eigenSpelers = $user->visiblePlayerIds();
 
         if ($eigenSpelers === []) {
@@ -237,6 +243,8 @@ class DashboardController extends Controller
     {
         return Inertia::render('Dashboard', [
             'view' => 'gezin',
+            // Wat er nú van de ouder gevraagd wordt: een openstaande rekening.
+            'attention' => $this->family->attention($user, $spelerIds),
             'children' => $this->family->children($spelerIds),
             'upcoming' => $this->family->upcomingTrainings($user, $spelerIds),
             'offerings' => $this->family->openOfferings($user),

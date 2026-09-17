@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Support\Availability\TrainerAvailability;
 use App\Support\Features\Features;
 use App\Support\Money\Money;
+use App\Support\Rating\RatingSettings;
 
 /**
  * Wat er nú actie vraagt, in één lijst.
@@ -77,8 +78,11 @@ class AttentionItems
             $items = [...$items, ...$this->betalingen()];
         }
 
-        if ($this->features->enabled(Feature::Ontwikkeling, $user->school)) {
-            $items = [...$items, ...$this->rapporten()];
+        // Bij de inzetkaart bestaan er geen rapporten; "geen rapport gehad"
+        // zou dan bij elk kind staan en niets zeggen.
+        if ($this->features->enabled(Feature::Ontwikkeling, $user->school)
+            && ! RatingSettings::for($user->school)->usesEffort()) {
+            $items = [...$items, ...$this->rapporten($user)];
         }
 
         // De planning is werk van de eigenaar. Een trainer kan niets met "er
@@ -175,7 +179,7 @@ class AttentionItems
                     ? 'Bij één training staat nog geen trainer'
                     : "Bij {$zonder} trainingen staat nog geen trainer",
                 'body' => ucfirst($eerste['date']).', '.$eerste['time'].' · '.$eerste['group'].'.',
-                'href' => '/personeel/beschikbaarheid',
+                'href' => '/trainings/'.$eerste['id'].'/edit',
                 'action' => 'Trainer koppelen',
             ];
         }
@@ -229,13 +233,16 @@ class AttentionItems
     }
 
     /** @return list<array<string, mixed>> */
-    protected function rapporten(): array
+    protected function rapporten(User $user): array
     {
         $items = [];
 
         $grens = now()->subDays(self::RAPPORT_NA_DAGEN);
 
+        // Een trainer krijgt alleen zijn eigen spelers: over de rest kan hij
+        // niets doen, en hij mag ze ook niet openen. Zie TrainerScope.
         $stil = Player::active()
+            ->visibleTo($user)
             ->withMax('reports', 'reported_on')
             ->get()
             ->filter(fn (Player $speler) => $speler->reports_max_reported_on === null
@@ -257,10 +264,18 @@ class AttentionItems
             ];
         }
 
+        // Wie er verder nog niets invulde gaat een trainer niet aan.
+        if (! $user->isEigenaar()) {
+            return $items;
+        }
+
         // Trainers die deze week nog niets invulden. De eigenaar telt mee als
-        // trainer: bij een kleine school geeft hij zelf ook training.
+        // trainer: bij een kleine school geeft hij zelf ook training. Alleen
+        // wie aan een training gekoppeld is: een eigenaar die niet traint of
+        // een trainer zonder rooster hoeft niets in te vullen.
         $trainers = User::ofCurrentSchool()
             ->whereHas('roles', fn ($q) => $q->whereIn('name', ['trainer', 'eigenaar']))
+            ->whereHas('trainings')
             ->whereDoesntHave('reports', fn ($q) => $q->whereDate('reported_on', '>=', now()->startOfWeek()->toDateString()))
             ->get(['id', 'name']);
 

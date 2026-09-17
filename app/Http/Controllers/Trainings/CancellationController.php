@@ -44,7 +44,7 @@ class CancellationController extends Controller
         $bericht = $this->verstuur->handle(
             $request->user(),
             'Training van '.$training->starts_at->format('d-m-Y').' gaat niet door',
-            "De training van {$training->starts_at->format('l j F')} om {$training->starts_at->format('H:i')} gaat niet door.\n\n{$validated['reason']}",
+            "De training van {$training->starts_at->translatedFormat('l j F')} om {$training->starts_at->format('H:i')} gaat niet door.\n\n{$validated['reason']}",
             $training->group,
             $training,
         );

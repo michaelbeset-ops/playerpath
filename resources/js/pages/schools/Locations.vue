@@ -52,8 +52,6 @@ const slaOp = () =>
         preserveScroll: true,
         onSuccess: () => (bewerkId.value = null),
     });
-
-const veld = 'h-11 w-full rounded-lg border border-input bg-background px-3 text-base outline-none focus:border-primary sm:text-sm';
 </script>
 
 <template>
@@ -104,11 +102,22 @@ const veld = 'h-11 w-full rounded-lg border border-input bg-background px-3 text
                          of drie, daar hoort geen eigen pagina bij. -->
                     <form v-if="bewerkId === locatie.id" class="space-y-3" @submit.prevent="slaOp">
                         <div class="grid gap-3 sm:grid-cols-2">
-                            <Input v-model="bewerk.name" required class="h-11 sm:h-10" />
-                            <Input v-model="bewerk.address" placeholder="Adres" class="h-11 sm:h-10" />
+                            <div class="grid gap-1">
+                                <Label :for="'name-' + locatie.id" class="sr-only">Naam</Label>
+                                <Input :id="'name-' + locatie.id" v-model="bewerk.name" required placeholder="Naam" class="h-11 sm:h-10" />
+                                <InputError :message="bewerk.errors.name" />
+                            </div>
+                            <div class="grid gap-1">
+                                <Label :for="'address-' + locatie.id" class="sr-only">Adres</Label>
+                                <Input :id="'address-' + locatie.id" v-model="bewerk.address" placeholder="Adres" class="h-11 sm:h-10" />
+                                <InputError :message="bewerk.errors.address" />
+                            </div>
                         </div>
-                        <Input v-model="bewerk.note" placeholder="Notitie" class="h-11 sm:h-10" />
-                        <InputError :message="bewerk.errors.name" />
+                        <div class="grid gap-1">
+                            <Label :for="'note-' + locatie.id" class="sr-only">Notitie</Label>
+                            <Input :id="'note-' + locatie.id" v-model="bewerk.note" placeholder="Notitie" class="h-11 sm:h-10" />
+                            <InputError :message="bewerk.errors.note" />
+                        </div>
 
                         <label class="flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3">
                             <input v-model="bewerk.is_active" type="checkbox" class="size-4 shrink-0 rounded border-input accent-primary" />
@@ -122,7 +131,11 @@ const veld = 'h-11 w-full rounded-lg border border-input bg-background px-3 text
 
                         <div class="flex flex-wrap items-center gap-3">
                             <Button type="submit" class="h-11 sm:h-10" :disabled="bewerk.processing">Opslaan</Button>
-                            <button type="button" class="text-sm text-muted-foreground underline underline-offset-4" @click="bewerkId = null">
+                            <button
+                                type="button"
+                                class="inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4"
+                                @click="bewerkId = null"
+                            >
                                 Annuleren
                             </button>
                         </div>

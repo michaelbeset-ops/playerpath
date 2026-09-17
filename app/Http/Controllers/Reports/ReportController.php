@@ -11,7 +11,9 @@ use App\Models\Report;
 use App\Support\Dashboard\SchoolDashboard;
 use App\Support\Goals\GoalProgress;
 use App\Support\PlayerCard\CalculatePlayerCard;
+use App\Support\Rating\RatingSettings;
 use App\Support\Reports\ReportOutcome;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -19,6 +21,9 @@ use Inertia\Response;
 
 class ReportController extends Controller
 {
+    /** De melding als een school met de inzetkaart werkt: daar bestaan geen rapporten. */
+    public const INZET_MELDING = 'Deze school werkt met inzetpunten in plaats van rapporten. Die geef je na de training bij Mijn trainingen.';
+
     public function __construct(
         protected CalculatePlayerCard $calculator,
         protected GoalProgress $goals,
@@ -26,9 +31,13 @@ class ReportController extends Controller
     ) {}
 
     /** Wie ga je beoordelen? De lijst is bewust kort en direct klikbaar. */
-    public function index(Request $request): Response
+    public function index(Request $request): Response|RedirectResponse
     {
         $this->authorize('viewAny', Report::class);
+
+        if (RatingSettings::for($request->user()->school)->usesEffort()) {
+            return redirect()->route('trainings.mine')->with('status', self::INZET_MELDING);
+        }
 
         // Vanuit een training kom je hier met een groep in de URL: dan gaat het
         // om de spelers die je zojuist voor je had staan.
@@ -38,10 +47,13 @@ class ReportController extends Controller
             ->active()
             ->visibleTo($request->user())
             ->when($groep > 0, fn ($q) => $q->whereHas('groups', fn ($g) => $g->whereKey($groep)))
+            ->withMax('reports', 'reported_on')
             ->orderBy('first_name')
             ->get()
             ->map(function (Player $player) {
-                $laatste = $player->reports()->newestFirst()->value('reported_on');
+                $laatste = $player->reports_max_reported_on === null
+                    ? null
+                    : CarbonImmutable::parse($player->reports_max_reported_on);
 
                 return [
                     'id' => $player->id,
@@ -53,7 +65,7 @@ class ReportController extends Controller
                     // Hoe lang geleden, zodat het scherm kan laten zien waar het
                     // stilvalt. De grens ligt op 30 dagen, dezelfde als het
                     // aandacht-blok op het dashboard: één begrip van "te lang".
-                    'days_since_report' => $laatste?->startOfDay()->diffInDays(now()->startOfDay()),
+                    'days_since_report' => $laatste === null ? null : (int) $laatste->startOfDay()->diffInDays(now()->startOfDay()),
                 ];
             });
 
@@ -67,13 +79,18 @@ class ReportController extends Controller
             // Dezelfde grens als het aandacht-blok op het dashboard: "te lang
             // geleden" hoort in de hele app hetzelfde te betekenen.
             'staleAfterDays' => SchoolDashboard::AANDACHT_NA_DAGEN,
+            'canCreatePlayer' => $request->user()->can('create', Player::class),
         ]);
     }
 
     /** Het 30-seconden-scherm. */
-    public function create(Player $player): Response
+    public function create(Player $player): Response|RedirectResponse
     {
         $this->authorize('createReport', $player);
+
+        if ($inzet = $this->inzetDoorverwijzing($player)) {
+            return $inzet;
+        }
 
         $vorige = $player->reports()->newestFirst()->with('scores')->first();
 
@@ -99,8 +116,19 @@ class ReportController extends Controller
         ]);
     }
 
-    public function store(StoreReportRequest $request, Player $player, StoreReport $storeReport): RedirectResponse
+    public function store(Request $request, Player $player, StoreReport $storeReport): RedirectResponse
     {
+        $this->authorize('createReport', $player);
+
+        // Vóór de validatie: bij de inzetkaart is er geen formulier om te
+        // controleren, alleen een doorverwijzing.
+        if ($inzet = $this->inzetDoorverwijzing($player)) {
+            return $inzet;
+        }
+
+        /** @var StoreReportRequest $request */
+        $request = app(StoreReportRequest::class);
+
         // De stand vóór het opslaan, zodat de kaartpagina kan laten zien wát er
         // veranderde. Dat is het moment waar de trainer het voor doet.
         $voor = $this->outcome->snapshot($player);
@@ -119,6 +147,16 @@ class ReportController extends Controller
             ->route('players.card', $player)
             ->with('status', 'Het rapport is opgeslagen en de spelerskaart is bijgewerkt.')
             ->with('reportResult', $wijziging);
+    }
+
+    /** Bij de inzetkaart bestaan geen rapporten: terug naar de kaart. */
+    protected function inzetDoorverwijzing(Player $player): ?RedirectResponse
+    {
+        if (! RatingSettings::for($player->school)->usesEffort()) {
+            return null;
+        }
+
+        return redirect()->route('players.card', $player)->with('status', self::INZET_MELDING);
     }
 
     /**

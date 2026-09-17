@@ -28,8 +28,11 @@ class TrainingRequest extends FormRequest
         return [
             // exists kent de global scope niet, dus expliciet op school begrenzen.
             // Zie CLAUDE.md 3.1.
+            // Een privétraining (een geboekt moment) heeft geen groep en krijgt
+            // er bij bewerken ook geen: dan zou hij een groepstraining worden.
             'group_id' => [
-                'required',
+                Rule::requiredIf(! $this->isPrivate()),
+                'nullable',
                 'integer',
                 Rule::exists('groups', 'id')->where('school_id', app(Tenancy::class)->id()),
             ],
@@ -104,13 +107,13 @@ class TrainingRequest extends FormRequest
         $datum = $this->validated('date');
 
         return [
-            'group_id' => $this->validated('group_id'),
+            ...($this->isPrivate() ? [] : ['group_id' => $this->validated('group_id')]),
             'starts_at' => CarbonImmutable::parse($datum.' '.$this->validated('starts_at')),
             'ends_at' => CarbonImmutable::parse($datum.' '.$this->validated('ends_at')),
             // De gekozen locatie vult de tekst; die blijft staan zoals hij op
             // dat moment heette. Zie Location.
             'location_id' => $this->validated('location_id'),
-            'location' => $this->locatienaam() ?? $this->validated('location'),
+            'location' => $this->locatienaam() ?? $this->vrijeLocatie(),
             'note' => $this->validated('note'),
             ...$this->enrollmentData(),
         ];
@@ -181,6 +184,34 @@ class TrainingRequest extends FormRequest
         }
 
         return $momenten;
+    }
+
+    /** Bewerken we een privétraining (een geboekt moment zonder groep)? */
+    public function isPrivate(): bool
+    {
+        $training = $this->route('training');
+
+        return $training instanceof Training && $training->slot_id !== null;
+    }
+
+    /**
+     * De locatie als losse tekst, zonder gekozen locatie.
+     *
+     * Het formulier stuurt die tekst niet mee. Een oude training met alleen
+     * een vrije tekst verliest die dan niet bij opslaan; wie een gekozen
+     * locatie leegmaakt, maakt hem wel leeg.
+     */
+    protected function vrijeLocatie(): ?string
+    {
+        if ($this->has('location')) {
+            return $this->validated('location');
+        }
+
+        $training = $this->route('training');
+
+        return $training instanceof Training && $training->location_id === null
+            ? $training->location
+            : null;
     }
 
     /** De naam van de gekozen locatie, als er een gekozen is. */

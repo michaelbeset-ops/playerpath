@@ -6,6 +6,7 @@ use App\Actions\Onboarding\SendInvitation;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Invitation;
+use App\Models\Player;
 use App\Models\User;
 use App\Notifications\Uitnodiging;
 use App\Support\Tenancy\Tenancy;
@@ -77,7 +78,7 @@ class InvitationController extends Controller
                 return back()->withErrors(['recipients' => 'Nodig één speler tegelijk uit, met zijn eigen e-mailadres.']);
             }
 
-            $speler = \App\Models\Player::query()->with('user')->findOrFail($spelers[0]);
+            $speler = Player::query()->with('user')->findOrFail($spelers[0]);
 
             if ($speler->user !== null && ! $speler->user->isKindAccount()) {
                 return back()->withErrors(['recipients' => $speler->first_name.' heeft al een eigen account.']);
@@ -88,10 +89,21 @@ class InvitationController extends Controller
 
         $verstuurd = [];
         $overgeslagen = [];
+        $elders = 0;
 
         foreach ($regels as [$naam, $email]) {
-            if (User::where('email', $email)->exists()) {
-                $overgeslagen[] = $email;
+            $bestaand = User::where('email', $email)->first(['id', 'school_id']);
+
+            if ($bestaand !== null) {
+                // Binnen de eigen school mag het adres genoemd worden; hoort het
+                // bij een andere school (of het platform), dan zeggen we alleen
+                // dat het niet lukte. Anders is dit een manier om te testen
+                // welke adressen elders een account hebben.
+                if ($bestaand->school_id === $school->id) {
+                    $overgeslagen[] = $email;
+                } else {
+                    $elders++;
+                }
 
                 continue;
             }
@@ -114,7 +126,7 @@ class InvitationController extends Controller
             $this->uitnodigen->send($uitnodiging);
         }
 
-        return back()->with('status', $this->melding(count($verstuurd), $overgeslagen));
+        return back()->with('status', $this->melding(count($verstuurd), $overgeslagen, $elders));
     }
 
     public function resend(Request $request, Invitation $invitation): RedirectResponse
@@ -192,7 +204,7 @@ class InvitationController extends Controller
     }
 
     /** @param  list<string>  $overgeslagen */
-    protected function melding(int $aantal, array $overgeslagen): string
+    protected function melding(int $aantal, array $overgeslagen, int $elders = 0): string
     {
         $tekst = match ($aantal) {
             0 => 'Er is niemand uitgenodigd.',
@@ -203,6 +215,12 @@ class InvitationController extends Controller
         if ($overgeslagen !== []) {
             $tekst .= ' Overgeslagen omdat er al een account is: '.implode(', ', array_slice($overgeslagen, 0, 5)).
                 (count($overgeslagen) > 5 ? ' en '.(count($overgeslagen) - 5).' meer.' : '.');
+        }
+
+        if ($elders > 0) {
+            $tekst .= $elders === 1
+                ? ' Eén adres kon niet worden uitgenodigd.'
+                : " {$elders} adressen konden niet worden uitgenodigd.";
         }
 
         return $tekst;

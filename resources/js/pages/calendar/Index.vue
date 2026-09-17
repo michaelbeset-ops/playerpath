@@ -84,7 +84,15 @@ onMounted(() => {
 
 onBeforeUnmount(() => media?.removeEventListener('change', opBreedte));
 
-const bewaard = typeof localStorage !== 'undefined' ? localStorage.getItem('pp.calendar.layout') : null;
+// Lezen kan net zo goed stuklopen als schrijven (privévenster, geblokkeerde opslag).
+const leesBewaard = (): string | null => {
+    try {
+        return typeof localStorage !== 'undefined' ? localStorage.getItem('pp.calendar.layout') : null;
+    } catch {
+        return null;
+    }
+};
+const bewaard = leesBewaard();
 const weergave = ref<'lijst' | 'raster'>(bewaard === 'raster' ? 'raster' : 'lijst');
 
 const kiesWeergave = (keuze: 'lijst' | 'raster') => {
@@ -222,8 +230,6 @@ const naarVandaag = () => ga(props.view, props.today);
 const wisselWeergave = (view: 'month' | 'week') => ga(view, props.date);
 
 const kiesBereik = (scope: 'all' | 'mine') => ga(props.view, props.date, scope);
-
-const open = (id: number) => router.get('/trainings/' + id);
 
 // Een inschrijfbare training opent meteen de inschrijving.
 const hrefVoor = (t: Training) => (t.enrollable ? '/trainings/' + t.id + '/inschrijven' : '/trainings/' + t.id);
@@ -469,7 +475,15 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                                     {{ [t.trainers.join(', '), t.location].filter(Boolean).join(' · ') || 'geen trainer' }}
                                 </span>
                             </span>
-                            <span v-if="(perDag[dag.iso]?.length ?? 0) > 2" class="block pl-1.5 text-[11px] text-muted-foreground">
+                            <!-- De rest van die dag staat in de weekweergave. -->
+                            <span
+                                v-if="(perDag[dag.iso]?.length ?? 0) > 2"
+                                role="link"
+                                tabindex="0"
+                                class="block cursor-pointer pl-1.5 text-[11px] font-medium text-primary underline underline-offset-2 hover:opacity-70"
+                                @click.stop="ga('week', dag.iso)"
+                                @keydown.enter.stop.prevent="ga('week', dag.iso)"
+                            >
                                 +{{ perDag[dag.iso].length - 2 }} meer
                             </span>
                         </div>

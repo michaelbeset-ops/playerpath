@@ -26,11 +26,18 @@ class BrandingController extends Controller
         $school = $request->user()->school;
 
         return Inertia::render('branding/Edit', [
-            'school' => [
+            // Niet `school`: dat is een gedeelde prop, en een paginaprop met
+            // dezelfde naam overschrijft hem (zie CLAUDE.md).
+            'schoolInfo' => [
                 'name' => $school->name,
                 'slug' => $school->slug,
                 'logo' => $school->logo_path !== null ? Storage::url($school->logo_path) : null,
                 'brand_color' => $school->brand_color,
+                // De tekstkleur die de app op deze merkkleur zet, zodat het
+                // knopvoorbeeld dezelfde leesbaarheid toont als de echte knop.
+                'brand_foreground' => $school->brand_color !== null && BrandColor::isValid($school->brand_color)
+                    ? 'hsl('.BrandColor::fromHex($school->brand_color)->adjustedForContrast()->readableForeground().')'
+                    : null,
             ],
             // Het adres waarop deze school straks bereikbaar is; leeg als er
             // geen basisdomein is ingesteld, want dan bestaan subdomeinen niet.
@@ -45,10 +52,12 @@ class BrandingController extends Controller
         $validated = $request->validate([
             'brand_color' => ['nullable', 'string', 'max:7'],
             // 1 MB is ruim voor een logo en houdt een ingescande poster buiten.
-            'logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,svg,webp', 'max:1024'],
+            'logo' => ['nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:1024'],
             'remove_logo' => ['nullable', 'boolean'],
         ], [
             'logo.image' => 'Kies een afbeelding.',
+            // Geen svg: dat is uitvoerbare opmaak op pagina's die we delen.
+            'logo.mimes' => 'Het logo moet een PNG, JPG of WebP zijn.',
             'logo.max' => 'Het logo mag hoogstens 1 MB groot zijn.',
         ], [
             'brand_color' => 'De merkkleur',
@@ -60,7 +69,7 @@ class BrandingController extends Controller
 
         if ($kleur !== null && $kleur !== '' && ! BrandColor::isValid($kleur)) {
             throw ValidationException::withMessages([
-                'brand_color' => 'Gebruik een kleurcode als #1BB85E.',
+                'brand_color' => 'Gebruik een kleurcode als #12813D.',
             ]);
         }
 

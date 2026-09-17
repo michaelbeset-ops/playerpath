@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Trainings;
 
+use App\Actions\Payments\SettleOrder;
 use App\Actions\Trainings\CancelTrainingEnrollment;
 use App\Actions\Trainings\ReviewTrainingEnrollment;
 use App\Enums\PaymentMethod;
@@ -9,6 +10,7 @@ use App\Enums\PaymentStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Training;
 use App\Models\TrainingEnrollment;
+use App\Support\Status\TransitionException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
@@ -25,6 +27,7 @@ class TrainingRequestController extends Controller
     public function __construct(
         protected ReviewTrainingEnrollment $beoordelen,
         protected CancelTrainingEnrollment $afmelden,
+        protected SettleOrder $afrekenen,
     ) {}
 
     public function approve(Training $training, TrainingEnrollment $enrollment): RedirectResponse
@@ -83,17 +86,27 @@ class TrainingRequestController extends Controller
     {
         $this->authorize('recordAttendance', $training);
         abort_unless($enrollment->training_id === $training->id, 404);
+        // Alleen een lopende aanmelding die contant betaalt: een geannuleerde
+        // of online betaalde aanmelding vink je hier niet af.
+        abort_unless($enrollment->status->isActive() && $enrollment->paysCash(), 404);
 
         $betaling = $enrollment->payment;
 
         abort_if($betaling === null, 404);
 
         if ($betaling->status !== PaymentStatus::Paid) {
-            $betaling->update([
-                'status' => PaymentStatus::Paid,
-                'method' => PaymentMethod::Cash,
-                'paid_at' => now(),
-            ]);
+            try {
+                $betaling->transitionTo(PaymentStatus::Paid, [
+                    'method' => PaymentMethod::Cash,
+                    'paid_at' => now(),
+                ]);
+            } catch (TransitionException $e) {
+                return back()->withErrors(['enrollment' => 'Deze betaling kan niet meer op betaald worden gezet.']);
+            }
+
+            // Dezelfde deur als elke andere betaalstand: hangt er een order
+            // aan, dan volgt die mee.
+            $this->afrekenen->handle($betaling);
         }
 
         return back()->with('status', "Contant ontvangen van {$enrollment->player->first_name}.");

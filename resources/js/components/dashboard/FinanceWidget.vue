@@ -34,7 +34,7 @@ const openstaandKleur = computed(() => toneText[props.data.outstandingTone]);
     <section class="flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card p-5 shadow-sm">
         <div class="flex flex-wrap items-baseline justify-between gap-2">
             <p class="font-medium">Financieel</p>
-            <Link href="/payments" class="text-xs font-medium text-primary underline underline-offset-4">Alles</Link>
+            <Link href="/payments" class="inline-flex min-h-11 items-center text-xs font-medium text-primary underline underline-offset-4">Alles</Link>
         </div>
 
         <div class="mt-4 space-y-3">

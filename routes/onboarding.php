@@ -9,7 +9,10 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth', 'verified'])->group(function () {
     // Uitnodigen: trainers en ouders, één tegelijk of een hele lijst.
     Route::post('uitnodigingen', [InvitationController::class, 'store'])->name('invitations.store');
-    Route::post('uitnodigingen/{invitation}/opnieuw', [InvitationController::class, 'resend'])->name('invitations.resend');
+    // Elke keer opnieuw versturen is een mail; niet eindeloos achter elkaar.
+    Route::post('uitnodigingen/{invitation}/opnieuw', [InvitationController::class, 'resend'])
+        ->middleware('throttle:6,1,invitation-resend')
+        ->name('invitations.resend');
     Route::delete('uitnodigingen/{invitation}', [InvitationController::class, 'destroy'])->name('invitations.destroy');
 
     // De startlijst, de rondleiding en de voorbeelddata.

@@ -32,7 +32,7 @@ class MyTrainingsController extends Controller
         $user = $request->user();
 
         $trainingen = Training::query()
-            ->with(['group', 'trainers'])
+            ->with(['group', 'trainers', 'slot.product', 'slot.player'])
             ->where('starts_at', '>=', now()->startOfDay())
             // Dezelfde regel als in de kalender, uit één plek (Training::scopeForTrainer).
             ->forTrainer($user)

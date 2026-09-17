@@ -124,6 +124,13 @@ class ParticipantController extends Controller
 
         $participation->update(['status' => ParticipationStatus::Cancelled]);
 
+        // Een eenmalige rekening voor deze plek hoeft niet meer betaald te worden.
+        foreach ($participation->purchase?->payments()->get() ?? [] as $betaling) {
+            if ($betaling->status->isPayable() && $betaling->canTransitionTo(PaymentStatus::Cancelled)) {
+                $betaling->transitionTo(PaymentStatus::Cancelled);
+            }
+        }
+
         // Uit de groep, zodat hij niet op de aanwezigheidslijst van de
         // eerstvolgende training blijft staan.
         if ($product->group !== null && $participation->player instanceof Player) {
@@ -151,7 +158,11 @@ class ParticipantController extends Controller
             return ['payment_status' => 'none', 'payment_label' => 'geen rekening', 'amount' => null];
         }
 
-        $open = $betalingen->first(fn (Payment $betaling) => $betaling->status === PaymentStatus::Open);
+        $open = $betalingen->first(fn (Payment $betaling) => $betaling->status->isOutstanding());
+
+        if ($open === null && $betalingen->every(fn (Payment $betaling) => ! $betaling->status->countsAsRevenue())) {
+            return ['payment_status' => 'none', 'payment_label' => $betalingen->first()->status->label(), 'amount' => Money::format($betalingen->sum('amount_cents'))];
+        }
 
         if ($open === null) {
             return [
@@ -162,8 +173,8 @@ class ParticipantController extends Controller
         }
 
         return [
-            'payment_status' => $open->isOverdue() ? 'overdue' : 'open',
-            'payment_label' => $open->isOverdue() ? 'te laat' : 'openstaand',
+            'payment_status' => $open->isOverdue() || $open->status->needsAttention() ? 'overdue' : 'open',
+            'payment_label' => $open->status->needsAttention() ? strtolower($open->status->label()) : ($open->isOverdue() ? 'te laat' : 'openstaand'),
             'amount' => Money::format($open->amount_cents),
         ];
     }

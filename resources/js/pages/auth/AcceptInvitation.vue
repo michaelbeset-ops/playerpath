@@ -47,6 +47,11 @@ const belofte = computed(() => {
         return 'Je school staat klaar. Kies een wachtwoord, dan laten we je in een paar minuten zien hoe alles werkt.';
     }
 
+    // Een speler met een eigen inlog: het gaat om zijn eigen kaart.
+    if (props.invitation.role === 'speler') {
+        return 'Je ziet je eigen spelerskaart, hoe je groeit en wanneer je volgende training is.';
+    }
+
     if (!isOuder.value) {
         return 'Je ziet je eigen trainingen, vinkt aanwezigheid af en vult na afloop de rapporten in.';
     }

@@ -49,6 +49,27 @@ class DashboardTest extends TestCase
         $this->actingAs($this->eigenaar($school))->get('/dashboard')->assertOk();
     }
 
+    /**
+     * Een eigenaar met een eigen kind op de school runt nog steeds de school:
+     * zijn dashboard is dat van de school, niet het gezinsdashboard.
+     */
+    public function test_een_eigenaar_die_ook_ouder_is_krijgt_het_schooldashboard(): void
+    {
+        $school = School::factory()->create();
+        $eigenaar = $this->eigenaar($school);
+        $eigenaar->assignRole(Role::Ouder->value);
+
+        app(Tenancy::class)->set($school);
+
+        $kind = Player::factory()->for($school)->create();
+        $eigenaar->children()->attach($kind->id);
+
+        $this->actingAs($eigenaar)
+            ->get('/dashboard')
+            ->assertOk()
+            ->assertInertia(fn ($page) => $page->where('view', 'school')->missing('children'));
+    }
+
     public function test_het_dashboard_telt_alleen_de_eigen_school(): void
     {
         $schoolA = School::factory()->create();

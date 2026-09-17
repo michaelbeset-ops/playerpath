@@ -126,6 +126,18 @@ class ProductController extends Controller
     {
         $this->authorize('delete', $product);
 
+        // Verwijderen neemt de groep, de trainingen met hun aanwezigheid en de
+        // deelnemers mee. Zodra daar iets van bestaat is niet-actief zetten
+        // de enige juiste weg: de historie hoort te blijven kloppen.
+        $heeftHistorie = $product->participations()->exists()
+            || $product->purchases()->exists()
+            || $product->subscriptions()->exists()
+            || ($product->group !== null && $product->group->trainings()->exists());
+
+        if ($heeftHistorie) {
+            return back()->with('status', 'Dit aanbod heeft al deelnemers, trainingen of rekeningen en kan daarom niet weg. Zet het bij Bewerken op niet actief; dan verdwijnt het uit de shop en van de inschrijfpagina.');
+        }
+
         // Lopende afspraken blijven bestaan met hun eigen bedrag; alleen de
         // verwijzing naar dit aanbod verdwijnt.
         $product->subscriptions()->update(['product_id' => null]);
@@ -349,8 +361,14 @@ class ProductController extends Controller
         // Het bedrag komt als tekst binnen; pas na omzetting naar centen weet
         // je of het klopt. Nul mag: een proefles is gratis.
         $validator->after(function ($validator) use ($request) {
-            if (Money::toCents((string) $request->input('amount')) < 0) {
-                $validator->errors()->add('amount', 'Vul een bedrag van nul of hoger in, bijvoorbeeld 12,50.');
+            if (filled($request->input('amount')) && ! Money::isValid((string) $request->input('amount'))) {
+                $validator->errors()->add('amount', 'Vul een bedrag in, bijvoorbeeld 12,50.');
+            }
+
+            foreach ((array) $request->input('payment_options', []) as $i => $optie) {
+                if (filled($optie['amount'] ?? null) && ! Money::isValid((string) $optie['amount'])) {
+                    $validator->errors()->add("payment_options.{$i}.amount", 'Vul een bedrag in, bijvoorbeeld 12,50.');
+                }
             }
         });
 
@@ -399,7 +417,7 @@ class ProductController extends Controller
         foreach ($validated['payment_options'] ?? [] as $optie) {
             $betaalvormen[] = [
                 'type' => $optie['type'],
-                'amount_cents' => max(0, Money::toCents($optie['amount'])),
+                'amount_cents' => Money::toCents($optie['amount']),
                 'installments' => $optie['installments'] ?? null,
                 'interval' => $optie['interval'] ?? null,
                 'label' => $optie['label'] ?? null,

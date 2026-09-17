@@ -270,7 +270,7 @@ class ClientDirectoryTest extends TestCase
     {
         $this->actingAs($this->eigenaar)
             ->delete('/staff/trainers/'.$this->eigenaar->id)
-            ->assertStatus(422);
+            ->assertSessionHasErrors(['user' => 'Je kunt je eigen account niet verwijderen.']);
 
         $this->assertDatabaseHas('users', ['id' => $this->eigenaar->id]);
     }

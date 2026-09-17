@@ -70,6 +70,9 @@ class PaymentController extends Controller
                 'vat_rate' => $payment->vat_rate,
                 'status' => $payment->status->value,
                 'status_label' => $payment->status->label(),
+                // Alleen de stappen die de school met de hand mag zetten.
+                'next_statuses' => collect($this->handmatig($payment))
+                    ->mapWithKeys(fn (PaymentStatus $status) => [$status->value => $status === PaymentStatus::Open && $payment->status === PaymentStatus::Paid ? 'Openstaand (vergissing herstellen)' : $status->label()]),
                 'method' => $payment->method?->label(),
                 'method_value' => $payment->method?->value,
                 'description' => $payment->description,
@@ -132,11 +135,22 @@ class PaymentController extends Controller
         $nieuw = PaymentStatus::from($validated['status']);
         $methode = isset($validated['method']) ? PaymentMethod::from($validated['method']) : null;
 
-        $payment->update([
-            'status' => $nieuw,
-            'paid_at' => $nieuw === PaymentStatus::Paid ? ($payment->paid_at ?? now()) : null,
-            'method' => $methode ?? $payment->method,
-        ]);
+        if ($nieuw !== $payment->status && ! in_array($nieuw, $this->handmatig($payment), true)) {
+            return back()->withErrors(['status' => "Een rekening die op '{$payment->status->label()}' staat kan niet met de hand naar '{$nieuw->label()}'."]);
+        }
+
+        if ($nieuw === $payment->status) {
+            $payment->update(['method' => $methode ?? $payment->method]);
+        } elseif ($payment->status === PaymentStatus::Paid && $nieuw === PaymentStatus::Open) {
+            // Een vergissing herstellen: alleen bij een rekening die met de hand
+            // op betaald stond (zie handmatig()), dus buiten de machine om.
+            $payment->forceFill(['status' => $nieuw, 'paid_at' => null])->save();
+        } else {
+            $payment->transitionTo($nieuw, [
+                'paid_at' => $nieuw === PaymentStatus::Paid ? ($payment->paid_at ?? now()) : ($nieuw->countsAsRevenue() || $nieuw === PaymentStatus::Refunded ? $payment->paid_at : null),
+                'method' => $methode ?? $payment->method,
+            ]);
+        }
 
         // Hoort de betaling bij een inschrijving, dan volgt die de stand:
         // betaald bevestigt, mislukt zet hem op "betaling mislukt".
@@ -166,5 +180,25 @@ class PaymentController extends Controller
             'group_key' => $datum->format('Y-m-d'),
             'group_label' => ($kolom === 'paid_at' ? 'Betaald op ' : 'Vervalt ').$datum->translatedFormat('j F Y'),
         ];
+    }
+
+    /**
+     * Waar de school deze rekening met de hand naartoe mag zetten.
+     *
+     * De stappen uit de statusmachine, plus één uitzondering: wie een
+     * rekening per ongeluk op betaald zette, mag dat terugdraaien - zolang de
+     * betaling niet via de betaalprovider liep.
+     *
+     * @return list<PaymentStatus>
+     */
+    protected function handmatig(Payment $payment): array
+    {
+        $stappen = $payment->status->manualNext();
+
+        if ($payment->status === PaymentStatus::Paid && $payment->external_reference === null) {
+            array_unshift($stappen, PaymentStatus::Open);
+        }
+
+        return $stappen;
     }
 }

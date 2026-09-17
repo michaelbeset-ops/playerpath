@@ -6,6 +6,7 @@ use App\Enums\Role;
 use App\Models\Group;
 use App\Models\Player;
 use App\Models\School;
+use App\Models\Training;
 use App\Models\User;
 use App\Support\Tenancy\Tenancy;
 use Database\Seeders\RoleSeeder;
@@ -170,5 +171,25 @@ class GroupManagementTest extends TestCase
         $ouder->assignRole(Role::Ouder->value);
 
         $this->actingAs($ouder)->get('/groups')->assertForbidden();
+    }
+
+    public function test_een_groep_met_trainingen_kan_niet_verwijderd_worden(): void
+    {
+        $groep = Group::factory()->for($this->school)->create();
+        $training = Training::factory()->for($this->school)->for($groep)->create();
+
+        // Verwijderen zou de trainingen, aanwezigheid en berichten meenemen.
+        $this->actingAs($this->eigenaar)
+            ->from('/groups/'.$groep->id.'/edit')
+            ->delete('/groups/'.$groep->id)
+            ->assertRedirect('/groups/'.$groep->id.'/edit')
+            ->assertSessionHasErrors('group');
+
+        $this->assertDatabaseHas('groups', ['id' => $groep->id]);
+        $this->assertDatabaseHas('trainings', ['id' => $training->id]);
+
+        $this->actingAs($this->eigenaar)
+            ->get('/groups/'.$groep->id.'/edit')
+            ->assertInertia(fn ($page) => $page->whereType('deleteBlocker', 'string'));
     }
 }

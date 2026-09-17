@@ -48,7 +48,7 @@ const props = defineProps<{
     players: Speler[];
     upcoming: { id: number; date: string; time: string; location: string | null }[];
     available: Kandidaat[];
-    can: { manage: boolean };
+    can: { manage: boolean; editProduct: boolean };
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -134,7 +134,13 @@ watch(open, (nu) => {
                         &middot; <span class="tabular">{{ group.trainings_total }}</span> {{ group.trainings_total === 1 ? 'training' : 'trainingen' }}
                         <template v-if="group.product">
                             &middot; hoort bij
-                            <Link :href="'/aanbod/' + group.product.id + '/edit'" class="text-primary underline underline-offset-4">{{ group.product.name }}</Link>
+                            <Link
+                                v-if="can.editProduct"
+                                :href="'/aanbod/' + group.product.id + '/edit'"
+                                class="text-primary underline underline-offset-4"
+                                >{{ group.product.name }}</Link
+                            >
+                            <span v-else>{{ group.product.name }}</span>
                         </template>
                     </p>
                 </div>

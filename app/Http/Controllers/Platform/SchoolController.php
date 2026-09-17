@@ -329,7 +329,7 @@ class SchoolController extends Controller
         ]);
 
         if (! empty($validated['brand_color']) && ! BrandColor::isValid($validated['brand_color'])) {
-            throw ValidationException::withMessages(['brand_color' => 'Gebruik een kleurcode als #1BB85E.']);
+            throw ValidationException::withMessages(['brand_color' => 'Gebruik een kleurcode als #12813D.']);
         }
 
         return $validated;

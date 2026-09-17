@@ -14,7 +14,7 @@ import { computed } from 'vue';
  * betalen - geen achternaam, geen geboortedatum, geen andere rekeningen.
  */
 const props = defineProps<{
-    payment: { description: string; amount: string; due_on: string; paid: boolean; player: string | null };
+    payment: { description: string; amount: string; due_on: string; paid: boolean; closed?: boolean; player: string | null };
     school: { name: string };
     connected: boolean;
     payUrl: string;
@@ -64,7 +64,10 @@ const betaal = () => form.post(props.payUrl);
                     <p class="tabular mt-1 text-3xl font-bold">{{ payment.amount }}</p>
                     <p class="mt-1 text-xs text-muted-foreground">Vervaldatum {{ payment.due_on }}</p>
 
-                    <form v-if="connected" class="mt-6" @submit.prevent="betaal">
+                    <p v-if="payment.closed" class="mt-6 rounded-xl border border-border bg-secondary/60 p-4 text-sm">
+                        Deze rekening staat niet meer open. Heb je een vraag, neem dan contact op met de school.
+                    </p>
+                    <form v-else-if="connected" class="mt-6" @submit.prevent="betaal">
                         <p v-if="demo" class="mb-3 flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-xs">
                             <FlaskConical class="mt-0.5 size-4 shrink-0 text-warning" />
                             <span>Demo: je ziet de betaalflow, er wordt geen geld afgeschreven.</span>

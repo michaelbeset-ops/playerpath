@@ -35,11 +35,14 @@ Route::get('inschrijven/{school:slug}', [PublicEnrollmentController::class, 'sho
 // Zonder APP_DOMAIN of zonder subdomein bestaat dit adres niet.
 Route::get('inschrijven', [PublicEnrollmentController::class, 'onSubdomain'])->name('enroll.subdomain');
 Route::post('inschrijven/{school:slug}', [PublicEnrollmentController::class, 'store'])
-    ->middleware('throttle:10,1')
+    ->middleware('throttle:10,1,enroll-store')
     ->name('enroll.store');
 
 // Het overzicht vóór het bevestigen: wat betaal je en waarvoor. Dezelfde
 // berekening als bij het indienen, zodat die twee nooit verschillen.
+// Hier wordt ook een kortingscode gecontroleerd, dus krap: tien per minuut.
+// De derde parameter geeft elke route een eigen teller; zonder die deelden
+// overzicht en inzending er één, en maakte het overzicht de inzendingen op.
 Route::post('inschrijven/{school:slug}/overzicht', [PublicEnrollmentController::class, 'preview'])
-    ->middleware('throttle:60,1')
+    ->middleware('throttle:10,1,enroll-preview')
     ->name('enroll.preview');

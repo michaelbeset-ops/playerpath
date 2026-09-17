@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import FlashMessage from '@/components/FlashMessage.vue';
 import InputError from '@/components/InputError.vue';
 import DemoBadge from '@/components/onboarding/DemoBadge.vue';
 import { Button } from '@/components/ui/button';
@@ -25,11 +24,15 @@ const props = defineProps<{
     }[];
     groups: { id: number; name: string; recipients: number }[];
     schoolRecipients: number;
+    canMessageSchool: boolean;
 }>();
 
-const breadcrumbs: BreadcrumbItem[] = [{ title: 'Mededelingen', href: '/announcements' }];
+const breadcrumbs: BreadcrumbItem[] = [{ title: 'Berichten', href: '/announcements' }];
 
-const form = useForm({ title: '', body: '', group_id: '' as string | number });
+// Een trainer mag de hele school niet aanschrijven: hij begint bij zijn eerste groep.
+const startGroep = (): string | number => (props.canMessageSchool ? '' : (props.groups[0]?.id ?? ''));
+
+const form = useForm({ title: '', body: '', group_id: startGroep() });
 
 // Welke berichten uitgeklapt staan. Standaard geen: de lijst is een register,
 // geen leesscherm.
@@ -51,24 +54,34 @@ const ontvangers = computed(() => {
     return props.groups.find((g) => g.id === Number(form.group_id))?.recipients ?? 0;
 });
 
-const versturen = () =>
+const ontvangerGroep = computed(() =>
+    form.group_id === '' ? 'iedereen in de school' : `groep ${props.groups.find((g) => g.id === Number(form.group_id))?.name ?? ''}`,
+);
+
+const versturen = () => {
+    // Een verstuurd bericht is niet terug te nemen: eerst zeggen aan wie het gaat.
+    const tekst = `Dit bericht gaat naar ${ontvangers.value} ${ontvangers.value === 1 ? 'ontvanger' : 'ontvangers'} (${ontvangerGroep.value}). Versturen?`;
+    if (!window.confirm(tekst)) return;
+
     form.post('/announcements', {
         preserveScroll: true,
-        onSuccess: () => form.reset(),
+        onSuccess: () => {
+            form.reset();
+            form.group_id = startGroep();
+        },
     });
+};
 </script>
 
 <template>
-    <Head title="Mededelingen" />
+    <Head title="Berichten" />
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="p-4" data-tour="announcements">
-            <FlashMessage />
-
             <div class="flex items-center gap-3">
                 <Megaphone class="size-5 text-primary" />
                 <div>
-                    <h1 class="text-xl font-semibold">Mededelingen</h1>
+                    <h1 class="text-xl font-semibold">Berichten</h1>
                     <p class="text-sm text-muted-foreground">Een bericht aan alle gezinnen of aan één groep, in de app en per e-mail.</p>
                 </div>
             </div>
@@ -88,7 +101,7 @@ const versturen = () =>
                             v-model="form.group_id"
                             class="min-h-11 rounded-lg border border-input bg-background px-3 text-sm outline-none focus:border-primary"
                         >
-                            <option value="">Iedereen in de school</option>
+                            <option v-if="canMessageSchool" value="">Iedereen in de school</option>
                             <option v-for="groep in groups" :key="groep.id" :value="groep.id">{{ groep.name }}</option>
                         </select>
                         <InputError :message="form.errors.group_id" />
@@ -165,7 +178,7 @@ const versturen = () =>
                     </div>
                 </div>
 
-                <p v-else class="mt-3 text-sm text-muted-foreground">Er is nog geen mededeling verstuurd.</p>
+                <p v-else class="mt-3 text-sm text-muted-foreground">Er is nog geen bericht verstuurd.</p>
             </div>
         </div>
     </AppLayout>

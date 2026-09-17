@@ -120,8 +120,12 @@ class BillingTest extends TestCase
             ->assertSessionHasErrors('name');
     }
 
-    public function test_een_tarief_verwijderen_laat_lopende_abonnementen_bestaan(): void
+    public function test_aanbod_zonder_historie_verwijderen_en_met_historie_niet(): void
     {
+        $leeg = Product::factory()->for($this->school)->create();
+        $this->actingAs($this->eigenaar)->delete('/aanbod/'.$leeg->id)->assertRedirect('/aanbod');
+        $this->assertNull(Product::find($leeg->id));
+
         $product = Product::factory()->for($this->school)->create();
         $speler = Player::factory()->for($this->school)->create();
 
@@ -131,11 +135,12 @@ class BillingTest extends TestCase
             'amount_cents' => 2750,
         ]);
 
-        $this->actingAs($this->eigenaar)->delete('/aanbod/'.$product->id)->assertRedirect('/aanbod');
+        // Met een lopend abonnement blijft het aanbod staan: niet-actief zetten is de weg.
+        $this->actingAs($this->eigenaar)->delete('/aanbod/'.$product->id)->assertSessionHas('status');
 
+        $this->assertNotNull(Product::find($product->id));
         $abonnement->refresh();
-
-        $this->assertNull($abonnement->product_id);
+        $this->assertSame($product->id, $abonnement->product_id);
         $this->assertSame(2750, $abonnement->amount_cents, 'Het bedrag hoort bij het abonnement te blijven.');
     }
 
@@ -266,6 +271,19 @@ class BillingTest extends TestCase
 
         $this->assertSame(PaymentStatus::Paid, $betaling->status);
         $this->assertNotNull($betaling->paid_at);
+    }
+
+    public function test_een_betaling_via_de_provider_gaat_niet_terug_naar_openstaand(): void
+    {
+        $speler = Player::factory()->for($this->school)->create();
+        $betaling = Payment::factory()->for($this->school)->paid()->create(['player_id' => $speler->id, 'external_reference' => 'tr_123']);
+
+        $this->actingAs($this->eigenaar)->patch('/payments/'.$betaling->id, ['status' => PaymentStatus::Open->value])->assertSessionHasErrors('status');
+        $this->assertSame(PaymentStatus::Paid, $betaling->refresh()->status);
+
+        // Een geannuleerde rekening is niet meer te betalen.
+        $this->assertFalse(PaymentStatus::Cancelled->isPayable());
+        $this->assertTrue(PaymentStatus::Failed->isPayable());
     }
 
     public function test_een_betaling_terugzetten_wist_de_betaaldatum(): void

@@ -79,6 +79,14 @@ class PurchaseController extends Controller
 
         $purchase->update(['status' => 'cancelled']);
 
+        // Een rekening voor iets dat is ingetrokken hoeft niet meer betaald te
+        // worden; anders blijft de herinnering komen. Wat betaald is blijft staan.
+        foreach ($purchase->payments()->get() as $betaling) {
+            if ($betaling->status->isPayable() && $betaling->canTransitionTo(\App\Enums\PaymentStatus::Cancelled)) {
+                $betaling->transitionTo(\App\Enums\PaymentStatus::Cancelled);
+            }
+        }
+
         return back()->with('status', "{$purchase->name} is ingetrokken.");
     }
 }

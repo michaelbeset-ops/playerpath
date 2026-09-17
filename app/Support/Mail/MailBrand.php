@@ -99,10 +99,10 @@ final class MailBrand
             // wie hij belt als het niet lukt.
             'phone' => $school === null ? EnrollmentSettingsController::SUPPORT_PHONE : $school->contact_phone,
             'url' => config('app.url'),
-            // Wel of niet "Verstuurd met PlayerPath" onderaan: bij een school
-            // wel (zij is de afzender, wij het gereedschap), bij PlayerPath
-            // zelf niet - dan staat er twee keer hetzelfde.
-            'platform' => $school !== null,
+            // Komt de mail van een school? Dan staat onderaan "Verstuurd met
+            // PlayerPath" (zij is de afzender, wij het gereedschap). Zonder
+            // school is PlayerPath zelf de afzender, met ons telefoonnummer.
+            'fromSchool' => $school !== null,
         ];
     }
 

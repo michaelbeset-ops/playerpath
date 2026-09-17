@@ -97,7 +97,7 @@ class SubscriptionController extends Controller
         $validated = $request->validate([
             // exists kent de global scope niet, dus expliciet op school begrenzen.
             'player_id' => ['required', 'integer', Rule::exists('players', 'id')->where('school_id', $schoolId)],
-            'product_id' => ['required', 'integer', Rule::exists('products', 'id')->where('school_id', $schoolId)],
+            'product_id' => ['required', 'integer', Rule::exists('products', 'id')->where('school_id', $schoolId)->where('billing_type', \App\Enums\BillingType::Maandelijks->value)->where('is_active', true)],
             'payment_method' => ['required', Rule::enum(PaymentMethod::class)],
             'starts_on' => ['required', 'date'],
             // Een jaarbedrag in tien maandtermijnen is bij sportclubs normaal.
@@ -113,6 +113,20 @@ class SubscriptionController extends Controller
         ]);
 
         $product = Product::findOrFail($validated['product_id']);
+
+        // Termijnen splitsen één periode. Een maand in twaalf stukken levert
+        // reeksen rekeningen op die over elkaar heen lopen.
+        $maxTermijnen = match ($product->interval) {
+            \App\Enums\BillingInterval::Quarterly => 3,
+            \App\Enums\BillingInterval::Yearly => 12,
+            default => 1,
+        };
+
+        if (($validated['installments'] ?? 1) > $maxTermijnen) {
+            return back()->withErrors(['installments' => $maxTermijnen === 1
+                ? 'Een maandbedrag betaal je niet in termijnen.'
+                : "Kies hooguit {$maxTermijnen} termijnen voor dit abonnement."]);
+        }
 
         // Bedrag en frequentie worden overgenomen, niet gekoppeld: verandert de
         // school later haar tarief, dan verandert een lopend abonnement niet mee.
@@ -160,7 +174,17 @@ class SubscriptionController extends Controller
             app(PlanCancellation::class)->handle($subscription);
         } else {
             $stopt = in_array($nieuw, [SubscriptionStatus::Cancelled, SubscriptionStatus::Ended], strict: true);
-            $subscription->transitionTo($nieuw, ['ends_on' => $stopt ? ($subscription->ends_on ?? now()->toDateString()) : null]);
+
+            // Stoppen zet een einddatum. Weer actief na een geplande opzegging
+            // haalt die weg, behalve bij een blok dat op zijn einddatum stopt.
+            // Pauzeren of een mislukte betaling laten de einddatum staan.
+            $einde = match (true) {
+                $stopt => $subscription->ends_on ?? now()->toDateString(),
+                $nieuw === SubscriptionStatus::Active && $subscription->status === SubscriptionStatus::CancellationPlanned => $subscription->product?->stops_at_end ? $subscription->product->ends_on : null,
+                default => $subscription->ends_on,
+            };
+
+            $subscription->transitionTo($nieuw, ['ends_on' => $einde]);
         }
 
         return back()->with('status', "Het abonnement staat nu op '{$nieuw->label()}'.");

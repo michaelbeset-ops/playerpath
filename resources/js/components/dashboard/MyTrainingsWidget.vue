@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { useGrading } from '@/lib/grade';
 import { Link } from '@inertiajs/vue3';
-import { CalendarPlus, CheckSquare, ClipboardList, MapPin, Users } from 'lucide-vue-next';
+import { CalendarPlus, CheckSquare, ClipboardList, MapPin, Sparkles, Users } from 'lucide-vue-next';
 
 /**
  * Mijn trainingen, op het dashboard van de trainer.
@@ -29,6 +30,9 @@ export interface MijnTraining {
 }
 
 defineProps<{ data: MijnTraining[] }>();
+
+// Bij de inzetkaart geef je na de training inzet in plaats van rapporten.
+const { inzet } = useGrading();
 </script>
 
 <template>
@@ -99,11 +103,12 @@ defineProps<{ data: MijnTraining[] }>();
                         Aanwezigheid
                     </Link>
                     <Link
-                        :href="'/trainings/' + training.id + '/rapporten'"
+                        :href="'/trainings/' + training.id + (inzet ? '/inzet' : '/rapporten')"
                         class="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg bg-primary px-2 text-xs font-semibold text-primary-foreground transition hover:opacity-90"
                     >
-                        <ClipboardList class="size-3.5 shrink-0" />
-                        Rapporten
+                        <Sparkles v-if="inzet" class="size-3.5 shrink-0" />
+                        <ClipboardList v-else class="size-3.5 shrink-0" />
+                        {{ inzet ? 'Inzet geven' : 'Rapporten' }}
                     </Link>
                 </div>
             </article>

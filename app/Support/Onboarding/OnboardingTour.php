@@ -78,13 +78,22 @@ class OnboardingTour
                 'body' => 'In dit blok staat wat aandacht nodig heeft: een betaling die mislukte, een speler die lang geen rapport kreeg, een training zonder trainer. Achter elke regel zit een knop naar de plek waar je het oplost.',
                 'tip' => 'Is er niets aan de hand, dan staat hier één regel: alles loopt. Nu staat er voorbeelddata in, dus je ziet misschien al iets.',
             ],
-            [
+            // Zonder Kalender is /calendar een 404; dan wijst de stap naar het
+            // rooster, dat er altijd is.
+            $this->features->enabled(Feature::Kalender, $school) ? [
                 'key' => 'agenda',
                 'url' => '/calendar',
                 'anchor' => 'calendar',
                 'title' => 'Je agenda',
                 'body' => 'Alle trainingen in een kalender. Een nieuwe training plan je met de plusknop: je kiest een groep, een tijd, een plek en een trainer. Trainers zien hier hun eigen rooster; ouders alleen de trainingen van hun kind.',
                 'tip' => 'Klik eens op een training in de kalender om te zien wat erin staat.',
+            ] : [
+                'key' => 'agenda',
+                'url' => '/trainings',
+                'anchor' => null,
+                'title' => 'Je trainingen',
+                'body' => 'Alle trainingen onder elkaar. Een nieuwe training plan je met de knop bovenaan: je kiest een groep, een tijd, een plek en een trainer. Trainers zien hier hun eigen rooster; ouders alleen de trainingen van hun kind.',
+                'tip' => 'Klik eens op een training om te zien wat erin staat.',
             ],
             [
                 'key' => 'trainingen',

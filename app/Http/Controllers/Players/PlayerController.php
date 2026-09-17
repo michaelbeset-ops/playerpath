@@ -19,6 +19,7 @@ use App\Support\Goals\GoalProgress;
 use App\Support\Money\Money;
 use App\Support\PlayerCard\BadgeSettings;
 use App\Support\PlayerCard\CalculatePlayerCard;
+use App\Support\Rating\RatingSettings;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -73,6 +74,14 @@ class PlayerController extends Controller
 
         $player->load(['groups', 'guardians', 'user']);
 
+        // Ouders, uitnodigingen en de ouders die je kunt koppelen horen bij de
+        // klantrelatie. Een trainer mag de speler zien, maar krijgt die niet
+        // mee - ook niet onzichtbaar in de JSON.
+        $beheer = $request->user()->can('update', $player);
+
+        // De inzetkaart heeft geen doelen met cijfers.
+        $inzet = RatingSettings::for($player->school)->usesEffort();
+
         return Inertia::render('players/Show', [
             'player' => [
                 'id' => $player->id,
@@ -93,7 +102,7 @@ class PlayerController extends Controller
                 'name' => $group->name,
                 'age_category' => $group->age_category,
             ]),
-            'guardians' => $player->guardians->map(fn ($guardian) => [
+            'guardians' => ! $beheer ? [] : $player->guardians->map(fn ($guardian) => [
                 'id' => $guardian->id,
                 'name' => $guardian->name,
                 'email' => $guardian->email,
@@ -102,7 +111,7 @@ class PlayerController extends Controller
             // Uitnodigingen waar dit kind aan hangt en die nog niet gebruikt
             // zijn. Zonder dit lijstje weet je na het uitnodigen niet of het
             // gelukt is, en stuur je er nog een.
-            'invitations' => Invitation::pending()
+            'invitations' => ! $beheer ? [] : Invitation::pending()
                 ->where('role', Role::Ouder->value)
                 ->get()
                 ->filter(fn (Invitation $rij) => in_array($player->id, $rij->player_ids ?? [], true))
@@ -116,11 +125,11 @@ class PlayerController extends Controller
                 ])
                 ->values(),
             // De speler zelf: een eigen account, of alleen de kind-link, of nog niets.
-            'account' => $player->user === null ? null : [
+            'account' => ! $beheer || $player->user === null ? null : [
                 'email' => $player->user->isKindAccount() ? null : $player->user->email,
                 'kind' => $player->user->isKindAccount(),
             ],
-            'playerInvitations' => Invitation::pending()
+            'playerInvitations' => ! $beheer ? [] : Invitation::pending()
                 ->where('role', Role::Speler->value)
                 ->get()
                 ->filter(fn (Invitation $rij) => in_array($player->id, $rij->player_ids ?? [], true))
@@ -167,7 +176,7 @@ class PlayerController extends Controller
                 ]) : [],
             // Wat je hem kunt geven. Abonnementen niet: die lopen via het
             // abonnementenscherm, met termijnen en incasso.
-            'sellableProducts' => $betalingen && $request->user()->can('update', $player)
+            'sellableProducts' => $betalingen && $beheer
                 ? Product::active()->purchasable()->orderBy('name')->get()
                     ->map(fn (Product $product) => [
                         'id' => $product->id,
@@ -177,7 +186,7 @@ class PlayerController extends Controller
                         'credits' => $product->credits,
                     ])
                 : [],
-            'goals' => $this->goals->forPlayer($player),
+            'goals' => $inzet ? [] : $this->goals->forPlayer($player),
             // De eigen mijlpalen van de school, met of ze aan deze speler zijn
             // toegekend. De standaardmijlpalen staan op de kaart; die kent
             // niemand met de hand toe.
@@ -190,13 +199,13 @@ class PlayerController extends Controller
                 ->push(['value' => Goal::CUSTOM, 'label' => 'Overig (zelf invullen)'])
                 ->values(),
             // Ouders van deze school die nog niet aan deze speler hangen.
-            'linkableGuardians' => User::ofCurrentSchool()
+            'linkableGuardians' => ! $beheer ? [] : User::ofCurrentSchool()
                 ->role(Role::Ouder->value)
                 ->whereNotIn('id', $player->guardians->pluck('id'))
                 ->orderBy('name')
                 ->get(['id', 'name', 'email']),
             'can' => [
-                'manage' => $request->user()->can('update', $player),
+                'manage' => $beheer,
                 'delete' => $request->user()->can('delete', $player),
                 'report' => $request->user()->can('createReport', $player),
                 'goals' => $request->user()->can('createFor', [Goal::class, $player]),

@@ -40,10 +40,17 @@ class NotificationPreferenceController extends Controller
             collect($sleutels)->mapWithKeys(fn (string $s) => ["preferences.{$s}" => ['required', 'boolean']])->all()
         );
 
-        $request->user()->forceFill([
-            'notification_preferences' => collect($sleutels)
-                ->mapWithKeys(fn (string $s) => [$s => (bool) $validated['preferences'][$s]])
-                ->all(),
+        $gebruiker = $request->user();
+
+        // Samenvoegen, niet vervangen: de hoofdschakelaar `mail` (een
+        // kind-account zonder mailbox) staat niet op dit scherm en moet blijven.
+        $gebruiker->forceFill([
+            'notification_preferences' => array_merge(
+                (array) ($gebruiker->notification_preferences ?? []),
+                collect($sleutels)
+                    ->mapWithKeys(fn (string $s) => [$s => (bool) $validated['preferences'][$s]])
+                    ->all(),
+            ),
         ])->save();
 
         return back()->with('status', 'Je voorkeuren zijn opgeslagen.');

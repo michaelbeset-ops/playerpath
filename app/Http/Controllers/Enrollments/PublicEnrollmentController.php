@@ -20,6 +20,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -75,7 +76,12 @@ class PublicEnrollmentController extends Controller
                 ->values();
 
             return Inertia::render('enrollments/Public', [
-                'school' => ['name' => $school->name, 'slug' => $school->slug],
+                // Niet 'school': dat is een gedeelde prop.
+                'enrollSchool' => [
+                    'name' => $school->name,
+                    'slug' => $school->slug,
+                    'logo' => $school->logo_path === null ? null : Storage::url($school->logo_path),
+                ],
                 'products' => $aanbod,
                 'selected' => $request->integer('aanbod') ?: null,
                 'config' => $this->form->for($school, $instellingen, $ouder),
@@ -103,7 +109,7 @@ class PublicEnrollmentController extends Controller
 
         return $this->tenancy->forSchool($school, function () use ($request, $school, $ouder) {
             $instellingen = EnrollmentSettings::for($school);
-            $validated = $request->validate($this->kindRegels($school, alleenKeuze: true));
+            $validated = $request->validate($this->kindRegels($school, alleenKeuze: true), self::kindMeldingen(), self::kindAttributen());
 
             $regels = $this->regels($validated['children'], $ouder);
 
@@ -136,7 +142,7 @@ class PublicEnrollmentController extends Controller
                 'note' => ['nullable', 'string', 'max:2000'],
             ], [
                 'password.min' => 'Kies een wachtwoord van minstens 8 tekens.',
-                'date_of_birth.before' => 'De geboortedatum moet in het verleden liggen.',
+                ...self::kindMeldingen(),
             ], [
                 'guardian_name' => 'Je naam',
                 'guardian_email' => 'Je e-mailadres',
@@ -145,6 +151,7 @@ class PublicEnrollmentController extends Controller
                 'payment_method' => 'De betaalmethode',
                 'code' => 'De kortingscode',
                 'note' => 'De opmerking',
+                ...self::kindAttributen(),
             ]);
 
             // Verplichte toestemmingen zijn verplicht, welke dat zijn zegt de school.
@@ -231,13 +238,62 @@ class PublicEnrollmentController extends Controller
             'children.*.last_name' => ['required_without:children.*.player_id', 'nullable', 'string', 'max:255'],
             'children.*.date_of_birth' => ['required_without:children.*.player_id', 'nullable', 'date', 'before:today', 'after:'.now()->subYears(30)->toDateString()],
             'children.*.position' => [
-                $instellingen->field('positie') === 'off' ? 'nullable' : 'required_without:children.*.player_id',
+                // Uit of optioneel: leeg mag; SubmitEnrollment kiest dan zelf.
+                $instellingen->field('positie') === 'required' ? 'required_without:children.*.player_id' : 'nullable',
                 'nullable', Rule::enum(PlayerPosition::class),
             ],
             'children.*.details' => ['nullable', 'array'],
             'children.*.details.kledingmaat' => $veld('kledingmaat'),
             'children.*.details.niveau' => $veld('niveau'),
             'children.*.details.medisch' => $instellingen->field('medisch') === 'off' ? ['prohibited'] : ['nullable', 'string', 'max:2000'],
+        ];
+    }
+
+    /**
+     * Meldingen voor de kindvelden. Zonder deze staat er "children.0.first_name"
+     * in de melding, en dat leest een ouder niet.
+     *
+     * @return array<string, string>
+     */
+    protected static function kindMeldingen(): array
+    {
+        return [
+            'children.required' => 'Vul de gegevens van minstens één kind in.',
+            'children.max' => 'Je kunt hooguit zes kinderen tegelijk inschrijven.',
+            'children.*.first_name.required_without' => 'Vul de voornaam in.',
+            'children.*.last_name.required_without' => 'Vul de achternaam in.',
+            'children.*.date_of_birth.required_without' => 'Vul de geboortedatum in.',
+            'children.*.date_of_birth.date' => 'Vul een geldige geboortedatum in.',
+            'children.*.date_of_birth.before' => 'De geboortedatum moet in het verleden liggen.',
+            'children.*.date_of_birth.after' => 'Controleer de geboortedatum: die ligt wel erg ver terug.',
+            'children.*.position.required_without' => 'Kies een positie.',
+            'children.*.position.enum' => 'Kies een positie.',
+            'children.*.product_id.required' => 'Kies eerst een aanbod.',
+            'children.*.product_id.exists' => 'Dit aanbod bestaat niet meer. Kies een ander aanbod.',
+            'children.*.payment_option_id.required' => 'Kies een betaalvorm.',
+            'children.*.payment_option_id.exists' => 'Kies een betaalvorm van dit aanbod.',
+            'children.*.details.kledingmaat.required' => 'Vul de kledingmaat in.',
+            'children.*.details.niveau.required' => 'Vul het niveau in.',
+            'children.*.details.*.prohibited' => 'Dit veld hoort niet bij het formulier.',
+        ];
+    }
+
+    /** @return array<string, string> */
+    protected static function kindAttributen(): array
+    {
+        return [
+            'children' => 'de kinderen',
+            'children.*.player_id' => 'het kind',
+            'children.*.first_name' => 'de voornaam',
+            'children.*.last_name' => 'de achternaam',
+            'children.*.date_of_birth' => 'de geboortedatum',
+            'children.*.position' => 'de positie',
+            'children.*.product_id' => 'het aanbod',
+            'children.*.payment_option_id' => 'de betaalvorm',
+            'children.*.details' => 'de aanvullende gegevens',
+            'children.*.details.kledingmaat' => 'de kledingmaat',
+            'children.*.details.niveau' => 'het niveau',
+            'children.*.details.medisch' => 'de medische bijzonderheden',
         ];
     }
 
@@ -284,7 +340,7 @@ class PublicEnrollmentController extends Controller
             $regels[] = [
                 'product' => $aanbod,
                 'option' => $optie,
-                'child_name' => $bestaand?->first_name ?? ($kind['first_name'] ?: 'je kind'),
+                'child_name' => $bestaand?->first_name ?? (($kind['first_name'] ?? '') ?: 'je kind'),
                 'player_id' => $bestaand?->id,
             ];
         }

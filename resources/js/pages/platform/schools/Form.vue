@@ -99,12 +99,12 @@ const opslaan = () => (bewerken.value ? form.patch('/beheer/scholen/' + props.sc
                         <div class="flex items-center gap-2">
                             <input
                                 type="color"
-                                :value="/^#[0-9a-fA-F]{6}$/.test(form.brand_color) ? form.brand_color : '#1BB85E'"
+                                :value="/^#[0-9a-fA-F]{6}$/.test(form.brand_color) ? form.brand_color : '#12813D'"
                                 class="size-10 shrink-0 cursor-pointer rounded-lg border border-input bg-background"
                                 aria-label="Kies een merkkleur"
                                 @input="form.brand_color = ($event.target as HTMLInputElement).value"
                             />
-                            <Input id="brand_color" v-model="form.brand_color" placeholder="#1BB85E" />
+                            <Input id="brand_color" v-model="form.brand_color" placeholder="#12813D" />
                         </div>
                         <InputError :message="form.errors.brand_color" />
                     </div>

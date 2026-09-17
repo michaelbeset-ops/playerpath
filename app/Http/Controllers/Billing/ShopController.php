@@ -138,6 +138,18 @@ class ShopController extends Controller
 
         abort_unless($product->is_active, 404);
 
+        // Een blok of kamp gaat via de inschrijving, met de controles op plek,
+        // status, leeftijd en positie. Hier alleen wat nog open staat en past.
+        if ($product->type !== ProductType::Privetraining) {
+            abort_unless($product->acceptsSignups(), 404);
+
+            $kind = Player::findOrFail($validated['player_id']);
+
+            if (! $product->fitsAge($kind->age) || ! $product->fitsPosition($kind->position)) {
+                return back()->withErrors(['payment' => 'Dit aanbod past niet bij de leeftijd of positie van '.$kind->first_name.'.']);
+            }
+        }
+
         // Wat per maand loopt heeft termijnen; dat regelt de school.
         abort_if($product->isRecurring(), 422, 'Aanbod per maand regel je via de school.');
 
