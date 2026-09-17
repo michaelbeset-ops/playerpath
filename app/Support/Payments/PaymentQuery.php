@@ -65,13 +65,18 @@ class PaymentQuery
         }
 
         if ($filters['search'] !== '') {
-            $term = '%'.$filters['search'].'%';
+            // % en _ zijn jokers in LIKE; wie "50%" typt bedoelt letterlijk dat.
+            // Zelfde aanpak als bij Klanten: '!' als escape-teken, expliciet in
+            // de query, want SQLite kent geen standaard en een backslash
+            // betekent in MySQL en SQLite iets anders.
+            $term = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $filters['search']).'%';
+            $like = fn (string $kolom) => "{$kolom} like ? escape '!'";
 
             $query->where(fn ($q) => $q
-                ->where('description', 'like', $term)
+                ->whereRaw($like('payments.description'), [$term])
                 ->orWhereHas('player', fn ($p) => $p
-                    ->where('first_name', 'like', $term)
-                    ->orWhere('last_name', 'like', $term)));
+                    ->whereRaw($like('players.first_name'), [$term])
+                    ->orWhereRaw($like('players.last_name'), [$term])));
         }
 
         return $query;
@@ -134,10 +139,12 @@ class PaymentQuery
      */
     public function totals(Builder $query): array
     {
-        $rijen = (clone $query)->reorder()->get(['amount_cents', 'vat_rate']);
+        // Kale rijen, geen modellen: bij twintigduizend rekeningen scheelt het
+        // hydrateren (en de eager loads uit build()) het meeste werk.
+        $rijen = (clone $query)->reorder()->toBase()->get(['amount_cents', 'vat_rate']);
 
         $totaal = (int) $rijen->sum('amount_cents');
-        $exclusief = (int) $rijen->sum(fn (Payment $p) => (int) round($p->amount_cents / (1 + $p->vat_rate / 100)));
+        $exclusief = (int) $rijen->sum(fn (object $p) => (int) round((int) $p->amount_cents / (1 + (float) $p->vat_rate / 100)));
 
         return [
             'count' => $rijen->count(),

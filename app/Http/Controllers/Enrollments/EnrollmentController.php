@@ -10,6 +10,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Enrollment;
 use App\Models\Payment;
 use App\Support\Money\Money;
+use App\Support\Pagination\LoadMore;
 use App\Support\Payments\PaymentLink;
 use App\Support\Status\TransitionException;
 use App\Support\Tenancy\Tenancy;
@@ -28,11 +29,35 @@ use RuntimeException;
  */
 class EnrollmentController extends Controller
 {
+    /** Afgehandeld groeit elk seizoen; dat komt per dertig. */
+    public const AFGEHANDELD_PER_PAGINA = 30;
+
     public function index(Request $request): Response
     {
         $this->authorize('viewAny', Enrollment::class);
 
-        $alle = Enrollment::with(['product', 'paymentOption', 'order.payments'])->orderBy('created_at')->get();
+        $relaties = ['product', 'paymentOption', 'order.payments'];
+
+        // Wat nog om een handeling vraagt staat er altijd helemaal: een
+        // aanvraag die op pagina drie staat wordt niet goedgekeurd.
+        $openStatussen = collect(EnrollmentStatus::cases())
+            ->filter(fn (EnrollmentStatus $s) => $s->isOpen())
+            ->map(fn (EnrollmentStatus $s) => $s->value)
+            ->values()
+            ->all();
+
+        $open = Enrollment::with($relaties)->whereIn('status', $openStatussen)->orderBy('created_at')->orderBy('id')->get();
+
+        // Wat afgehandeld is groeit alleen maar; dat komt per pagina.
+        [$afgehandeld, $afgehandeldPagina] = LoadMore::slice(
+            Enrollment::with($relaties)->whereNotIn('status', $openStatussen)->orderByDesc('updated_at')->orderByDesc('id'),
+            $request,
+            'handled',
+            self::AFGEHANDELD_PER_PAGINA,
+        );
+
+        $alle = $open->concat($afgehandeld);
+
         // Welke rekeningen openstaan zegt de scope op Payment; één query voor alles.
         $openstaand = Payment::query()
             ->outstanding()
@@ -76,10 +101,12 @@ class EnrollmentController extends Controller
         $school = app(Tenancy::class)->schoolOrFail();
 
         return Inertia::render('enrollments/Index', [
-            'pending' => $alle->where('status', EnrollmentStatus::AwaitingApproval)->map($vorm)->values(),
-            'awaitingPayment' => $alle->whereIn('status', [EnrollmentStatus::AwaitingPayment, EnrollmentStatus::PaymentFailed])->map($vorm)->values(),
-            'waitlist' => $alle->where('status', EnrollmentStatus::Waitlist)->map($vorm)->values(),
-            'handled' => $alle->filter(fn (Enrollment $e) => ! $e->status->isOpen())->sortByDesc('updated_at')->take(30)->map($vorm)->values(),
+            'pending' => $open->where('status', EnrollmentStatus::AwaitingApproval)->map($vorm)->values(),
+            'awaitingPayment' => $open->whereIn('status', [EnrollmentStatus::AwaitingPayment, EnrollmentStatus::PaymentFailed])->map($vorm)->values(),
+            'waitlist' => $open->where('status', EnrollmentStatus::Waitlist)->map($vorm)->values(),
+            'handled' => Inertia::merge($afgehandeld->map($vorm)->values()),
+            // Het tabblad telt alles wat afgehandeld is, niet alleen wat er geladen is.
+            'handledPage' => $afgehandeldPagina,
             'formUrl' => route('enroll.show', $school),
         ]);
     }

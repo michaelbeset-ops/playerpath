@@ -24,7 +24,8 @@ const page = usePage<SharedData>();
 const melding = computed(() => (page.props.flash as { status: string | null } | undefined)?.status ?? null);
 const demo = computed(() => page.props.paymentsDemo === true);
 
-const form = useForm({});
+// Leeg formulier; de server kan wel een fout onder 'payment' teruggeven.
+const form = useForm<{ payment?: string }>({});
 
 const betaal = () => form.post(props.payUrl);
 </script>

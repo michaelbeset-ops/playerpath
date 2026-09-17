@@ -66,13 +66,13 @@ const props = defineProps<{
     availableTrainers: { id: number; name: string }[];
 }>();
 
-interface Betaalvorm {
+type Betaalvorm = {
     type: string;
     amount: string;
     installments: number | null;
     interval: string | null;
     label: string | null;
-}
+};
 
 const bewerken = computed(() => props.product !== null);
 

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Enrollments;
 
+use App\Actions\Enrollments\SubmitEnrollment;
 use App\Enums\EnrollmentStatus;
 use App\Enums\OfferingStatus;
 use App\Enums\ParticipationStatus;
@@ -202,9 +203,74 @@ class EnrollmentTest extends TestCase
 
         // Neutraal: de melding zegt niet letterlijk dat het adres bekend is.
         $this->post('/inschrijven/keepersschool-rob', $this->formulier())
-            ->assertSessionHasErrors(['guardian_email' => 'Log eerst in met dit e-mailadres, of gebruik een ander adres.']);
+            ->assertSessionHasErrors(['guardian_account' => SubmitEnrollment::BESTAAND_ACCOUNT]);
 
         $this->assertDatabaseCount('enrollments', 0);
+    }
+
+    public function test_de_inlogknop_brengt_je_na_het_inloggen_terug_naar_de_inschrijfpagina(): void
+    {
+        $ouder = User::factory()->for($this->school)->create(['email' => 'marieke@voorbeeld.nl']);
+        $ouder->assignRole(Role::Ouder->value);
+
+        $this->get('/inschrijven/keepersschool-rob?aanbod='.$this->blok->id)
+            ->assertInertia(fn ($page) => $page->where('loginUrl', route('login', ['redirect' => '/inschrijven/keepersschool-rob?aanbod='.$this->blok->id])));
+
+        $this->get('/login?redirect='.urlencode('/inschrijven/keepersschool-rob?aanbod='.$this->blok->id))->assertOk();
+
+        $this->post('/login', ['email' => 'marieke@voorbeeld.nl', 'password' => 'password'])
+            ->assertRedirect(url('/inschrijven/keepersschool-rob?aanbod='.$this->blok->id));
+    }
+
+    public function test_de_terugweg_na_inloggen_blijft_binnen_de_site(): void
+    {
+        $this->get('/login?redirect='.urlencode('//kwaad.example/x'))->assertOk()->assertSessionMissing('url.intended');
+        $this->get('/login?redirect='.urlencode('https://kwaad.example/x'))->assertOk()->assertSessionMissing('url.intended');
+    }
+
+    public function test_een_oude_slug_stuurt_permanent_door_naar_de_nieuwe(): void
+    {
+        $this->school->update(['slug' => 'keepersschool-rob-nieuw']);
+
+        $this->assertDatabaseHas('school_slug_redirects', ['slug' => 'keepersschool-rob', 'school_id' => $this->school->id]);
+
+        $this->get('/inschrijven/keepersschool-rob?aanbod=5')
+            ->assertStatus(301)
+            ->assertRedirect(url('/inschrijven/keepersschool-rob-nieuw?aanbod=5'));
+
+        // Een formulier blijft een formulier: 308 houdt de POST een POST.
+        $this->postJson('/inschrijven/keepersschool-rob/overzicht', [])
+            ->assertStatus(308)
+            ->assertRedirect(url('/inschrijven/keepersschool-rob-nieuw/overzicht'));
+        $this->post('/inschrijven/keepersschool-rob', [])->assertStatus(308);
+
+        $this->get('/inschrijven/keepersschool-rob-nieuw')->assertOk();
+        $this->get('/inschrijven/nooit-bestaan')->assertNotFound();
+    }
+
+    public function test_een_oude_slug_die_weer_in_gebruik_is_stuurt_niet_meer_door(): void
+    {
+        $this->school->update(['slug' => 'rob-nieuw']);
+
+        // Een andere school neemt het oude adres over: die wint.
+        $ander = School::factory()->create(['slug' => 'keepersschool-rob']);
+
+        $this->assertDatabaseMissing('school_slug_redirects', ['slug' => 'keepersschool-rob']);
+        $this->get('/inschrijven/keepersschool-rob')->assertOk()->assertInertia(fn ($page) => $page->where('enrollSchool.name', $ander->name));
+
+        // Terug naar de oude slug: de eigen school ook, en rob-nieuw wordt het oude adres.
+        $ander->update(['slug' => 'iets-anders']);
+        $this->school->update(['slug' => 'keepersschool-rob']);
+
+        $this->get('/inschrijven/rob-nieuw')->assertRedirect(url('/inschrijven/keepersschool-rob'));
+    }
+
+    public function test_een_oude_slug_van_een_inactieve_school_geeft_404(): void
+    {
+        $this->school->update(['slug' => 'rob-nieuw']);
+        $this->school->update(['is_active' => false]);
+
+        $this->get('/inschrijven/keepersschool-rob')->assertNotFound();
     }
 
     public function test_aanbod_van_een_andere_school_leeftijd_en_positie_worden_geweigerd(): void

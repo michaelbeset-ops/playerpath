@@ -11,6 +11,7 @@ use App\Models\Player;
 use App\Models\Product;
 use App\Models\Subscription;
 use App\Support\Money\Money;
+use App\Support\Pagination\LoadMore;
 use App\Support\Payments\PaymentGateway;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Http\RedirectResponse;
@@ -29,6 +30,8 @@ use Inertia\Response;
  */
 class SubscriptionController extends Controller
 {
+    public const PER_PAGINA = 50;
+
     public function __construct(
         protected PaymentGateway $gateway,
         protected GeneratePayments $facturen,
@@ -38,11 +41,14 @@ class SubscriptionController extends Controller
     {
         $this->authorize('viewAny', Subscription::class);
 
-        $subscriptions = Subscription::query()
+        $query = Subscription::query()
             ->with(['player', 'product'])
             ->orderByDesc('starts_on')
-            ->get()
-            ->map(fn (Subscription $abonnement) => [
+            // Vaste volgorde bij gelijke startdatum, anders schuift een
+            // abonnement tussen twee pagina's.
+            ->orderByDesc('id');
+
+        [$subscriptions, $pagina] = LoadMore::paginate($query, $request, 'subscriptions', self::PER_PAGINA, fn (Subscription $abonnement) => [
                 'id' => $abonnement->id,
                 'player' => $abonnement->player?->full_name,
                 'player_id' => $abonnement->player_id,
@@ -58,6 +64,7 @@ class SubscriptionController extends Controller
 
         return Inertia::render('billing/Subscriptions', [
             'subscriptions' => $subscriptions,
+            'subscriptionsPage' => $pagina,
             'gateway' => $this->gatewayProps(),
             'playersWithoutSubscription' => Player::active()
                 ->whereDoesntHave('subscriptions', fn ($q) => $q->active())

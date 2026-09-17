@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Dashboard;
 
 use App\Http\Controllers\Controller;
 use App\Support\Dashboard\SchoolAccountability;
+use App\Support\Dashboard\Signal;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -40,8 +41,18 @@ class AccountabilityController extends Controller
             ? CarbonImmutable::parse($validated['to'])->endOfDay()
             : CarbonImmutable::now();
 
+        $overzicht = $this->overzicht->for($vanaf, $tot);
+
+        // Welke kleur een cijfer krijgt beslist Signal, niet de pagina: zo
+        // betekent oranje hier hetzelfde als op het dashboard.
+        $overzicht['tones'] = [
+            'coverage' => Signal::ratio($overzicht['coverage']),
+            'attendance' => Signal::ratio($overzicht['attendance']['percentage']),
+            'development' => Signal::trend($overzicht['development']['average']),
+        ];
+
         return Inertia::render('accountability/Index', [
-            'report' => $this->overzicht->for($vanaf, $tot),
+            'report' => $overzicht,
             'schoolInfo' => $request->user()->school->only(['name']),
             'range' => ['from' => $vanaf->toDateString(), 'to' => $tot->toDateString()],
         ]);

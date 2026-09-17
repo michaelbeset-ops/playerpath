@@ -32,10 +32,21 @@ class FortifyServiceProvider extends ServiceProvider
 
         $this->authMails();
 
-        Fortify::loginView(fn () => Inertia::render('auth/Login', [
-            'canResetPassword' => true,
-            'status' => session('status'),
-        ]));
+        Fortify::loginView(function (Request $request) {
+            // /login?redirect=/inschrijven/... brengt je na het inloggen terug
+            // (Fortify gebruikt intended()). Alleen een pad binnen deze site:
+            // een volledig adres of //host zou een open redirect zijn.
+            $terug = $request->query('redirect');
+
+            if (is_string($terug) && str_starts_with($terug, '/') && ! str_starts_with($terug, '//') && ! str_contains($terug, '\\')) {
+                $request->session()->put('url.intended', url($terug));
+            }
+
+            return Inertia::render('auth/Login', [
+                'canResetPassword' => true,
+                'status' => session('status'),
+            ]);
+        });
 
         Fortify::requestPasswordResetLinkView(fn () => Inertia::render('auth/ForgotPassword', [
             'status' => session('status'),

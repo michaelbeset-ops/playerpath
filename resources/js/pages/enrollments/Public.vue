@@ -50,7 +50,7 @@ interface Aanbod {
     payment_options: Betaalvorm[];
 }
 
-interface Kind {
+type Kind = {
     player_id: number | null;
     first_name: string;
     last_name: string;
@@ -59,7 +59,7 @@ interface Kind {
     product_id: number | null;
     payment_option_id: number | null;
     details: { kledingmaat: string; niveau: string; medisch: string };
-}
+};
 
 interface BestaandKind {
     id: number;
@@ -695,6 +695,16 @@ const invoer = 'h-11 w-full rounded-lg border border-input bg-background px-3 te
                                 :class="'mt-1 ' + invoer"
                             />
                             <InputError :message="fout('guardian_email')" />
+                            <!-- Al een account: een vraag met een weg, geen rode fout. -->
+                            <div v-if="fout('guardian_account')" class="mt-2 rounded-lg border border-border bg-muted/50 p-3 text-sm" role="status">
+                                <p>{{ fout('guardian_account') }}</p>
+                                <a
+                                    :href="loginUrl"
+                                    class="mt-2 inline-flex min-h-11 items-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                                >
+                                    Inloggen
+                                </a>
+                            </div>
                         </div>
                         <div>
                             <label for="guardian_phone" class="block text-sm font-medium"

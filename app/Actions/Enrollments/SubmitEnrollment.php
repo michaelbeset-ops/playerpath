@@ -44,6 +44,12 @@ use RuntimeException;
  */
 class SubmitEnrollment
 {
+    /**
+     * Een zachte vraag, geen verwijt: wie al een account heeft, logt in en gaat
+     * verder. Zegt niet letterlijk dat het adres bekend is.
+     */
+    public const BESTAAND_ACCOUNT = 'Heb je al een account met dit e-mailadres? Log dan eerst in, dan gaat de inschrijving daarna gewoon verder. Of gebruik een ander e-mailadres.';
+
     public function __construct(
         protected OrderWriter $orders,
         protected ConfirmEnrollment $bevestig,
@@ -183,7 +189,7 @@ class SubmitEnrollment
             // Zonder inloggen mag je geen bestaand account gebruiken: anders
             // schrijft iemand een kind in op andermans naam.
             // De tekst zegt niet letterlijk dat het adres bekend is.
-            throw new RuntimeException('Log eerst in met dit e-mailadres, of gebruik een ander adres.');
+            throw new RuntimeException(self::BESTAAND_ACCOUNT);
         }
 
         $ouder = User::create([

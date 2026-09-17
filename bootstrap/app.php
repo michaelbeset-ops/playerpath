@@ -77,7 +77,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 };
 
                 if ($melding !== null) {
-                    return back()->with('status', $melding);
+                    return back()->with('error', $melding);
                 }
             }
 

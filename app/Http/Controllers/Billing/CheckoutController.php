@@ -37,15 +37,15 @@ class CheckoutController extends Controller
         $this->magBij($request, $payment);
 
         if (! $this->gateway->isConnected()) {
-            return back()->with('status', $this->gateway->statusMessage());
+            return back()->with('error', $this->gateway->statusMessage());
         }
 
         if ($payment->status === PaymentStatus::Paid) {
-            return back()->with('status', 'Deze betaling is al voldaan.');
+            return back()->with('error', 'Deze betaling is al voldaan.');
         }
 
         if (! $payment->status->isPayable()) {
-            return back()->with('status', $payment->status === PaymentStatus::Pending
+            return back()->with('error', $payment->status === PaymentStatus::Pending
                 ? 'Deze betaling wordt al verwerkt. Probeer het over een paar minuten nog eens.'
                 : 'Deze rekening staat niet meer open.');
         }
@@ -53,7 +53,7 @@ class CheckoutController extends Controller
         // Contant of overboeking wordt bij de school afgerekend. Hier ook online
         // kunnen betalen levert dubbel betaalde gezinnen op.
         if ($payment->method?->isOffline()) {
-            return back()->with('status', 'Deze betaling reken je af bij de school zelf.');
+            return back()->with('error', 'Deze betaling reken je af bij de school zelf.');
         }
 
         try {

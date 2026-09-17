@@ -164,7 +164,7 @@ class SchoolUserController extends Controller
         abort_unless($user->school_id === $school->id, 404);
 
         if ($user->email_verified_at !== null) {
-            return back()->with('status', "{$user->name} heeft het account al geactiveerd. Komt hij er niet in, stuur dan een wachtwoordmail.");
+            return back()->with('error', "{$user->name} heeft het account al geactiveerd. Komt hij er niet in, stuur dan een wachtwoordmail.");
         }
 
         $naam = $user->name;

@@ -135,7 +135,7 @@ class ProductController extends Controller
             || ($product->group !== null && $product->group->trainings()->exists());
 
         if ($heeftHistorie) {
-            return back()->with('status', 'Dit aanbod heeft al deelnemers, trainingen of rekeningen en kan daarom niet weg. Zet het bij Bewerken op niet actief; dan verdwijnt het uit de shop en van de inschrijfpagina.');
+            return back()->with('error', 'Dit aanbod heeft al deelnemers, trainingen of rekeningen en kan daarom niet weg. Zet het bij Bewerken op niet actief; dan verdwijnt het uit de shop en van de inschrijfpagina.');
         }
 
         // Lopende afspraken blijven bestaan met hun eigen bedrag; alleen de

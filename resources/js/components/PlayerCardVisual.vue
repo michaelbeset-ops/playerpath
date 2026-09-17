@@ -1064,13 +1064,13 @@ const upgradeTekst = computed(() => {
     font-size: 1.625rem;
     font-weight: 800;
     letter-spacing: -0.02em;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
 }
 
 .pp-stats {
     position: relative;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 0.6rem 1.1rem;
     margin-top: 0.85rem;
 }
@@ -1084,6 +1084,8 @@ const upgradeTekst = computed(() => {
 
 .pp-stat-label {
     min-width: 0;
+    overflow-wrap: break-word;
+    hyphens: auto;
     font-size: 0.75rem;
     font-weight: 500;
     color: var(--pp-tekst-zacht);
@@ -1197,7 +1199,7 @@ const upgradeTekst = computed(() => {
     text-align: center;
     text-transform: uppercase;
     color: var(--pp-tekst-zacht);
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
 }
 
 /* Het grote cijfer als kleur: kleiner dan een getal, want het is een woord. */
@@ -1487,6 +1489,22 @@ const upgradeTekst = computed(() => {
 
     .pp-achternaam {
         font-size: 1.375rem;
+    }
+}
+
+/* Op een smalle telefoon passen "Communicatie", het pijltje en het cijfer
+   anders niet naast elkaar in een halve kaart. */
+@media (max-width: 400px) {
+    .pp-stats {
+        column-gap: 0.6rem;
+    }
+
+    .pp-stat-label {
+        font-size: 0.65rem;
+    }
+
+    .pp-stat-regel {
+        gap: 0.2rem;
     }
 }
 </style>

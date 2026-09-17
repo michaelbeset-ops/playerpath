@@ -2,11 +2,13 @@
 import FlashMessage from '@/components/FlashMessage.vue';
 import GatewayNotice from '@/components/GatewayNotice.vue';
 import InputError from '@/components/InputError.vue';
+import LoadMore from '@/components/LoadMore.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
+import { type PageMeta } from '@/types/pagination';
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import { Plus } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
@@ -27,6 +29,7 @@ interface Abonnement {
 
 defineProps<{
     subscriptions: Abonnement[];
+    subscriptionsPage: PageMeta;
     gateway: { connected: boolean; name: string; message: string };
     playersWithoutSubscription: { id: number; name: string }[];
     products: { id: number; name: string; amount: string; interval: string | null }[];
@@ -58,14 +61,17 @@ const opslaan = () =>
 
 // Stoppen is niet terug te draaien; daar hoort een bevestiging bij. Lukt een
 // overgang niet, dan komt de fout onder de lijst en springt de keuze terug.
-const zetStatus = (abonnement: Abonnement, status: string) => {
+// De keuzelijst zetten we zelf terug: de lijst opnieuw ophalen met alleen
+// "subscriptions" zou hem, omdat hij per pagina wordt samengevoegd, dubbel
+// onder elkaar zetten.
+const zetStatus = (abonnement: Abonnement, status: string, keuze: HTMLSelectElement) => {
     if (['cancelled', 'ended'].includes(status) && !confirm('Dit abonnement stoppen? Dat is niet terug te draaien.')) {
-        router.reload({ only: ['subscriptions'] });
+        keuze.value = abonnement.status;
 
         return;
     }
 
-    router.patch('/subscriptions/' + abonnement.id, { status }, { preserveScroll: true, onError: () => router.reload({ only: ['subscriptions'] }) });
+    router.patch('/subscriptions/' + abonnement.id, { status }, { preserveScroll: true, onError: () => (keuze.value = abonnement.status) });
 };
 
 const statusFout = computed(() => (usePage().props.errors as Record<string, string> | undefined)?.status ?? null);
@@ -131,7 +137,7 @@ const kleurVoor = (status: string) =>
                         >
                             <option value="">Kies een tarief...</option>
                             <option v-for="plan in products" :key="plan.id" :value="plan.id">
-                                {{ plan.name }} - {{ plan.amount }} {{ plan.interval.toLowerCase() }}
+                                {{ plan.name }} - {{ plan.amount }} {{ plan.interval?.toLowerCase() ?? '' }}
                             </option>
                         </select>
                         <InputError :message="form.errors.product_id" />
@@ -213,13 +219,22 @@ const kleurVoor = (status: string) =>
                             :value="abonnement.status"
                             class="min-h-11 shrink-0 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
                             :aria-label="'Status van het abonnement van ' + (abonnement.player ?? 'onbekend')"
-                            @change="zetStatus(abonnement, ($event.target as HTMLSelectElement).value)"
+                            @change="zetStatus(abonnement, ($event.target as HTMLSelectElement).value, $event.target as HTMLSelectElement)"
                         >
                             <option v-for="(label, waarde) in statuses" :key="waarde" :value="waarde">{{ label }}</option>
                         </select>
                     </div>
                 </div>
             </div>
+
+            <LoadMore
+                v-if="subscriptions.length"
+                prop="subscriptions"
+                meta-prop="subscriptionsPage"
+                :meta="subscriptionsPage"
+                noun="abonnementen"
+                label="Meer abonnementen laden"
+            />
 
             <div v-else-if="products.length" class="mt-4 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
                 <p class="font-medium">Nog geen abonnementen</p>

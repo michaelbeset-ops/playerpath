@@ -452,11 +452,11 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                         <InputError class="mt-2" :message="form.errors.slug" />
                         <p
                             v-if="slugGewijzigd"
-                            class="mt-2 rounded-lg border border-warning/30 bg-warning/10 p-3 text-xs text-foreground"
+                            class="mt-2 rounded-lg border border-border bg-muted/50 p-3 text-xs text-foreground"
                             role="status"
                         >
-                            Let op: het oude adres (/inschrijven/{{ schoolProfile.slug }}) werkt na opslaan niet meer. Staat die link al op je website
-                            of in een bericht aan ouders, pas hem daar dan ook aan.
+                            Het oude adres (/inschrijven/{{ schoolProfile.slug }}) blijft werken: oude links sturen automatisch door naar het nieuwe
+                            adres. Pas de link op je website wel aan als het kan; dan komen ouders er meteen.
                         </p>
                     </section>
 
@@ -1246,8 +1246,8 @@ const getalKlasse = 'h-11 w-24 rounded-lg border border-input bg-background px-3
                                     </div>
                                     <InputError
                                         :message="
-                                            form.errors[('consents.' + doc.key + '.body') as any] ??
-                                            form.errors[('consents.' + doc.key + '.title') as any]
+                                            (form.errors as Record<string, string | undefined>)['consents.' + doc.key + '.body'] ??
+                                            (form.errors as Record<string, string | undefined>)['consents.' + doc.key + '.title']
                                         "
                                     />
                                 </div>

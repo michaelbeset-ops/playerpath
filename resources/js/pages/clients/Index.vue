@@ -3,9 +3,11 @@ import { kleurVan, useGrading } from '@/lib/grade';
 import Avatar from '@/components/Avatar.vue';
 import FilterSheet from '@/components/FilterSheet.vue';
 import FlashMessage from '@/components/FlashMessage.vue';
+import LoadMore from '@/components/LoadMore.vue';
 import DemoBadge from '@/components/onboarding/DemoBadge.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
+import { type PageMeta } from '@/types/pagination';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ChevronDown, KeyRound, Mail, Plus, Search, Users } from 'lucide-vue-next';
 import { computed, reactive, ref, watch } from 'vue';
@@ -40,6 +42,8 @@ const props = defineProps<{
     counts: { players: number; guardians: number | null };
     can: { managePlayers: boolean };
     players: SpelerRij[];
+    /** De lijst komt per vijftig; dit zegt hoeveel er in totaal gevonden zijn. */
+    playersPage: PageMeta;
     filters: { search: string; position: string; group: number | null; status: string };
     positions: Record<string, string>;
     groups: { id: number; name: string }[];
@@ -116,8 +120,8 @@ const { kleuren, niveauVoor } = useGrading();
 
             <div class="mt-5 flex flex-wrap items-center justify-between gap-3">
                 <p class="text-sm text-muted-foreground">
-                    <span class="tabular">{{ players.length }}</span>
-                    {{ players.length === 1 ? 'speler' : 'spelers' }} gevonden
+                    <span class="tabular">{{ playersPage.total }}</span>
+                    {{ playersPage.total === 1 ? 'speler' : 'spelers' }} gevonden
                 </p>
 
                 <Link
@@ -277,6 +281,8 @@ const { kleuren, niveauVoor } = useGrading();
                     </div>
                 </div>
             </div>
+
+            <LoadMore v-if="players.length" prop="players" meta-prop="playersPage" :meta="playersPage" noun="spelers" label="Meer spelers laden" />
 
             <div v-else class="mt-4 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
                 <p class="font-medium">Geen spelers gevonden</p>

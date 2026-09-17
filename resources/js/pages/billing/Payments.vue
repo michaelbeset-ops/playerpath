@@ -2,9 +2,11 @@
 import FilterSheet from '@/components/FilterSheet.vue';
 import FlashMessage from '@/components/FlashMessage.vue';
 import GatewayNotice from '@/components/GatewayNotice.vue';
+import LoadMore from '@/components/LoadMore.vue';
 import StatCard from '@/components/StatCard.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
+import { type PageMeta } from '@/types/pagination';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { AlertTriangle, Clock, Euro, Search, SlidersHorizontal, Wallet } from 'lucide-vue-next';
 import { computed, reactive, ref, watch } from 'vue';
@@ -31,10 +33,12 @@ interface Betaling {
 
 const props = defineProps<{
     payments: Betaling[];
+    /** De lijst komt per honderd; de totalen gaan altijd over alle rijen. */
+    paymentsPage: PageMeta;
     filters: { tab: string; period: string; method: string; product: number | null; search: string };
     tabs: Record<string, string>;
     periods: Record<string, string>;
-    totals: { count: number; total: string; excl_vat: string; vat: string; shown: number };
+    totals: { count: number; total: string; excl_vat: string; vat: string };
     statuses: Record<string, string>;
     methods: Record<string, string>;
     products: { id: number; name: string }[];
@@ -96,7 +100,9 @@ const kleurVoor = (status: string) => {
 
 // Per dag, met de datum één keer boven het groepje in plaats van op elke regel.
 // Welke datum dat is bepaalt de server, want dat verschilt per tabblad. De
-// volgorde komt daar ook vandaan; hier wordt alleen samengevoegd.
+// volgorde komt daar ook vandaan; hier wordt alleen samengevoegd. Omdat
+// "Meer laden" de volgende pagina achter deze lijst plakt, loopt een dag die
+// over de paginagrens valt vanzelf door in hetzelfde groepje.
 const dagen = computed(() => {
     const uit: { key: string; label: string; items: Betaling[] }[] = [];
 
@@ -123,7 +129,7 @@ const wissel = (id: number) => {
 
 // Terug naar openstaand, annuleren of terugbetaald zetten raakt de
 // administratie; daar hoort een bevestiging bij.
-const zetStatus = (betaling: Betaling, status: string) => {
+const zetStatus = (betaling: Betaling, status: string, keuze: HTMLSelectElement) => {
     const zwaar: Record<string, string> = {
         cancelled: 'Deze rekening annuleren? Hij hoeft dan niet meer betaald te worden.',
         refunded: 'Deze rekening op terugbetaald zetten? Het bedrag telt dan niet meer mee als omzet.',
@@ -131,7 +137,9 @@ const zetStatus = (betaling: Betaling, status: string) => {
     };
 
     if (zwaar[status] && !confirm(zwaar[status])) {
-        router.reload({ only: ['payments'] });
+        // Terug naar wat er stond. Geen reload van de lijst: die wordt per
+        // pagina samengevoegd, en dan zou hij dubbel onder elkaar komen.
+        keuze.value = betaling.status;
 
         return;
     }
@@ -263,10 +271,10 @@ const zetMethode = (betaling: Betaling, method: string) =>
                 </p>
             </div>
 
-            <p v-if="totals.count > totals.shown" class="mt-2 text-xs text-muted-foreground">
+            <p v-if="paymentsPage.hasMore" class="mt-2 text-xs text-muted-foreground">
                 Het totaal gaat over alle <span class="tabular">{{ totals.count }}</span> rekeningen; hieronder staan de
-                <span class="tabular">{{ totals.shown }}</span> meest recente. Wil je ze allemaal, gebruik dan
-                <Link href="/exports" class="underline underline-offset-4">Overzichten</Link>.
+                <span class="tabular">{{ paymentsPage.shown }}</span> meest recente. Laad er meer onderaan, of gebruik
+                <Link href="/exports" class="underline underline-offset-4">Overzichten</Link> voor een bestand met alles.
             </p>
 
             <div v-if="payments.length" class="mt-4 space-y-4">
@@ -331,7 +339,7 @@ const zetMethode = (betaling: Betaling, method: string) =>
                                     <select
                                         :value="betaling.status"
                                         class="h-11 rounded-lg border border-input bg-background px-2 text-sm text-foreground outline-none focus:border-primary"
-                                        @change="zetStatus(betaling, ($event.target as HTMLSelectElement).value)"
+                                        @change="zetStatus(betaling, ($event.target as HTMLSelectElement).value, $event.target as HTMLSelectElement)"
                                     >
                                         <option :value="betaling.status">{{ betaling.status_label }}</option>
                                         <option v-for="(label, waarde) in betaling.next_statuses" :key="waarde" :value="waarde">{{ label }}</option>
@@ -356,6 +364,8 @@ const zetMethode = (betaling: Betaling, method: string) =>
                     </div>
                 </section>
             </div>
+
+            <LoadMore v-if="payments.length" prop="payments" meta-prop="paymentsPage" :meta="paymentsPage" noun="rekeningen" label="Meer rekeningen laden" />
 
             <div v-else class="mt-4 rounded-2xl border border-dashed border-border bg-card/50 p-10 text-center">
                 <p class="font-medium">Niets gevonden</p>

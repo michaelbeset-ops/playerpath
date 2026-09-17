@@ -55,7 +55,7 @@ const submit = () => {
                 <div class="grid gap-2">
                     <div class="flex items-center justify-between">
                         <Label for="password">Wachtwoord</Label>
-                        <TextLink v-if="canResetPassword" :href="route('password.request')" class="text-sm" tabindex="5">
+                        <TextLink v-if="canResetPassword" :href="route('password.request')" class="text-sm" :tabindex="5">
                             Wachtwoord vergeten?
                         </TextLink>
                     </div>
@@ -86,7 +86,7 @@ const submit = () => {
 
             <p class="text-center text-sm text-muted-foreground">
                 Nog geen account?
-                <TextLink href="/scholen/zoeken" tabindex="6">Zoek je school</TextLink>
+                <TextLink href="/scholen/zoeken" :tabindex="6">Zoek je school</TextLink>
                 en schrijf je daar in.
             </p>
         </form>

@@ -28,10 +28,10 @@ defineProps<{
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Locaties', href: '/locaties' }];
 
-const nieuw = useForm({ name: '', address: '', note: '', is_active: true });
+const nieuw = useForm({ name: '', address: '', note: '', is_active: true as boolean });
 
 const bewerkId = ref<number | null>(null);
-const bewerk = useForm({ name: '', address: '', note: '', is_active: true });
+const bewerk = useForm({ name: '', address: '', note: '', is_active: true as boolean });
 
 const voegToe = () =>
     nieuw.post('/locaties', {

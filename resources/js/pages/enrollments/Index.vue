@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import FlashMessage from '@/components/FlashMessage.vue';
+import LoadMore from '@/components/LoadMore.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem, type SharedData } from '@/types';
+import { type PageMeta } from '@/types/pagination';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { Check, Copy, CreditCard, Inbox, Link2, LoaderCircle, Mail, Phone, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
@@ -44,6 +46,8 @@ const props = defineProps<{
     awaitingPayment: Inschrijving[];
     waitlist: Inschrijving[];
     handled: Inschrijving[];
+    /** Afgehandeld komt per pagina; open staat er altijd helemaal. */
+    handledPage: PageMeta;
     formUrl: string;
 }>();
 
@@ -60,10 +64,16 @@ const tabs = computed(() => [
     { key: 'pending' as const, label: 'Goedkeuren', count: props.pending.length },
     { key: 'awaitingPayment' as const, label: 'Wacht op betaling', count: props.awaitingPayment.length },
     { key: 'waitlist' as const, label: 'Wachtlijst', count: props.waitlist.length },
-    { key: 'handled' as const, label: 'Afgehandeld', count: props.handled.length },
+    { key: 'handled' as const, label: 'Afgehandeld', count: props.handledPage.total },
 ]);
 
 const lijst = computed(() => props[tab.value]);
+
+// Bij de eerste keer openen: blijft de pagina staan na "Meer laden" (page in
+// het adres), dan hoort het tabblad Afgehandeld open te staan.
+if (props.handledPage.page > 1) {
+    tab.value = 'handled';
+}
 
 const gekopieerd = ref(false);
 
@@ -297,6 +307,15 @@ const detailLabels: Record<string, string> = { kledingmaat: 'Kledingmaat', nivea
                         </button>
                     </div>
                 </article>
+
+                <LoadMore
+                    v-if="tab === 'handled'"
+                    prop="handled"
+                    meta-prop="handledPage"
+                    :meta="handledPage"
+                    noun="afgehandelde inschrijvingen"
+                    label="Meer laden"
+                />
             </div>
         </div>
     </AppLayout>

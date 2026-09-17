@@ -48,6 +48,36 @@ class School extends Model
         ];
     }
 
+    /**
+     * Oude inschrijfadressen bijhouden, waar de slug ook gewijzigd wordt.
+     *
+     * Een gewijzigde slug laat het oude adres doorsturen; een slug die (weer)
+     * in gebruik is, is geen oud adres meer. Zie SchoolSlugRedirect.
+     */
+    protected static function booted(): void
+    {
+        static::saved(function (School $school) {
+            // In 'saved' is de oude stand nog niet bijgewerkt: bij aanmaken is
+            // er geen oude slug, bij een wijziging staat hij in getOriginal().
+            if (! $school->isDirty('slug')) {
+                return;
+            }
+
+            SchoolSlugRedirect::forget($school->slug);
+
+            $oud = $school->getOriginal('slug');
+
+            if (is_string($oud) && $oud !== '' && $oud !== $school->slug) {
+                SchoolSlugRedirect::remember($school, $oud);
+            }
+        });
+    }
+
+    public function slugRedirects(): HasMany
+    {
+        return $this->hasMany(SchoolSlugRedirect::class);
+    }
+
     public function users(): HasMany
     {
         return $this->hasMany(User::class);

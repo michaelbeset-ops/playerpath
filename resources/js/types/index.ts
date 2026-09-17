@@ -24,7 +24,9 @@ export interface NavGroup {
     title: string;
     href: string | null;
     icon: LucideIcon;
-    items: { title: string; href: string; icon: LucideIcon }[];
+    items: { title: string; href: string; icon: LucideIcon; badge?: number }[];
+    /** Hoeveel er openstaat (een bolletje in de balk); 0 is niets. */
+    badge?: number;
     /** Anker voor de rondleiding; zie AppTour.vue. */
     tour?: string;
 }
@@ -44,15 +46,17 @@ export interface Branding {
 }
 
 export interface SharedData {
+    /** Inertia eist een open vorm: een pagina voegt er haar eigen props aan toe. */
+    [key: string]: unknown;
     name: string;
     /** Null op de publiek gedeelde spelerskaart: die verraadt geen school. */
     branding: Branding | null;
     auth: Auth;
     /** De actieve school van de ingelogde gebruiker; null als er geen is. */
     school: School | null;
-    flash: { status: string | null };
+    flash: { status: string | null; error?: string | null };
     /** Het hoofdmenu, server-side bepaald op basis van wat je mag. */
-    nav: { title: string; href: string | null; icon: string; items: { title: string; href: string; icon: string }[] }[];
+    nav: { title: string; href: string | null; icon: string; badge?: number; items: { title: string; href: string; icon: string; badge?: number }[] }[];
     /** De plusknop in de balk: wat je vanaf hier mag aanmaken. */
     quickAdd: { title: string; href: string; icon: string }[];
     unreadNotifications: number;

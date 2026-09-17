@@ -69,6 +69,9 @@ class AccountabilityTest extends TestCase
                 ->where('report.playersWithReport', 1)
                 // Eén van de twee spelers is gevolgd: dat is het cijfer dat telt.
                 ->where('report.coverage', 50)
+                // De kleur komt van Signal: 50% is precies de ondergrens van oranje.
+                ->where('report.tones.coverage', 'warn')
+                ->where('report.tones.attendance', 'neutral')
             );
     }
 
@@ -83,6 +86,7 @@ class AccountabilityTest extends TestCase
             ->assertInertia(fn ($page) => $page
                 ->where('report.development.average', null)
                 ->where('report.development.measured', 0)
+                ->where('report.tones.development', 'neutral')
             );
 
         $this->rapporteer($speler, 8);
@@ -93,6 +97,7 @@ class AccountabilityTest extends TestCase
                 ->where('report.development.average', 20)
                 ->where('report.development.measured', 1)
                 ->where('report.development.improved', 1)
+                ->where('report.tones.development', 'good')
             );
     }
 

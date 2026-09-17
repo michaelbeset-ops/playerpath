@@ -136,7 +136,7 @@ class BillingTest extends TestCase
         ]);
 
         // Met een lopend abonnement blijft het aanbod staan: niet-actief zetten is de weg.
-        $this->actingAs($this->eigenaar)->delete('/aanbod/'.$product->id)->assertSessionHas('status');
+        $this->actingAs($this->eigenaar)->delete('/aanbod/'.$product->id)->assertSessionHas('error');
 
         $this->assertNotNull(Product::find($product->id));
         $abonnement->refresh();

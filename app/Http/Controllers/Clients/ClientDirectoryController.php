@@ -12,6 +12,7 @@ use App\Models\Player;
 use App\Models\User;
 use App\Support\Dashboard\SchoolDashboard;
 use App\Support\Features\Features;
+use App\Support\Pagination\LoadMore;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -40,6 +41,9 @@ use Inertia\Response;
  */
 class ClientDirectoryController extends Controller
 {
+    /** Vijftig per keer: genoeg om door te scrollen, weinig genoeg voor een telefoon. */
+    public const PER_PAGINA = 50;
+
     public function __construct(protected Features $features) {}
 
     public function index(Request $request): Response
@@ -59,7 +63,7 @@ class ClientDirectoryController extends Controller
         $user = $request->user();
         $trainer = $user->isTrainer() && ! $user->isEigenaar();
 
-        $players = Player::query()
+        $query = Player::query()
             // Een trainer ziet zijn eigen spelers; de eigenaar alles.
             ->visibleTo($user)
             // Een trainer krijgt geen ouders mee, dus die hoeven ook niet geladen.
@@ -99,8 +103,11 @@ class ClientDirectoryController extends Controller
             ->when($filters['status'] === 'inactive', fn ($q) => $q->where('is_active', false))
             ->orderBy('last_name')
             ->orderBy('first_name')
-            ->get()
-            ->map(fn (Player $player) => [
+            // Bij gelijke namen een vaste volgorde; anders schuift een speler
+            // tussen twee pagina's en staat hij dubbel of juist niet in de lijst.
+            ->orderBy('players.id');
+
+        [$players, $pagina] = LoadMore::paginate($query, $request, 'players', self::PER_PAGINA, fn (Player $player) => [
                 'id' => $player->id,
                 'name' => $player->full_name,
                 'photo' => $player->photo_url,
@@ -130,6 +137,8 @@ class ClientDirectoryController extends Controller
 
         return Inertia::render('clients/Index', [
             'players' => $players,
+            // Hoeveel er gevonden zijn en of er meer is; de lijst komt per pagina.
+            'playersPage' => $pagina,
             // Een trainer heeft geen klanten, hij heeft spelers. Zelfde scherm,
             // ander woord - en zonder ouders uitklapbaar eronder.
             'isTrainer' => $trainer,

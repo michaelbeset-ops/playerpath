@@ -29,7 +29,7 @@ class CancellationController extends Controller
         $this->authorize('update', $training);
 
         if ($training->cancelled_at !== null) {
-            return back()->with('status', 'Deze training was al afgezegd.');
+            return back()->with('error', 'Deze training was al afgezegd.');
         }
 
         $validated = $request->validate([

@@ -12,6 +12,7 @@ use App\Models\Player;
 use App\Support\Enrollment\EnrollmentSettings;
 use App\Support\Enrollment\RefundPolicy;
 use App\Support\Money\Money;
+use App\Support\Pagination\LoadMore;
 use App\Support\Payments\PaymentGateway;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -25,6 +26,9 @@ use Inertia\Response;
  */
 class MyBillingController extends Controller
 {
+    /** Twee jaar maandtermijnen; ouder staat achter "Oudere betalingen tonen". */
+    public const PER_PAGINA = 24;
+
     public function __construct(protected PaymentGateway $gateway) {}
 
     public function index(Request $request): Response
@@ -38,10 +42,13 @@ class MyBillingController extends Controller
         abort_if($spelerIds === [], 403, 'Je hebt geen spelers waar een abonnement bij hoort.');
 
         $spelers = Player::whereIn('id', $spelerIds)
+            // Het lopende abonnement en zijn aanbod in één keer, niet per kind
+            // een query. Dezelfde selectie als Player::activeSubscription().
+            ->with(['subscriptions' => fn ($q) => $q->active()->latest('starts_on')->with('product')])
             ->orderBy('first_name')
             ->get()
             ->map(function (Player $speler) {
-                $abonnement = $speler->activeSubscription();
+                $abonnement = $speler->subscriptions->first();
                 $kanOpzeggen = $abonnement !== null && $abonnement->status->canTransitionTo(SubscriptionStatus::CancellationPlanned);
 
                 return [
@@ -62,12 +69,14 @@ class MyBillingController extends Controller
                 ];
             });
 
-        $betalingen = Payment::whereIn('player_id', $spelerIds)
+        // Per pagina, niet stil afgekapt: een ouder die wil weten wat hij vorig
+        // jaar betaalde moet dat kunnen vinden.
+        $betalingenQuery = Payment::whereIn('player_id', $spelerIds)
             ->with('player')
             ->orderByDesc('due_on')
-            ->limit(24)
-            ->get()
-            ->map(fn (Payment $betaling) => [
+            ->orderByDesc('id');
+
+        [$betalingen, $pagina] = LoadMore::paginate($betalingenQuery, $request, 'payments', self::PER_PAGINA, fn (Payment $betaling) => [
                 'id' => $betaling->id,
                 'player' => $betaling->player?->first_name,
                 'amount' => Money::format($betaling->amount_cents),
@@ -104,13 +113,17 @@ class MyBillingController extends Controller
         $beleid = RefundPolicy::for($instellingen);
 
         $inschrijvingen = Enrollment::whereIn('player_id', $spelerIds)
-            ->with(['product', 'order.payments'])
+            // De orderregels meteen mee: het restitutiebedrag hoeft dan niet per
+            // inschrijving een eigen query.
+            ->with(['product', 'order.payments', 'order.lines'])
             ->whereNotIn('status', [EnrollmentStatus::Declined->value, EnrollmentStatus::Expired->value])
             ->latest()
             ->limit(12)
             ->get()
             ->map(function (Enrollment $e) use ($beleid) {
-                $regel = $e->order?->lines()->where('enrollment_id', $e->id)->whereIn('type', ['offering', 'trial'])->sum('amount_cents') ?? 0;
+                $regel = $e->order?->lines
+                    ->filter(fn ($l) => (int) $l->enrollment_id === $e->id && in_array($l->type?->value, ['offering', 'trial'], strict: true))
+                    ->sum('amount_cents') ?? 0;
                 $betaald = $e->order ? (int) $e->order->payments->filter(fn ($p) => $p->status->countsAsRevenue())->sum('amount_cents') : 0;
                 $terug = $beleid->refundCents(max(0, min((int) $regel, $betaald)), $e->product?->starts_on);
 
@@ -135,6 +148,7 @@ class MyBillingController extends Controller
             'policy' => ['cancellation' => $beleid->describe(), 'notice_months' => $instellingen->noticeMonths()],
             'players' => $spelers,
             'payments' => $betalingen,
+            'paymentsPage' => $pagina,
             'outstanding' => Money::format($openstaand),
             'hasOutstanding' => $openstaand > 0,
             'gateway' => [

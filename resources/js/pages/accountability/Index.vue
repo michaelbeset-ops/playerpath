@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { toneStat, type Tone } from '@/lib/tone';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router } from '@inertiajs/vue3';
 import { CalendarDays, ClipboardList, FileCheck2, Printer, Target, TrendingUp, Users } from 'lucide-vue-next';
@@ -24,6 +25,8 @@ const props = defineProps<{
         cancelled: number;
         attendance: { percentage: number | null; present: number; recorded: number };
         development: { average: number | null; measured: number; improved: number };
+        /** De kleur per cijfer, bepaald door Signal op de server (Support/Dashboard). */
+        tones: { coverage: Tone; attendance: Tone; development: Tone };
     };
     schoolInfo: { name: string };
     range: { from: string; to: string };
@@ -36,13 +39,6 @@ const periode = reactive({ ...props.range });
 const toon = () => router.get('/verantwoording', periode, { preserveState: true, preserveScroll: true });
 
 const afdrukken = () => window.print();
-
-// Kleur is een signaal: groen leest als goed. Zonder cijfer blijft de kaart grijs.
-const toonVoor = (waarde: number | null, goed = 75, matig = 50): 'default' | 'warning' | 'danger' => {
-    if (waarde === null) return 'default';
-    if (waarde >= goed) return 'default';
-    return waarde >= matig ? 'warning' : 'danger';
-};
 </script>
 
 <template>
@@ -103,7 +99,7 @@ const toonVoor = (waarde: number | null, goed = 75, matig = 50): 'default' | 'wa
                         :value="report.playersWithReport || null"
                         :hint="report.coverage !== null ? report.coverage + '% van de spelers' : 'nog geen rapport'"
                         :icon="ClipboardList"
-                        :tone="toonVoor(report.coverage)"
+                        :tone="toneStat[report.tones.coverage]"
                     />
                     <StatCard label="Rapporten" :value="report.reports || null" hint="geschreven in deze periode" :icon="ClipboardList" />
                     <StatCard
@@ -128,7 +124,7 @@ const toonVoor = (waarde: number | null, goed = 75, matig = 50): 'default' | 'wa
                                 : 'er is nog niets afgevinkt'
                         "
                         :icon="Users"
-                        :tone="toonVoor(report.attendance.percentage)"
+                        :tone="toneStat[report.tones.attendance]"
                     />
                     <StatCard
                         class="col-span-2 lg:col-span-1"
@@ -145,7 +141,7 @@ const toonVoor = (waarde: number | null, goed = 75, matig = 50): 'default' | 'wa
                                 : 'vraagt minstens twee rapporten per speler'
                         "
                         :icon="TrendingUp"
-                        :tone="report.development.average !== null && report.development.average < 0 ? 'warning' : 'default'"
+                        :tone="toneStat[report.tones.development]"
                     />
                 </div>
 

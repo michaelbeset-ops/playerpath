@@ -85,7 +85,8 @@ class PublicEnrollmentController extends Controller
                 'products' => $aanbod,
                 'selected' => $request->integer('aanbod') ?: null,
                 'config' => $this->form->for($school, $instellingen, $ouder),
-                'loginUrl' => route('login'),
+                // Na het inloggen terug naar deze pagina, met het gekozen aanbod.
+                'loginUrl' => route('login', ['redirect' => '/'.ltrim($request->getRequestUri(), '/')]),
                 'submitted' => session('enrollment_submitted'),
             ]);
         });
@@ -185,7 +186,11 @@ class PublicEnrollmentController extends Controller
                     $request->ip(),
                 );
             } catch (RuntimeException $e) {
-                throw ValidationException::withMessages(['guardian_email' => $e->getMessage()]);
+                // Een bestaand account krijgt een eigen sleutel: het formulier
+                // toont dan een vraag met een knop Inloggen, geen rode fout.
+                throw ValidationException::withMessages([
+                    $e->getMessage() === SubmitEnrollment::BESTAAND_ACCOUNT ? 'guardian_account' : 'guardian_email' => $e->getMessage(),
+                ]);
             }
 
             $eerste = $uitkomst['enrollments'][0];

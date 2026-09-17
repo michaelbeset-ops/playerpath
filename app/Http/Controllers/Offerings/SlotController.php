@@ -104,6 +104,24 @@ class SlotController extends Controller
         $weken = max(1, (int) ($validated['repeat_weeks'] ?? 1));
         $dag = CarbonImmutable::parse($validated['date']);
         $aantal = 0;
+        $trainerId = $validated['user_id'] ?? null;
+
+        // De locatie is voor elke week dezelfde; één keer opzoeken, niet
+        // zesentwintig keer. De naam zoals hij nu heet; zie Location.
+        $locatieId = $validated['location_id'] ?? $product->location_id;
+        $locatieNaam = $locatieId === null
+            ? $product->location
+            : Location::whereKey($locatieId)->value('name');
+
+        // Welke begintijden deze trainer hier al heeft, in één query over de
+        // hele reeks in plaats van per week een eigen controle.
+        $eersteStart = $dag->setTimeFromTimeString($validated['starts_at']);
+        $bezet = $product->slots()
+            ->where('user_id', $trainerId)
+            ->whereBetween('starts_at', [$eersteStart, $eersteStart->addWeeks($weken - 1)])
+            ->pluck('starts_at')
+            ->map(fn ($start) => CarbonImmutable::parse($start)->format('Y-m-d H:i'))
+            ->flip();
 
         for ($week = 0; $week < $weken; $week++) {
             $start = $dag->addWeeks($week)->setTimeFromTimeString($validated['starts_at']);
@@ -111,26 +129,16 @@ class SlotController extends Controller
 
             // Hetzelfde uur twee keer neerzetten levert een ouder een lijst met
             // dubbele momenten op, en dat is precies waar hij op afhaakt.
-            $bestaat = $product->slots()
-                ->where('starts_at', $start)
-                ->where('user_id', $validated['user_id'] ?? null)
-                ->exists();
-
-            if ($bestaat) {
+            if ($bezet->has($start->format('Y-m-d H:i'))) {
                 continue;
             }
 
-            $locatieId = $validated['location_id'] ?? $product->location_id;
-
             $product->slots()->create([
-                'user_id' => $validated['user_id'] ?? null,
+                'user_id' => $trainerId,
                 'starts_at' => $start,
                 'ends_at' => $eind,
                 'location_id' => $locatieId,
-                // De naam zoals hij nu heet; zie Location.
-                'location' => $locatieId === null
-                    ? $product->location
-                    : Location::whereKey($locatieId)->value('name'),
+                'location' => $locatieNaam,
             ]);
 
             $aantal++;

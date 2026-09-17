@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import LoadMore from '@/components/LoadMore.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
+import { type PageMeta } from '@/types/pagination';
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { CreditCard, Receipt } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
@@ -48,7 +50,11 @@ defineProps<{
         is_overdue: boolean;
         payable: boolean;
         offline: boolean;
+        method_value: string | null;
+        cash_at_training: boolean;
     }[];
+    /** Per 24; oudere betalingen komen erbij met "Oudere betalingen tonen". */
+    paymentsPage: PageMeta;
     outstanding: string;
     hasOutstanding: boolean;
     gateway: { connected: boolean; name: string };
@@ -239,6 +245,15 @@ const kleurVoor = (status: string) => {
                         </div>
                     </div>
                 </div>
+
+                <LoadMore
+                    v-if="payments.length"
+                    prop="payments"
+                    meta-prop="paymentsPage"
+                    :meta="paymentsPage"
+                    noun="betalingen"
+                    label="Oudere betalingen tonen"
+                />
 
                 <p v-else class="mt-3 text-sm text-muted-foreground">Er zijn nog geen betalingen.</p>
             </div>

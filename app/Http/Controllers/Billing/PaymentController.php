@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Models\Product;
 use App\Support\Money\Money;
+use App\Support\Pagination\LoadMore;
 use App\Support\Payments\BillingOverview;
 use App\Support\Payments\PaymentGateway;
 use App\Support\Payments\PaymentQuery;
@@ -27,6 +28,9 @@ use Inertia\Response;
  */
 class PaymentController extends Controller
 {
+    /** Honderd rekeningen per keer; de totalen gaan altijd over alles. */
+    public const PER_PAGINA = 100;
+
     public function __construct(
         protected BillingOverview $overview,
         protected PaymentGateway $gateway,
@@ -47,8 +51,9 @@ class PaymentController extends Controller
 
         $query = $this->filter->build($filters);
 
-        // Het totaal telt precies de rijen die je eronder ziet; daarom eerst
-        // optellen en pas daarna de lijst afkappen.
+        // Het totaal telt alle rijen die aan de filters voldoen, ook die op
+        // pagina's die nog niet geladen zijn; daarom eerst optellen en pas
+        // daarna de lijst in stukken knippen.
         $totalen = $this->filter->totals($query);
 
         // De lijst wordt per dag gegroepeerd, en welke dag dat is verschilt per
@@ -57,12 +62,14 @@ class PaymentController extends Controller
         // de kopjes niet iets anders zeggen dan het totaal.
         $kolom = $this->filter->datumkolom($filters['tab']);
 
-        $payments = (clone $query)
+        // De volgorde ligt vast (datum, dan id), zodat de groepjes per dag over
+        // de pagina's heen doorlopen: het scherm plakt de volgende pagina
+        // eronder en voegt een dag die over de grens loopt gewoon samen.
+        $gesorteerd = (clone $query)
             ->orderByDesc($kolom)
-            ->orderByDesc('id')
-            ->limit(200)
-            ->get()
-            ->map(fn (Payment $payment) => [
+            ->orderByDesc('id');
+
+        [$payments, $pagina] = LoadMore::paginate($gesorteerd, $request, 'payments', self::PER_PAGINA, fn (Payment $payment) => [
                 'id' => $payment->id,
                 'player' => $payment->player?->full_name,
                 'player_id' => $payment->player_id,
@@ -84,6 +91,7 @@ class PaymentController extends Controller
 
         return Inertia::render('billing/Payments', [
             'payments' => $payments,
+            'paymentsPage' => $pagina,
             'filters' => $filters,
             'tabs' => PaymentQuery::TABBLADEN,
             'periods' => PaymentQuery::PERIODEN,
@@ -92,9 +100,6 @@ class PaymentController extends Controller
                 'total' => Money::format($totalen['total']),
                 'excl_vat' => Money::format($totalen['excl_vat']),
                 'vat' => Money::format($totalen['vat']),
-                // Meer dan er getoond worden: dan is de lijst afgekapt en moet
-                // het scherm dat zeggen, anders lijkt het totaal niet te kloppen.
-                'shown' => min($totalen['count'], 200),
             ],
             'statuses' => PaymentStatus::options(),
             'methods' => PaymentMethod::options(),

@@ -34,3 +34,14 @@ export const toneChip: Record<Tone, string> = {
     bad: 'bg-destructive/10 text-destructive',
     neutral: 'bg-secondary text-muted-foreground',
 };
+
+/**
+ * De `tone` van een StatCard. Die kent geen apart groen: een kerncijfer met een
+ * waarde is al groen, en zonder waarde grijs. Alleen oranje en rood wijken af.
+ */
+export const toneStat: Record<Tone, 'default' | 'warning' | 'danger'> = {
+    good: 'default',
+    warn: 'warning',
+    bad: 'danger',
+    neutral: 'default',
+};

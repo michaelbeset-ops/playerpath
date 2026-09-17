@@ -62,7 +62,23 @@ class ShopController extends Controller
             ->get()
             // Alles waar je je op kunt aanmelden, ook doorlopende training: de
             // inschrijfstap regelt de betaalvorm. Gesloten aanbod niet.
-            ->filter(fn (Product $product) => $product->status->acceptsSignups())
+            ->filter(fn (Product $product) => $product->status->acceptsSignups());
+
+        // De vrije momenten van alle privétrainingen in één query, niet per
+        // aanbod een eigen. Per aanbod de eerste twintig, net als eerst.
+        $privetrainingen = $producten
+            ->filter(fn (Product $product) => $product->type === ProductType::Privetraining)
+            ->modelKeys();
+
+        $momenten = $privetrainingen === [] ? collect() : Slot::query()
+            ->bookable()
+            ->whereIn('product_id', $privetrainingen)
+            ->with('trainer')
+            ->get()
+            ->groupBy('product_id')
+            ->map(fn ($reeks) => $reeks->take(20)->values());
+
+        $producten = $producten
             ->map(fn (Product $product) => [
                 'id' => $product->id,
                 'name' => $product->name,
@@ -85,7 +101,7 @@ class ShopController extends Controller
                 // Bij een privétraining kies je een moment in plaats van je in
                 // te schrijven op een vaste reeks.
                 'slots' => $product->type === ProductType::Privetraining
-                    ? $product->slots()->bookable()->with('trainer')->limit(20)->get()->map(fn (Slot $slot) => [
+                    ? ($momenten->get($product->id) ?? collect())->map(fn (Slot $slot) => [
                         'id' => $slot->id,
                         'day' => $slot->starts_at->translatedFormat('l j F'),
                         'time' => $slot->starts_at->format('H:i').' – '.$slot->ends_at->format('H:i'),

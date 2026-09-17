@@ -6,16 +6,11 @@ import type { DefineComponent } from 'vue';
 import { createApp, h } from 'vue';
 import { ZiggyVue } from '../../vendor/tightenco/ziggy';
 
-// Extend ImportMeta interface for Vite...
-declare module 'vite/client' {
+// Eigen omgevingsvariabelen; import.meta.env en glob komen uit vite/client.
+declare global {
     interface ImportMetaEnv {
         readonly VITE_APP_NAME: string;
         [key: string]: string | boolean | undefined;
-    }
-
-    interface ImportMeta {
-        readonly env: ImportMetaEnv;
-        readonly glob: <T>(pattern: string) => Record<string, () => Promise<T>>;
     }
 }
 

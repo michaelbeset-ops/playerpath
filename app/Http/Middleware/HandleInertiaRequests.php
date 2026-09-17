@@ -64,7 +64,7 @@ class HandleInertiaRequests extends Middleware
                 'nav' => [],
                 'quickAdd' => [],
                 'unreadNotifications' => 0,
-                'flash' => ['status' => null, 'reportResult' => null],
+                'flash' => ['status' => null, 'error' => null, 'reportResult' => null],
             ]);
         }
 
@@ -100,6 +100,9 @@ class HandleInertiaRequests extends Middleware
             'onboarding' => fn () => $this->onboarding($request),
             'flash' => [
                 'status' => fn () => $request->session()->get('status'),
+                // Iets wat níét lukte. Een eigen soort, zodat een weigering niet
+                // als groen vinkje verschijnt; zie FlashToast.
+                'error' => fn () => $request->session()->get('error'),
                 // Wat een zojuist opgeslagen rapport veranderde; zie ReportOutcome.
                 'reportResult' => fn () => $request->session()->get('reportResult'),
                 // Net binnengekomen via de kind-link: dan vraagt de app meteen
