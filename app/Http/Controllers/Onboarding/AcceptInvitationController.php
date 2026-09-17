@@ -97,6 +97,14 @@ class AcceptInvitationController extends Controller
                 }
             }
 
+            // Een speler krijgt zijn eigen profiel. Had hij alleen de kind-link,
+            // dan logt hij voortaan met dit account in; de ouders blijven gekoppeld.
+            if ($uitnodiging->role === Role::Speler->value) {
+                foreach ($uitnodiging->players() as $speler) {
+                    $speler->forceFill(['user_id' => $gebruiker->id])->save();
+                }
+            }
+
             $uitnodiging->forceFill([
                 'accepted_at' => now(),
                 'user_id' => $gebruiker->id,

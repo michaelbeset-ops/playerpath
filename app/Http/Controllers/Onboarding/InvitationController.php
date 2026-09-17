@@ -49,7 +49,7 @@ class InvitationController extends Controller
         $this->authorize('create', User::class);
 
         $data = $request->validate([
-            'role' => ['required', Rule::in([Role::Trainer->value, Role::Ouder->value])],
+            'role' => ['required', Rule::in([Role::Trainer->value, Role::Ouder->value, Role::Speler->value])],
             // Eén per regel: "Naam <mail@voorbeeld.nl>" of "Naam, mail@voorbeeld.nl".
             'recipients' => ['required', 'string', 'max:20000'],
             'player_ids' => ['nullable', 'array'],
@@ -65,6 +65,23 @@ class InvitationController extends Controller
 
         if ($regels === []) {
             return back()->withErrors(['recipients' => 'Geen geldig e-mailadres gevonden. Zet één persoon per regel, bijvoorbeeld: Jansen <jansen@voorbeeld.nl>']);
+        }
+
+        // Een speler nodig je één voor één uit, met zijn eigen adres, en hij
+        // hoort bij precies één spelersprofiel. Naast een ouder mag: dan zien ze
+        // allebei de kaart.
+        if ($data['role'] === Role::Speler->value) {
+            $spelers = $data['player_ids'] ?? [];
+
+            if (count($spelers) !== 1 || count($regels) !== 1) {
+                return back()->withErrors(['recipients' => 'Nodig één speler tegelijk uit, met zijn eigen e-mailadres.']);
+            }
+
+            $speler = \App\Models\Player::query()->with('user')->findOrFail($spelers[0]);
+
+            if ($speler->user !== null && ! $speler->user->isKindAccount()) {
+                return back()->withErrors(['recipients' => $speler->first_name.' heeft al een eigen account.']);
+            }
         }
 
         $school = $request->user()->school;

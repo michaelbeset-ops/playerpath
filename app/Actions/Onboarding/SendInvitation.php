@@ -30,7 +30,7 @@ use Illuminate\Support\Facades\Notification;
 class SendInvitation
 {
     /**
-     * @param  list<int>  $playerIds  de kinderen die bij activatie gekoppeld worden (alleen voor een ouder)
+     * @param  list<int>  $playerIds  bij een ouder: de kinderen die bij activatie gekoppeld worden; bij een speler: zijn eigen profiel
      * @param  bool  $send  false als de aanroeper de mails pas na zijn eigen transactie verstuurt
      */
     public function handle(
@@ -62,7 +62,7 @@ class SendInvitation
                 'email' => $email,
                 'role' => $role,
                 'token' => Invitation::nieuwToken(),
-                'player_ids' => $role === Role::Ouder->value ? array_values($playerIds) : null,
+                'player_ids' => in_array($role, [Role::Ouder->value, Role::Speler->value], true) ? array_values($playerIds) : null,
                 'relationship' => $role === Role::Ouder->value ? $relationship : null,
                 'invited_by' => $inviter?->id,
                 'expires_at' => now()->addDays($dagen),

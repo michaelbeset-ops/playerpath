@@ -33,10 +33,10 @@ export interface Uitnodiging {
 
 const props = withDefaults(
     defineProps<{
-        role: 'trainer' | 'ouder';
+        role: 'trainer' | 'ouder' | 'speler';
         invitations: Uitnodiging[];
         validDays: number;
-        /** Bij een ouder: aan welk kind hij gekoppeld wordt. */
+        /** Bij een ouder: aan welk kind hij gekoppeld wordt. Bij een speler: zijn eigen profiel. */
         playerIds?: number[];
         title?: string;
     }>(),
@@ -104,6 +104,7 @@ const trekIn = (id: number) => {
 };
 
 const isOuder = computed(() => props.role === 'ouder');
+const isSpeler = computed(() => props.role === 'speler');
 </script>
 
 <template>
@@ -112,6 +113,9 @@ const isOuder = computed(() => props.role === 'ouder');
         <p class="mt-1 text-sm text-muted-foreground">
             <template v-if="isOuder">
                 Ze krijgen een e-mail met jouw naam en logo erboven, en zien na activatie meteen de kaart van hun kind.
+            </template>
+            <template v-else-if="isSpeler">
+                De speler krijgt een e-mail met jouw naam en logo erboven, kiest zelf een wachtwoord en ziet daarna zijn eigen kaart.
             </template>
             <template v-else>
                 Ze krijgen een e-mail met jouw naam en logo erboven, en kiezen zelf een wachtwoord. Jij hoeft er geen te bedenken.
@@ -157,6 +161,7 @@ const isOuder = computed(() => props.role === 'ouder');
 
             <!-- Meer: een hele lijst tegelijk, en bij een ouder de relatie. -->
             <button
+                v-if="!isSpeler"
                 type="button"
                 class="mt-2 inline-flex min-h-11 items-center gap-1 text-sm font-medium text-muted-foreground transition hover:text-foreground"
                 :aria-expanded="meerOpties"

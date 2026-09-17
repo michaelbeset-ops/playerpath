@@ -71,7 +71,7 @@ class PlayerController extends Controller
         // dan hoeft er ook geen leeg vak op dit scherm te staan.
         $betalingen = $this->features->enabled(Feature::Betalingen);
 
-        $player->load(['groups', 'guardians']);
+        $player->load(['groups', 'guardians', 'user']);
 
         return Inertia::render('players/Show', [
             'player' => [
@@ -104,6 +104,24 @@ class PlayerController extends Controller
             // gelukt is, en stuur je er nog een.
             'invitations' => Invitation::pending()
                 ->where('role', Role::Ouder->value)
+                ->get()
+                ->filter(fn (Invitation $rij) => in_array($player->id, $rij->player_ids ?? [], true))
+                ->map(fn (Invitation $rij) => [
+                    'id' => $rij->id,
+                    'name' => $rij->name,
+                    'email' => $rij->email,
+                    'status' => $rij->status(),
+                    'expires_on' => $rij->expires_at->format('d-m-Y'),
+                    'sent_count' => $rij->sent_count,
+                ])
+                ->values(),
+            // De speler zelf: een eigen account, of alleen de kind-link, of nog niets.
+            'account' => $player->user === null ? null : [
+                'email' => $player->user->isKindAccount() ? null : $player->user->email,
+                'kind' => $player->user->isKindAccount(),
+            ],
+            'playerInvitations' => Invitation::pending()
+                ->where('role', Role::Speler->value)
                 ->get()
                 ->filter(fn (Invitation $rij) => in_array($player->id, $rij->player_ids ?? [], true))
                 ->map(fn (Invitation $rij) => [

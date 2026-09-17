@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { Award, ClipboardList, FileDown, IdCard, Pencil, Plus, Target, Trash2, UserPlus, X } from 'lucide-vue-next';
+import { Award, Check, ClipboardList, FileDown, IdCard, Pencil, Plus, Target, Trash2, UserPlus, X } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 
 interface Categorie {
@@ -73,6 +73,9 @@ const props = defineProps<{
     }[];
     goalCategories: { value: string; label: string }[];
     can: { manage: boolean; delete: boolean; report: boolean; goals: boolean; dataExport: boolean; badges: boolean };
+    /** De speler zelf: eigen account, alleen de kind-link, of nog niets. */
+    account: { email: string | null; kind: boolean } | null;
+    playerInvitations: Uitnodiging[];
 }>();
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -454,7 +457,7 @@ const streefScore = computed<number | null>({
 
             <!-- Ouders -->
             <div class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
-                <p class="font-medium">Ouders</p>
+                <p class="font-medium">Ouder koppelen</p>
                 <p class="mt-1 text-xs text-muted-foreground">Gekoppelde ouders zien de spelerskaart en de voortgang van hun kind.</p>
 
                 <div v-if="guardians.length" class="mt-4 space-y-2">
@@ -530,6 +533,34 @@ const streefScore = computed<number | null>({
                         :title="'Ouder van ' + player.first_name + ' uitnodigen'"
                     />
                 </div>
+            </div>
+
+            <!-- De speler zelf: een eigen inlog, los van of naast een ouder -->
+            <div class="mt-4 rounded-xl border border-border bg-card p-5 shadow-sm">
+                <p class="font-medium">Eigen inlog voor {{ player.first_name }}</p>
+                <p class="mt-1 text-xs text-muted-foreground">
+                    Voor een speler met een eigen e-mailadres. Kan naast een ouder: dan zien ze allebei de kaart en de voortgang.
+                </p>
+
+                <p v-if="account && !account.kind" class="mt-3 flex items-center gap-2 rounded-lg border border-border p-3 text-sm">
+                    <Check class="size-4 shrink-0 text-primary" />
+                    <span class="min-w-0 truncate">Heeft een eigen account: {{ account.email }}</span>
+                </p>
+                <p v-else-if="account?.kind" class="mt-3 text-sm text-muted-foreground">
+                    {{ player.first_name }} kijkt nu via de kind-link, zonder wachtwoord. Nodig je {{ player.first_name }} uit met een eigen e-mailadres, dan
+                    logt hij voortaan daarmee in.
+                </p>
+                <p v-else-if="!can.manage" class="mt-3 text-sm text-muted-foreground">{{ player.first_name }} heeft nog geen eigen inlog.</p>
+
+                <InviteForm
+                    v-if="can.manage && !(account && !account.kind)"
+                    class="mt-4"
+                    role="speler"
+                    :invitations="playerInvitations"
+                    :valid-days="invitationDays"
+                    :player-ids="[player.id]"
+                    :title="player.first_name + ' zelf uitnodigen'"
+                />
             </div>
 
             <!-- Laatste rapporten (niet bij de inzetkaart) -->

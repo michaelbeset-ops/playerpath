@@ -18,6 +18,10 @@
 {{ $school->name }} gebruikt PlayerPath om de ontwikkeling van spelers bij te houden. In je eigen account zie je de spelerskaart en de voortgang van {{ $wie }}, wanneer de trainingen zijn en wat er nog openstaat.
 
 Klik hieronder om je account te activeren en een wachtwoord te kiezen.
+@elseif (($rol ?? null) === 'speler')
+{{ $school->name }} gebruikt PlayerPath om de ontwikkeling van spelers bij te houden. In je eigen account zie je je spelerskaart, je voortgang en wanneer je volgende training is.
+
+Klik hieronder om je account te activeren en een wachtwoord te kiezen.
 @elseif (($rol ?? null) === 'eigenaar')
 Je account voor {{ $school->name }} op PlayerPath staat klaar. Daar plan je trainingen, beoordelen je trainers de spelers en zien ouders de spelerskaart van hun kind groeien.
 
