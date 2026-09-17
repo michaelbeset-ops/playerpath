@@ -2,7 +2,7 @@
 import InstallSteps from '@/components/InstallSteps.vue';
 import { useInstall } from '@/composables/useInstall';
 import { usePage } from '@inertiajs/vue3';
-import { ArrowDown, Download, X } from 'lucide-vue-next';
+import { ArrowDown, Download, Share, SquarePlus, X } from 'lucide-vue-next';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 /**
@@ -42,6 +42,14 @@ const rijp = ref(kind.value);
 const uitgesteld = ref(false);
 
 const zichtbaar = computed(() => !isApp.value && kan.value && rijp.value && (kind.value || !uitgesteld.value));
+
+// iPhone en iPad: een venster zoals een echte app het vraagt, met het
+// app-kaartje en de twee stappen met de iconen die je in Safari ziet.
+const alsVenster = computed(() => ['iphone', 'ipad', 'ios-andere-browser'].includes(weg.value));
+const appNaam = computed(() => (page.props.school as { name?: string } | null)?.name ?? 'PlayerPath');
+const waarDeelknop = computed(() =>
+    weg.value === 'ipad' ? 'bovenin' : weg.value === 'ios-andere-browser' ? 'rechtsboven in de adresbalk' : 'onderin',
+);
 
 const titel = computed(() => (kind.value ? 'Zet je kaart op je beginscherm' : 'Zet PlayerPath op je beginscherm'));
 const uitleg = computed(() =>
@@ -103,8 +111,51 @@ onUnmounted(() => {
 </script>
 
 <template>
+    <!-- iPhone en iPad: het venster met het app-kaartje -->
     <div
-        v-if="zichtbaar"
+        v-if="zichtbaar && alsVenster"
+        class="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-3"
+        :class="weg === 'iphone' ? 'pb-14' : ''"
+        @click.self="stelUit(7)"
+    >
+        <div class="relative w-full max-w-md rounded-2xl bg-card p-4 pb-5 text-foreground shadow-2xl" role="dialog" :aria-label="titel">
+            <button
+                type="button"
+                class="absolute right-2 top-2 flex size-9 items-center justify-center rounded-lg text-muted-foreground hover:text-foreground"
+                aria-label="Niet nu"
+                @click="stelUit(7)"
+            >
+                <X class="size-4" />
+            </button>
+
+            <!-- Het app-kaartje: zo staat hij straks op je beginscherm -->
+            <div class="flex items-center gap-4 rounded-2xl bg-secondary p-4">
+                <img src="/icons/icon-192.png" alt="" class="size-16 shrink-0 rounded-2xl shadow-sm" />
+                <div class="min-w-0">
+                    <p class="truncate text-lg font-bold leading-tight">{{ appNaam }}</p>
+                    <p class="text-sm leading-snug text-muted-foreground">
+                        {{ kind ? 'Je spelerskaart, altijd bij de hand' : 'Trainingen, spelerskaart en voortgang' }}
+                    </p>
+                </div>
+            </div>
+
+            <p class="mx-auto mt-5 max-w-xs text-center text-base leading-relaxed">
+                <template v-if="weg === 'ios-andere-browser'">Open deze pagina eerst in Safari. </template>
+                Installeer deze app door {{ waarDeelknop }} op
+                <Share class="mx-0.5 inline size-6 -translate-y-0.5 text-primary" aria-label="de deelknop" />
+                te tikken. Kies daarna
+                <span class="whitespace-nowrap"
+                    >'Zet op beginscherm' <SquarePlus class="ml-0.5 inline size-6 -translate-y-0.5 text-muted-foreground" aria-hidden="true" /></span
+                >.
+            </p>
+
+            <!-- Een punt naar de deelknop in de balk van Safari eronder -->
+            <span v-if="weg === 'iphone'" class="absolute -bottom-2 left-1/2 size-4 -translate-x-1/2 rotate-45 bg-card" aria-hidden="true"></span>
+        </div>
+    </div>
+
+    <div
+        v-else-if="zichtbaar"
         class="fixed inset-x-3 bottom-[calc(var(--pp-tabbar)+0.75rem)] z-50 rounded-xl border bg-card p-3 shadow-lg sm:left-auto sm:w-96"
         :class="kind ? 'border-primary/50' : 'border-border'"
         role="dialog"
@@ -144,11 +195,7 @@ onUnmounted(() => {
     </div>
 
     <!-- iPhone in Safari: de deelknop zit in de balk van Safari, onder de pagina. Een pijl wijst hem aan. -->
-    <div
-        v-if="zichtbaar && weg === 'iphone'"
-        class="pointer-events-none fixed inset-x-0 bottom-1 z-50 flex justify-center"
-        aria-hidden="true"
-    >
+    <div v-if="zichtbaar && weg === 'iphone'" class="pointer-events-none fixed inset-x-0 bottom-1 z-50 flex justify-center" aria-hidden="true">
         <span class="flex size-9 animate-bounce items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
             <ArrowDown class="size-5" />
         </span>
