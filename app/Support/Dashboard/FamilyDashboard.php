@@ -231,7 +231,7 @@ class FamilyDashboard
         return Product::query()
             ->where('is_active', true)
             ->purchasable()
-            ->withCount(['participations' => fn ($q) => $q->confirmed()])
+            ->withSpotsTaken()
             ->orderByRaw('starts_on is null')
             ->orderBy('starts_on')
             ->get()

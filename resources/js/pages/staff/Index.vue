@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import Avatar from '@/components/Avatar.vue';
-import FlashMessage from '@/components/FlashMessage.vue';
 import InputError from '@/components/InputError.vue';
 import InviteForm, { type Uitnodiging } from '@/components/onboarding/InviteForm.vue';
 import { Button } from '@/components/ui/button';
@@ -48,7 +47,6 @@ const verwijder = (id: number, naam: string) => {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-4xl p-4" data-tour="business">
-            <FlashMessage />
 
             <h1 class="text-2xl font-semibold tracking-tight">Personeel</h1>
             <p class="mt-1 text-sm text-muted-foreground">Wie er training geeft bij jouw school.</p>

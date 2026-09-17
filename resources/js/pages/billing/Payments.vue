@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import FilterSheet from '@/components/FilterSheet.vue';
-import FlashMessage from '@/components/FlashMessage.vue';
 import GatewayNotice from '@/components/GatewayNotice.vue';
 import LoadMore from '@/components/LoadMore.vue';
 import StatCard from '@/components/StatCard.vue';
@@ -160,7 +159,6 @@ const zetMethode = (betaling: Betaling, method: string) =>
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-5xl p-4" data-tour="payments">
-            <FlashMessage />
             <GatewayNotice :gateway="gateway" />
 
             <h1 class="text-2xl font-semibold tracking-tight">Betalingen</h1>

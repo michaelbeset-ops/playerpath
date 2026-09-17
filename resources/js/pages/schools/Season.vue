@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import FlashMessage from '@/components/FlashMessage.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -113,7 +112,6 @@ const voortgang = computed(() =>
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-2xl p-4">
-            <FlashMessage />
 
             <h1 class="text-2xl font-semibold tracking-tight">Seizoen</h1>
             <p class="mt-1 text-sm text-muted-foreground">

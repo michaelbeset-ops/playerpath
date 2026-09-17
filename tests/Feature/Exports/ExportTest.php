@@ -274,6 +274,32 @@ class ExportTest extends TestCase
         $this->actingAs($this->eigenaar)->get('/exports/financial?format=xlsx')->assertOk();
     }
 
+    public function test_ontvangen_telt_op_de_betaaldatum_en_openstaand_op_de_vervaldatum(): void
+    {
+        $speler = Player::factory()->for($this->school)->create();
+
+        // Een rekening van augustus die in september betaald wordt: omzet van september.
+        Payment::factory()->for($this->school)->paid()->create([
+            'player_id' => $speler->id, 'amount_cents' => 4000, 'due_on' => '2026-08-20', 'paid_at' => '2026-09-03 14:00:00',
+        ]);
+        // Vervalt in september, betaald in oktober: niet in september ontvangen.
+        Payment::factory()->for($this->school)->paid()->create([
+            'player_id' => $speler->id, 'amount_cents' => 1500, 'due_on' => '2026-09-25', 'paid_at' => '2026-10-02 09:00:00',
+        ]);
+        Payment::factory()->for($this->school)->create([
+            'player_id' => $speler->id, 'amount_cents' => 1250, 'due_on' => '2026-09-30',
+        ]);
+
+        $overzicht = iterator_to_array(app(FinancialExport::class)->sheets(['from' => '2026-09-01', 'to' => '2026-09-30'])[0]->rows);
+
+        $this->assertCount(2, $overzicht);
+        $this->assertSame('September 2026', $overzicht[0][0]);
+        $this->assertSame(40.0, $overzicht[0][1]);
+        $this->assertSame(12.5, $overzicht[0][2]);
+        $this->assertSame(1, $overzicht[0][5]);
+        $this->assertSame(['Totaal', 40.0, 12.5], array_slice($overzicht[1], 0, 3));
+    }
+
     public function test_het_register_is_uitbreidbaar(): void
     {
         $registry = app(ExportRegistry::class);

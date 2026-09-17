@@ -8,6 +8,7 @@ use App\Models\Training;
 use App\Support\Money\Money;
 use App\Support\PlayerCard\BadgeSettings;
 use App\Support\Tenancy\Tenancy;
+use App\Support\Trainers\TrainerScope;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -23,6 +24,24 @@ class TrainingRequest extends FormRequest
             : $this->user()->can('create', Training::class);
     }
 
+    /**
+     * Wie er bij de training staan. Dat kiest de eigenaar; een trainer zet
+     * zichzelf erbij als hij een training aanmaakt en laat een bestaande lijst
+     * staan. Die lijst bepaalt welke spelers van hem zijn.
+     *
+     * @return list<int>
+     */
+    public function trainerIds(?Training $training = null): array
+    {
+        if ($this->user()->isEigenaar()) {
+            return array_map('intval', $this->validated('trainers') ?? []);
+        }
+
+        return $training
+            ? $training->trainers()->pluck('users.id')->all()
+            : [$this->user()->id];
+    }
+
     public function rules(): array
     {
         return [
@@ -35,6 +54,15 @@ class TrainingRequest extends FormRequest
                 'nullable',
                 'integer',
                 Rule::exists('groups', 'id')->where('school_id', app(Tenancy::class)->id()),
+                // Een gekoppelde trainer plant alleen in voor zijn eigen groepen.
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    $scope = app(TrainerScope::class);
+                    $groepen = $scope->applies($this->user()) ? $scope->groupIds($this->user()) : null;
+
+                    if ($value !== null && $groepen !== null && ! in_array((int) $value, $groepen, true)) {
+                        $fail('Je kunt alleen trainingen inplannen voor je eigen groepen.');
+                    }
+                },
             ],
             'date' => ['required', 'date'],
             'starts_at' => ['required', 'date_format:H:i'],

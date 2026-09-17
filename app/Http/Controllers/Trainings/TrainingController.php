@@ -152,7 +152,7 @@ class TrainingController extends Controller
                     'ends_at' => $moment['ends_at'],
                 ]);
 
-                $training->trainers()->sync($request->validated('trainers') ?? []);
+                $training->trainers()->sync($request->trainerIds());
 
                 return $training;
             });
@@ -284,7 +284,7 @@ class TrainingController extends Controller
     public function update(TrainingRequest $request, Training $training): RedirectResponse
     {
         $training->update($request->trainingData());
-        $training->trainers()->sync($request->validated('trainers') ?? []);
+        $training->trainers()->sync($request->trainerIds($training));
 
         return redirect()
             ->route('trainings.show', $training)

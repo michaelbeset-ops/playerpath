@@ -110,33 +110,66 @@ class FinancialExport implements WorkbookExport
             ->get();
     }
 
-    /** Per maand, met een totaalregel onderaan. */
+    /**
+     * Ontvangen geld, gefilterd en per maand op de dag dat het binnenkwam
+     * (`paid_at`), zoals het tabblad Ontvangen in PaymentQuery. Een rekening
+     * van februari die in maart betaald wordt hoort bij de omzet van maart.
+     *
+     * @return Collection<int, Payment>
+     */
+    protected function ontvangen(array $filters)
+    {
+        return Payment::query()
+            ->whereIn('status', array_map(
+                fn (PaymentStatus $s) => $s->value,
+                array_filter(PaymentStatus::cases(), fn (PaymentStatus $s) => $s->countsAsRevenue()),
+            ))
+            ->whereNotNull('paid_at')
+            ->when($filters['from'] ?? null, fn ($q, $van) => $q->whereDate('paid_at', '>=', $van))
+            ->when($filters['to'] ?? null, fn ($q, $tot) => $q->whereDate('paid_at', '<=', $tot))
+            ->get();
+    }
+
+    /**
+     * Per maand, met een totaalregel onderaan.
+     *
+     * Ontvangen en "aantal betaald" gaan op de betaaldatum; openstaand,
+     * mislukt en het aantal betalingen op de vervaldatum. Dat zijn dezelfde
+     * datumkolommen als in het betalingenoverzicht (PaymentQuery::datumkolom).
+     */
     protected function overzicht(array $filters): iterable
     {
         $betalingen = $this->betalingen($filters);
+        $ontvangen = $this->ontvangen($filters);
 
-        $perMaand = $betalingen->groupBy(fn (Payment $b) => $b->due_on->format('Y-m'))->sortKeys();
+        $opVervaldag = $betalingen->groupBy(fn (Payment $b) => $b->due_on->format('Y-m'));
+        $opBetaaldag = $ontvangen->groupBy(fn (Payment $b) => $b->paid_at->format('Y-m'));
+
+        $maanden = $opVervaldag->keys()->merge($opBetaaldag->keys())->unique()->sort()->values();
 
         $totaalOntvangen = 0;
         $totaalOpen = 0;
         $totaalMis = 0;
 
-        foreach ($perMaand as $maand => $items) {
-            $ontvangen = (int) $items->filter(fn (Payment $b) => $b->status->countsAsRevenue())->sum('amount_cents');
+        foreach ($maanden as $maand) {
+            $items = $opVervaldag->get($maand, collect());
+            $binnen = $opBetaaldag->get($maand, collect());
+
+            $bedragBinnen = (int) $binnen->sum('amount_cents');
             $open = (int) $items->where('status', PaymentStatus::Open)->sum('amount_cents');
             $mis = (int) $items->filter(fn (Payment $b) => $b->status->needsAttention())->sum('amount_cents');
 
-            $totaalOntvangen += $ontvangen;
+            $totaalOntvangen += $bedragBinnen;
             $totaalOpen += $open;
             $totaalMis += $mis;
 
             yield [
                 ucfirst(CarbonImmutable::parse($maand.'-01')->translatedFormat('F Y')),
-                self::euro($ontvangen),
+                self::euro($bedragBinnen),
                 self::euro($open),
                 self::euro($mis),
                 $items->count(),
-                $items->where('status', PaymentStatus::Paid)->count(),
+                $binnen->where('status', PaymentStatus::Paid)->count(),
             ];
         }
 
@@ -146,7 +179,7 @@ class FinancialExport implements WorkbookExport
             self::euro($totaalOpen),
             self::euro($totaalMis),
             $betalingen->count(),
-            $betalingen->where('status', PaymentStatus::Paid)->count(),
+            $ontvangen->where('status', PaymentStatus::Paid)->count(),
         ];
     }
 

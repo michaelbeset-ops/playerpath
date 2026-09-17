@@ -198,7 +198,7 @@ const veldKlassen = 'h-11 w-full rounded-lg border border-input bg-background px
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-2xl p-4">
-            <Link href="/aanbod" class="text-sm text-muted-foreground underline underline-offset-4">Terug naar het aanbod</Link>
+            <Link href="/aanbod" class="inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4">Terug naar het aanbod</Link>
 
             <h1 class="mt-2 text-2xl font-semibold tracking-tight">
                 {{ bewerken ? product!.name : 'Nieuw aanbod' }}
@@ -518,7 +518,7 @@ const veldKlassen = 'h-11 w-full rounded-lg border border-input bg-background px
                     <div class="space-y-3 border-t border-border pt-4">
                         <div class="flex flex-wrap items-baseline justify-between gap-2">
                             <p class="text-sm font-medium">Andere manieren om te betalen <span class="text-muted-foreground">(optioneel)</span></p>
-                            <button type="button" class="text-sm font-medium text-primary underline underline-offset-4" @click="voegBetaalvormToe">
+                            <button type="button" class="inline-flex min-h-11 items-center text-sm font-medium text-primary underline underline-offset-4" @click="voegBetaalvormToe">
                                 Betaalvorm toevoegen
                             </button>
                         </div>
@@ -659,7 +659,7 @@ const veldKlassen = 'h-11 w-full rounded-lg border border-input bg-background px
                         {{ bewerken ? 'Opslaan' : 'Aanbod aanmaken' }}
                     </Button>
 
-                    <Link href="/aanbod" class="text-sm text-muted-foreground underline underline-offset-4">Annuleren</Link>
+                    <Link href="/aanbod" class="inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4">Annuleren</Link>
 
                     <button
                         v-if="bewerken"

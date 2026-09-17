@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import FlashMessage from '@/components/FlashMessage.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, router, usePage } from '@inertiajs/vue3';
@@ -68,7 +67,6 @@ const boek = (product: Product) => {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-3xl p-4">
-            <FlashMessage />
 
             <h1 class="text-2xl font-semibold tracking-tight">Shop</h1>
             <p class="mt-1 text-sm text-muted-foreground">Het aanbod van de school. Tik op iets om je kind in te schrijven.</p>

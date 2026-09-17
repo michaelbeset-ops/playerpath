@@ -89,10 +89,14 @@ class TrainingPolicy
         return $user->isEigenaar() || $user->isTrainer();
     }
 
+    /**
+     * Bewerken mag de eigenaar altijd; een trainer alleen bij zijn eigen werk.
+     * Anders koppelt hij zich via een andere training aan een groep die niet
+     * van hem is, en ziet hij daarna die spelers (zie TrainerScope).
+     */
     public function update(User $user, Training $training): bool
     {
-        return $user->belongsToSameSchool($training)
-            && ($user->isEigenaar() || $user->isTrainer());
+        return $this->recordAttendance($user, $training);
     }
 
     public function delete(User $user, Training $training): bool

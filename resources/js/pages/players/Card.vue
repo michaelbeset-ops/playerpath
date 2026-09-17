@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import CardGlow from '@/components/CardGlow.vue';
 import CardPersonalise from '@/components/CardPersonalise.vue';
-import FlashMessage from '@/components/FlashMessage.vue';
 import CardShareActions from '@/components/CardShareActions.vue';
 import GoalList, { type Doel } from '@/components/GoalList.vue';
 import LevelProgress from '@/components/LevelProgress.vue';
@@ -184,7 +183,6 @@ const sticker = computed(() => (viering.value?.level.up ? 'NIEUW LEVEL' : groeiS
         <ReportCelebration v-if="viering" :result="viering" :level-up-visible="levelUpZichtbaar" @close="viering = null" />
 
         <div class="mx-auto w-full max-w-3xl p-4">
-            <FlashMessage />
 
             <!--
                 De kaart is het pronkstuk en bewust donker: dit is de

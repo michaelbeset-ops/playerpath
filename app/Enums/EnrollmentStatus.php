@@ -56,15 +56,15 @@ enum EnrollmentStatus: string
             'concept' => ['waitlist', 'awaiting_approval', 'awaiting_payment', 'confirmed', 'cancelled', 'expired'],
             'waitlist' => ['awaiting_approval', 'awaiting_payment', 'confirmed', 'cancelled', 'declined', 'expired'],
             'awaiting_approval' => ['awaiting_payment', 'confirmed', 'waitlist', 'declined', 'cancelled', 'expired'],
-            'awaiting_payment' => ['confirmed', 'payment_failed', 'cancelled', 'expired'],
-            'payment_failed' => ['awaiting_payment', 'confirmed', 'cancelled', 'expired'],
+            'awaiting_payment' => ['confirmed', 'payment_failed', 'waitlist', 'cancelled', 'expired'],
+            'payment_failed' => ['awaiting_payment', 'confirmed', 'waitlist', 'cancelled', 'expired'],
             'confirmed' => ['active', 'cancellation_planned', 'cancelled', 'ended'],
             'active' => ['cancellation_planned', 'ended', 'cancelled'],
             'cancellation_planned' => ['ended', 'active'],
             'ended' => [],
             'cancelled' => [],
             'declined' => [],
-            'expired' => ['awaiting_payment'],
+            'expired' => ['awaiting_payment', 'waitlist'],
         ];
     }
 
@@ -72,6 +72,28 @@ enum EnrollmentStatus: string
     public function isOpen(): bool
     {
         return in_array($this, [self::Concept, self::Waitlist, self::AwaitingApproval, self::AwaitingPayment, self::PaymentFailed], strict: true);
+    }
+
+    /**
+     * Houdt deze inschrijving een plek vast?
+     *
+     * Wie wacht op goedkeuring of betaling heeft nog geen bevestigde deelname,
+     * maar telt wel mee als bezet: anders ziet de volgende ouder een plek die
+     * al beloofd is. Een concept telt ook, want bij het indienen staan de
+     * kinderen van één order even op concept voordat ze verder gaan.
+     */
+    public function holdsSpot(): bool
+    {
+        return in_array($this, [self::Concept, self::AwaitingApproval, self::AwaitingPayment, self::PaymentFailed], strict: true);
+    }
+
+    /** @return list<string> */
+    public static function holdingSpot(): array
+    {
+        return array_values(array_map(
+            fn (self $s) => $s->value,
+            array_filter(self::cases(), fn (self $s) => $s->holdsSpot()),
+        ));
     }
 
     /** Doet het kind (straks) mee? */

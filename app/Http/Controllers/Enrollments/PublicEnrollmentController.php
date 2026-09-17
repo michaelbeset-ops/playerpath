@@ -63,7 +63,7 @@ class PublicEnrollmentController extends Controller
             $aanbod = Product::query()
                 ->where('is_active', true)
                 ->with('paymentOptions')
-                ->withCount(['participations' => fn ($q) => $q->confirmed()])
+                ->withSpotsTaken()
                 ->orderByRaw("type = 'proefles' desc")
                 ->orderByRaw('starts_on is null')
                 ->orderBy('starts_on')
@@ -112,7 +112,7 @@ class PublicEnrollmentController extends Controller
             $instellingen = EnrollmentSettings::for($school);
             $validated = $request->validate($this->kindRegels($school, alleenKeuze: true), self::kindMeldingen(), self::kindAttributen());
 
-            $regels = $this->regels($validated['children'], $ouder);
+            $regels = $this->regels($validated['children'], $ouder, $instellingen->hasWaitlist());
 
             return response()->json($this->orders->build($instellingen, $regels, $ouder, $request->input('code')));
         });
@@ -165,7 +165,7 @@ class PublicEnrollmentController extends Controller
             }
 
             // Leeftijd, positie en of het aanbod nog openstaat: hier, niet in het formulier.
-            $this->regels($validated['children'], $ouder);
+            $this->regels($validated['children'], $ouder, $instellingen->hasWaitlist());
 
             try {
                 $uitkomst = $this->indienen->handle(
@@ -309,9 +309,10 @@ class PublicEnrollmentController extends Controller
      * @param  list<array<string, mixed>>  $kinderen
      * @return list<array{product: Product, option: PaymentOption, child_name: string, player_id: int|null}>
      */
-    protected function regels(array $kinderen, ?User $ouder): array
+    protected function regels(array $kinderen, ?User $ouder, bool $wachtlijst = true): array
     {
         $regels = [];
+        $gevraagd = [];
 
         foreach ($kinderen as $i => $kind) {
             $aanbod = Product::with('paymentOptions')->findOrFail($kind['product_id']);
@@ -323,6 +324,13 @@ class PublicEnrollmentController extends Controller
 
             if (! $aanbod->status->acceptsSignups()) {
                 throw ValidationException::withMessages(["children.{$i}.product_id" => 'Voor dit aanbod kun je je op dit moment niet meer aanmelden.']);
+            }
+
+            // Zonder wachtlijst moet er voor elk kind in deze aanmelding een plek zijn.
+            $gevraagd[$aanbod->id] = ($gevraagd[$aanbod->id] ?? 0) + 1;
+
+            if (! $wachtlijst && $aanbod->capacity !== null && $aanbod->spotsLeft() < $gevraagd[$aanbod->id]) {
+                throw ValidationException::withMessages(["children.{$i}.product_id" => 'Dit aanbod zit vol. Kies een ander aanbod.']);
             }
 
             $bestaand = ! empty($kind['player_id']) && $ouder !== null ? $ouder->children()->find($kind['player_id']) : null;

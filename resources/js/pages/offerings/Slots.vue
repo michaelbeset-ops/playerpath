@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import FlashMessage from '@/components/FlashMessage.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -87,7 +86,6 @@ const geboekt = computed(() => props.slots.filter((s) => s.player_id).length);
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-3xl p-4">
-            <FlashMessage />
 
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div class="min-w-0">

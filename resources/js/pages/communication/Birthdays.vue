@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import FlashMessage from '@/components/FlashMessage.vue';
+import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
@@ -30,7 +30,6 @@ const opslaan = () => form.patch('/announcements/verjaardagen', { preserveScroll
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-2xl p-4">
-            <FlashMessage />
 
             <h1 class="text-2xl font-semibold tracking-tight">Verjaardagsmail</h1>
             <p class="mt-1 text-sm text-muted-foreground">
@@ -64,6 +63,7 @@ const opslaan = () => form.patch('/announcements/verjaardagen', { preserveScroll
                         placeholder="Van harte gefeliciteerd! Tot zaterdag op het veld."
                     ></textarea>
                     <p class="tabular mt-1 text-xs text-muted-foreground">{{ form.message.length }} / 500</p>
+                    <InputError :message="form.errors.message" />
                 </div>
 
                 <Button type="submit" :disabled="form.processing">Opslaan</Button>

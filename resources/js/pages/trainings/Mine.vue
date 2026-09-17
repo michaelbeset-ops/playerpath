@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import ReportPrompt, { type Herinnering } from '@/components/dashboard/ReportPrompt.vue';
-import FlashMessage from '@/components/FlashMessage.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
@@ -60,7 +59,6 @@ const dagen = computed(() => {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-3xl p-4">
-            <FlashMessage />
 
             <!-- Bovenaan, want dit is tijdgebonden: over vijf uur is het weg. -->
             <ReportPrompt v-if="reportPrompts.length" class="mb-5" :prompts="reportPrompts" />

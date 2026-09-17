@@ -322,7 +322,7 @@ const wissel = () => {
                     <Button type="submit" variant="destructive" :disabled="verwijderForm.processing || verwijderForm.confirm !== school.name">
                         Ja, verwijder alles
                     </Button>
-                    <button type="button" class="text-sm text-muted-foreground underline underline-offset-4" @click="toonVerwijderen = false">
+                    <button type="button" class="inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4" @click="toonVerwijderen = false">
                         Annuleren
                     </button>
                 </div>

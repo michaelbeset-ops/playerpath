@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import FlashMessage from '@/components/FlashMessage.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -99,7 +98,11 @@ const voegToe = () =>
         },
     });
 
-const verwijder = (id: number) => router.delete('/beschikbaarheid/uitzonderingen/' + id, { preserveScroll: true });
+const verwijder = (id: number) => {
+    if (confirm('Deze uitzondering verwijderen?')) {
+        router.delete('/beschikbaarheid/uitzonderingen/' + id, { preserveScroll: true });
+    }
+};
 </script>
 
 <template>
@@ -107,7 +110,6 @@ const verwijder = (id: number) => router.delete('/beschikbaarheid/uitzonderingen
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-3xl p-4 pb-28">
-            <FlashMessage />
 
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div class="min-w-0">

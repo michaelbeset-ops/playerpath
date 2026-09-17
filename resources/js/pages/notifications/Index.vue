@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import FlashMessage from '@/components/FlashMessage.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link } from '@inertiajs/vue3';
@@ -38,7 +37,6 @@ const nieuw = computed(() => props.notifications.filter((m) => !m.read).length);
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-2xl p-4">
-            <FlashMessage />
 
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>

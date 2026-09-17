@@ -168,10 +168,33 @@ class Product extends Model
         return $this->spotsTaken() >= $this->capacity;
     }
 
+    /**
+     * Bezet: de bevestigde deelnemers plus wie nog op goedkeuring of betaling
+     * wacht. Die laatste groep weglaten liet een aanbod van tien plekken
+     * vijftien aanmeldingen aannemen zolang er nog niemand betaald had.
+     */
     public function spotsTaken(): int
     {
-        return $this->participations_count
+        $bevestigd = $this->participations_count
             ?? $this->participations()->where('status', ParticipationStatus::Confirmed->value)->count();
+        $wachtend = $this->pending_enrollments_count
+            ?? $this->enrollments()->holdingSpot()->count();
+
+        return (int) $bevestigd + (int) $wachtend;
+    }
+
+    /** De tellingen voor spotsTaken() in één query, voor lijsten. */
+    public function scopeWithSpotsTaken(Builder $query): Builder
+    {
+        return $query->withCount([
+            'participations' => fn ($q) => $q->confirmed(),
+            'enrollments as pending_enrollments_count' => fn ($q) => $q->holdingSpot(),
+        ]);
+    }
+
+    public function enrollments(): HasMany
+    {
+        return $this->hasMany(Enrollment::class);
     }
 
     /** Hoeveel plekken er nog vrij zijn, of null als er geen grens is. */

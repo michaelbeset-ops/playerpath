@@ -3,8 +3,11 @@
 namespace App\Actions\Enrollments;
 
 use App\Enums\EnrollmentStatus;
+use App\Enums\OrderStatus;
 use App\Enums\ParticipationStatus;
+use App\Enums\PaymentStatus;
 use App\Models\Enrollment;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Models\User;
 use App\Models\WaitlistInvitation;
@@ -63,7 +66,7 @@ class InviteFromWaitlist
             // Verlopen en opnieuw uitgenodigd: eerst terug naar de wachtlijst,
             // zodat de rest van de machine dezelfde weg loopt.
             if ($enrollment->status === EnrollmentStatus::Expired) {
-                $enrollment->forceFill(['status' => EnrollmentStatus::Waitlist])->save();
+                $enrollment->transitionTo(EnrollmentStatus::Waitlist);
             }
 
             // De order ontstaat nu pas (betalen bij plaatsing), tenzij hij er
@@ -77,6 +80,16 @@ class InviteFromWaitlist
                     'enrollment' => $enrollment,
                 ]], $enrollment->guardian);
                 $enrollment->refresh();
+            } elseif ($enrollment->order->status === OrderStatus::Open && $enrollment->order->payments()->outstanding()->doesntExist()) {
+                // Opnieuw uitgenodigd na een verlopen plek: de oude rekeningen
+                // zijn vervallen, dus er komt opnieuw een rekening voor wat
+                // er nog openstaat.
+                $order = $enrollment->order;
+                $betaald = (int) $order->payments()->get()->filter(fn (Payment $p) => $p->status->countsAsRevenue())->sum('amount_cents');
+
+                if ($order->total_cents - $betaald > 0) {
+                    $this->bevestig->maakRekeningen($order, $betaald > 0 ? $order->total_cents - $betaald : null);
+                }
             }
 
             $enrollment->forceFill(['handled_by_id' => $door?->id, 'handled_at' => now()])->save();
@@ -138,7 +151,9 @@ class InviteFromWaitlist
             }
 
             DB::transaction(function () use ($inschrijving) {
-                $inschrijving->order?->payments()->outstanding()->update(['status' => 'cancelled']);
+                $inschrijving->order?->payments()->outstanding()->get()
+                    ->filter(fn (Payment $p) => $p->canTransitionTo(PaymentStatus::Cancelled))
+                    ->each(fn (Payment $p) => $p->transitionTo(PaymentStatus::Cancelled));
                 $inschrijving->player?->participations()->where('product_id', $inschrijving->product_id)
                     ->update(['status' => ParticipationStatus::Cancelled->value]);
                 $inschrijving->transitionTo(EnrollmentStatus::Expired);

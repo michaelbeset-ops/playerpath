@@ -3,7 +3,6 @@ import GradeChip from '@/components/GradeChip.vue';
 import GradePicker from '@/components/GradePicker.vue';
 import { kleurVan, useGrading } from '@/lib/grade';
 import Avatar from '@/components/Avatar.vue';
-import FlashMessage from '@/components/FlashMessage.vue';
 import GoalList, { type Doel } from '@/components/GoalList.vue';
 import InputError from '@/components/InputError.vue';
 import InviteForm, { type Uitnodiging } from '@/components/onboarding/InviteForm.vue';
@@ -191,7 +190,6 @@ const streefScore = computed<number | null>({
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-4xl p-4">
-            <FlashMessage />
 
             <!-- Kop met acties -->
             <div class="flex flex-wrap items-start justify-between gap-4">
@@ -399,7 +397,7 @@ const streefScore = computed<number | null>({
 
                     <div class="flex items-center gap-3">
                         <Button type="submit" :disabled="doelForm.processing || !doelForm.due_on">Doel stellen</Button>
-                        <button type="button" class="text-sm text-muted-foreground underline underline-offset-4" @click="toonDoelFormulier = false">
+                        <button type="button" class="inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4" @click="toonDoelFormulier = false">
                             Annuleren
                         </button>
                     </div>

@@ -14,8 +14,8 @@ const props = defineProps<{ card: Kaart }>();
 const faqOpen = ref(false);
 
 const kleur: Record<string, string> = {
-    brons: 'bg-amber-700',
-    zilver: 'bg-slate-400',
+    brons: 'bg-level-brons',
+    zilver: 'bg-level-zilver',
     goud: 'bg-gold',
     elite: 'bg-primary',
 };

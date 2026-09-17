@@ -675,7 +675,7 @@ const invoer = 'h-11 w-full rounded-lg border border-input bg-background px-3 te
                 <div v-else-if="stap === 'jij'" class="mt-5 space-y-4">
                     <p class="text-sm text-muted-foreground">
                         Hiermee maak je een account aan, zodat je straks de trainingen, de spelerskaart en je betalingen ziet. Al een account?
-                        <a :href="loginUrl" class="font-medium text-primary underline underline-offset-4">Log in</a> en kom hier terug.
+                        <a :href="loginUrl" class="font-medium text-primary underline underline-offset-4">Inloggen</a> en kom hier terug.
                     </p>
 
                     <div class="grid gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm">

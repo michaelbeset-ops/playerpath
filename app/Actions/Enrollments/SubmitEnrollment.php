@@ -23,6 +23,7 @@ use App\Support\Enrollment\OrderWriter;
 use App\Support\Tenancy\Tenancy;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
 /**
@@ -85,10 +86,17 @@ class SubmitEnrollment
             $inschrijvingen = [];
             $opWachtlijst = false;
 
-            foreach ($kinderen as $kind) {
+            foreach ($kinderen as $i => $kind) {
                 $aanbod = Product::findOrFail($kind['product_id']);
                 $optie = PaymentOption::where('product_id', $aanbod->id)->findOrFail($kind['payment_option_id']);
                 $vol = $aanbod->isFull();
+
+                // Vol en geen wachtlijst: dan is er niets om op te wachten.
+                if ($vol && ! $settings->hasWaitlist()) {
+                    throw ValidationException::withMessages([
+                        "children.{$i}.product_id" => 'Dit aanbod zit vol. Kies een ander aanbod.',
+                    ]);
+                }
 
                 $speler = $this->speler($ouder, $kind, $aanbod);
 

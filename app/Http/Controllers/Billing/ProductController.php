@@ -61,8 +61,8 @@ class ProductController extends Controller
             ->withCount([
                 'subscriptions' => fn ($q) => $q->active(),
                 'purchases' => fn ($q) => $q->active(),
-                'participations' => fn ($q) => $q->confirmed(),
             ])
+            ->withSpotsTaken()
             ->orderBy('type')
             ->orderBy('name')
             ->get()
@@ -204,7 +204,7 @@ class ProductController extends Controller
             'starts_on' => $product->starts_on?->format('d-m-Y'),
             'ends_on' => $product->ends_on?->format('d-m-Y'),
             'capacity' => $product->capacity,
-            'taken' => $product->participations_count ?? 0,
+            'taken' => $product->spotsTaken(),
             'is_full' => $product->isFull(),
             'min_age' => $product->min_age,
             'max_age' => $product->max_age,

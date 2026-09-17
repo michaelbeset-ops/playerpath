@@ -65,7 +65,7 @@ const opslaan = () => (bewerken.value ? form.patch('/beheer/scholen/' + props.sc
     <Head :title="bewerken ? 'School bewerken' : 'Nieuwe school'" />
 
     <PlatformLayout>
-        <Link href="/beheer/scholen" class="text-sm text-muted-foreground underline underline-offset-4">Terug naar scholen</Link>
+        <Link href="/beheer/scholen" class="inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4">Terug naar scholen</Link>
 
         <h1 class="mt-2 text-2xl font-semibold tracking-tight">
             {{ bewerken ? school!.name + ' bewerken' : 'Nieuwe school' }}
@@ -209,7 +209,7 @@ const opslaan = () => (bewerken.value ? form.patch('/beheer/scholen/' + props.sc
                 <Button type="submit" :disabled="form.processing">
                     {{ bewerken ? 'Opslaan' : 'School aanmaken' }}
                 </Button>
-                <Link href="/beheer/scholen" class="text-sm text-muted-foreground underline underline-offset-4">Annuleren</Link>
+                <Link href="/beheer/scholen" class="inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4">Annuleren</Link>
             </div>
         </form>
     </PlatformLayout>

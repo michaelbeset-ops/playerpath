@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import FlashMessage from '@/components/FlashMessage.vue';
 import LoadMore from '@/components/LoadMore.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem, type SharedData } from '@/types';
@@ -141,7 +140,6 @@ const detailLabels: Record<string, string> = { kledingmaat: 'Kledingmaat', nivea
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-3xl p-4" data-tour="enrollments">
-            <FlashMessage />
 
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div class="min-w-0">

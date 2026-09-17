@@ -3,13 +3,8 @@
 namespace App\Actions\Enrollments;
 
 use App\Enums\EnrollmentStatus;
-use App\Enums\OrderLineType;
-use App\Enums\OrderStatus;
 use App\Enums\ParticipationStatus;
-use App\Enums\PaymentStatus;
 use App\Models\Enrollment;
-use App\Models\Order;
-use App\Models\Payment;
 use App\Models\User;
 use App\Notifications\InschrijvingAfgewezen;
 use App\Support\Status\TransitionException;
@@ -34,7 +29,7 @@ use Illuminate\Support\Facades\DB;
  */
 class DeclineEnrollment
 {
-    public function __construct(protected ConfirmEnrollment $bevestig) {}
+    public function __construct(protected RemoveFromOrder $vanOrder) {}
 
     public function handle(Enrollment $enrollment, User $door): Enrollment
     {
@@ -59,55 +54,12 @@ class DeclineEnrollment
             ]);
 
             if ($order !== null) {
-                $this->werkOrderBij($order, $enrollment);
+                $this->vanOrder->handle($order, $enrollment);
             }
         });
 
         $enrollment->guardian?->notify(new InschrijvingAfgewezen($enrollment->refresh()));
 
         return $enrollment;
-    }
-
-    protected function werkOrderBij(Order $order, Enrollment $enrollment): void
-    {
-        $order->lines()->where('enrollment_id', $enrollment->id)->delete();
-
-        // Een gezinskorting die aan dit kind hing (op speler, zonder inschrijving).
-        if ($enrollment->player_id !== null) {
-            $order->lines()
-                ->whereNull('enrollment_id')
-                ->where('player_id', $enrollment->player_id)
-                ->where('type', OrderLineType::Discount->value)
-                ->delete();
-        }
-
-        $anderen = $order->enrollments()->get()
-            ->filter(fn (Enrollment $e) => $e->status->isOpen() || $e->status->isSettled());
-
-        $openstaand = $order->payments()->outstanding()->get()
-            ->filter(fn (Payment $p) => $p->canTransitionTo(PaymentStatus::Cancelled));
-        $betaald = $order->payments()->get()->contains(fn (Payment $p) => $p->status->countsAsRevenue());
-
-        if ($anderen->isEmpty()) {
-            $openstaand->each(fn (Payment $p) => $p->transitionTo(PaymentStatus::Cancelled));
-            $order->lines()->delete();
-            $order->recalculate();
-            $order->forceFill(['status' => $betaald ? OrderStatus::Paid : OrderStatus::Cancelled])->save();
-
-            return;
-        }
-
-        $order->recalculate();
-
-        // Rekeningen op het oude totaal kloppen niet meer. Alleen opnieuw
-        // opmaken als er nog niets betaald is; anders zou een deelbetaling
-        // dubbel meetellen, en dat hoort bij de school.
-        if ($order->status === OrderStatus::Open && $openstaand->isNotEmpty() && ! $betaald) {
-            $openstaand->each(fn (Payment $p) => $p->transitionTo(PaymentStatus::Cancelled));
-
-            if ($order->total_cents > 0) {
-                $this->bevestig->maakRekeningen($order);
-            }
-        }
     }
 }

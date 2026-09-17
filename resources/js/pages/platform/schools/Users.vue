@@ -89,7 +89,7 @@ const bekijkAls = (id: number) => {
     <Head :title="'Gebruikers ' + school.name" />
 
     <PlatformLayout>
-        <Link :href="'/beheer/scholen/' + school.id" class="text-sm text-muted-foreground underline underline-offset-4">
+        <Link :href="'/beheer/scholen/' + school.id" class="inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4">
             Terug naar {{ school.name }}
         </Link>
 
@@ -142,7 +142,7 @@ const bekijkAls = (id: number) => {
 
             <div class="mt-4 flex items-center gap-3">
                 <Button type="submit" :disabled="form.processing">Uitnodiging sturen</Button>
-                <button type="button" class="text-sm text-muted-foreground underline underline-offset-4" @click="toonFormulier = false">
+                <button type="button" class="inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4" @click="toonFormulier = false">
                     Annuleren
                 </button>
             </div>

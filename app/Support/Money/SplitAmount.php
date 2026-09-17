@@ -29,4 +29,54 @@ final class SplitAmount
             range(0, $parts - 1),
         );
     }
+
+    /**
+     * Een bedrag naar rato over gewichten verdelen, met dezelfde belofte: de
+     * som is exact het bedrag. Eerst naar beneden afgerond (intdiv), daarna
+     * gaan de restcenten één voor één naar de zwaarste gewichten.
+     *
+     * @template TKey of array-key
+     *
+     * @param  array<TKey, int>  $weights  niet-negatief
+     * @return array<TKey, int>
+     */
+    public static function proportional(int $cents, array $weights): array
+    {
+        if ($weights === []) {
+            return [];
+        }
+
+        $totaal = array_sum(array_map(fn (int $w) => max(0, $w), $weights));
+
+        if ($totaal <= 0) {
+            // Niets om naar te verdelen: alles op de eerste.
+            $uit = array_map(fn () => 0, $weights);
+            $uit[array_key_first($weights)] = $cents;
+
+            return $uit;
+        }
+
+        $negatief = $cents < 0;
+        $rest = abs($cents);
+        $uit = [];
+
+        foreach ($weights as $sleutel => $gewicht) {
+            $uit[$sleutel] = intdiv(abs($cents) * max(0, $gewicht), $totaal);
+            $rest -= $uit[$sleutel];
+        }
+
+        $volgorde = $weights;
+        arsort($volgorde);
+
+        foreach (array_keys($volgorde) as $sleutel) {
+            if ($rest <= 0) {
+                break;
+            }
+
+            $uit[$sleutel]++;
+            $rest--;
+        }
+
+        return $negatief ? array_map(fn (int $c) => -$c, $uit) : $uit;
+    }
 }

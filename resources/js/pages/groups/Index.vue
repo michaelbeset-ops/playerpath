@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import FlashMessage from '@/components/FlashMessage.vue';
 import DemoBadge from '@/components/onboarding/DemoBadge.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
@@ -27,7 +26,6 @@ const breadcrumbs: BreadcrumbItem[] = [{ title: 'Groepen', href: '/groups' }];
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-3xl p-4">
-            <FlashMessage />
 
             <div class="flex flex-wrap items-center justify-between gap-4">
                 <div>

@@ -39,7 +39,7 @@ const dekkingKleur = computed(() => toneFill[props.data.coverage.tone ?? 'neutra
     <section class="flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card p-5 shadow-sm">
         <div class="flex flex-wrap items-baseline justify-between gap-2">
             <p class="font-medium">Ontwikkeling</p>
-            <Link href="/reports" class="text-xs font-medium text-primary underline underline-offset-4">Alle rapporten</Link>
+            <Link href="/reports" class="inline-flex min-h-11 items-center text-xs font-medium text-primary underline underline-offset-4">Alle rapporten</Link>
         </div>
 
         <!-- Het cijfer waar een school op stuurt, dus bovenaan en als balk. -->

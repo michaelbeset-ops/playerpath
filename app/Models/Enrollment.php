@@ -37,6 +37,16 @@ class Enrollment extends Model
         'details',
     ];
 
+    /**
+     * Een nieuwe inschrijving begint als concept. De kolom zelf heeft nog de
+     * oude standaard 'pending', en die bestaat in de statusmachine niet meer:
+     * zonder deze regel stond een net aangemaakte inschrijving tot haar eerste
+     * statuswissel op een waarde die niemand kan lezen of tellen.
+     */
+    protected $attributes = [
+        'status' => 'concept',
+    ];
+
     protected function casts(): array
     {
         return [
@@ -99,6 +109,12 @@ class Enrollment extends Model
             fn (EnrollmentStatus $s) => $s->value,
             array_filter(EnrollmentStatus::cases(), fn (EnrollmentStatus $s) => $s->isOpen()),
         ));
+    }
+
+    /** Wat een plek in het aanbod vasthoudt zonder al bevestigd te zijn. Zie EnrollmentStatus::holdsSpot(). */
+    public function scopeHoldingSpot(Builder $query): Builder
+    {
+        return $query->whereIn('status', EnrollmentStatus::holdingSpot());
     }
 
     public function getChildNameAttribute(): string

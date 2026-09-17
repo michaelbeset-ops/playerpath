@@ -2,7 +2,6 @@
 import { kleurVan, useGrading } from '@/lib/grade';
 import Avatar from '@/components/Avatar.vue';
 import FilterSheet from '@/components/FilterSheet.vue';
-import FlashMessage from '@/components/FlashMessage.vue';
 import LoadMore from '@/components/LoadMore.vue';
 import DemoBadge from '@/components/onboarding/DemoBadge.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -103,7 +102,6 @@ const { kleuren, niveauVoor } = useGrading();
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-4xl p-4" data-tour="clients">
-            <FlashMessage />
 
             <h1 class="text-2xl font-semibold tracking-tight">{{ isTrainer ? 'Spelers' : 'Klanten' }}</h1>
             <p class="mt-1 text-sm text-muted-foreground">
@@ -197,7 +195,10 @@ const { kleuren, niveauVoor } = useGrading();
                                 <span class="flex flex-wrap items-center gap-x-2 gap-y-1 font-medium">
                                     {{ speler.name }}
                                     <DemoBadge v-if="speler.is_demo" />
-                                    <KeyRound v-if="speler.has_login" class="size-3.5 shrink-0 text-muted-foreground" title="Heeft een eigen inlog" />
+                                    <span v-if="speler.has_login" class="inline-flex shrink-0" title="Heeft een eigen inlog">
+                                        <KeyRound class="size-3.5 text-muted-foreground" aria-hidden="true" />
+                                        <span class="sr-only">Heeft een eigen inlog</span>
+                                    </span>
                                     <span
                                         v-if="!speler.is_active"
                                         class="rounded bg-secondary px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"

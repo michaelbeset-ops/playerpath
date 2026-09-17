@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import FlashMessage from '@/components/FlashMessage.vue';
 import GatewayNotice from '@/components/GatewayNotice.vue';
 import InputError from '@/components/InputError.vue';
 import LoadMore from '@/components/LoadMore.vue';
@@ -85,7 +84,6 @@ const kleurVoor = (status: string) =>
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-4xl p-4">
-            <FlashMessage />
             <GatewayNotice :gateway="gateway" />
 
             <p v-if="statusFout" class="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive" role="alert">
@@ -182,7 +180,7 @@ const kleurVoor = (status: string) =>
 
                 <div class="flex items-center gap-3">
                     <Button type="submit" :disabled="form.processing || !form.player_id || !form.product_id">Abonnement vastleggen</Button>
-                    <button type="button" class="text-sm text-muted-foreground underline underline-offset-4" @click="toonFormulier = false">
+                    <button type="button" class="inline-flex min-h-11 items-center text-sm text-muted-foreground underline underline-offset-4" @click="toonFormulier = false">
                         Annuleren
                     </button>
                 </div>

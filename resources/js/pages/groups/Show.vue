@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import Avatar from '@/components/Avatar.vue';
-import FlashMessage from '@/components/FlashMessage.vue';
 import DemoBadge from '@/components/onboarding/DemoBadge.vue';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -119,7 +118,6 @@ watch(open, (nu) => {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-3xl p-4">
-            <FlashMessage />
 
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div class="min-w-0">
@@ -253,7 +251,7 @@ watch(open, (nu) => {
 
                 <div v-if="available.length === 0" class="rounded-lg border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
                     Alle actieve spelers zitten al in deze groep.
-                    <Link href="/players/create" class="mt-1 block text-primary underline underline-offset-4">Nieuwe speler toevoegen</Link>
+                    <Link href="/players/create" class="mt-1 flex min-h-11 items-center justify-center text-primary underline underline-offset-4">Nieuwe speler toevoegen</Link>
                 </div>
 
                 <ul v-else class="max-h-72 space-y-1 overflow-y-auto">

@@ -3,17 +3,24 @@
 namespace App\Support\Enrollment;
 
 use App\Enums\OrderStatus;
+use App\Models\Discount;
 use App\Models\Enrollment;
 use App\Models\Order;
 use App\Models\PaymentOption;
 use App\Models\Product;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Van een berekening (OrderBuilder) een order met regels maken en de
  * inschrijvingen eraan hangen. Eén plek, gebruikt bij het indienen én bij het
  * doorschuiven vanaf de wachtlijst, zodat een order er altijd hetzelfde
  * uitziet, waar hij ook vandaan komt.
+ *
+ * Hier telt ook een gebruikte kortingscode mee (`discounts.uses`), met de
+ * korting op slot: twee ouders die tegelijk de laatste keer van een code
+ * gebruiken mogen hem niet allebei krijgen.
  */
 class OrderWriter
 {
@@ -24,7 +31,25 @@ class OrderWriter
      */
     public function write(EnrollmentSettings $settings, array $regels, User $ouder, ?string $code = null, ?string $note = null): Order
     {
+        return DB::transaction(fn () => $this->schrijf($settings, $regels, $ouder, $code, $note));
+    }
+
+    /** @param  list<array{product: Product, option: PaymentOption, child_name: string, player_id: int|null, enrollment: Enrollment}>  $regels */
+    protected function schrijf(EnrollmentSettings $settings, array $regels, User $ouder, ?string $code, ?string $note): Order
+    {
         $berekening = $this->builder->build($settings, $regels, $ouder, $code);
+
+        foreach (array_unique(array_filter(array_column($berekening['lines'], 'discount_id'))) as $kortingId) {
+            $korting = Discount::query()->whereKey($kortingId)->lockForUpdate()->first();
+
+            if ($korting === null || ! $korting->isUsable()) {
+                throw ValidationException::withMessages([
+                    'code' => 'Deze kortingscode is net niet meer geldig. Haal hem weg en probeer het opnieuw.',
+                ]);
+            }
+
+            $korting->increment('uses');
+        }
 
         $order = Order::create([
             'user_id' => $ouder->id,

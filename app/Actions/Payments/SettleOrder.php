@@ -43,7 +43,11 @@ class SettleOrder
                 }
             }
 
-            $allesBetaald = $order->payments->every(fn (Payment $p) => $p->status->countsAsRevenue());
+            // Een geannuleerde rekening (bijvoorbeeld vervangen nadat een kind
+            // van de order ging) hoeft niet meer betaald te worden.
+            $allesBetaald = $order->payments
+                ->reject(fn (Payment $p) => $p->status === PaymentStatus::Cancelled)
+                ->every(fn (Payment $p) => $p->status->countsAsRevenue());
 
             if ($allesBetaald) {
                 $order->forceFill(['status' => OrderStatus::Paid, 'paid_at' => now()])->save();

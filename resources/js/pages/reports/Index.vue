@@ -70,7 +70,7 @@ const { kleuren, niveauVoor } = useGrading();
                 <span
                     >Alleen de spelers van <strong>{{ group }}</strong></span
                 >
-                <Link href="/reports" class="font-medium text-primary hover:underline">Toon alle spelers</Link>
+                <Link href="/reports" class="inline-flex min-h-11 items-center font-medium text-primary hover:underline">Toon alle spelers</Link>
             </div>
 
             <input

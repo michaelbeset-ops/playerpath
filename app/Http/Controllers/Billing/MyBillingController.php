@@ -115,17 +115,18 @@ class MyBillingController extends Controller
         $inschrijvingen = Enrollment::whereIn('player_id', $spelerIds)
             // De orderregels meteen mee: het restitutiebedrag hoeft dan niet per
             // inschrijving een eigen query.
-            ->with(['product', 'order.payments', 'order.lines'])
+            ->with(['product', 'order.payments', 'order.lines', 'order.enrollments'])
             ->whereNotIn('status', [EnrollmentStatus::Declined->value, EnrollmentStatus::Expired->value])
             ->latest()
             ->limit(12)
             ->get()
             ->map(function (Enrollment $e) use ($beleid) {
-                $regel = $e->order?->lines
-                    ->filter(fn ($l) => (int) $l->enrollment_id === $e->id && in_array($l->type?->value, ['offering', 'trial'], strict: true))
-                    ->sum('amount_cents') ?? 0;
-                $betaald = $e->order ? (int) $e->order->payments->filter(fn ($p) => $p->status->countsAsRevenue())->sum('amount_cents') : 0;
-                $terug = $beleid->refundCents(max(0, min((int) $regel, $betaald)), $e->product?->starts_on);
+                // Zelfde berekening als CancelEnrollment: het netto deel van dit
+                // kind, nooit meer dan er op de order betaald is. Na annuleren
+                // staat het vastgelegde bedrag er.
+                $terug = $e->status === EnrollmentStatus::Cancelled
+                    ? (int) $e->refund_cents
+                    : $beleid->refundCents($e->order?->refundableCentsFor($e) ?? 0, $e->product?->starts_on);
 
                 return [
                     'id' => $e->id,

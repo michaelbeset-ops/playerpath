@@ -442,7 +442,7 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                             >
                                 {{ dag.dag }}
                             </span>
-                            <span v-if="dag.isVandaag" class="hidden text-[10px] font-semibold uppercase tracking-wide text-primary sm:inline">
+                            <span v-if="dag.isVandaag" class="hidden text-[11px] font-semibold uppercase tracking-wide text-primary sm:inline">
                                 vandaag
                             </span>
                         </span>
@@ -453,7 +453,7 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                                 v-for="t in perDag[dag.iso].slice(0, 3)"
                                 :key="t.id"
                                 class="size-1.5 rounded-full"
-                                :class="t.enrollable ? 'bg-gold' : t.has_passed ? 'bg-muted-foreground/40' : 'bg-primary'"
+                                :class="t.enrollable ? 'border border-primary bg-transparent' : t.has_passed ? 'bg-muted-foreground/40' : 'bg-primary'"
                             ></span>
                         </div>
 
@@ -549,11 +549,11 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                                 {{ t.starts_at }} – {{ t.ends_at }}
                             </p>
                             <p class="mt-0.5 text-sm font-medium leading-tight" :class="t.cancelled ? 'line-through' : ''">{{ t.group }}</p>
-                            <p v-if="t.is_mine && scope === 'all'" class="mt-1 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                            <p v-if="t.is_mine && scope === 'all'" class="mt-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
                                 jouw training
                             </p>
-                            <p v-if="t.cancelled" class="mt-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">afgezegd</p>
-                            <p v-if="t.enrollable" class="mt-1 text-[10px] font-semibold uppercase tracking-wide text-gold">
+                            <p v-if="t.cancelled" class="mt-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">afgezegd</p>
+                            <p v-if="t.enrollable" class="mt-1 text-[11px] font-semibold uppercase tracking-wide text-primary">
                                 {{ t.is_full ? 'wachtlijst' : 'inschrijven' }}<template v-if="t.price"> · {{ t.price }}</template>
                             </p>
                             <p class="mt-1 flex items-start gap-1 text-xs text-muted-foreground">
@@ -591,7 +591,7 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                             :href="hrefVoor(t)"
                             class="flex min-w-0 gap-3 rounded-xl border bg-card p-3 shadow-sm transition hover:border-primary"
                             :class="
-                                t.enrollable ? 'border-dashed border-gold/60' : t.is_mine && scope === 'all' ? 'border-primary/40' : 'border-border'
+                                t.enrollable ? 'border-dashed border-primary/60' : t.is_mine && scope === 'all' ? 'border-primary/40' : 'border-border'
                             "
                         >
                             <span
@@ -607,19 +607,19 @@ const leegTekst = computed(() => (props.scope === 'mine' ? 'Geen trainingen van 
                                     <span class="font-medium" :class="t.cancelled ? 'line-through' : ''">{{ t.group }}</span>
                                     <span
                                         v-if="t.is_mine && scope === 'all'"
-                                        class="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary"
+                                        class="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary"
                                     >
                                         jij
                                     </span>
                                     <span
                                         v-if="t.cancelled"
-                                        class="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                                        class="rounded-full bg-secondary px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
                                     >
                                         afgezegd
                                     </span>
                                     <span
                                         v-if="t.enrollable"
-                                        class="rounded-full bg-gold/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gold"
+                                        class="rounded-full border border-dashed border-primary/60 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-primary"
                                     >
                                         {{ t.is_full ? 'wachtlijst' : 'inschrijven' }}<template v-if="t.price"> · {{ t.price }}</template>
                                     </span>

@@ -55,7 +55,7 @@ class ShopController extends Controller
 
         $producten = Product::query()
             ->where('is_active', true)
-            ->withCount(['participations' => fn ($q) => $q->confirmed()])
+            ->withSpotsTaken()
             ->orderByRaw('starts_on is null')
             ->orderBy('starts_on')
             ->orderBy('amount_cents')

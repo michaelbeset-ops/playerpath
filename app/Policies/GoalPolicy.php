@@ -24,12 +24,15 @@ class GoalPolicy
 
     public function createFor(User $user, Player $player): bool
     {
-        return $user->belongsToSameSchool($player) && ($user->isTrainer() || $user->isEigenaar());
+        // Dezelfde grens als een rapport: een trainer alleen bij zijn eigen spelers.
+        return $user->belongsToSameSchool($player) && ($user->isTrainer() || $user->isEigenaar())
+            && $user->can('createReport', $player);
     }
 
     public function update(User $user, Goal $goal): bool
     {
-        return $user->belongsToSameSchool($goal) && ($user->isTrainer() || $user->isEigenaar());
+        return $user->belongsToSameSchool($goal) && ($user->isTrainer() || $user->isEigenaar())
+            && $goal->player !== null && $user->can('createReport', $goal->player);
     }
 
     public function delete(User $user, Goal $goal): bool

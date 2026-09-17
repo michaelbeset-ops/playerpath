@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import FlashMessage from '@/components/FlashMessage.vue';
 import RegistrationDialog from '@/components/RegistrationDialog.vue';
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -191,7 +190,6 @@ const verwijderen = () => {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-2xl p-4">
-            <FlashMessage />
 
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div class="min-w-0">

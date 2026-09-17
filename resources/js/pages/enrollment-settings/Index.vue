@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import FlashMessage from '@/components/FlashMessage.vue';
 import EnrollmentFlow from '@/components/onboarding/EnrollmentFlow.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
@@ -202,7 +201,6 @@ const samenvatting = computed<Record<string, string[]>>(() => {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-2xl p-4">
-            <FlashMessage />
 
             <div class="flex items-start gap-3">
                 <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">

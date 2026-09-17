@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import Avatar from '@/components/Avatar.vue';
-import FlashMessage from '@/components/FlashMessage.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { type BreadcrumbItem } from '@/types';
 import { Head, Link, router } from '@inertiajs/vue3';
@@ -93,7 +92,6 @@ const haalVanLijst = (deelnemer: Deelnemer) => {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-3xl p-4">
-            <FlashMessage />
 
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div class="min-w-0">

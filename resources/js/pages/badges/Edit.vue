@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import FlashMessage from '@/components/FlashMessage.vue';
 import InputError from '@/components/InputError.vue';
 import ToggleSwitch from '@/components/ToggleSwitch.vue';
 import AppLayout from '@/layouts/AppLayout.vue';
@@ -71,7 +70,6 @@ const opslaan = () => form.patch('/mijlpalen', { preserveScroll: true });
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="mx-auto w-full max-w-2xl p-4 pb-28">
-            <FlashMessage />
 
             <div class="flex items-start gap-3">
                 <span class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gold/15 text-gold">
