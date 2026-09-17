@@ -257,3 +257,21 @@ commando.
 - Vraag de eerste trainer of het rapport-invulscherm op zijn telefoon in
   dertig seconden lukt. Zo niet, dan is dat het eerste wat je repareert — de
   rest van het product hangt eraan.
+
+## Een ledenlijst uit Excel importeren
+
+Voor een school die overstapt. Het bestand heeft een kopregel met `Keepers`
+(of `Naam`), `Team`, `Dag` en `Trainers`. Keepers worden spelers, de dag wordt
+de groep, trainers krijgen een account zonder e-mailadres en zonder inlog. Er
+gaat geen mail uit, en nog eens draaien maakt niets dubbel.
+
+1. Zet het bestand op de server (niet in git, het zijn namen van kinderen):
+   `scp "ledenlijst.xlsx" forge@<server-ip>:/home/forge/import.xlsx`
+2. Forge → Commands, eerst als proef:
+   `php artisan playerpath:importeer-spelers <school-slug> /home/forge/import.xlsx --proef`
+   Zonder geldige slug toont het commando de lijst met slugs.
+3. Klopt de uitvoer, draai hetzelfde zonder `--proef`.
+4. Haal het bestand weer weg: `rm /home/forge/import.xlsx`.
+
+De geboortedatum wordt geschat uit het team (O12 valt in O12); spelers zonder
+team staan in de uitvoer om na te lopen.

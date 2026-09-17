@@ -137,6 +137,10 @@ class SchoolUserController extends Controller
 
         abort_unless($user->school_id === $school->id, 404);
 
+        if ($user->email === null) {
+            return back()->with('error', "{$user->name} heeft geen e-mailadres. Nodig hem uit via Personeel om een inlog te geven.");
+        }
+
         Password::sendResetLink(['email' => $user->email]);
 
         $this->audit->log('user.password_reset', 'Wachtwoordreset gestuurd naar '.$this->audit->describeUser($user), $school);
@@ -162,6 +166,10 @@ class SchoolUserController extends Controller
         $this->authorize('platform.manageSchools');
 
         abort_unless($user->school_id === $school->id, 404);
+
+        if ($user->email === null) {
+            return back()->with('error', "{$user->name} heeft geen e-mailadres. Nodig hem uit via Personeel om een inlog te geven.");
+        }
 
         if ($user->email_verified_at !== null) {
             return back()->with('error', "{$user->name} heeft het account al geactiveerd. Komt hij er niet in, stuur dan een wachtwoordmail.");

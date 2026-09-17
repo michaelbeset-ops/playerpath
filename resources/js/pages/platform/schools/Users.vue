@@ -13,7 +13,7 @@ const props = defineProps<{
     users: {
         id: number;
         name: string;
-        email: string;
+        email: string | null;
         roles: string[];
         is_active: boolean;
         verified: boolean;
@@ -196,7 +196,7 @@ const bekijkAls = (id: number) => {
                         </span>
                     </p>
                     <p class="truncate text-xs text-muted-foreground">
-                        {{ user.email }}
+                        {{ user.email ?? 'geen e-mailadres' }}
                         <!-- Bevestigd = via de link in zijn mail een wachtwoord gekozen of een uitnodiging geactiveerd. -->
                         <template v-if="!user.verified"> &middot; nog niet geactiveerd</template>
                         <template v-if="user.deactivated_at"> &middot; sinds {{ user.deactivated_at }}</template>
@@ -206,10 +206,10 @@ const bekijkAls = (id: number) => {
                 <div class="flex flex-wrap items-center gap-2">
                     <!-- Nog nooit geactiveerd: de welkomstmail opnieuw, in plaats van een wachtwoordmail. -->
                     <button
-                        v-if="!user.verified"
+                        v-if="!user.verified && user.email"
                         type="button"
                         class="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
-                        @click="opnieuwUitnodigen(user.id, user.name, user.email)"
+                        @click="opnieuwUitnodigen(user.id, user.name, user.email ?? '')"
                     >
                         <Send class="size-3.5" />
                         Opnieuw uitnodigen
@@ -226,6 +226,7 @@ const bekijkAls = (id: number) => {
                     </button>
 
                     <button
+                        v-if="user.email"
                         type="button"
                         class="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-2.5 text-xs font-medium hover:border-primary"
                         @click="reset(user.id, user.email)"

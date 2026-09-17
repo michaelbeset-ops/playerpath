@@ -14,7 +14,7 @@ defineProps<{
         id: number;
         name: string;
         photo: string | null;
-        email: string;
+        email: string | null;
         is_owner: boolean;
         trainings_count: number;
         reports_count: number;
@@ -94,7 +94,8 @@ const verwijder = (id: number, naam: string) => {
                                 eigenaar
                             </span>
                         </p>
-                        <p class="truncate text-xs text-muted-foreground">{{ trainer.email }}</p>
+                        <!-- Een trainer uit een import heeft soms nog geen adres, en dus geen inlog. -->
+                        <p class="truncate text-xs text-muted-foreground">{{ trainer.email ?? 'Nog geen inlog' }}</p>
                         <p class="tabular mt-1 flex flex-wrap gap-x-3 text-xs text-muted-foreground">
                             <span>{{ trainer.trainings_count }} {{ trainer.trainings_count === 1 ? 'training' : 'trainingen' }}</span>
                             <span class="inline-flex items-center gap-1">
