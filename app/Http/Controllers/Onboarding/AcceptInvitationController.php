@@ -75,12 +75,28 @@ class AcceptInvitationController extends Controller
             // niets aan te knoeien. Zie CLAUDE.md 3.1.
             $this->tenancy->set($uitnodiging->school);
 
-            $gebruiker = User::create([
-                'school_id' => $uitnodiging->school_id,
-                'name' => $uitnodiging->name,
-                'email' => $uitnodiging->email,
-                'password' => $data['password'],
-            ]);
+            // Een trainer uit een import bestaat al, zonder adres. Die krijgt
+            // nu zijn inlog; een tweede account zou hem los zetten van zijn
+            // trainingen en rapporten.
+            $bestaand = $uitnodiging->user_id === null ? null : User::query()
+                ->where('school_id', $uitnodiging->school_id)
+                ->whereNull('email')
+                ->find($uitnodiging->user_id);
+
+            if ($bestaand !== null) {
+                $bestaand->forceFill([
+                    'email' => $uitnodiging->email,
+                    'password' => $data['password'],
+                ])->save();
+                $gebruiker = $bestaand;
+            } else {
+                $gebruiker = User::create([
+                    'school_id' => $uitnodiging->school_id,
+                    'name' => $uitnodiging->name,
+                    'email' => $uitnodiging->email,
+                    'password' => $data['password'],
+                ]);
+            }
 
             // Uitgenodigd worden en de link uit je eigen mailbox openen is het
             // bewijs dat het adres van jou is; nog een bevestigingsmail sturen
@@ -140,6 +156,15 @@ class AcceptInvitationController extends Controller
             ->first();
 
         if ($uitnodiging === null || ! $uitnodiging->isOpen() || ! $uitnodiging->school?->is_active) {
+            return null;
+        }
+
+        // Voor een bestaand account: dat moet er nog zijn en nog geen inlog hebben.
+        if ($uitnodiging->user_id !== null && ! User::query()
+            ->where('school_id', $uitnodiging->school_id)
+            ->whereNull('email')
+            ->whereKey($uitnodiging->user_id)
+            ->exists()) {
             return null;
         }
 

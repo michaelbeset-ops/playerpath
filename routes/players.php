@@ -82,6 +82,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('staff', [StaffController::class, 'index'])->name('staff.index');
     Route::post('staff/trainers', [TrainerController::class, 'store'])->name('trainers.store');
     Route::delete('staff/trainers/{user}', [TrainerController::class, 'destroy'])->name('trainers.destroy');
+    Route::post('staff/trainers/{user}/inlog', [TrainerController::class, 'login'])->name('trainers.login');
 
     // Beschikbaarheid: van jezelf, en voor de eigenaar het overzicht van zijn
     // team. Wie wat mag staat in AvailabilityExceptionPolicy.

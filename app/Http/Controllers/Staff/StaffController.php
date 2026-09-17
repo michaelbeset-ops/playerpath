@@ -27,12 +27,21 @@ class StaffController extends Controller
             ->role([Role::Trainer->value, Role::Eigenaar->value])
             ->withCount(['trainings', 'reports'])
             ->orderBy('name')
-            ->get()
+            ->get();
+
+        // Wie zonder inlog al een uitnodiging heeft: naar welk adres.
+        $uitgenodigd = Invitation::where('role', Role::Trainer->value)
+            ->pending()
+            ->whereIn('user_id', $trainers->whereNull('email')->pluck('id'))
+            ->pluck('email', 'user_id');
+
+        $trainers = $trainers
             ->map(fn (User $trainer) => [
                 'id' => $trainer->id,
                 'name' => $trainer->name,
                 'photo' => $trainer->photo_url,
                 'email' => $trainer->email,
+                'invited_email' => $uitgenodigd[$trainer->id] ?? null,
                 'roles' => $trainer->getRoleNames()->all(),
                 'is_owner' => $trainer->isEigenaar(),
                 'trainings_count' => $trainer->trainings_count,

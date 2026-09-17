@@ -50,6 +50,44 @@ class TrainerController extends Controller
         );
     }
 
+    /**
+     * Een trainer zonder inlog (uit een import) een inlog geven.
+     *
+     * Hetzelfde als uitnodigen, maar de uitnodiging hoort bij zijn bestaande
+     * account: bij activatie krijgt dat account het adres en een wachtwoord
+     * dat hij zelf kiest. Zijn trainingen en rapporten blijven van hem.
+     */
+    public function login(Request $request, User $user, SendInvitation $uitnodigen): RedirectResponse
+    {
+        $this->authorize('create', User::class);
+        $this->authorize('update', $user);
+
+        abort_unless($user->isTrainer() && $user->belongsToSameSchool($request->user()), 404);
+
+        if ($user->email !== null) {
+            return back()->with('error', "{$user->name} heeft al een inlog.");
+        }
+
+        $validated = $request->validate([
+            'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')],
+        ], [
+            'email.unique' => 'Dit e-mailadres is al in gebruik.',
+        ], [
+            'email' => 'Het e-mailadres',
+        ]);
+
+        $uitnodigen->handle(
+            $request->user()->school,
+            $user->name,
+            $validated['email'],
+            Role::Trainer->value,
+            $request->user(),
+            account: $user,
+        );
+
+        return back()->with('status', "{$user->name} krijgt een welkomstmail om een wachtwoord te kiezen.");
+    }
+
     public function destroy(Request $request, User $user): RedirectResponse
     {
         $this->authorize('delete', $user);

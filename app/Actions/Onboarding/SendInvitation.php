@@ -32,6 +32,7 @@ class SendInvitation
     /**
      * @param  list<int>  $playerIds  bij een ouder: de kinderen die bij activatie gekoppeld worden; bij een speler: zijn eigen profiel
      * @param  bool  $send  false als de aanroeper de mails pas na zijn eigen transactie verstuurt
+     * @param  User|null  $account  een bestaand account zonder inlog (een trainer uit een import) dat bij activatie het adres en wachtwoord krijgt
      */
     public function handle(
         School $school,
@@ -42,16 +43,18 @@ class SendInvitation
         array $playerIds = [],
         ?string $relationship = null,
         bool $send = true,
+        ?User $account = null,
     ): Invitation {
         $email = strtolower(trim($email));
         $dagen = (int) ($school->invitation_valid_days ?: 14);
 
-        $uitnodiging = DB::transaction(function () use ($school, $name, $email, $role, $inviter, $playerIds, $relationship, $dagen) {
+        $uitnodiging = DB::transaction(function () use ($school, $name, $email, $role, $inviter, $playerIds, $relationship, $dagen, $account) {
             // Een openstaande uitnodiging voor hetzelfde adres wordt vervangen,
             // niet verdubbeld: twee mails met twee links is verwarrend.
             Invitation::withoutSchoolScope()
                 ->where('school_id', $school->id)
-                ->where('email', $email)
+                ->where(fn ($q) => $q->where('email', $email)
+                    ->when($account, fn ($q) => $q->orWhere('user_id', $account->id)))
                 ->pending()
                 ->delete();
 
@@ -68,6 +71,9 @@ class SendInvitation
                 'expires_at' => now()->addDays($dagen),
                 'last_sent_at' => now(),
                 'sent_count' => 1,
+                // Vóór activatie: het account dat deze uitnodiging activeert.
+                // Daarna: het account dat eruit ontstond.
+                'user_id' => $account?->id,
             ])->save();
 
             return $rij;
